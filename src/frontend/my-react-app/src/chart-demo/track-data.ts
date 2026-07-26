@@ -11,15 +11,10 @@ export class ChartDate {
 }
 
 export class TrackData extends ChartDate {
-  // date: string; // This is now inherited from ChartDate
   distance: number;
   time: number;
   elevationGain: number;
   tss: number;
-
-  // weekNumber: number;
-  // monthNumber: number;
-  // yearNumber: number;
 
   constructor(date: string, distance: number, time: number, elevationGain: number, tss: number) {
     super(date);
@@ -28,10 +23,6 @@ export class TrackData extends ChartDate {
     this.time = time;
     this.elevationGain = elevationGain;
     this.tss = tss;
-    // this.dateObject = new Date(date);
-    // this.yearNumber = new Date(date).getFullYear();
-    // this.monthNumber = new Date(date).getMonth() + 1 + this.yearNumber * 100; // Months are zero-based in JavaScript
-    // this.weekNumber = this.getWeekNumber() + this.yearNumber * 100; // Combine year and week number to ensure uniqueness across years
   }
 
   getWeekNumber(): number {
@@ -116,22 +107,7 @@ export function getConsistentDays(minDate: Date, maxDate: Date): Date[] {
 
 export function addFormattedDate(trackData: TrackData[], key: "year" | "month" | "day" | "week"): TrackData[] {
   return trackData.map(e => {
-    // const year = new Date(e.date).getFullYear();
-    // const month = new Date(e.date).getMonth() + 1; // Months are zero-based in JavaScript
-    // const day = new Date(e.date).getDate();
-    // if (key === "year") {
-    //   e.formattedDate = `${year}-01-01`;
-    // } else if (key === "month") {
-    //   e.formattedDate = `${year}-${month.toString().padStart(2, '0')}-01`;
-    // } else if (key === "day") {
-    //   e.formattedDate = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-    // } else if (key === "week") {
-    //   const fdow = getFirstDayOfWeek(new Date(e.date));
-    //   e.formattedDate = `${fdow.getFullYear()}-${(fdow.getMonth() + 1).toString().padStart(2, '0')}-${fdow.getDate().toString().padStart(2, '0')}`;
-    //   // e.formattedDate = `${year}-W${weekNumber.toString().padStart(2, '0')}`;
-    // }
     e.formattedDate = getFormattedDate(new Date(e.date), key);
-
     return e;
   });
 }

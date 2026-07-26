@@ -1,13 +1,14 @@
 import {
   Bar,
   ComposedChart,
+  Legend,
   Line,
   Tooltip,
   XAxis,
   YAxis,
   type XAxisTickContentProps,
 } from "recharts";
-import type { ChartDate, TrackData } from "./track-data";
+import type { ChartDate } from "./track-data";
 import type { ReactNode } from "react";
 
 export default function TrackDiagram(props: { data: ChartDate[] }) {
@@ -116,6 +117,7 @@ export default function TrackDiagram(props: { data: ChartDate[] }) {
   return (
     <ComposedChart data={props.data}>
       <Tooltip />
+      <Legend />
 
       {/* <XAxis dataKey="formattedDate" /> */}
       <XAxis
@@ -148,15 +150,25 @@ export default function TrackDiagram(props: { data: ChartDate[] }) {
         label={{ value: "Year", position: "insideLeft", offset: -50 }}
       />
 
-      <YAxis yAxisId={"km"} orientation="left" width={"auto"} />
-      <YAxis yAxisId={"m"} orientation="right" width={"auto"} />
+      <YAxis
+        yAxisId={"km"}
+        orientation="left"
+        width={"auto"}
+        label={{ value: "Distance (km)", angle: -90, position: "insideLeft" }}
+      />
+      <YAxis
+        yAxisId={"m"}
+        orientation="right"
+        width={"auto"}
+        label={{ value: "Elevation/TSS (m/unit)", angle: -90, position: "insideRight" }}
+      />
 
       <Bar
         yAxisId={"km"}
         xAxisId={"month"}
         dataKey="distance"
         barSize={20}
-        fill="#413ea0"
+        fill="#201eaf"
       />
       <Line
         yAxisId={"m"}
@@ -164,13 +176,15 @@ export default function TrackDiagram(props: { data: ChartDate[] }) {
         type="monotone"
         dataKey="elevationGain"
         stroke="#ff7300"
+        strokeWidth={4}
       />
       <Line
         yAxisId={"m"}
         xAxisId={"month"}
         type="monotone"
         dataKey="tss"
-        stroke="#c5c5c5"
+        stroke="#535353"
+        strokeWidth={4}
       />
     </ComposedChart>
   );
