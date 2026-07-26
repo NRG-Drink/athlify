@@ -9,7 +9,7 @@
 | Dokumenttyp | Softwarekonzept / Projektdokumentation |
 | Version | 1.4 |
 | Datum | 26. Juli 2026 |
-| Autor | Marco Ebneter |
+| Autor | Beat Zimmermann & Marco Ebneter |
 
 ---
 
@@ -164,7 +164,7 @@ Athlify ist ausschliesslich auf Radsport-Aktivitäten ausgerichtet (Rennrad, Mou
 - **Bearbeiten**: Änderung von Metadaten (z. B. Beschreibung, verknüpftes Fahrzeug) – bei Strava-Aktivitäten eingeschränkt auf lokal verwaltete Zusatzfelder.
 - **Löschen**: Entfernen aus Athlify (ohne Rückwirkung auf Strava).
 > [!comment] Marco | 26/07/2026
-> Löschen aus Strava evtl. möglich machen da sonst beim nächsten Import diese Aktivität wider erscheint
+> Löschen aus Strava evtl. möglich machen da sonst beim nächsten Import diese Aktivität wider erscheint (evtl. mit softdelete gelöst)
 - **Manuell hinzufügen**: Erfassen von Aktivitäten ohne Strava-Ursprung (z. B. Indoor-Training).
 
 Attribute einer Aktivität: Datum, Distanz, Dauer, Durchschnittsgeschwindigkeit, Höhenmeter, Aktivitätstyp (Rennrad, Mountainbike, Gravel, Indoor/Rolle), Beschreibung, verknüpftes Fahrzeug (Bike), Quelle (Strava/Manuell).
