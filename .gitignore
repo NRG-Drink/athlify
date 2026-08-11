@@ -410,3 +410,4 @@ FodyWeavers.xsd
 .release-attachments/
 .test-results/
 *.csproj.lscache
+.obsidian

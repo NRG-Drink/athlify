@@ -2,14 +2,14 @@
 
 **Webbasierte Plattform zur Visualisierung und Analyse von Rad-Trainingsdaten**
 
-| | |
-|---|---|
-| Projekt | Athlify |
-| Kontext | CAS Frontend Engineering, OST – Ostschweizer Fachhochschule, Rapperswil |
-| Dokumenttyp | Softwarekonzept / Projektdokumentation |
-| Version | 1.4 |
-| Datum | 26. Juli 2026 |
-| Autor | Beat Zimmermann & Marco Ebneter |
+|             |                                                                         |
+| ----------- | ----------------------------------------------------------------------- |
+| Projekt     | Athlify                                                                 |
+| Kontext     | CAS Frontend Engineering, OST – Ostschweizer Fachhochschule, Rapperswil |
+| Dokumenttyp | Softwarekonzept / Projektdokumentation                                  |
+| Version     | 1.5                                                                     |
+| Datum       | 11. August 2026                                                        |
+| Autor       | Beat Zimmermann & Marco Ebneter                                         |
 
 ---
 
@@ -34,6 +34,7 @@
 17. [Teststrategie](#17-teststrategie)
 18. [Deployment](#18-deployment)
 19. [Anhang: Ergänzende Diagramme](#19-anhang-ergänzende-diagramme)
+20. [Offene Fragen](#20-offene-fragen)
 
 ---
 
@@ -41,7 +42,10 @@
 
 Athlify ist eine webbasierte Anwendung zur Visualisierung und Analyse von Rad-Trainingsdaten. Die Applikation ist bewusst auf den Radsport fokussiert – andere Sportarten werden nicht unterstützt. Sie richtet sich an Radsportlerinnen und Radsportler, die ihre Fahrradaktivitäten – primär synchronisiert über die Strava API – in übersichtlichen, interaktiven Dashboards auswerten möchten. Neben der Synchronisation von Aktivitäten und Velos bietet Athlify die Möglichkeit, Daten manuell zu erfassen, zu bearbeiten und langfristig auszuwerten. Die Applikation ist durchgängig zweisprachig (Deutsch/Englisch) nutzbar.
 
-Das Produkt besteht aus zwei klar getrennten Bereichen: einer öffentlichen, SEO-optimierten Marketing-Landing-Page zur Kundengewinnung sowie einer geschützten Applikation für registrierte Benutzer. Ein zeitlich unbefristeter, registrierungsfreier Demo-Modus mit vordefinierten Beispieldaten erlaubt es Interessenten, sich unverbindlich einen Eindruck von Athlify zu verschaffen, bevor sie sich registrieren und eine kostenpflichtige Subscription abschliessen.
+Das Produkt besteht aus zwei klar getrennten, unabhängig betriebenen Bereichen: einer öffentlichen Projekt-/Dokumentationswebsite, die das Open-Source-Projekt vorstellt und die Installation via Docker Compose erklärt (kein Marketing-Funnel, kein Login, keine Registrierung), sowie der eigentlichen Athlify-Applikation, die von Interessenten selbst als Docker-Container betrieben wird. Innerhalb dieser Applikation ist die Login-Seite der Einstiegspunkt (`/`) – sie übernimmt damit die Funktion einer klassischen Landingpage, jedoch innerhalb des laufenden Containers statt als separate Marketing-Seite. Von dort gelangen Interessenten direkt zu Registrierung oder zu einem zeitlich unbefristeten, registrierungsfreien Demo-Modus mit vordefinierten Beispieldaten, der es erlaubt, sich unverbindlich einen Eindruck von Athlify zu verschaffen, bevor sie sich registrieren und eine kostenpflichtige Subscription abschliessen.
+
+> [!comment] Hinweis zur Version 1.5
+> Diese Überarbeitung entfernt die bisherige SEO-Marketing-Landingpage aus dem Applikationsscope und ersetzt sie durch (a) eine separate Projekt-/Dokumentationswebsite für das Open-Source-Projekt und (b) die Login-Seite als Einstiegspunkt des Docker-Containers. Grundlage ist der Mockup `docs/AthlifyV2.html`, der beide Bereiche exemplarisch zeigt. Ein inhaltlicher Widerspruch zwischen der im Mockup kommunizierten Open-Source/MIT-Positionierung und dem bestehenden kostenpflichtigen Subscription-Modell wird in [Abschnitt 20](#20-offene-fragen) als kritische offene Frage geführt und in dieser Version bewusst nicht aufgelöst.
 
 Dieses Dokument beschreibt das vollständige Konzept von Athlify: die fachlichen Anforderungen, die technische Architektur, das Datenmodell, die API, sicherheitsrelevante Aspekte sowie die geplante Umsetzung im Rahmen des CAS-Projekts. Ziel ist es, eine belastbare Grundlage für Design, Implementierung und Bewertung des Projekts zu schaffen. Alle wesentlichen Entscheidungen werden nicht nur beschrieben, sondern auch begründet.
 
@@ -60,8 +64,8 @@ Athlify verfolgt folgende Hauptziele:
 - Synchronisation von Strava-Radaktivitäten und -Velos in eine eigene, persistente Datenbasis.
 - Bereitstellung aussagekräftiger Dashboards mit Kennzahlen, Verteilungen und Trends – ausschliesslich für Radsport-Aktivitäten.
 - Ermöglichung manueller Datenpflege für Nutzer ohne oder mit ergänzendem Strava-Konto.
-- Gewinnung neuer Kunden über eine ansprechende, informative Landing Page mit registrierungsfreiem Demo-Modus.
-- Abbildung eines nachhaltigen Geschäftsmodells über kostenpflichtige Subscriptions.
+- Gewinnung neuer Interessenten über eine öffentliche Projekt-/Dokumentationswebsite (Vorstellung, Installationsanleitung, Open-Source-Hinweis) sowie über einen registrierungsfreien Demo-Modus, der direkt über die Login-Seite der Applikation erreichbar ist.
+- Abbildung eines nachhaltigen Geschäftsmodells über kostenpflichtige Subscriptions. *(Annahme/offen – siehe [Abschnitt 20](#20-offene-fragen): Verträglichkeit mit der Open-Source/MIT-Positionierung des Mockups ist ungeklärt.)*
 - Durchgängige Mehrsprachigkeit (Deutsch/Englisch) der gesamten Applikation als verbindliche Kernanforderung.
 
 ### 2.3 Zielgruppe
@@ -118,31 +122,37 @@ Die Strava API (https://www.strava.com/) stellt die primäre externe Datenquelle
 
 ## 4. Funktionaler Projektumfang
 
-### 4.1 Öffentliche Landing Page
+### 4.1 Öffentliche Projekt-/Dokumentationswebsite
 
-Die Landing Page ist öffentlich zugänglich (kein Login erforderlich) und dient primär der Kundengewinnung. Sie umfasst folgende Bereiche:
+**Festgelegt:** Es gibt keine eigene, in die Applikation integrierte Marketing-Landingpage mehr. Stattdessen existiert eine eigenständige, öffentliche Webseite, die das Open-Source-Projekt Athlify vorstellt und Anleitung zur Selbst-Installation (Docker Compose) bietet. Diese Webseite ist nicht Teil des Docker-Containers/der SPA, sondern ein separates Deliverable. Der Mockup `docs/AthlifyV2.html` zeigt exemplarisch eine solche Startseite (Hero-Bereich "Rad-Trainingsdaten. Klar visualisiert.", einen Abschnitt "Open Source" mit `docker-compose.yml`-Beispiel und MIT-Lizenz-Hinweis sowie den Buttons "GitHub Repository" und "Dokumentation").
 
-| Seite | Zweck |
+Die Webseite umfasst folgende Bereiche:
+
+| Bereich | Zweck |
 |---|---|
-| Startseite | Value Proposition, Hero-Bereich, Call-to-Action (Registrierung/Demo) |
-| Features | Übersicht der Kernfunktionen (Sync, Dashboard, Fahrzeugverwaltung) |
-| Pricing | Übersicht der Subscription-Modelle (z. B. Monatlich, Jährlich) |
-| Screenshots | Visuelle Eindrücke der Applikation (Dashboard, Aktivitätsliste) |
-| FAQ | Häufige Fragen zu Datenschutz, Strava-Anbindung, Abrechnung |
-| Kontakt | Kontaktformular für Support- und Sales-Anfragen |
-| Login | Zugang zur bestehenden Applikation |
-| Registrierung | Anlage eines neuen Benutzerkontos |
-| Testzugang | Registrierungsfreier, zeitlich unbefristeter Demo-Modus mit Beispieldaten |
+| Startseite / Hero | Kurzvorstellung des Projekts, Value Proposition ("Rad-Trainingsdaten. Klar visualisiert.") |
+| Open Source & Lizenz | Hinweis auf die Lizenz (gemäss Mockup MIT), kurze Erklärung des Selbst-Hosting-Modells |
+| Installation / Dokumentation | Anleitung zur Inbetriebnahme via Docker Compose (inkl. Beispiel-`docker-compose.yml`), Link auf ausführliche Dokumentation |
+| Features | Übersicht der Kernfunktionen (Sync, Dashboard, Fahrzeugverwaltung, Mehrsprachigkeit) |
+| GitHub Repository | Direkter Link zum Quellcode |
+| FAQ | Häufige Fragen zu Datenschutz, Strava-Anbindung, Selbst-Hosting |
+| Kontakt | Kontaktmöglichkeit für Rückfragen/Issues |
 
-Die Landing Page wird als statisch-optimierter Bereich der React-Anwendung umgesetzt (separates Routing, kein Auth-Context erforderlich), um kurze Ladezeiten und gute SEO-Werte zu gewährleisten.
+Ausdrücklich **nicht** Teil dieser Webseite sind Login, Registrierung, Pricing/Checkout oder ein Testzugang – diese Funktionen leben innerhalb der laufenden Athlify-Applikation selbst und sind über deren Login-Seite erreichbar (siehe Abschnitt 4.2).
+
+**Annahme:** Die Webseite wird technisch unabhängig von der Athlify-Applikation betrieben (z. B. als statische Seite, etwa über GitHub Pages) und nicht über denselben Docker-Container ausgeliefert. Hosting-Details sind nicht festgelegt (siehe [Abschnitt 20](#20-offene-fragen), Wichtig).
+
+**Offen:** Ob ein kostenpflichtiges Pricing/Subscription-Angebot überhaupt noch kommuniziert werden soll, wenn das Projekt gleichzeitig als Open Source/MIT-lizenziert beworben wird (siehe [Abschnitt 20](#20-offene-fragen), Kritisch).
 
 ### 4.2 Login und Registrierung
+
+**Festgelegt:** Die Login-Seite (`/`) ist der Einstiegspunkt der ausgelieferten Docker-Applikation und übernimmt damit innerhalb des Containers die Funktion einer klassischen Landingpage. Gemäss Mockup ("Willkommen zurück bei Athlify") bietet sie neben E-Mail/Passwort-Login direkte Einstiege zu "Jetzt registrieren" (Registrierung) und "Demo starten" bzw. "Beispieldaten ansehen" (Demo-Modus), sodass Interessenten ohne Umweg über eine separate Marketing-Seite in die Applikation gelangen.
 
 - Registrierung mit E-Mail und Passwort.
 - Login mit E-Mail/Passwort, Ausstellung eines JWT Access Tokens sowie eines Refresh Tokens.
 - **Passwort vergessen**: Versand eines zeitlich limitierten Reset-Links per E-Mail.
 - **E-Mail-Verifizierung**: Bestätigung der E-Mail-Adresse nach Registrierung via Verifizierungslink, bevor der Account vollständig freigeschaltet wird.
-- **Demo-Zugang**: Interessenten können ohne Registrierung und ohne zeitliche Begrenzung den Demo-Modus nutzen. Dieser zeigt die Applikation (Dashboard, Aktivitäten, Fahrzeuge) ausschliesslich mit vordefinierten, fiktiven Beispieldaten – es wird kein Konto angelegt und es werden keine echten Benutzerdaten verarbeitet (siehe Abschnitt 5.3).
+- **Demo-Zugang**: Interessenten können direkt von der Login-Seite aus ("Demo starten") ohne Registrierung und ohne zeitliche Begrenzung den Demo-Modus nutzen. Dieser zeigt die Applikation (Dashboard, Aktivitäten, Fahrzeuge) ausschliesslich mit vordefinierten, fiktiven Beispieldaten – es wird kein Konto angelegt und es werden keine echten Benutzerdaten verarbeitet (siehe Abschnitt 5.3).
 
 ### 4.3 User Management
 
@@ -198,7 +208,7 @@ Das Dashboard ist vollständig zweisprachig (DE/EN) umzusetzen. Optional/erweite
 | ------------- | ------------------------------------------------------------------------------------------------------------ |
 | Administrator | Vollzugriff auf Systemverwaltung, Benutzerverwaltung und alle Daten                                          |
 | Normal User   | Vollzugriff auf eigene Daten (Aktivitäten, Fahrzeuge, Dashboard, Strava-Verbindung)                          |
-| Guest         | Kein Login; Zugriff auf öffentliche Landing Page sowie den registrierungsfreien Demo-Modus mit Beispieldaten |
+| Guest         | Kein Login; Zugriff auf die öffentliche Projekt-/Dokumentationswebsite sowie – über die Login-Seite der Applikation – auf den registrierungsfreien Demo-Modus mit Beispieldaten |
 
 Athlify verzichtet bewusst auf eine eigene "Trial User"-Rolle mit Benutzerkonto. Stattdessen steht Interessenten ein unbefristeter, registrierungsfreier Demo-Modus zur Verfügung (siehe Abschnitt 5.3), der ohne Datenbank-User auskommt.
 
@@ -206,7 +216,8 @@ Athlify verzichtet bewusst auf eine eigene "Trial User"-Rolle mit Benutzerkonto.
 
 | Funktion                          | Guest |         Demo-Modus (ohne Login)         | Normal User | Administrator |
 | --------------------------------- | :---: | :-------------------------------------: | :---------: | :-----------: |
-| Landing Page ansehen              |   ✅   |                    ✅                    |      ✅      |       ✅       |
+| Projekt-/Dokumentationswebsite ansehen (extern) |   ✅   |                    ✅                    |      ✅      |       ✅       |
+| Login-Seite der Applikation ansehen |   ✅   |                    ✅                    |      ✅      |       ✅       |
 | Demo-Modus nutzen (Beispieldaten) |   ✅   |                    ✅                    |      –      |       –       |
 | Registrieren                      |   ✅   |                    ✅                    |      –      |       –       |
 | Login                             |   –   |                    –                    |      ✅      |       ✅       |
@@ -317,7 +328,7 @@ Das Frontend ist als Single Page Application mit React, TypeScript und Vite umge
 
 Zentrale Konzepte:
 
-- **Routing**: React Router mit getrennten Routen-Bäumen für öffentliche Landing Page und geschützte Applikation (Auth Guard).
+- **Routing**: React Router mit der Login-Seite als öffentlichem Einstiegspunkt (`/`, inkl. `/register`, `/demo`) sowie einem geschützten Routen-Baum (Auth Guard) für Dashboard, Activities, Vehicles und Settings. Die separate Projekt-/Dokumentationswebsite (Abschnitt 4.1) ist nicht Teil dieser SPA.
 - **State Management**: Lokaler Komponentenstate für UI-State, React Query (TanStack Query) für Server-State (Caching, Refetching, Optimistic Updates der API-Daten).
 - **Auth Context**: Globaler Context zur Verwaltung von Access Token, aktuellem Benutzer und Rollen; automatisches Token-Refresh via Interceptor.
 - **Komponentenstruktur**: Trennung in `pages` (Routen-Ebene), `components` (wiederverwendbare UI-Bausteine), `features` (fachliche Module mit eigener Logik/API-Anbindung) und `shared` (Utilities, Hooks, Types).
@@ -400,7 +411,7 @@ athlify/
 ├── frontend/
 │   ├── src/
 │   │   ├── app/                 # App-Setup, Router, Providers
-│   │   ├── pages/                # Routen-Level Komponenten (Landing, Dashboard, ...)
+│   │   ├── pages/                # Routen-Level Komponenten (Login, Dashboard, ...)
 │   │   ├── features/
 │   │   │   ├── auth/
 │   │   │   ├── activities/
@@ -432,6 +443,8 @@ athlify/
 └── docs/
     └── Athlify_Konzept.md
 ```
+
+Die öffentliche Projekt-/Dokumentationswebsite (Abschnitt 4.1) ist bewusst **nicht** Teil dieser Ordnerstruktur bzw. des Docker-Builds; sie wird als eigenständiges Deliverable geführt (Annahme, siehe [Abschnitt 20](#20-offene-fragen)).
 
 ---
 
@@ -722,7 +735,7 @@ Die Demo-Endpunkte sind rein lesend, erfordern keine Authentifizierung und liefe
 - **Ziel**: Ein Interessent verschafft sich ohne Registrierung einen Eindruck von Athlify anhand von Beispieldaten.
 - **Akteure**: Guest
 - **Voraussetzungen**: Keine.
-- **Hauptablauf**: (1) Guest klickt auf der Landing Page auf "Testzugang". (2) System lädt Dashboard, Aktivitäten und Fahrzeuge über die unauthentifizierten Demo-Endpunkte mit einem festen, fiktiven Beispieldatensatz. (3) Guest navigiert beliebig lange und ohne zeitliche Begrenzung durch die Applikation.
+- **Hauptablauf**: (1) Guest ruft die Athlify-Applikation auf (z. B. verlinkt von der Projekt-/Dokumentationswebsite oder direkt über die URL der eigenen Docker-Instanz) und klickt auf der Login-Seite auf "Demo starten". (2) System lädt Dashboard, Aktivitäten und Fahrzeuge über die unauthentifizierten Demo-Endpunkte mit einem festen, fiktiven Beispieldatensatz. (3) Guest navigiert beliebig lange und ohne zeitliche Begrenzung durch die Applikation.
 - **Alternativen**: Guest entscheidet sich, sich zu registrieren, um mit echten, eigenen Daten zu arbeiten.
 - **Fehlerfälle**: Technischer Fehler beim Laden des Beispieldatensatzes.
 - **Ergebnis**: Guest hat den Funktionsumfang von Athlify anhand von Beispieldaten kennengelernt, ohne dass ein Konto angelegt oder echte Daten verändert wurden.
@@ -811,9 +824,11 @@ Die Demo-Endpunkte sind rein lesend, erfordern keine Authentifizierung und liefe
 
 ## 11. User Stories
 
+Eine kuratierte, auf maximal 20 Stories verdichtete Fassung inkl. Akzeptanzkriterien und Modulzuordnung befindet sich in [`docs/concept/user_stories.md`](concept/user_stories.md). Die folgende Tabelle bildet die vollständige, unverdichtete Liste ab.
+
 | # | User Story | Priorität |
 |---|---|:---:|
-| 1 | Als Guest möchte ich die Features auf der Landing Page sehen, damit ich verstehe, was Athlify bietet. | Must Have |
+| 1 | Als Interessent möchte ich auf der öffentlichen Projekt-/Dokumentationswebsite die Features sehen, damit ich verstehe, was Athlify bietet. | Must Have |
 | 2 | Als Guest möchte ich mich registrieren können, damit ich Athlify nutzen kann. | Must Have |
 | 3 | Als Guest möchte ich Athlify ohne Registrierung im Demo-Modus mit Beispieldaten ausprobieren können, damit ich mich risikofrei von den Funktionen überzeugen kann. | Must Have |
 | 4 | Als Benutzer möchte ich mich einloggen können, damit ich auf meine persönlichen Daten zugreifen kann. | Must Have |
@@ -853,38 +868,49 @@ Die Demo-Endpunkte sind rein lesend, erfordern keine Authentifizierung und liefe
 | **Skalierbarkeit** | Zustandslose Backend-Instanzen (horizontale Skalierung), Connection Pooling für PostgreSQL, Caching aggregierter Dashboard-Daten. |
 | **Maintainability** | Klare Schichtenarchitektur, hohe Testabdeckung, konsistente Code-Konventionen (ESLint/Prettier, .editorconfig, StyleCop). |
 | **Browser Support** | Aktuelle Versionen von Chrome, Firefox, Edge, Safari (jeweils letzte 2 Major-Versionen). |
-| **Responsive Design** | Vollständig responsives Layout für Desktop, Tablet und Smartphone (Mobile-First-Ansatz für Landing Page). |
+| **Responsive Design** | Vollständig responsives Layout für Desktop, Tablet und Smartphone (Mobile-First-Ansatz für Projekt-/Dokumentationswebsite und App-Login). |
 | **Datenschutz (DSGVO)** | Datensparsamkeit, Recht auf Auskunft/Löschung, Verschlüsselung sensibler Daten (Tokens), transparente Datenschutzerklärung, Auftragsverarbeitung bei Drittanbietern (Strava, Hosting) vertraglich geregelt. |
 
 ---
 
 ## 13. Wireframes
 
-### 13.1 Landing Page
+Die Wireframes 13.1 und 13.2 orientieren sich am interaktiven Mockup `docs/AthlifyV2.html`, das eine mögliche Umsetzung inkl. Startseite der Projekt-/Dokumentationswebsite, Login, Demo, Dashboard, Aktivitäten, Fahrzeuge und Settings zeigt.
+
+### 13.1 Projekt-/Dokumentationswebsite (extern, ausserhalb des Docker-Containers)
 
 ```
 ┌─────────────────────────────────────────────┐
-│  LOGO      Features  Pricing  FAQ   [Login]  │
+│  LOGO         Features  Doku  GitHub         │
 ├─────────────────────────────────────────────┤
 │                                               │
 │        Rad-Trainingsdaten. Klar visualisiert.│
-│        [ Demo starten ]      [ Mehr erfahren]│
+│        [ Zur Applikation ]  [ Dokumentation ]│
 │                                               │
-│        [ Dashboard-Screenshot ]              │
 ├─────────────────────────────────────────────┤
-│  Features   |  Pricing   |  Screenshots      │
+│  Open Source                                 │
+│  ┌─────────────────────────────────────────┐│
+│  │ docker-compose.yml            MIT-Lizenz ││
+│  │ services:                                ││
+│  │   app: ...                               ││
+│  └─────────────────────────────────────────┘│
+│  [ GitHub Repository ]   [ Dokumentation ]   │
 ├─────────────────────────────────────────────┤
-│  FAQ                                         │
+│  Features   |  FAQ                           │
 ├─────────────────────────────────────────────┤
 │  Kontakt / Footer                            │
 └─────────────────────────────────────────────┘
 ```
 
-### 13.2 Login
+Hinweis: Kein Login, keine Registrierung, kein Pricing/Checkout auf dieser Seite – diese Funktionen befinden sich ausschliesslich in der Applikation selbst (siehe 13.2).
+
+### 13.2 Login (Einstiegspunkt der Docker-Applikation, entspricht der bisherigen "Landingpage" innerhalb des Containers)
 
 ```
 ┌───────────────────────────┐
 │           Athlify          │
+│  Willkommen zurück bei     │
+│  Athlify                   │
 │  ┌─────────────────────┐  │
 │  │ E-Mail               │  │
 │  └─────────────────────┘  │
@@ -893,8 +919,10 @@ Die Demo-Endpunkte sind rein lesend, erfordern keine Authentifizierung und liefe
 │  └─────────────────────┘  │
 │      [ Login ]             │
 │  Passwort vergessen?       │
-│  Noch kein Konto? Registr. │
-│  Oder: Demo ohne Login     │
+│  Noch kein Konto?          │
+│  [ Jetzt registrieren ]    │
+│  [ Demo starten /           │
+│    Beispieldaten ansehen ] │
 └───────────────────────────┘
 ```
 
@@ -967,7 +995,8 @@ Die Projektstruktur gliedert sich in vier Hauptbereiche: Frontend, Backend, Shar
 
 | Bereich | Inhalt |
 |---|---|
-| **Frontend** | React-SPA (Landing Page + Applikation), Vite-Konfiguration, statische Assets, i18n-Ressourcen |
+| **Frontend** | React-SPA (Login als Einstiegspunkt + geschützte Applikation), Vite-Konfiguration, statische Assets, i18n-Ressourcen |
+| **Projekt-/Dokumentationswebsite** | Separates Deliverable ausserhalb des Docker-Builds: Vorstellung des Open-Source-Projekts, Installationsanleitung, GitHub-Link (Annahme zum Hosting, siehe Abschnitt 20) |
 | **Backend** | ASP.NET Core Web API, Domain-/Application-/Infrastructure-Schichten, Hintergrunddienste für Strava-Sync |
 | **Shared** | Gemeinsame Typdefinitionen (z. B. generierte OpenAPI-Clients/DTOs), Dokumentation, Konfigurationsschemas |
 | **Database** | EF-Core-Migrationen, Seed-Skripte für Rollen sowie für den fixen Demo-/Beispieldatensatz, ER-Dokumentation |
@@ -998,7 +1027,7 @@ gantt
     title Athlify – Projekt-Roadmap
     dateFormat  YYYY-MM-DD
     section Phasen
-    Phase 1 – Landing Page           :p1, 2026-08-01, 2w
+    Phase 1 – App-Shell & Projektwebsite :p1, 2026-08-01, 2w
     Phase 2 – Authentication         :p2, after p1, 2w
     Phase 3 – Strava Integration     :p3, after p2, 3w
     Phase 4 – Dashboard              :p4, after p3, 3w
@@ -1009,7 +1038,7 @@ gantt
 
 | Phase                        | Inhalt                                                                                    |
 | ---------------------------- | ----------------------------------------------------------------------------------------- |
-| Phase 1 – Landing Page       | Aufbau der öffentlichen Marketing-Seite inkl. Feature-, Pricing-, FAQ- und Kontaktbereich |
+| Phase 1 – App-Shell & Projektwebsite | Aufbau des App-Shells mit Login als Einstiegspunkt der Docker-Applikation sowie der separaten Projekt-/Dokumentationswebsite (Feature-, Installations-, FAQ- und Kontaktbereich) |
 | Phase 2 – Authentication     | Registrierung, Login, JWT/Refresh-Token-Handling, registrierungsfreier Demo-Modus         |
 | Phase 3 – Strava Integration | OAuth-Flow, Token-Verwaltung, Synchronisation von Aktivitäten und Fahrzeugen              |
 | Phase 4 – Dashboard          | Implementierung der Kennzahlen-Widgets und Diagramme                                      |
@@ -1093,8 +1122,7 @@ stateDiagram-v2
 ```mermaid
 flowchart TB
     subgraph "Frontend (React SPA)"
-        LP[Landing Page Modul]
-        AUTH_FE[Auth Modul]
+        AUTH_FE[Auth Modul<br/>inkl. Login als Einstiegspunkt]
         DASH[Dashboard Modul]
         ACT[Activities Modul]
         VEH[Vehicles Modul]
@@ -1131,4 +1159,28 @@ flowchart TB
 
 ---
 
-*Ende des Dokuments – Softwarekonzept Athlify, Version 1.4*
+## 20. Offene Fragen
+
+### Kritisch
+
+| # | Frage | Kontext |
+|---|---|---|
+| 1 | Verträgt sich das bestehende, kostenpflichtige Subscription-Modell (Abschnitte 2.2, 5, 8.1, 9.7, 19.1) mit der im Mockup `docs/AthlifyV2.html` kommunizierten Open-Source/MIT-Positionierung ("Open Source", `docker-compose.yml`, MIT-Lizenz, GitHub Repository)? Es ist zu klären, ob (a) das Subscription-Modell entfällt, (b) ein "Open Core"-Modell (kostenlos self-hosted, optional kostenpflichtige Zusatzleistung, z. B. gehostetes Angebot) verfolgt wird, oder (c) beide Modelle unverändert parallel bestehen bleiben. Diese Entscheidung wirkt sich auf Datenmodell (`Subscription`-Entität), API (`/api/subscriptions/*`), Rollen/Berechtigungen, Roadmap und Risikomatrix aus. | Widerspruch zwischen Mockup und bestehendem Konzept |
+
+### Wichtig
+
+| # | Frage | Kontext |
+|---|---|---|
+| 2 | Wo und wie wird die neue Projekt-/Dokumentationswebsite (Abschnitt 4.1) technisch betrieben (z. B. statische Seite via GitHub Pages, Teil desselben Repositorys, eigenes Hosting)? | Aktuell nur als Annahme markiert |
+| 3 | Welche Inhalte soll die Dokumentationswebsite konkret bieten – nur eine Installationsanleitung, oder zusätzlich API-Dokumentation, Changelog, Versionshinweise? | Beeinflusst Aufwand/Scope der Website |
+| 4 | Wird die Docker-Distribution offiziell öffentlich (z. B. auf Docker Hub/GHCR) bereitgestellt, oder bezieht sich "Open Source" nur auf den Quellcode (Self-Build erforderlich)? | Beeinflusst Installationsanleitung und CI/CD (Abschnitt 18) |
+
+### Optional
+
+| # | Frage | Kontext |
+|---|---|---|
+| 5 | Soll auf der Login-Seite direkt eine Sprachumschaltung (DE/EN) angeboten werden, oder bleibt diese wie bisher ausschliesslich in den Settings? | UX-Detail, kein Architektur-Einfluss |
+
+---
+
+*Ende des Dokuments – Softwarekonzept Athlify, Version 1.5*
