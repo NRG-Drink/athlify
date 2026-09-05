@@ -1,1186 +1,418 @@
-# Softwarekonzept Athlify
+# Athlify – Software Concept
 
-**Webbasierte Plattform zur Visualisierung und Analyse von Rad-Trainingsdaten**
+**Web-based application for visualizing and analyzing cycling activities**
 
-|             |                                                                         |
-| ----------- | ----------------------------------------------------------------------- |
-| Projekt     | Athlify                                                                 |
-| Kontext     | CAS Frontend Engineering, OST – Ostschweizer Fachhochschule, Rapperswil |
-| Dokumenttyp | Softwarekonzept / Projektdokumentation                                  |
-| Version     | 1.5                                                                     |
-| Datum       | 11. August 2026                                                        |
-| Autor       | Beat Zimmermann & Marco Ebneter                                         |
-
----
-
-## Inhaltsverzeichnis
-
-1. [Management Summary](#1-management-summary)
-2. [Projektübersicht](#2-projektübersicht)
-3. [Technologie-Stack und Begründung](#3-technologie-stack-und-begründung)
-4. [Funktionaler Projektumfang](#4-funktionaler-projektumfang)
-5. [Rollen und Berechtigungen](#5-rollen-und-berechtigungen)
-6. [Sicherheitsanforderungen](#6-sicherheitsanforderungen)
-7. [Architektur](#7-architektur)
-8. [Datenmodell](#8-datenmodell)
-9. [API-Design](#9-api-design)
-10. [Use Cases](#10-use-cases)
-11. [User Stories](#11-user-stories)
-12. [Nichtfunktionale Anforderungen](#12-nichtfunktionale-anforderungen)
-13. [Wireframes](#13-wireframes)
-14. [Projektstruktur](#14-projektstruktur)
-15. [Risiken und Massnahmen](#15-risiken-und-massnahmen)
-16. [Roadmap](#16-roadmap)
-17. [Teststrategie](#17-teststrategie)
-18. [Deployment](#18-deployment)
-19. [Anhang: Ergänzende Diagramme](#19-anhang-ergänzende-diagramme)
-20. [Offene Fragen](#20-offene-fragen)
-
----
-
-## 1. Management Summary
-
-Athlify ist eine webbasierte Anwendung zur Visualisierung und Analyse von Rad-Trainingsdaten. Die Applikation ist bewusst auf den Radsport fokussiert – andere Sportarten werden nicht unterstützt. Sie richtet sich an Radsportlerinnen und Radsportler, die ihre Fahrradaktivitäten – primär synchronisiert über die Strava API – in übersichtlichen, interaktiven Dashboards auswerten möchten. Neben der Synchronisation von Aktivitäten und Velos bietet Athlify die Möglichkeit, Daten manuell zu erfassen, zu bearbeiten und langfristig auszuwerten. Die Applikation ist durchgängig zweisprachig (Deutsch/Englisch) nutzbar.
-
-Das Produkt besteht aus zwei klar getrennten, unabhängig betriebenen Bereichen: einer öffentlichen Projekt-/Dokumentationswebsite, die das Open-Source-Projekt vorstellt und die Installation via Docker Compose erklärt (kein Marketing-Funnel, kein Login, keine Registrierung), sowie der eigentlichen Athlify-Applikation, die von Interessenten selbst als Docker-Container betrieben wird. Innerhalb dieser Applikation ist die Login-Seite der Einstiegspunkt (`/`) – sie übernimmt damit die Funktion einer klassischen Landingpage, jedoch innerhalb des laufenden Containers statt als separate Marketing-Seite. Von dort gelangen Interessenten direkt zu Registrierung oder zu einem zeitlich unbefristeten, registrierungsfreien Demo-Modus mit vordefinierten Beispieldaten, der es erlaubt, sich unverbindlich einen Eindruck von Athlify zu verschaffen, bevor sie sich registrieren und eine kostenpflichtige Subscription abschliessen.
-
-> [!comment] Hinweis zur Version 1.5
-> Diese Überarbeitung entfernt die bisherige SEO-Marketing-Landingpage aus dem Applikationsscope und ersetzt sie durch (a) eine separate Projekt-/Dokumentationswebsite für das Open-Source-Projekt und (b) die Login-Seite als Einstiegspunkt des Docker-Containers. Grundlage ist der Mockup `docs/AthlifyV2.html`, der beide Bereiche exemplarisch zeigt. Ein inhaltlicher Widerspruch zwischen der im Mockup kommunizierten Open-Source/MIT-Positionierung und dem bestehenden kostenpflichtigen Subscription-Modell wird in [Abschnitt 20](#20-offene-fragen) als kritische offene Frage geführt und in dieser Version bewusst nicht aufgelöst.
-
-Dieses Dokument beschreibt das vollständige Konzept von Athlify: die fachlichen Anforderungen, die technische Architektur, das Datenmodell, die API, sicherheitsrelevante Aspekte sowie die geplante Umsetzung im Rahmen des CAS-Projekts. Ziel ist es, eine belastbare Grundlage für Design, Implementierung und Bewertung des Projekts zu schaffen. Alle wesentlichen Entscheidungen werden nicht nur beschrieben, sondern auch begründet.
-
----
-
-## 2. Projektübersicht
-
-### 2.1 Ausgangslage
-
-Radsportlerinnen und Radsportler, die Plattformen wie Strava nutzen, erhalten zwar eine solide Grunddokumentation ihrer Aktivitäten, jedoch nur eingeschränkte Möglichkeiten zur individuellen Auswertung, Langzeitanalyse und Verwaltung ihres Equipments (Velos). Athlify schliesst diese Lücke, indem es die über Strava verfügbaren Rohdaten mit zusätzlichen Auswertungsmöglichkeiten, einer flexiblen manuellen Datenpflege und einem persönlichen Dashboard kombiniert – mit klarem Fokus auf Radsport.
-
-### 2.2 Zielsetzung
-
-Athlify verfolgt folgende Hauptziele:
-
-- Synchronisation von Strava-Radaktivitäten und -Velos in eine eigene, persistente Datenbasis.
-- Bereitstellung aussagekräftiger Dashboards mit Kennzahlen, Verteilungen und Trends – ausschliesslich für Radsport-Aktivitäten.
-- Ermöglichung manueller Datenpflege für Nutzer ohne oder mit ergänzendem Strava-Konto.
-- Gewinnung neuer Interessenten über eine öffentliche Projekt-/Dokumentationswebsite (Vorstellung, Installationsanleitung, Open-Source-Hinweis) sowie über einen registrierungsfreien Demo-Modus, der direkt über die Login-Seite der Applikation erreichbar ist.
-- Abbildung eines nachhaltigen Geschäftsmodells über kostenpflichtige Subscriptions. *(Annahme/offen – siehe [Abschnitt 20](#20-offene-fragen): Verträglichkeit mit der Open-Source/MIT-Positionierung des Mockups ist ungeklärt.)*
-- Durchgängige Mehrsprachigkeit (Deutsch/Englisch) der gesamten Applikation als verbindliche Kernanforderung.
-
-### 2.3 Zielgruppe
-
-Primäre Zielgruppe sind ambitionierte Freizeit- und Hobby-Radsportlerinnen und -sportler (Rennrad, Mountainbike, Gravel, Indoor-Cycling), die ihre Trainingsdaten strukturiert auswerten und ihr Bike-Equipment verwalten möchten. Andere Sportarten (z. B. Laufen, Wandern) liegen ausserhalb des Funktionsumfangs. Sekundär richtet sich Athlify an kleine Radsportgruppen oder Vereine, die eine einfache, zentrale Übersicht über Aktivitäten ihrer Mitglieder wünschen (ausserhalb des initialen Scopes, aber architektonisch nicht ausgeschlossen).
-
-### 2.4 Abgrenzung
-
-Athlify ist kein Ersatz für Strava, sondern ein ergänzendes Analyse- und Verwaltungswerkzeug. Es werden keine GPS-Tracks live aufgezeichnet; die Aufzeichnung von Aktivitäten erfolgt weiterhin über Strava oder kompatible Geräte. Athlify konsumiert die Strava API und reichert die Daten mit eigener Funktionalität an.
-
----
-
-## 3. Technologie-Stack und Begründung
-
-### 3.1 Übersicht
-
-| Layer | Technologie | Begründung |
-|---|---|---|
-| Frontend | React + TypeScript + Vite | Komponentenbasiert, grosses Ökosystem, hervorragende TypeScript-Unterstützung, sehr schnelle Dev-Experience durch Vite (HMR, ESBuild) |
-| Backend | ASP.NET Core (C#) | Siehe Abschnitt 3.3 |
-| Datenbank | PostgreSQL | Robustes, relationales OSS-RDBMS mit exzellenter Unterstützung für komplexe Abfragen, JSON-Spalten und Skalierbarkeit |
-| Externe API | Strava API | Zentrale Datenquelle für Aktivitäten und Fahrzeuge (Gear) |
-| Authentifizierung | JWT + OAuth 2.0 (Strava) | Zustandslose API-Authentifizierung kombiniert mit OAuth-Flow für Strava |
-
-### 3.2 Frontend: React, TypeScript, Vite
-
-React wurde gewählt, da es sich um das im Kursumfeld (CAS Frontend Engineering) vertiefte Framework handelt und sich durch seine deklarative, komponentenbasierte Architektur ideal für datengetriebene Dashboards eignet. TypeScript reduziert Laufzeitfehler durch statische Typprüfung, was insbesondere bei der Verarbeitung komplexer, verschachtelter API-Antworten (Strava-Payloads) einen klaren Mehrwert bietet. Vite ersetzt klassische Bundler wie Webpack durch einen nativen ESM-basierten Dev-Server mit sehr kurzen Startzeiten und schnellem Hot Module Replacement, was die Entwicklungsproduktivität im Rahmen des zeitlich begrenzten CAS-Projekts erhöht.
-
-### 3.3 Backend: ASP.NET Core vs. Next.js
-
-Zur Wahl standen ASP.NET Core (C#) und Next.js (TypeScript). Beide Varianten sind technisch geeignet; die Entscheidung fiel aus folgenden Gründen auf **ASP.NET Core**:
-
-| Kriterium                         | ASP.NET Core                                                                                                  | Next.js                                                                                               |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Trennung Frontend/Backend         | Klare Trennung, eigenständige Web-API                                                                         | Vermischt Frontend- und Backend-Verantwortlichkeiten (API Routes)                                     |
-| Typsicherheit im Backend          | Stark typisiert (C#), robustes Typsystem, Compile-Time-Checks                                                 | TypeScript im Backend möglich, aber weniger strikt als C# im Enterprise-Kontext                       |
-| ORM / Datenzugriff                | Entity Framework Core mit ausgereiften Migrations- und LINQ-Fähigkeiten                                       | Meist Prisma oder Drizzle, funktional vergleichbar, aber weniger etabliert im Enterprise-Umfeld       |
-| Skalierbarkeit / Performance      | Hervorragende Performance bei I/O- und CPU-intensiven Operationen (z. B. Batch-Sync grosser Aktivitätsmengen) | Node.js Single-Thread-Modell, für I/O-lastige Workloads gut, bei CPU-lastigen Aggregationen limitiert |
-| Ökosystem für Enterprise-Patterns | Native Unterstützung für Dependency Injection, Middleware-Pipeline, Repository-Pattern, Clean Architecture    | Möglich, aber weniger konventionsgetrieben                                                            |
-| Lernrelevanz im CAS-Kontext       | Demonstriert bewusste Trennung von SPA-Frontend und Web-API-Backend, wie im Modul gefordert                   | Next.js verwischt diese Trennung durch SSR/API-Hybridansatz                                           |
-| Deployment                        | Docker-Container, unabhängig skalierbar                                                                       | Vercel-optimiert, aber auch containerisierbar                                                         |
-
-Die explizite Trennung von Frontend (React SPA) und Backend (ASP.NET Core Web API) entspricht der Zielsetzung des CAS-Moduls, eine moderne Frontend-Architektur mit einer sauber getrennten Backend-Schicht zu kombinieren. Zusätzlich bringt C#/.NET ein reifes Typsystem, ausgereifte Tools für Authentifizierung (ASP.NET Core Identity), Hintergrundjobs (Hosted Services für die Strava-Synchronisation) und eine performante Verarbeitung grösserer Datenmengen mit, was für die geplanten Dashboard-Aggregationen relevant ist.
-
-### 3.4 Datenbank: PostgreSQL
-
-PostgreSQL wurde gewählt, da es sich um ein leistungsfähiges, quelloffenes RDBMS handelt, das komplexe relationale Modelle (User, Aktivitäten, Fahrzeuge, Subscriptions) sauber abbildet, gleichzeitig aber auch JSONB-Spalten für halbstrukturierte Strava-Rohdaten unterstützt. Es bietet ausserdem hervorragende Unterstützung für zeitreihenbasierte Aggregationen (Distanz pro Monat, Heatmaps), die für die Dashboard-Funktionalität zentral sind.
-
-### 3.5 Externe API: Strava
-
-Die Strava API (https://www.strava.com/) stellt die primäre externe Datenquelle dar. Sie liefert über OAuth 2.0 autorisierten Zugriff auf Aktivitäten (`/athlete/activities`), Ausrüstung/Gear (`/gear/{id}`) sowie Athletenprofile (`/athlete`). Die Integration erfolgt über einen dedizierten Backend-Service, der Tokens verwaltet, Rate Limits respektiert und Daten in die eigene Datenbank überführt (siehe Abschnitt 7.5).
-
----
-
-## 4. Funktionaler Projektumfang
-
-### 4.1 Öffentliche Projekt-/Dokumentationswebsite
-
-**Festgelegt:** Es gibt keine eigene, in die Applikation integrierte Marketing-Landingpage mehr. Stattdessen existiert eine eigenständige, öffentliche Webseite, die das Open-Source-Projekt Athlify vorstellt und Anleitung zur Selbst-Installation (Docker Compose) bietet. Diese Webseite ist nicht Teil des Docker-Containers/der SPA, sondern ein separates Deliverable. Der Mockup `docs/AthlifyV2.html` zeigt exemplarisch eine solche Startseite (Hero-Bereich "Rad-Trainingsdaten. Klar visualisiert.", einen Abschnitt "Open Source" mit `docker-compose.yml`-Beispiel und MIT-Lizenz-Hinweis sowie den Buttons "GitHub Repository" und "Dokumentation").
-
-Die Webseite umfasst folgende Bereiche:
-
-| Bereich | Zweck |
+| | |
 |---|---|
-| Startseite / Hero | Kurzvorstellung des Projekts, Value Proposition ("Rad-Trainingsdaten. Klar visualisiert.") |
-| Open Source & Lizenz | Hinweis auf die Lizenz (gemäss Mockup MIT), kurze Erklärung des Selbst-Hosting-Modells |
-| Installation / Dokumentation | Anleitung zur Inbetriebnahme via Docker Compose (inkl. Beispiel-`docker-compose.yml`), Link auf ausführliche Dokumentation |
-| Features | Übersicht der Kernfunktionen (Sync, Dashboard, Fahrzeugverwaltung, Mehrsprachigkeit) |
-| GitHub Repository | Direkter Link zum Quellcode |
-| FAQ | Häufige Fragen zu Datenschutz, Strava-Anbindung, Selbst-Hosting |
-| Kontakt | Kontaktmöglichkeit für Rückfragen/Issues |
-
-Ausdrücklich **nicht** Teil dieser Webseite sind Login, Registrierung, Pricing/Checkout oder ein Testzugang – diese Funktionen leben innerhalb der laufenden Athlify-Applikation selbst und sind über deren Login-Seite erreichbar (siehe Abschnitt 4.2).
-
-**Annahme:** Die Webseite wird technisch unabhängig von der Athlify-Applikation betrieben (z. B. als statische Seite, etwa über GitHub Pages) und nicht über denselben Docker-Container ausgeliefert. Hosting-Details sind nicht festgelegt (siehe [Abschnitt 20](#20-offene-fragen), Wichtig).
-
-**Offen:** Ob ein kostenpflichtiges Pricing/Subscription-Angebot überhaupt noch kommuniziert werden soll, wenn das Projekt gleichzeitig als Open Source/MIT-lizenziert beworben wird (siehe [Abschnitt 20](#20-offene-fragen), Kritisch).
-
-### 4.2 Login und Registrierung
-
-**Festgelegt:** Die Login-Seite (`/`) ist der Einstiegspunkt der ausgelieferten Docker-Applikation und übernimmt damit innerhalb des Containers die Funktion einer klassischen Landingpage. Gemäss Mockup ("Willkommen zurück bei Athlify") bietet sie neben E-Mail/Passwort-Login direkte Einstiege zu "Jetzt registrieren" (Registrierung) und "Demo starten" bzw. "Beispieldaten ansehen" (Demo-Modus), sodass Interessenten ohne Umweg über eine separate Marketing-Seite in die Applikation gelangen.
-
-- Registrierung mit E-Mail und Passwort.
-- Login mit E-Mail/Passwort, Ausstellung eines JWT Access Tokens sowie eines Refresh Tokens.
-- **Passwort vergessen**: Versand eines zeitlich limitierten Reset-Links per E-Mail.
-- **E-Mail-Verifizierung**: Bestätigung der E-Mail-Adresse nach Registrierung via Verifizierungslink, bevor der Account vollständig freigeschaltet wird.
-- **Demo-Zugang**: Interessenten können direkt von der Login-Seite aus ("Demo starten") ohne Registrierung und ohne zeitliche Begrenzung den Demo-Modus nutzen. Dieser zeigt die Applikation (Dashboard, Aktivitäten, Fahrzeuge) ausschliesslich mit vordefinierten, fiktiven Beispieldaten – es wird kein Konto angelegt und es werden keine echten Benutzerdaten verarbeitet (siehe Abschnitt 5.3).
-
-### 4.3 User Management
-
-Jeder Benutzer verfügt über folgende Datenbereiche:
-
-- **Profil**: Name, E-Mail, Sprache, Profilbild (optional).
-- **Passwort**: Gehasht gespeichert, änderbar über Settings.
-- **Subscription**: Aktueller Plan, Status (aktiv, abgelaufen, gekündigt), Ablaufdatum.
-- **Sprache**: Bevorzugte UI-Sprache (DE/EN)
-- **Strava-Verbindung**: OAuth-Verknüpfung mit Access Token, Refresh Token, Ablaufdatum und Synchronisationsstatus.
-- **Two-Factor-Authentication** (optional): Zusätzliche Absicherung des Logins über TOTP.
-
-### 4.4 Activity Management
-
-Athlify ist ausschliesslich auf Radsport-Aktivitäten ausgerichtet (Rennrad, Mountainbike, Gravel, Indoor-Cycling/Rolle); andere Sportarten werden nicht unterstützt und sind auch datenmodellseitig nicht vorgesehen. Aktivitäten stammen entweder aus Strava (via Synchronisation) oder werden manuell erfasst. Funktionsumfang:
-
-- **Synchronisieren**: Abruf neuer/aktualisierter Rad-Aktivitäten aus Strava.
-- **Anzeigen**: Liste und Detailansicht pro Aktivität.
-- **Bearbeiten**: Änderung von Metadaten (z. B. Beschreibung, verknüpftes Fahrzeug) – bei Strava-Aktivitäten eingeschränkt auf lokal verwaltete Zusatzfelder.
-- **Löschen**: Entfernen aus Athlify (ohne Rückwirkung auf Strava).
-> [!comment] Marco | 26/07/2026
-> Löschen aus Strava evtl. möglich machen da sonst beim nächsten Import diese Aktivität wider erscheint (evtl. mit softdelete gelöst)
-- **Manuell hinzufügen**: Erfassen von Aktivitäten ohne Strava-Ursprung (z. B. Indoor-Training).
-
-Attribute einer Aktivität: Datum, Distanz, Dauer, Durchschnittsgeschwindigkeit, Höhenmeter, Aktivitätstyp (Rennrad, Mountainbike, Gravel, Indoor/Rolle), Beschreibung, verknüpftes Fahrzeug (Bike), Quelle (Strava/Manuell).
-
-### 4.5 Vehicle Management
-
-Fahrzeuge (primär Velos) können aus Strava synchronisiert oder manuell erfasst werden. Funktionsumfang: Anzeigen, Erstellen, Bearbeiten, Löschen, Synchronisieren. Optional: Verwaltung mehrerer Bilder pro Fahrzeug.
-
-Attribute eines Fahrzeugs: Name, Typ, Marke, Modell, Gewicht, Kaufdatum, gefahrene Kilometer, Bild.
-
-### 4.6 Dashboard
-
-Das Dashboard ist die zentrale Ansicht der Applikation und visualisiert die aggregierten Daten des Benutzers über konfigurierbare Widgets:
-
-- Gesamtaktivitäten, Gesamtdistanz, Höhenmeter, Trainingszeit
-- Aktivitätsverteilung (nach Aktivitätstyp, z. B. Rennrad, MTB, Gravel, Indoor)
-- Distanz pro Monat, Distanz pro Bike
-- Durchschnittsgeschwindigkeit
-- Aktivitätskalender, Heatmap
-- Top Aktivitäten, Bike-Nutzung
-
-Das Dashboard ist vollständig zweisprachig (DE/EN) umzusetzen. Optional/erweiterbar: Vergleich zweier Zeiträume, PDF-Report-Export, CSV-Export.
+| Project | Athlify |
+| Context | CAS Frontend Engineering, OST – Eastern Switzerland University of Applied Sciences, Rapperswil |
+| Document type | Functional software concept / big picture |
+| Version | 1.7 |
+| Date | 5 September 2026 |
+| Authors | Beat Zimmermann & Marco Ebneter |
 
 ---
 
-## 5. Rollen und Berechtigungen
+## Table of contents
 
-### 5.1 Rollenübersicht
-
-| Rolle         | Beschreibung                                                                                                 |
-| ------------- | ------------------------------------------------------------------------------------------------------------ |
-| Administrator | Vollzugriff auf Systemverwaltung, Benutzerverwaltung und alle Daten                                          |
-| Normal User   | Vollzugriff auf eigene Daten (Aktivitäten, Fahrzeuge, Dashboard, Strava-Verbindung)                          |
-| Guest         | Kein Login; Zugriff auf die öffentliche Projekt-/Dokumentationswebsite sowie – über die Login-Seite der Applikation – auf den registrierungsfreien Demo-Modus mit Beispieldaten |
-
-Athlify verzichtet bewusst auf eine eigene "Trial User"-Rolle mit Benutzerkonto. Stattdessen steht Interessenten ein unbefristeter, registrierungsfreier Demo-Modus zur Verfügung (siehe Abschnitt 5.3), der ohne Datenbank-User auskommt.
-
-### 5.2 Berechtigungsmatrix
-
-| Funktion                          | Guest |         Demo-Modus (ohne Login)         | Normal User | Administrator |
-| --------------------------------- | :---: | :-------------------------------------: | :---------: | :-----------: |
-| Projekt-/Dokumentationswebsite ansehen (extern) |   ✅   |                    ✅                    |      ✅      |       ✅       |
-| Login-Seite der Applikation ansehen |   ✅   |                    ✅                    |      ✅      |       ✅       |
-| Demo-Modus nutzen (Beispieldaten) |   ✅   |                    ✅                    |      –      |       –       |
-| Registrieren                      |   ✅   |                    ✅                    |      –      |       –       |
-| Login                             |   –   |                    –                    |      ✅      |       ✅       |
-| Strava verbinden                  |   –   |                    –                    |      ✅      |       ✅       |
-| Aktivitäten synchronisieren       |   –   |                    –                    |      ✅      |       ✅       |
-| Aktivitäten manuell erfassen      |   –   | ✅ (nicht persistent, nur Beispieldaten) |      ✅      |       ✅       |
-| Aktivitäten bearbeiten/löschen    |   –   |          ✅ (nicht persistent)           | ✅ (eigene)  |   ✅ (alle)    |
-| Fahrzeuge verwalten               |   –   |          ✅ (nicht persistent)           |      ✅      |       ✅       |
-| Dashboard ansehen                 |   –   |            ✅ (Beispieldaten)            |      ✅      |       ✅       |
-| PDF/CSV-Export                    |   –   |                    –                    |      ✅      |       ✅       |
-| Subscription kaufen/verwalten     |   –   |                    –                    |      ✅      |       ✅       |
-| Eigenes Profil verwalten          |   –   |                    –                    |      ✅      |       ✅       |
-| Benutzerverwaltung (alle User)    |   –   |                    –                    |      –      |       ✅       |
-| Systemeinstellungen               |   –   |                    –                    |      –      |       ✅       |
-| Rollen zuweisen                   |   –   |                    –                    |      –      |       ✅       |
-
-### 5.3 Demo-Modus
-
-Um Interessenten einen unkomplizierten, risikofreien Einblick in Athlify zu ermöglichen, steht ein öffentlich zugänglicher Demo-Modus zur Verfügung:
-
-- Kein Konto und keine Registrierung erforderlich.
-- Zeitlich unbefristet nutzbar (kein Ablaufdatum, keine Testphase).
-- Zeigt Dashboard, Aktivitäten und Fahrzeuge ausschliesslich mit einem festen, fiktiven Beispieldatensatz (Seed-Daten) – es werden zu keinem Zeitpunkt echte Benutzerdaten angelegt, verändert oder gespeichert.
-- Keine Verbindung zu Strava.
-- Schreibende Aktionen (z. B. Aktivität hinzufügen) sind entweder deaktiviert oder wirken nur innerhalb der aktuellen Browser-Session, ohne die Beispieldaten dauerhaft zu verändern.
-- Dient ausschliesslich der Navigation und Veranschaulichung des Funktionsumfangs vor einer Registrierung.
-
-Technisch wird der Demo-Modus über dedizierte, nicht authentifizierte API-Endpunkte realisiert, die stets denselben Beispieldatensatz zurückliefern (siehe Abschnitt 9.8).
+1. [Management summary](#1-management-summary)
+2. [Project overview](#2-project-overview)
+3. [Functional project scope](#3-functional-project-scope)
+4. [Roles and permissions](#4-roles-and-permissions)
+5. [Use cases](#5-use-cases)
+6. [User stories](#6-user-stories)
+7. [Quality requirements](#7-quality-requirements)
+8. [Wireframes](#8-wireframes)
+9. [Roadmap](#9-roadmap)
+10. [Risks and mitigation](#10-risks-and-mitigation)
+11. [Technical detail documents](#11-technical-detail-documents)
+12. [Open questions](#12-open-questions)
 
 ---
 
-## 6. Sicherheitsanforderungen
+## 1. Management summary
 
-Athlify verarbeitet personenbezogene und potenziell sensible Trainingsdaten sowie OAuth-Tokens Dritter. Entsprechend hoch sind die Anforderungen an die Applikationssicherheit.
+Athlify is an open-source student project developed by a two-person team. The application is intended for cyclists who want to record their activities clearly, analyze them visually and manage personal cycling data.
 
-### 6.1 Authentifizierung
+Activities can be imported from Strava or entered manually. The Dashboard displays key metrics and trends in clear charts. Athlify also provides separate management for Activities, a Garage for bicycles and gadgets, Body-Stats and Events such as accidents or repairs. Events are displayed on the Dashboard in their chronological context.
 
-Die Authentifizierung erfolgt über E-Mail/Passwort mit anschliessender Ausstellung eines **JWT Access Tokens** (kurzlebig, z. B. 15 Minuten) sowie eines **Refresh Tokens** (langlebig, z. B. 7–30 Tage, serverseitig widerrufbar). Der Access Token wird bei jedem API-Aufruf im `Authorization: Bearer`-Header mitgesendet. Optional wird Two-Factor-Authentication (TOTP) als zweiter Faktor unterstützt.
+The application focuses on functionality for individual users. After a simple login, all personal data is assigned to the respective user.
 
-### 6.2 Autorisierung
-
-Die Autorisierung erfolgt rollenbasiert (RBAC) über Policies in ASP.NET Core (`[Authorize(Roles = "Admin")]` bzw. Policy-basierte Handler für feingranulare Regeln wie "nur eigene Ressourcen"). Jede API-Anfrage wird sowohl auf Authentifizierung als auch auf Ressourcen-Eigentümerschaft geprüft (z. B. darf ein Normal User nur eigene Aktivitäten bearbeiten).
-
-### 6.3 OAuth mit Strava
-
-Die Strava-Anbindung nutzt den OAuth-2.0-Authorization-Code-Flow. Der Benutzer wird zu Strava weitergeleitet, autorisiert den Zugriff, und Athlify erhält einen Authorization Code, der serverseitig gegen Access und Refresh Token getauscht wird. Tokens werden verschlüsselt in der Datenbank gespeichert und automatisiert erneuert, bevor sie ablaufen.
-
-### 6.4 Passwort-Sicherheit
-
-Passwörter werden nie im Klartext gespeichert, sondern mittels eines adaptiven Hashing-Algorithmus (BCrypt bzw. ASP.NET Core Identity PasswordHasher, basierend auf PBKDF2 mit Salt) gehasht.
-
-### 6.5 Transportsicherheit
-
-Sämtliche Kommunikation erfolgt ausschliesslich über **HTTPS** (TLS 1.2+). HTTP-Anfragen werden serverseitig auf HTTPS umgeleitet; HSTS wird aktiviert.
-
-### 6.6 Weitere Schutzmassnahmen
-
-| Massnahme            | Umsetzung                                                                                                                                                                                                                                              |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| CORS                 | Restriktive CORS-Policy, die nur die eigene Frontend-Domain zulässt                                                                                                                                                                                    |
-| Rate Limiting        | Begrenzung der API-Aufrufe pro User/IP (z. B. via ASP.NET Core Rate Limiting Middleware), insbesondere für Login-, Sync- und die unauthentifizierten Demo-Endpunkte (Missbrauchsschutz, da ohne Login erreichbar)                                      |
-| Input Validation     | Serverseitige Validierung aller Eingaben (FluentValidation/DataAnnotations), zusätzlich clientseitige Validierung als UX-Massnahme                                                                                                                     |
-| SQL-Injection-Schutz | Ausschliessliche Nutzung von Entity Framework Core mit parametrisierten Queries, keine dynamische SQL-Konkatenation                                                                                                                                    |
-| XSS-Schutz           | Konsequentes Escaping/Encoding von Ausgaben, React's eingebauter JSX-Escaping-Mechanismus, striktes Content-Security-Policy-Header                                                                                                                     |
-| CSRF-Schutz          | Da die API zustandslos über Bearer-Token arbeitet (kein Cookie-basiertes Session-Handling), ist die klassische CSRF-Angriffsfläche reduziert; bei Einsatz von Cookies (z. B. Refresh Token) werden `SameSite=Strict` sowie Anti-CSRF-Tokens eingesetzt |
-| Secrets Management   | API-Keys und Strava Client Secret werden über Umgebungsvariablen/Secret Stores verwaltet, nie im Repository                                                                                                                                            |
+This document describes the functional big picture. Technical decisions and implementation details are maintained in separate documents under [`docs/concept/`](concept/).
 
 ---
 
-## 7. Architektur
+## 2. Project overview
 
-### 7.1 Architekturübersicht
+### 2.1 Starting point
 
-Athlify folgt einer klassischen Drei-Schichten-Architektur mit klar getrenntem Frontend (SPA), Backend (Web-API) und Datenbank. Die Kommunikation erfolgt über eine versionierte REST-API im JSON-Format.
+Strava provides a good basis for recording activities, but only limited options for an individually designed overview of training development, bicycles, gadgets, body data and notable events. Athlify supplements this information with a personal, visually appealing analysis.
 
-```mermaid
-flowchart LR
-    subgraph Client
-        A[React SPA<br/>TypeScript + Vite]
-    end
-    subgraph Server["ASP.NET Core Backend"]
-        B[Controllers / API Layer]
-        C[Application / Service Layer]
-        D[Repository Layer]
-        E[Strava Integration Service]
-        F[Background Sync Jobs]
-    end
-    subgraph Data
-        G[(PostgreSQL)]
-    end
-    subgraph External
-        H[Strava API]
-    end
+### 2.2 Objectives
 
-    A -- REST/JSON + JWT --> B
-    B --> C
-    C --> D
-    D --> G
-    C --> E
-    E -- OAuth 2.0 --> H
-    F --> E
-    F --> D
-```
+Athlify pursues the following objectives:
 
-### 7.2 Frontend-Architektur
+- Display cycling activities clearly and attractively.
+- Import activities from Strava.
+- Enter, edit and delete activities manually.
+- Provide a Dashboard with meaningful metrics and charts.
+- Manage bicycles and gadgets in a personal Garage.
+- Record and track Body-Stats over multiple points in time.
+- Document notable Events such as accidents, repairs or other incidents.
+- Assign personal data unambiguously through a simple login.
+- Deliver a reasonable and feasible scope for a two-person student project.
 
-Das Frontend ist als Single Page Application mit React, TypeScript und Vite umgesetzt. Es folgt einer feature-basierten Ordnerstruktur (statt rein technischer Trennung), um Kohäsion pro Fachlichkeit (z. B. Activities, Vehicles, Dashboard) zu maximieren.
+### 2.3 Target audience
 
-Zentrale Konzepte:
+The primary target audience is cyclists, especially people who cycle recreationally or as a hobby. The immediate user group for the student project is the development team and the academic assessors.
 
-- **Routing**: React Router mit der Login-Seite als öffentlichem Einstiegspunkt (`/`, inkl. `/register`, `/demo`) sowie einem geschützten Routen-Baum (Auth Guard) für Dashboard, Activities, Vehicles und Settings. Die separate Projekt-/Dokumentationswebsite (Abschnitt 4.1) ist nicht Teil dieser SPA.
-- **State Management**: Lokaler Komponentenstate für UI-State, React Query (TanStack Query) für Server-State (Caching, Refetching, Optimistic Updates der API-Daten).
-- **Auth Context**: Globaler Context zur Verwaltung von Access Token, aktuellem Benutzer und Rollen; automatisches Token-Refresh via Interceptor.
-- **Komponentenstruktur**: Trennung in `pages` (Routen-Ebene), `components` (wiederverwendbare UI-Bausteine), `features` (fachliche Module mit eigener Logik/API-Anbindung) und `shared` (Utilities, Hooks, Types).
-- **Styling**: Utility-first CSS-Framework (z. B. Tailwind CSS) für konsistentes, schnelles UI-Development.
+### 2.4 Boundaries
 
-### 7.3 Backend-Architektur
-
-Das Backend folgt einer Clean-Architecture-inspirierten Schichtenteilung:
-
-- **API Layer (Controllers)**: Nimmt HTTP-Requests entgegen, validiert Eingaben, delegiert an die Service-Schicht, gibt DTOs zurück.
-- **Application/Service Layer**: Enthält die fachliche Logik (z. B. Synchronisationslogik, Dashboard-Aggregationen, Subscription-Handling).
-- **Repository Layer**: Kapselt den Datenzugriff über Entity Framework Core; abstrahiert die konkrete Datenbanktechnologie von der Business-Logik (Repository Pattern).
-- **Domain Layer**: Enthält Entities, Enums und Domain-Regeln, unabhängig von Infrastruktur.
-- **Infrastructure Layer**: Enthält konkrete Implementierungen wie den Strava-API-Client, E-Mail-Versand, Token-Verschlüsselung.
-- **Demo Data Service**: Liefert über nicht authentifizierte Endpunkte einen statischen, vordefinierten Beispieldatensatz für den Demo-Modus aus; greift nicht auf echte Benutzerdaten zu.
-
-Dependency Injection (nativ in ASP.NET Core) verbindet die Schichten lose gekoppelt; Interfaces (`IActivityRepository`, `IStravaClient`) ermöglichen Testbarkeit durch Mocking.
-
-### 7.4 Datenfluss und API-Kommunikation
-
-1. Das Frontend authentifiziert sich über `/api/auth/login` und erhält Access + Refresh Token.
-2. Nachfolgende Anfragen senden den Access Token im `Authorization`-Header.
-3. Der Server validiert das Token (Middleware), löst den Benutzerkontext auf und autorisiert den Zugriff.
-4. Anfragen an fachliche Endpunkte (z. B. `/api/activities`) durchlaufen Controller → Service → Repository → Datenbank.
-5. Läuft der Access Token ab, nutzt das Frontend automatisiert `/api/auth/refresh`, um ein neues Token-Paar zu erhalten.
-
-### 7.5 Strava-Integration
-
-Die Strava-Integration ist als eigenständiger Infrastruktur-Service (`StravaIntegrationService`) gekapselt und übernimmt:
-
-- Verwaltung des OAuth-Flows (Autorisierung, Token-Austausch, Token-Refresh).
-- Abruf von Aktivitäten und Gear via Strava REST API.
-- Mapping der Strava-Datenstrukturen auf das interne Domänenmodell.
-- Steuerung von Rate Limits (Strava begrenzt Anfragen pro 15-Minuten-Fenster und pro Tag) inklusive Backoff-Strategie.
-
-Die Synchronisation kann sowohl manuell (Button "Synchronisieren") als auch automatisiert über einen Hintergrunddienst (Hosted Service / Background Job, z. B. mit Hangfire oder .NET `IHostedService`) periodisch ausgelöst werden.
-
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant FE as React Frontend
-    participant BE as ASP.NET Core API
-    participant SVC as Strava Integration Service
-    participant ST as Strava API
-    participant DB as PostgreSQL
-
-    U->>FE: Klick "Mit Strava verbinden"
-    FE->>BE: GET /api/strava/authorize
-    BE->>ST: Redirect zu Strava OAuth
-    ST-->>U: Login & Autorisierung
-    ST-->>BE: Redirect mit Authorization Code
-    BE->>ST: Tausche Code gegen Access/Refresh Token
-    ST-->>BE: Access Token, Refresh Token, Expiry
-    BE->>DB: Speichere OAuthConnection (verschlüsselt)
-    BE-->>FE: Erfolg + Status "verbunden"
-
-    U->>FE: Klick "Synchronisieren"
-    FE->>BE: POST /api/activities/sync
-    BE->>SVC: StartSync(userId)
-    SVC->>DB: Lade OAuthConnection
-    SVC->>ST: GET /athlete/activities
-    ST-->>SVC: Liste Aktivitäten
-    SVC->>DB: Upsert Activities
-    SVC-->>BE: Sync-Ergebnis
-    BE-->>FE: Sync-Status + Anzahl neuer Aktivitäten
-```
-
-### 7.6 Repository Pattern
-
-Der Datenzugriff wird konsequent über Repositories gekapselt (`IActivityRepository`, `IVehicleRepository`, `IUserRepository`), die von Entity Framework Core Implementierungen umgesetzt werden. Dies erlaubt:
-
-- Austauschbarkeit der Persistenzschicht (z. B. für Tests mit In-Memory-Datenbank).
-- Zentrale Kapselung von Query-Logik (z. B. Aggregationen für das Dashboard).
-- Klare Trennung zwischen Domänenlogik und ORM-spezifischem Code.
-
-### 7.7 Mögliche Ordnerstruktur
-
-```
-athlify/
-├── frontend/
-│   ├── src/
-│   │   ├── app/                 # App-Setup, Router, Providers
-│   │   ├── pages/                # Routen-Level Komponenten (Login, Dashboard, ...)
-│   │   ├── features/
-│   │   │   ├── auth/
-│   │   │   ├── activities/
-│   │   │   ├── vehicles/
-│   │   │   ├── dashboard/
-│   │   │   └── settings/
-│   │   ├── components/           # Wiederverwendbare UI-Komponenten
-│   │   ├── shared/
-│   │   │   ├── api/               # API-Client, React Query Hooks
-│   │   │   ├── hooks/
-│   │   │   ├── types/
-│   │   │   └── utils/
-│   │   ├── i18n/                  # Übersetzungen DE/EN
-│   │   └── main.tsx
-│   ├── index.html
-│   └── vite.config.ts
-├── backend/
-│   ├── src/
-│   │   ├── Athlify.Api/            # Controllers, Middleware, Program.cs
-│   │   ├── Athlify.Application/    # Services, DTOs, Interfaces
-│   │   ├── Athlify.Domain/         # Entities, Enums, Domain-Logik
-│   │   └── Athlify.Infrastructure/ # EF Core, Strava-Client, Repositories
-│   └── tests/
-│       ├── Athlify.UnitTests/
-│       └── Athlify.IntegrationTests/
-├── database/
-│   ├── migrations/
-│   └── seed/
-└── docs/
-    └── Athlify_Konzept.md
-```
-
-Die öffentliche Projekt-/Dokumentationswebsite (Abschnitt 4.1) ist bewusst **nicht** Teil dieser Ordnerstruktur bzw. des Docker-Builds; sie wird als eigenständiges Deliverable geführt (Annahme, siehe [Abschnitt 20](#20-offene-fragen)).
+Athlify is a supplementary analysis and management tool, not a replacement for Strava. The application does not record activities live. Sports other than cycling are outside the initial project scope. Group, club and social features are not planned either.
 
 ---
 
-## 8. Datenmodell
+## 3. Functional project scope
 
-### 8.1 Entitäten und Attribute
+### 3.1 Login and user account
 
-**User**
+The login page is the application's entry point. A user can log in with an email address and password. An initial admin user is provided so that user administration can be added later. After a successful login, the Dashboard opens.
 
-| Feld                 | Typ            | Beschreibung                |
-| -------------------- | -------------- | --------------------------- |
-| Id (PK)              | UUID           | Eindeutiger Identifier      |
-| Email                | string         | Eindeutig, für Login        |
-| PasswordHash         | string         | Gehashtes Passwort          |
-| FirstName / LastName | string         | Profildaten                 |
-| Language             | enum (DE, EN)  | UI-Sprache                  |
-| IsEmailVerified      | bool           | E-Mail-Verifizierungsstatus |
-| TwoFactorEnabled     | bool           | 2FA-Status                  |
-| CreatedAt            | timestamp      | Erstellungsdatum            |
-| RoleId (FK)          | UUID           | Verweis auf Role            |
-| SubscriptionId (FK)  | UUID, nullable | Verweis auf Subscription    |
+- Login and logout.
+- Assign all personal data to the logged-in user.
 
-**Role**
+### 3.2 Dashboard
 
-| Feld        | Typ    | Beschreibung              |
-| ----------- | ------ | ------------------------- |
-| Id (PK)     | UUID   | Eindeutiger Identifier    |
-| Name        | string | Administrator, NormalUser |
-| Description | string | Beschreibung der Rolle    |
+The Dashboard is the central view after login. It shows an understandable summary of personal cycling data:
 
-**Subscription**
+- **Track Metrics**: distance in kilometers, time in hours, elevation gain, TSS (Training Stress Score) and speed in km/h.
+- **Fitness Metrics**: Fitness (CTL – Chronic Training Load), Fatigue (ATL – Acute Training Load) and Form (TSB – Training Stress Balance).
+- **Body Metrics**: weight, body-fat percentage, muscle percentage, water percentage and bone mass.
+- Activity distribution by bicycle type.
+- Distance development over time.
+- Distance per bicycle.
+- Activity calendar or timeline overview.
+- Particularly relevant or recent activities.
+- Events such as accidents or repairs at the appropriate point in time.
 
-| Feld        | Typ       | Beschreibung               |
-| ----------- | --------- | -------------------------- |
-| Id (PK)     | UUID      | Eindeutiger Identifier     |
-| UserId (FK) | UUID      | Zugehöriger Benutzer       |
-| Plan        | enum      | Monthly, Yearly            |
-| Status      | enum      | Active, Expired, Cancelled |
-| StartDate   | timestamp | Beginn                     |
-| EndDate     | timestamp | Ablaufdatum                |
+The three metric groups are displayed as visually distinct Dashboard areas. Charts should make trends over time easy to understand. The Dashboard can be filtered by the following criteria:
 
-**OAuthConnection**
+- Period or freely selectable date range.
+- Activity tags.
+- Activity type, especially Indoor or Outdoor.
+- Bicycle used.
 
-| Feld         | Typ                    | Beschreibung                            |
-| ------------ | ---------------------- | --------------------------------------- |
-| Id (PK)      | UUID                   | Eindeutiger Identifier                  |
-| UserId (FK)  | UUID                   | Zugehöriger Benutzer                    |
-| Provider     | enum                   | Strava (erweiterbar)                    |
-| AccessToken  | string (verschlüsselt) | Aktueller Access Token                  |
-| RefreshToken | string (verschlüsselt) | Refresh Token                           |
-| ExpiresAt    | timestamp              | Ablaufzeitpunkt des Access Tokens       |
-| SyncStatus   | enum                   | NotConnected, Connected, Syncing, Error |
-| LastSyncedAt | timestamp, nullable    | Zeitpunkt der letzten Synchronisation   |
+The filters apply to the displayed metrics, charts, activity trends and Events. The Dashboard should remain useful even when there is little or no data and should show a clear empty state.
 
-**Activity**
+### 3.3 Activity management
 
-| Feld | Typ | Beschreibung |
-|---|---|---|
-| Id (PK) | UUID | Eindeutiger Identifier |
-| UserId (FK) | UUID | Zugehöriger Benutzer |
-| VehicleId (FK) | UUID, nullable | Verwendetes Fahrzeug |
-| StravaActivityId | string, nullable | Externe Referenz-ID (falls synchronisiert) |
-| Date | timestamp | Datum der Aktivität |
-| Distance | decimal | Distanz in km |
-| Duration | integer | Dauer in Sekunden |
-| AvgSpeed | decimal | Durchschnittsgeschwindigkeit |
-| ElevationGain | decimal | Höhenmeter |
-| ActivityType | enum | Rennrad, Mountainbike, Gravel, Indoor/Rolle, Sonstige (ausschliesslich Radsport-Disziplinen) |
-| Description | string | Freitext |
-| Source | enum | Strava, Manual |
+The Activities page provides complete management of cycling activities. It offers a list or table view, a detail view as a form and a calendar view with a weekly summary similar to TrainingPeaks. Activities can be imported from Strava, created manually, viewed, filtered, edited, deleted and merged.
 
-**Vehicle**
+The Activities page contains a visible **Strava sync button**. The button starts synchronization directly from activity management. The last synchronization time and any error status are displayed alongside it.
 
-| Feld | Typ | Beschreibung |
-|---|---|---|
-| Id (PK) | UUID | Eindeutiger Identifier |
-| UserId (FK) | UUID | Zugehöriger Benutzer |
-| StravaGearId | string, nullable | Externe Referenz-ID |
-| Name | string | Bezeichnung |
-| Type | enum | Rennrad, Mountainbike, Gravel, etc. |
-| Brand | string | Marke |
-| Model | string | Modell |
-| Weight | decimal | Gewicht in kg |
-| PurchaseDate | timestamp | Kaufdatum |
-| TotalDistance | decimal | Gefahrene Kilometer |
-| ImageUrl | string, nullable | Bild-URL |
-| Source | enum | Strava, Manual |
+An activity contains, from a domain perspective:
 
-### 8.2 Beziehungen
+- Date and activity type.
+- An optionally assigned bicycle and the gadgets used.
+- Time or duration, distance, average speed and elevation gain.
+- TSS (Training Stress Score).
+- Description and freely selectable tags.
+- Minimum, maximum and average heart rate.
+- Mood or personal well-being.
+- Effort.
+- Wind conditions.
+- Data source: Strava or manual.
 
-- Ein `User` besitzt genau eine `Role` (n:1).
-- Ein `User` besitzt maximal eine aktive `Subscription` (1:1, historisch 1:n für vergangene Subscriptions).
-- Ein `User` besitzt maximal eine `OAuthConnection` pro Provider (1:1 pro Provider).
-- Ein `User` besitzt beliebig viele `Activity`- und `Vehicle`-Einträge (1:n).
-- Eine `Activity` kann optional genau einem `Vehicle` zugeordnet sein (n:1, nullable).
+Some values are maintained or calculated automatically by the application and are marked with `*` in the edit form. These values cannot be edited directly.
 
-### 8.3 ER-Diagramm
+Supported activity types include road bike, mountain bike, gravel and indoor cycling or trainer rides. Activities from other sports are not required. For imported Strava activities, locally maintained additional information may be edited. Deleted activities remain excluded from the active overview and must not reappear as active activities during a later synchronization.
 
-```mermaid
-erDiagram
-    ROLE ||--o{ USER : "hat"
-    USER ||--o| SUBSCRIPTION : "besitzt"
-    USER ||--o| OAUTHCONNECTION : "verbindet"
-    USER ||--o{ ACTIVITY : "erstellt"
-    USER ||--o{ VEHICLE : "besitzt"
-    VEHICLE ||--o{ ACTIVITY : "wird genutzt in"
+Multiple activities can be grouped into a merged activity. The original activities remain traceable.
 
-    ROLE {
-        uuid Id PK
-        string Name
-        string Description
-    }
-    USER {
-        uuid Id PK
-        string Email
-        string PasswordHash
-        string FirstName
-        string LastName
-        string Language
-        bool IsEmailVerified
-        bool TwoFactorEnabled
-        timestamp CreatedAt
-        uuid RoleId FK
-        uuid SubscriptionId FK
-    }
-    SUBSCRIPTION {
-        uuid Id PK
-        uuid UserId FK
-        string Plan
-        string Status
-        timestamp StartDate
-        timestamp EndDate
-    }
-    OAUTHCONNECTION {
-        uuid Id PK
-        uuid UserId FK
-        string Provider
-        string AccessToken
-        string RefreshToken
-        timestamp ExpiresAt
-        string SyncStatus
-        timestamp LastSyncedAt
-    }
-    ACTIVITY {
-        uuid Id PK
-        uuid UserId FK
-        uuid VehicleId FK
-        string StravaActivityId
-        timestamp Date
-        decimal Distance
-        integer Duration
-        decimal AvgSpeed
-        decimal ElevationGain
-        string ActivityType
-        string Description
-        string Source
-    }
-    VEHICLE {
-        uuid Id PK
-        uuid UserId FK
-        string StravaGearId
-        string Name
-        string Type
-        string Brand
-        string Model
-        decimal Weight
-        timestamp PurchaseDate
-        decimal TotalDistance
-        string ImageUrl
-        string Source
-    }
-```
+### 3.4 Strava synchronization
+
+Users can connect their account to Strava and start synchronization manually. New and updated cycling activities should be imported without creating duplicate entries. Bicycles or Strava Gear can also be imported. The synchronization status and possible errors are displayed clearly.
+
+### 3.5 Garage: bicycles and gadgets
+
+The Garage is the personal area for cycling equipment.
+
+**Bicycles** can be imported from Strava or entered manually, viewed, added, edited, synchronized and deleted. Possible fields are name, bicycle type, brand, model, weight, purchase date, ridden kilometers, image and note.
+
+**Gadgets** are additional equipment such as bike computers, heart-rate monitors or sensors. Possible fields are name, category, brand, model, purchase date, description and image.
+
+### 3.6 Body-Stats
+
+The Body-Stats page lets users record and manage personal body data over time. Examples include measurement date, weight, body height, other personal values and an optional note. Multiple measurements are retained so that trends remain visible. Body-Stats are private data.
+
+### 3.7 Events
+
+The Events page lets users record notable events such as accidents, injuries, repairs, longer breaks, personal goals or other relevant incidents.
+
+An Event contains at least a date, event type, title and description. Events can be created, viewed, edited and deleted. Relevant Events are included in the Dashboard's timeline overview.
+
+### 3.8 Settings and language
+
+Users can manage personal details and their preferred language. The central interfaces are available in German and English.
 
 ---
 
-## 9. API-Design
+## 4. Roles and permissions
 
-Die API folgt REST-Konventionen, ist versioniert (`/api/v1/...`, hier zur Übersichtlichkeit ohne Versionspräfix dargestellt) und liefert/erwartet JSON.
+| Role | Description |
+|---|---|
+| User | Manages their own Activities, bicycles, gadgets, Body-Stats, Events and Dashboard data. |
+| Administrator | Can manage user accounts and the local application. This role is optional and is not a central part of the core domain functions. |
 
-### 9.1 Auth
+| Function | User | Administrator |
+|---|:---:|:---:|
+| Register and log in | Yes | Yes |
+| Manage own Activities | Yes | Yes |
+| Connect and synchronize Strava | Yes | Yes |
+| Manage own bicycles and gadgets | Yes | Yes |
+| Manage own Body-Stats | Yes | Yes |
+| Manage own Events | Yes | Yes |
+| View own Dashboard | Yes | Yes |
+| Manage all users | No | Optional |
 
-| Methode | Endpunkt                    | Beschreibung                           |
-| ------- | --------------------------- | -------------------------------------- |
-| POST    | `/api/auth/register`        | Neuen Benutzer registrieren            |
-| POST    | `/api/auth/login`           | Login, liefert Access + Refresh Token  |
-| POST    | `/api/auth/logout`          | Refresh Token invalidieren             |
-| POST    | `/api/auth/refresh`         | Neues Token-Paar anhand Refresh Token  |
-| POST    | `/api/auth/forgot-password` | Passwort-Reset anstossen (optional)    |
-| POST    | `/api/auth/reset-password`  | Neues Passwort setzen (optional)       |
-| GET     | `/api/auth/verify-email`    | E-Mail-Adresse verifizieren (optional) |
-
-### 9.2 User
-
-| Methode | Endpunkt                 | Beschreibung                                     |
-| ------- | ------------------------ | ------------------------------------------------ |
-| GET     | `/api/users/me`          | Eigenes Profil abrufen                           |
-| PUT     | `/api/users/me`          | Eigenes Profil aktualisieren                     |
-| PUT     | `/api/users/me/password` | Passwort ändern                                  |
-| GET     | `/api/users`             | Alle Benutzer auflisten (nur Administrator)      |
-| PUT     | `/api/users/{id}/role`   | Rolle eines Benutzers ändern (nur Administrator) |
-| DELETE  | `/api/users/{id}`        | Benutzer löschen (nur Administrator)             |
-
-### 9.3 Strava / OAuth
-
-| Methode | Endpunkt | Beschreibung |
-|---|---|---|
-| GET | `/api/strava/authorize` | Startet OAuth-Flow, Redirect zu Strava |
-| GET | `/api/strava/callback` | OAuth-Callback, Token-Austausch |
-| DELETE | `/api/strava/disconnect` | Strava-Verbindung trennen |
-| GET | `/api/strava/status` | Aktuellen Verbindungs-/Sync-Status abrufen |
-
-### 9.4 Activities
-
-| Methode | Endpunkt | Beschreibung |
-|---|---|---|
-| GET | `/api/activities` | Aktivitäten auflisten (Filter, Pagination) |
-| GET | `/api/activities/{id}` | Einzelne Aktivität abrufen |
-| POST | `/api/activities` | Aktivität manuell erstellen |
-| PUT | `/api/activities/{id}` | Aktivität bearbeiten |
-| DELETE | `/api/activities/{id}` | Aktivität löschen |
-| POST | `/api/activities/sync` | Synchronisation mit Strava anstossen |
-
-### 9.5 Vehicles
-
-| Methode | Endpunkt | Beschreibung |
-|---|---|---|
-| GET | `/api/vehicles` | Fahrzeuge auflisten |
-| GET | `/api/vehicles/{id}` | Einzelnes Fahrzeug abrufen |
-| POST | `/api/vehicles` | Fahrzeug erstellen |
-| PUT | `/api/vehicles/{id}` | Fahrzeug bearbeiten |
-| DELETE | `/api/vehicles/{id}` | Fahrzeug löschen |
-| POST | `/api/vehicles/sync` | Fahrzeuge mit Strava synchronisieren |
-
-### 9.6 Dashboard
-
-| Methode | Endpunkt | Beschreibung |
-|---|---|---|
-| GET | `/api/dashboard` | Aggregierte Übersicht (Widgets) |
-| GET | `/api/dashboard/statistics` | Detaillierte statistische Auswertungen |
-| GET | `/api/dashboard/export/pdf` | PDF-Report generieren (optional) |
-| GET | `/api/dashboard/export/csv` | CSV-Export generieren (optional) |
-
-### 9.7 Subscription
-
-| Methode | Endpunkt | Beschreibung |
-|---|---|---|
-| GET | `/api/subscriptions/plans` | Verfügbare Pläne auflisten |
-| POST | `/api/subscriptions/checkout` | Kaufprozess starten |
-| GET | `/api/subscriptions/me` | Eigene Subscription abrufen |
-| POST | `/api/subscriptions/cancel` | Subscription kündigen |
-
-### 9.8 Demo
-
-| Methode | Endpunkt | Beschreibung |
-|---|---|---|
-| GET | `/api/demo/dashboard` | Dashboard-Aggregationen mit fixem Beispieldatensatz (kein Auth erforderlich) |
-| GET | `/api/demo/activities` | Beispiel-Aktivitäten auflisten (kein Auth erforderlich) |
-| GET | `/api/demo/vehicles` | Beispiel-Fahrzeuge auflisten (kein Auth erforderlich) |
-
-Die Demo-Endpunkte sind rein lesend, erfordern keine Authentifizierung und liefern stets denselben, serverseitig vordefinierten Beispieldatensatz zurück.
+Users may access only their own personal data. A public demo without a user account is not planned.
 
 ---
 
-## 10. Use Cases
+## 5. Use cases
 
-### UC-01 Registrierung
+### UC-01 Registration
 
-- **Ziel**: Ein neuer Benutzer erstellt ein Konto.
-- **Akteure**: Guest
-- **Voraussetzungen**: Gültige, noch nicht registrierte E-Mail-Adresse.
-- **Hauptablauf**: (1) Guest öffnet Registrierungsformular. (2) Eingabe von E-Mail, Passwort, Name. (3) System validiert Eingaben. (4) Konto wird angelegt, Passwort gehasht gespeichert. (5) Bestätigungs-E-Mail wird versendet.
-- **Alternativen**: E-Mail bereits vergeben → Fehlermeldung mit Hinweis auf Login.
-- **Fehlerfälle**: Ungültiges Passwortformat, Serverfehler beim Speichern.
-- **Ergebnis**: Neues Benutzerkonto mit Rolle "NormalUser" existiert.
+A guest creates a personal account with the required details. After successful registration, they can log in.
 
 ### UC-02 Login
 
-- **Ziel**: Ein registrierter Benutzer meldet sich an.
-- **Akteure**: NormalUser, Administrator
-- **Voraussetzungen**: Bestehendes, aktives Benutzerkonto.
-- **Hauptablauf**: (1) Benutzer gibt E-Mail und Passwort ein. (2) System prüft Zugangsdaten. (3) Bei Erfolg werden Access- und Refresh-Token ausgestellt. (4) Benutzer wird ins Dashboard weitergeleitet.
-- **Alternativen**: 2FA aktiviert → zusätzlicher TOTP-Prompt vor Ausstellung der Tokens.
-- **Fehlerfälle**: Falsches Passwort, gesperrtes Konto, nicht verifizierte E-Mail.
-- **Ergebnis**: Benutzer ist authentifiziert und erhält Zugriff auf die Applikation.
+A registered user logs in and is taken directly to their personal Dashboard.
 
-### UC-03 Demo-Modus nutzen
+### UC-03 Display Dashboard
 
-- **Ziel**: Ein Interessent verschafft sich ohne Registrierung einen Eindruck von Athlify anhand von Beispieldaten.
-- **Akteure**: Guest
-- **Voraussetzungen**: Keine.
-- **Hauptablauf**: (1) Guest ruft die Athlify-Applikation auf (z. B. verlinkt von der Projekt-/Dokumentationswebsite oder direkt über die URL der eigenen Docker-Instanz) und klickt auf der Login-Seite auf "Demo starten". (2) System lädt Dashboard, Aktivitäten und Fahrzeuge über die unauthentifizierten Demo-Endpunkte mit einem festen, fiktiven Beispieldatensatz. (3) Guest navigiert beliebig lange und ohne zeitliche Begrenzung durch die Applikation.
-- **Alternativen**: Guest entscheidet sich, sich zu registrieren, um mit echten, eigenen Daten zu arbeiten.
-- **Fehlerfälle**: Technischer Fehler beim Laden des Beispieldatensatzes.
-- **Ergebnis**: Guest hat den Funktionsumfang von Athlify anhand von Beispieldaten kennengelernt, ohne dass ein Konto angelegt oder echte Daten verändert wurden.
+The Dashboard displays metrics, charts, activity trends and relevant Events for the logged-in user.
 
-### UC-04 Strava verbinden
+### UC-04 Connect and synchronize Strava
 
-- **Ziel**: Der Benutzer verknüpft sein Athlify-Konto mit Strava.
-- **Akteure**: NormalUser
-- **Voraussetzungen**: Eingeloggter Benutzer, bestehendes Strava-Konto.
-- **Hauptablauf**: (1) Benutzer klickt "Mit Strava verbinden". (2) Weiterleitung zu Strava-OAuth-Seite. (3) Benutzer autorisiert Zugriff. (4) Strava leitet mit Authorization Code zurück. (5) Backend tauscht Code gegen Access-/Refresh-Token und speichert die Verbindung.
-- **Alternativen**: Benutzer bricht Autorisierung bei Strava ab → Rückleitung ohne Verbindung.
-- **Fehlerfälle**: Ungültiger/abgelaufener Code, Netzwerkfehler zu Strava.
-- **Ergebnis**: `OAuthConnection`-Eintrag mit Status "Connected" existiert.
+The user connects their Strava account and starts synchronization. New and updated cycling data is imported into Athlify.
 
-### UC-05 Aktivitäten synchronisieren
+### UC-05 Enter activity manually
 
-- **Ziel**: Aktivitäten aus Strava werden in Athlify übernommen.
-- **Akteure**: NormalUser
-- **Voraussetzungen**: Aktive Strava-Verbindung.
-- **Hauptablauf**: (1) Benutzer klickt "Synchronisieren" oder automatischer Hintergrundjob läuft. (2) System ruft neue/aktualisierte Aktivitäten via Strava API ab. (3) Daten werden validiert und in die Datenbank übernommen (Upsert). (4) Sync-Status und Zeitstempel werden aktualisiert.
-- **Alternativen**: Keine neuen Aktivitäten vorhanden → Status "Aktuell" ohne Änderungen.
-- **Fehlerfälle**: Abgelaufenes Token (automatischer Refresh-Versuch), Strava-Rate-Limit erreicht (Retry mit Backoff), Netzwerkfehler.
-- **Ergebnis**: Aktivitätsliste des Benutzers ist mit Strava synchronisiert.
+The user enters the date, type, distance, duration and other details. The activity then appears in the list and analyses.
 
-### UC-06 Aktivitäten bearbeiten
+### UC-06 Edit or delete activity
 
-- **Ziel**: Ein Benutzer passt Details einer bestehenden Aktivität an.
-- **Akteure**: NormalUser, Administrator
-- **Voraussetzungen**: Aktivität existiert und gehört dem Benutzer (oder Administrator-Rechte).
-- **Hauptablauf**: (1) Benutzer öffnet Aktivitätsdetails. (2) Klick auf "Bearbeiten". (3) Anpassung von Feldern (z. B. Beschreibung, Fahrzeug). (4) Speichern, Validierung, Aktualisierung in der Datenbank.
-- **Alternativen**: Bearbeitung abbrechen ohne Speichern.
-- **Fehlerfälle**: Ungültige Werte (z. B. negative Distanz), fehlende Berechtigung.
-- **Ergebnis**: Aktivität ist mit aktualisierten Daten gespeichert.
+The user opens an existing activity and edits available details or deletes the entry. The list and Dashboard are updated.
 
-### UC-07 Aktivität manuell erstellen
+### UC-07 Manage Garage
 
-- **Ziel**: Eine nicht über Strava erfasste Aktivität wird hinzugefügt.
-- **Akteure**: NormalUser
-- **Voraussetzungen**: Eingeloggter Benutzer.
-- **Hauptablauf**: (1) Benutzer klickt "Aktivität hinzufügen". (2) Eingabe von Datum, Distanz, Dauer, Aktivitätstyp etc. (3) Optional Zuordnung eines Fahrzeugs. (4) Speichern mit Quelle "Manual".
-- **Alternativen**: Kein Fahrzeug zugeordnet (optional).
-- **Fehlerfälle**: Pflichtfelder fehlen, unplausible Werte (z. B. Dauer 0).
-- **Ergebnis**: Neue Aktivität mit Quelle "Manual" existiert.
+The user creates, edits, synchronizes or deletes bicycles and gadgets in the Garage.
 
-### UC-08 Fahrzeug verwalten
+### UC-08 Manage Body-Stats
 
-- **Ziel**: Der Benutzer verwaltet seine Fahrzeuge (Erstellen, Bearbeiten, Löschen).
-- **Akteure**: NormalUser, Administrator
-- **Voraussetzungen**: Eingeloggter Benutzer.
-- **Hauptablauf**: (1) Benutzer öffnet Fahrzeugverwaltung. (2) Erstellt neues Fahrzeug oder wählt bestehendes zur Bearbeitung. (3) Eingabe/Anpassung von Name, Typ, Marke, Modell etc. (4) Speichern.
-- **Alternativen**: Fahrzeug wird stattdessen aus Strava synchronisiert.
-- **Fehlerfälle**: Ungültige Eingaben, Duplikate.
-- **Ergebnis**: Fahrzeugliste ist aktualisiert.
+The user records, edits or deletes personal body measurements with a date.
 
-### UC-09 Dashboard anzeigen
+### UC-09 Manage Event
 
-- **Ziel**: Der Benutzer erhält eine visuelle Übersicht seiner Trainingsdaten.
-- **Akteure**: NormalUser, Administrator
-- **Voraussetzungen**: Mindestens eine erfasste Aktivität (sonst Leerzustand mit Hinweis).
-- **Hauptablauf**: (1) Benutzer öffnet Dashboard. (2) System aggregiert Daten (Gesamtdistanz, Höhenmeter etc.). (3) Widgets werden mit berechneten Werten gerendert.
-- **Alternativen**: Filterung nach Zeitraum oder Aktivitätstyp.
-- **Fehlerfälle**: Aggregationsfehler bei inkonsistenten Daten (serverseitig abgefangen).
-- **Ergebnis**: Dashboard zeigt aktuelle, korrekte Kennzahlen.
-
-### UC-10 Subscription kaufen
-
-- **Ziel**: Ein registrierter Benutzer schliesst eine kostenpflichtige Subscription ab.
-- **Akteure**: NormalUser
-- **Voraussetzungen**: Eingeloggter Benutzer, gültige Zahlungsmethode.
-- **Hauptablauf**: (1) Benutzer wählt Plan auf der Pricing-Seite. (2) Weiterleitung zum Checkout (Zahlungsanbieter). (3) Zahlung wird verarbeitet. (4) System aktualisiert den Subscription-Status auf "Active".
-- **Alternativen**: Wechsel des Plans (Upgrade/Downgrade).
-- **Fehlerfälle**: Zahlung fehlgeschlagen, Zahlungsanbieter nicht erreichbar.
-- **Ergebnis**: Aktive, kostenpflichtige Subscription ist hinterlegt.
-
-### UC-11 Administrator verwaltet Benutzer
-
-- **Ziel**: Ein Administrator pflegt Benutzerkonten und Rollen.
-- **Akteure**: Administrator
-- **Voraussetzungen**: Eingeloggt mit Rolle Administrator.
-- **Hauptablauf**: (1) Administrator öffnet Benutzerverwaltung. (2) Sucht/filtert Benutzer. (3) Passt Rolle, Status oder Subscription an oder löscht Konto. (4) Änderungen werden gespeichert und protokolliert.
-- **Alternativen**: Sperren statt Löschen eines Kontos.
-- **Fehlerfälle**: Versuch, sich selbst die Administrator-Rolle zu entziehen (durch System verhindert), fehlende Berechtigung.
-- **Ergebnis**: Benutzerdatenbank ist aktualisiert, Änderungen sind nachvollziehbar.
+The user enters the type, date, title and description of an Event. The Event appears on the Events page and in the Dashboard's timeline context.
 
 ---
 
-## 11. User Stories
+## 6. User stories
 
-Eine kuratierte, auf maximal 20 Stories verdichtete Fassung inkl. Akzeptanzkriterien und Modulzuordnung befindet sich in [`docs/concept/user_stories.md`](concept/user_stories.md). Die folgende Tabelle bildet die vollständige, unverdichtete Liste ab.
-
-| # | User Story | Priorität |
+| # | User story | Priority |
 |---|---|:---:|
-| 1 | Als Interessent möchte ich auf der öffentlichen Projekt-/Dokumentationswebsite die Features sehen, damit ich verstehe, was Athlify bietet. | Must Have |
-| 2 | Als Guest möchte ich mich registrieren können, damit ich Athlify nutzen kann. | Must Have |
-| 3 | Als Guest möchte ich Athlify ohne Registrierung im Demo-Modus mit Beispieldaten ausprobieren können, damit ich mich risikofrei von den Funktionen überzeugen kann. | Must Have |
-| 4 | Als Benutzer möchte ich mich einloggen können, damit ich auf meine persönlichen Daten zugreifen kann. | Must Have |
-| 5 | Als Benutzer möchte ich mein Passwort zurücksetzen können, damit ich bei Vergessen wieder Zugriff erhalte. | Should Have |
-| 6 | Als Benutzer möchte ich meine E-Mail-Adresse verifizieren, damit mein Konto abgesichert ist. | Should Have |
-| 7 | Als Benutzer möchte ich mein Konto mit Strava verbinden, damit meine Aktivitäten automatisch übernommen werden. | Must Have |
-| 8 | Als Benutzer möchte ich meine Strava-Aktivitäten synchronisieren, damit meine Daten aktuell sind. | Must Have |
-| 9 | Als Benutzer möchte ich Aktivitäten manuell erfassen können, damit ich auch Training ohne Strava dokumentieren kann. | Must Have |
-| 10 | Als Benutzer möchte ich Aktivitäten bearbeiten können, damit ich Fehler korrigieren kann. | Must Have |
-| 11 | Als Benutzer möchte ich Aktivitäten löschen können, damit meine Übersicht sauber bleibt. | Should Have |
-| 12 | Als Benutzer möchte ich meine Fahrzeuge verwalten können, damit ich weiss, welches Bike ich wie oft nutze. | Must Have |
-| 13 | Als Benutzer möchte ich Fahrzeuge aus Strava synchronisieren, damit ich sie nicht manuell erfassen muss. | Should Have |
-| 14 | Als Benutzer möchte ich ein Dashboard mit meinen wichtigsten Kennzahlen sehen, damit ich meinen Trainingsfortschritt einschätzen kann. | Must Have |
-| 15 | Als Benutzer möchte ich eine Heatmap meiner Aktivitäten sehen, damit ich meine Trainingsgebiete erkenne. | Could Have |
-| 16 | Als Benutzer möchte ich meine Distanz pro Monat einsehen, damit ich saisonale Trends erkenne. | Should Have |
-| 17 | Als Benutzer möchte ich zwei Zeiträume miteinander vergleichen können, damit ich meine Entwicklung beurteilen kann. | Could Have |
-| 18 | Als Benutzer möchte ich meine Daten als PDF-Report exportieren können, damit ich sie teilen oder archivieren kann. | Could Have |
-| 19 | Als Benutzer möchte ich meine Daten als CSV exportieren können, damit ich sie in anderen Tools weiterverarbeiten kann. | Could Have |
-| 20 | Als Benutzer möchte ich die Sprache zwischen Deutsch und Englisch wechseln können, damit ich die App in meiner bevorzugten Sprache nutze. | Must Have |
-| 21 | Als Benutzer möchte ich eine Subscription abschliessen können, damit ich den vollen Funktionsumfang nutzen kann. | Must Have |
-| 22 | Als Guest möchte ich aus dem Demo-Modus heraus jederzeit direkt zur Registrierung wechseln können, damit ich nahtlos zu einem echten Konto übergehen kann. | Should Have |
-| 23 | Als Benutzer möchte ich Two-Factor-Authentication aktivieren können, damit mein Konto besser geschützt ist. | Could Have |
-| 24 | Als Administrator möchte ich alle Benutzer einsehen können, damit ich das System verwalten kann. | Must Have |
-| 25 | Als Administrator möchte ich Rollen von Benutzern ändern können, damit ich Berechtigungen steuern kann. | Must Have |
-| 26 | Als Administrator möchte ich Benutzerkonten sperren oder löschen können, damit ich Missbrauch verhindern kann. | Should Have |
+| 1 | As a user, I want to register and log in so that my data is assigned to me. | Must Have |
+| 2 | As a user, I want to synchronize my Strava activities so that my training data is imported automatically. | Must Have |
+| 3 | As a user, I want to create, edit and delete activities manually so that I can manage data without Strava. | Must Have |
+| 4 | As a user, I want to see a visually appealing Dashboard with Track, Fitness and Body Metrics so that I can analyze my cycling data, training load and physical development. | Must Have |
+| 5 | As a user, I want to manage bicycles in my Garage so that I can track their use. | Must Have |
+| 6 | As a user, I want to manage gadgets in my Garage so that my cycling equipment is fully documented. | Should Have |
+| 7 | As a user, I want to record and edit Body-Stats so that I can track personal development. | Should Have |
+| 8 | As a user, I want to record Events such as accidents or repairs so that they appear in the timeline of my activities. | Should Have |
+| 9 | As a user, I want to switch between German and English so that I can use the application in my preferred language. | Should Have |
+| 10 | As an administrator, I want to manage users so that the local application can be administered. | Could Have |
+
+Detailed acceptance criteria are documented in [`docs/concept/user_stories.md`](concept/user_stories.md).
 
 ---
 
-## 12. Nichtfunktionale Anforderungen
+## 7. Quality requirements
 
-| Kategorie | Anforderung |
+| Category | Functional requirement |
 |---|---|
-| **Performance** | API-Antwortzeiten < 300 ms für Standard-Requests (ohne externen Strava-Aufruf); Dashboard-Aggregationen < 1 s bei bis zu 10'000 Aktivitäten pro Benutzer. |
-| **Usability** | Intuitive, konsistente Bedienung nach etablierten UX-Mustern; maximal 3 Klicks bis zu jeder Kernfunktion. |
-| **Accessibility** | Einhaltung von WCAG 2.1 AA, wo praktikabel (Kontraste, Tastaturbedienbarkeit, ARIA-Labels für Diagramme). |
-| **Security** | Umsetzung sämtlicher in Abschnitt 6 beschriebenen Massnahmen; regelmässige Abhängigkeits-Updates (Dependabot). |
-| **Skalierbarkeit** | Zustandslose Backend-Instanzen (horizontale Skalierung), Connection Pooling für PostgreSQL, Caching aggregierter Dashboard-Daten. |
-| **Maintainability** | Klare Schichtenarchitektur, hohe Testabdeckung, konsistente Code-Konventionen (ESLint/Prettier, .editorconfig, StyleCop). |
-| **Browser Support** | Aktuelle Versionen von Chrome, Firefox, Edge, Safari (jeweils letzte 2 Major-Versionen). |
-| **Responsive Design** | Vollständig responsives Layout für Desktop, Tablet und Smartphone (Mobile-First-Ansatz für Projekt-/Dokumentationswebsite und App-Login). |
-| **Datenschutz (DSGVO)** | Datensparsamkeit, Recht auf Auskunft/Löschung, Verschlüsselung sensibler Daten (Tokens), transparente Datenschutzerklärung, Auftragsverarbeitung bei Drittanbietern (Strava, Hosting) vertraglich geregelt. |
+| Understandability | The most important functions can be found and used without technical knowledge. |
+| Clarity | Activities, equipment, Body-Stats and Events are clearly separated. |
+| Visualization | Track Metrics, Fitness Metrics and Body Metrics are displayed as clearly separated areas with understandable labels and charts. |
+| Filtering | The user can filter Dashboard data by period, tags, activity type (Indoor/Outdoor) and bicycle. |
+| Responsiveness | The application is practical to use on desktop, tablet and smartphone. |
+| Accessible operation | Contrast, keyboard operation and understandable labels are considered. |
+| Privacy | Personal training, body and Event data remains assigned to the respective user. |
+| Reliability | Input is not discarded without feedback. Failed actions are explained clearly. |
+| Consistency | The same terms and interaction patterns are used in all areas. |
+| Multilingual support | The central functions are available in German and English. |
 
 ---
 
-## 13. Wireframes
+## 8. Wireframes
 
-Die Wireframes 13.1 und 13.2 orientieren sich am interaktiven Mockup `docs/AthlifyV2.html`, das eine mögliche Umsetzung inkl. Startseite der Projekt-/Dokumentationswebsite, Login, Demo, Dashboard, Aktivitäten, Fahrzeuge und Settings zeigt.
+The wireframes show the domain views of the application. They do not prescribe a technical implementation.
 
-### 13.1 Projekt-/Dokumentationswebsite (extern, ausserhalb des Docker-Containers)
+### 8.1 Login
 
-```
-┌─────────────────────────────────────────────┐
-│  LOGO         Features  Doku  GitHub         │
-├─────────────────────────────────────────────┤
-│                                               │
-│        Rad-Trainingsdaten. Klar visualisiert.│
-│        [ Zur Applikation ]  [ Dokumentation ]│
-│                                               │
-├─────────────────────────────────────────────┤
-│  Open Source                                 │
-│  ┌─────────────────────────────────────────┐│
-│  │ docker-compose.yml            MIT-Lizenz ││
-│  │ services:                                ││
-│  │   app: ...                               ││
-│  └─────────────────────────────────────────┘│
-│  [ GitHub Repository ]   [ Dokumentation ]   │
-├─────────────────────────────────────────────┤
-│  Features   |  FAQ                           │
-├─────────────────────────────────────────────┤
-│  Kontakt / Footer                            │
-└─────────────────────────────────────────────┘
-```
-
-Hinweis: Kein Login, keine Registrierung, kein Pricing/Checkout auf dieser Seite – diese Funktionen befinden sich ausschliesslich in der Applikation selbst (siehe 13.2).
-
-### 13.2 Login (Einstiegspunkt der Docker-Applikation, entspricht der bisherigen "Landingpage" innerhalb des Containers)
-
-```
+```text
 ┌───────────────────────────┐
-│           Athlify          │
-│  Willkommen zurück bei     │
-│  Athlify                   │
+│           Athlify         │
+│  Welcome to Athlify       │
 │  ┌─────────────────────┐  │
-│  │ E-Mail               │  │
+│  │ Email               │  │
 │  └─────────────────────┘  │
 │  ┌─────────────────────┐  │
-│  │ Passwort              │  │
+│  │ Password            │  │
 │  └─────────────────────┘  │
-│      [ Login ]             │
-│  Passwort vergessen?       │
-│  Noch kein Konto?          │
-│  [ Jetzt registrieren ]    │
-│  [ Demo starten /           │
-│    Beispieldaten ansehen ] │
+│        [ Login ]           │
+│  No account yet?           │
+│  [ Register now ]          │
 └───────────────────────────┘
 ```
 
-### 13.3 Dashboard
+### 8.2 Dashboard
 
-```
-┌───────────────────────────────────────────────┐
-│ Athlify   Dashboard | Activities | Vehicles ⚙ │
-├───────────────────────────────────────────────┤
-│ [Gesamtdistanz] [Höhenmeter] [Trainingszeit]   │
-├───────────────────────────────────────────────┤
-│ [ Distanz pro Monat (Chart) ] [ Verteilung ]   │
-├───────────────────────────────────────────────┤
-│ [ Heatmap ]           [ Top Aktivitäten ]      │
-└───────────────────────────────────────────────┘
-```
-
-### 13.4 Activities
-
-```
-┌───────────────────────────────────────────────┐
-│ Aktivitäten            [+ Neu] [ Synchronisieren]│
-├───────────────────────────────────────────────┤
-│ Datum      Typ       Distanz  Dauer   Quelle  ⋮│
-│ 24.07.26   Rennrad    42 km   1:15h   Strava  ⋮│
-│ 22.07.26   Indoor      8 km   0:40h   Manuell ⋮│
-└───────────────────────────────────────────────┘
+```text
+┌────────────────────────────────────────────────────┐
+│ Athlify  Dashboard | Activities | Garage | Stats    │
+│                         | Events                    │
+├────────────────────────────────────────────────────┤
+│ Filter: [Period] [Tags] [Indoor/Outdoor] [Bicycle] │
+├────────────────────────────────────────────────────┤
+│ TRACK METRICS                                      │
+│ [Distance] [Time] [Elevation] [TSS] [Speed]        │
+├────────────────────────────────────────────────────┤
+│ FITNESS METRICS                                    │
+│ [Fitness / CTL] [Fatigue / ATL] [Form / TSB]       │
+├────────────────────────────────────────────────────┤
+│ BODY METRICS                                       │
+│ [Weight] [Fat] [Muscle] [Water] [Bone]             │
+├────────────────────────────────────────────────────┤
+│ [Metric trends]              [Events / notices]     │
+└────────────────────────────────────────────────────┘
 ```
 
-### 13.5 Vehicles
+### 8.3 Activities
 
-```
-┌───────────────────────────────────────────────┐
-│ Fahrzeuge                        [+ Neu]        │
-├───────────────────────────────────────────────┤
-│ [Bild] Rennrad "Speedy"   1'240 km   [Bearbeiten]│
-│ [Bild] Gravelbike "Trail"   580 km   [Bearbeiten]│
-└───────────────────────────────────────────────┘
-```
-
-### 13.6 Settings
-
-```
-┌───────────────────────────────────────────────┐
-│ Einstellungen                                   │
-├───────────────────────────────────────────────┤
-│ Profil   |  Passwort  |  Strava  |  Sprache    │
-│ Subscription: Yearly Plan – aktiv bis 12/2026   │
-└───────────────────────────────────────────────┘
+```text
+┌────────────────────────────────────────────────────┐
+│ Activities                    [+ New] [Sync]        │
+├────────────────────────────────────────────────────┤
+│ Activities [+ New] [Strava Sync] [Merge]           │
+├────────────────────────────────────────────────────┤
+│ [List] [Calendar]                                   │
+│ Date       Type      Distance  Duration  Source     │
+│ 24.07.26   Road bike 42 km     1:15 h    Strava     │
+│ 22.07.26   Indoor     8 km     0:40 h    Manual     │
+└────────────────────────────────────────────────────┘
 ```
 
-### 13.7 Admin
+### 8.4 Activity detail and edit form
 
+```text
+┌────────────────────────────────────────────────────┐
+│ Edit activity                           [Save]       │
+├────────────────────────────────────────────────────┤
+│ Date [____]       Type [Indoor/Outdoor ▼]           │
+│ Bicycle [_______] Gadgets [________]               │
+│ Time [____]       Distance [____]                  │
+│ Average speed* [____]                              │
+│ Elevation [____]   TSS* [____]                     │
+│ Heart rate Min. [__] Max. [__] Avg. [__]            │
+│ Mood [________]    Effort [____]                   │
+│ Wind [________]    Tags [________]                 │
+│ Description [_______________________________]       │
+│ Some values are calculated automatically            │
+└────────────────────────────────────────────────────┘
 ```
-┌───────────────────────────────────────────────┐
-│ Administration – Benutzerverwaltung             │
-├───────────────────────────────────────────────┤
-│ Suche: [___________]                           │
-│ Name        E-Mail            Rolle      ⋮     │
-│ Max Muster  max@mail.ch       NormalUser ⋮     │
-│ Nina Rider  nina@mail.ch      NormalUser ⋮     │
-└───────────────────────────────────────────────┘
+
+### 8.5 Activity calendar
+
+The calendar view displays activities by week and summarizes at least distance, time, elevation gain and TSS per week. Individual activities can be opened directly from the calendar view.
+
+### 8.4 Garage
+
+```text
+┌────────────────────────────────────────────────────┐
+│ Garage                    [Bicycles] [Gadgets] [+]  │
+├────────────────────────────────────────────────────┤
+│ Road bike "Speedy"      1,240 km        [Edit]      │
+│ Gravel bike "Trail"       580 km        [Edit]      │
+│ Bike computer                           [Edit]      │
+└────────────────────────────────────────────────────┘
+```
+
+### 8.5 Body-Stats and Events
+
+```text
+┌──────────────────────────────┐  ┌──────────────────────────────┐
+│ Body-Stats          [+ New]  │  │ Events              [+ New]  │
+├──────────────────────────────┤  ├──────────────────────────────┤
+│ Date    Weight   Height      │  │ Date    Type       Title       │
+│ 01.08.  75.4 kg  180 cm     │  │ 15.07.  Accident   Fall        │
+└──────────────────────────────┘  └──────────────────────────────┘
 ```
 
 ---
 
-## 14. Projektstruktur
+## 9. Roadmap
 
-Die Projektstruktur gliedert sich in vier Hauptbereiche: Frontend, Backend, Shared und Database (vgl. detaillierte Ordnerstruktur in Abschnitt 7.7).
-
-| Bereich | Inhalt |
+| Phase | Content |
 |---|---|
-| **Frontend** | React-SPA (Login als Einstiegspunkt + geschützte Applikation), Vite-Konfiguration, statische Assets, i18n-Ressourcen |
-| **Projekt-/Dokumentationswebsite** | Separates Deliverable ausserhalb des Docker-Builds: Vorstellung des Open-Source-Projekts, Installationsanleitung, GitHub-Link (Annahme zum Hosting, siehe Abschnitt 20) |
-| **Backend** | ASP.NET Core Web API, Domain-/Application-/Infrastructure-Schichten, Hintergrunddienste für Strava-Sync |
-| **Shared** | Gemeinsame Typdefinitionen (z. B. generierte OpenAPI-Clients/DTOs), Dokumentation, Konfigurationsschemas |
-| **Database** | EF-Core-Migrationen, Seed-Skripte für Rollen sowie für den fixen Demo-/Beispieldatensatz, ER-Dokumentation |
+| 1. Foundation | Login, navigation and basic user guidance |
+| 2. Activities | Manual activities and activity-list management |
+| 3. Strava | Connecting and synchronizing activities and bicycles |
+| 4. Dashboard | Metrics, charts and timeline analyses |
+| 5. Garage | Manage bicycles and gadgets |
+| 6. Personal data | Integrate Body-Stats and Events |
+| 7. Quality | Check usability, data ownership, multilingual support and error cases |
 
 ---
 
-## 15. Risiken und Massnahmen
+## 10. Risks and mitigation
 
-| Risiko                                                                    | Auswirkung                                       | Massnahme                                                                                                                          |
-| ------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Änderungen der Strava API (Breaking Changes, Deprecation)                 | Synchronisation funktioniert nicht mehr          | Versionierte API-Clients, regelmässige Prüfung des Strava-Changelogs, Abstraktionsschicht (Adapter) zur Isolierung von API-Details |
-| OAuth-Probleme (abgelaufene/ungültige Tokens)                             | Benutzer verliert Sync-Fähigkeit                 | Automatisches Token-Refresh, klare Fehlermeldungen, erneuter Autorisierungs-Flow bei Bedarf                                        |
-| Strava Rate Limits                                                        | Synchronisation schlägt fehl oder verzögert sich | Warteschlangenbasierte Synchronisation, Exponential Backoff, Caching bereits abgerufener Daten                                     |
-| Datenverlust (DB-Fehler, versehentliches Löschen)                         | Verlust von Benutzerdaten                        | Regelmässige automatisierte Backups, Soft-Delete statt Hard-Delete für kritische Entitäten                                         |
-| Synchronisationskonflikte (manuelle Bearbeitung vs. erneuter Strava-Sync) | Inkonsistente/überschriebene Daten               | Klare Konfliktstrategie (z. B. Strava-Daten für Kernfelder autoritativ, lokale Zusatzfelder bleiben erhalten)                      |
-| Sicherheitslücken (z. B. Token-Leaks, unsichere Endpunkte)                | Datenschutzverletzung, Vertrauensverlust         | Sicherheitsreview vor Release, automatisierte Dependency-Scans, Verschlüsselung sensibler Felder                                   |
-| Verzögerung durch begrenzte CAS-Projektzeit                               | Nicht alle Features werden fertig umgesetzt      | Klare Priorisierung (Must/Should/Could Have), iterative Roadmap mit lauffähigem Zwischenstand pro Phase                            |
-| Abhängigkeit von Drittanbieter-Hosting/Zahlungsanbieter                   | Ausfall beeinträchtigt Subscription-Kauf         | Etablierte, gut dokumentierte Anbieter wählen, Fallback-Kommunikation an Benutzer bei Ausfällen                                    |
-| Öffentlich zugängliche, unauthentifizierte Demo-Endpunkte                 | Potenzieller Missbrauch für Lastangriffe (DoS)   | Striktes Rate Limiting pro IP, Caching des statischen Beispieldatensatzes, keine Schreiboperationen auf die echte Datenbank        |
-| Self-Hosted Backend/Datenbank auf eigener Infrastruktur (On-Premises-Server, kein Cloud-Providing) | Hardware-/Stromausfall oder Netzwerkprobleme führen zu Downtime; keine automatische Cloud-Redundanz | Regelmässige, automatisierte Backups (pg_dump + Server-/VM-Snapshots), Monitoring/Alerting für den Host, dokumentierter Recovery-Prozess über Docker Compose |
-
----
-
-## 16. Roadmap
-
-```mermaid
-gantt
-    title Athlify – Projekt-Roadmap
-    dateFormat  YYYY-MM-DD
-    section Phasen
-    Phase 1 – App-Shell & Projektwebsite :p1, 2026-08-01, 2w
-    Phase 2 – Authentication         :p2, after p1, 2w
-    Phase 3 – Strava Integration     :p3, after p2, 3w
-    Phase 4 – Dashboard              :p4, after p3, 3w
-    Phase 5 – Vehicle Management     :p5, after p4, 2w
-    Phase 6 – Testing                :p6, after p5, 2w
-    Phase 7 – Deployment             :p7, after p6, 1w
-```
-
-| Phase                        | Inhalt                                                                                    |
-| ---------------------------- | ----------------------------------------------------------------------------------------- |
-| Phase 1 – App-Shell & Projektwebsite | Aufbau des App-Shells mit Login als Einstiegspunkt der Docker-Applikation sowie der separaten Projekt-/Dokumentationswebsite (Feature-, Installations-, FAQ- und Kontaktbereich) |
-| Phase 2 – Authentication     | Registrierung, Login, JWT/Refresh-Token-Handling, registrierungsfreier Demo-Modus         |
-| Phase 3 – Strava Integration | OAuth-Flow, Token-Verwaltung, Synchronisation von Aktivitäten und Fahrzeugen              |
-| Phase 4 – Dashboard          | Implementierung der Kennzahlen-Widgets und Diagramme                                      |
-| Phase 5 – Vehicle Management | Vollständige CRUD-Funktionalität für Fahrzeuge inkl. Bildverwaltung                       |
-| Phase 6 – Testing            | Unit-, Integrations- und E2E-Tests, manuelle Testphase                                    |
-| Phase 7 – Deployment         | Produktive Bereitstellung von Frontend, Backend und Datenbank                             |
-
----
-
-## 17. Teststrategie
-
-| Teststufe | Werkzeuge (Vorschlag) | Fokus |
+| Risk | Impact | Mitigation |
 |---|---|---|
-| **Unit Tests** | xUnit (Backend), Vitest/React Testing Library (Frontend) | Isolierte Prüfung von Services, Utilities und Komponenten |
-| **Integration Tests** | xUnit mit In-Memory-/Test-PostgreSQL-Datenbank | Zusammenspiel von Repository, Datenbank und Services |
-| **API Tests** | Postman/Newman oder REST Client Testsuiten | Vertragskonformität und Verhalten der Endpunkte |
-| **E2E Tests** | Playwright oder Cypress | Vollständige Benutzerflüsse (Registrierung, Sync, Dashboard) |
-| **Manuelle Tests** | Exploratives Testen nach jeder Phase | Usability, Edge Cases, visuelle Konsistenz |
-
-Die Teststrategie orientiert sich an der Testpyramide: viele schnelle Unit-Tests, eine moderate Anzahl Integrationstests und wenige, aber aussagekräftige E2E-Tests für die kritischen Kernflows (Login, Strava-Sync, Dashboard-Anzeige).
-
----
-
-## 18. Deployment
-
-Athlify wird **vollständig selbst gehostet** auf eigener Infrastruktur (On-Premises-Server bzw. eigene Virtualisierungsumgebung) betrieben – Frontend, Backend und Datenbank laufen als eigenständige Docker-Container auf demselben Host, orchestriert über ein gemeinsames Docker Compose Setup. Auf einen externen Cloud- oder Static-Hosting-Anbieter wird bewusst verzichtet.
-
-Das Frontend-Build (statische HTML/JS/CSS-Dateien aus `vite build`) wird über einen schlanken `nginx:alpine`-Container ausgeliefert bzw. direkt vom ohnehin vorhandenen NGINX-Reverse-Proxy als statisches Verzeichnis bedient; API-Aufrufe unter `/api` werden vom selben NGINX an den ASP.NET-Core-Container weitergeleitet. Da bereits ein Reverse Proxy für das Backend benötigt wird, entsteht durch das zusätzliche Ausliefern des Frontends kein nennenswerter Mehraufwand – es ist lediglich eine zusätzliche Location-Regel bzw. ein weiterer, sehr leichtgewichtiger Container.
-
-```mermaid
-flowchart TB
-    subgraph Client
-        Browser
-    end
-    subgraph OwnInfra["Eigene Infrastruktur"]
-        subgraph VM["VM / Docker Host (docker compose)"]
-            NGINX[NGINX Reverse Proxy<br/>TLS-Terminierung]
-            FE[React SPA<br/>nginx:alpine Container<br/>statisches Vite-Build]
-            API[ASP.NET Core API<br/>Docker Container]
-            PG[(PostgreSQL<br/>Docker Container)]
-        end
-    end
-
-    Browser -->|HTTPS /| NGINX
-    Browser -->|HTTPS /api| NGINX
-    NGINX --> FE
-    NGINX --> API
-    API --> PG
-```
-
-| Komponente    | Empfehlung                                                                                                                                                                    | Begründung                                                                                                                                                                                             |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Frontend      | Self-Hosted: Statisches Vite-Build, ausgeliefert über `nginx:alpine`-Container bzw. den bestehenden NGINX-Reverse-Proxy                                                       | Kein zusätzlicher Vendor/Account nötig, keine laufenden Kosten, nutzt dieselbe Infrastruktur und denselben Deployment-Mechanismus wie Backend/DB, minimaler Mehraufwand da NGINX ohnehin vorhanden ist |
-| Backend       | Self-Hosted: Docker-Container auf einer VM des eigenen Hosts                                                                                                                  | Volle Kontrolle über Betrieb, Daten und Kosten; keine Abhängigkeit von einem Cloud-Anbieter; bestehende Infrastruktur wird genutzt                                                                     |
-| Datenbank     | Self-Hosted: PostgreSQL als eigener Docker-Container auf derselben VM                                                                                                         | Volle Datenhoheit über sensible Trainings- und Tokendaten, keine laufenden Kosten für einen Managed-Database-Dienst, kurze Latenz zum Backend (lokales Docker-Netzwerk)                                |
-| Reverse Proxy | NGINX (auf derselben VM)                                                                                                                                                      | TLS-Terminierung, Routing zwischen Frontend (`/`) und Backend (`/api`), Caching statischer Antworten                                                                                                   |
-| TLS/HTTPS     | Let's Encrypt (über NGINX)                                                                                                                                                    | Kostenlose, automatisiert erneuerbare Zertifikate                                                                                                                                                      |
-| CI/CD         | GitHub Actions: Build von Frontend- und Backend-Image, Push in eine Registry, anschliessend `docker compose pull && up -d` auf dem eigenen Host (SSH oder Self-Hosted Runner) | Automatisierte, einheitliche Build- und Deployment-Pipeline für alle drei Komponenten, ohne Cloud-Hosting-Abhängigkeit                                                                                 |
-
-Da Frontend, Backend und Datenbank vollständig auf eigener Infrastruktur betrieben werden, liegt die Verantwortung für Betrieb, Backups und Verfügbarkeit komplett beim Projektteam. Backups von PostgreSQL erfolgen über regelmässige `pg_dump`-Exporte sowie Server-/VM-Snapshots; sämtliche Container werden über ein gemeinsames Docker Compose File deklarativ verwaltet, um eine reproduzierbare Neuinstallation im Fehlerfall zu ermöglichen. Der Verzicht auf ein globales CDN (wie es z. B. Vercel bieten würde) wird bewusst in Kauf genommen, da die Zielgruppe des CAS-Projekts keine geografisch verteilte, latenzkritische Nutzerbasis erfordert.
+| Limited time due to the two-person team | Not all functions will be implemented completely. | Prioritize core functions and handle optional extensions afterward. |
+| Changes or restrictions at Strava | Synchronization may fail or be incomplete. | Offer manual entry as an equivalent alternative and display errors clearly. |
+| Unclear or incomplete data | Dashboard analyses may be inaccurate. | Validate input and handle missing values transparently. |
+| Incorrect data ownership | Personal data could appear for the wrong user. | Check user ownership for every personal function. |
+| Scope that is too complex | Core functions will not be finished on time. | Review scope regularly and prioritize Must-Have functions. |
+| Sensitive Body-Stats or Events | Users could lose trust in the application. | Show data only in the personal area and respect privacy. |
 
 ---
 
-## 19. Anhang: Ergänzende Diagramme
+## 11. Technical detail documents
 
-### 19.1 State-Diagramm: Subscription-Status
+The following documents contain technical decisions and implementation details. They are intentionally separated from this functional concept:
 
-```mermaid
-stateDiagram-v2
-    [*] --> Registered: Registrierung abgeschlossen
-    Registered --> Active: Subscription gekauft
-    Active --> Cancelled: Kündigung durch Benutzer
-    Active --> Expired: Zahlung fehlgeschlagen
-    Cancelled --> [*]
-    Expired --> Active: Erneuter Kauf
-    Expired --> [*]
-```
-
-### 19.2 Komponentendiagramm (vereinfacht, C4-inspiriert)
-
-```mermaid
-flowchart TB
-    subgraph "Frontend (React SPA)"
-        AUTH_FE[Auth Modul<br/>inkl. Login als Einstiegspunkt]
-        DASH[Dashboard Modul]
-        ACT[Activities Modul]
-        VEH[Vehicles Modul]
-        DEMO_FE[Demo Modul]
-    end
-    subgraph "Backend (ASP.NET Core)"
-        AUTH_BE[Auth Service]
-        USR[User Service]
-        ACT_BE[Activity Service]
-        VEH_BE[Vehicle Service]
-        DASH_BE[Dashboard/Aggregation Service]
-        STRAVA[Strava Integration Service]
-        DEMO_BE[Demo Data Service]
-    end
-    DB[(PostgreSQL)]
-    EXT[Strava API]
-
-    AUTH_FE --> AUTH_BE
-    DASH --> DASH_BE
-    ACT --> ACT_BE
-    VEH --> VEH_BE
-    DEMO_FE --> DEMO_BE
-    AUTH_BE --> DB
-    USR --> DB
-    ACT_BE --> DB
-    VEH_BE --> DB
-    DASH_BE --> DB
-    STRAVA --> EXT
-    STRAVA --> DB
-    ACT_BE --> STRAVA
-    VEH_BE --> STRAVA
-    DEMO_BE -.->|statischer Beispieldatensatz, kein Auth| DB
-```
+- [Technology stack](concept/technology-stack.md)
+- [Architecture](concept/architecture.md)
+- [Data model](concept/data-model.md)
+- [Activity management](concept/activity-management.md)
+- [API design](concept/api-design.md)
+- [Security requirements](concept/security.md)
+- [Testing strategy and deployment](concept/testing-deployment.md)
 
 ---
 
-## 20. Offene Fragen
+## 12. Open questions
 
-### Kritisch
-
-| # | Frage | Kontext |
+| # | Question | Significance |
 |---|---|---|
-| 1 | Verträgt sich das bestehende, kostenpflichtige Subscription-Modell (Abschnitte 2.2, 5, 8.1, 9.7, 19.1) mit der im Mockup `docs/AthlifyV2.html` kommunizierten Open-Source/MIT-Positionierung ("Open Source", `docker-compose.yml`, MIT-Lizenz, GitHub Repository)? Es ist zu klären, ob (a) das Subscription-Modell entfällt, (b) ein "Open Core"-Modell (kostenlos self-hosted, optional kostenpflichtige Zusatzleistung, z. B. gehostetes Angebot) verfolgt wird, oder (c) beide Modelle unverändert parallel bestehen bleiben. Diese Entscheidung wirkt sich auf Datenmodell (`Subscription`-Entität), API (`/api/subscriptions/*`), Rollen/Berechtigungen, Roadmap und Risikomatrix aus. | Widerspruch zwischen Mockup und bestehendem Konzept |
-
-### Wichtig
-
-| # | Frage | Kontext |
-|---|---|---|
-| 2 | Wo und wie wird die neue Projekt-/Dokumentationswebsite (Abschnitt 4.1) technisch betrieben (z. B. statische Seite via GitHub Pages, Teil desselben Repositorys, eigenes Hosting)? | Aktuell nur als Annahme markiert |
-| 3 | Welche Inhalte soll die Dokumentationswebsite konkret bieten – nur eine Installationsanleitung, oder zusätzlich API-Dokumentation, Changelog, Versionshinweise? | Beeinflusst Aufwand/Scope der Website |
-| 4 | Wird die Docker-Distribution offiziell öffentlich (z. B. auf Docker Hub/GHCR) bereitgestellt, oder bezieht sich "Open Source" nur auf den Quellcode (Self-Build erforderlich)? | Beeinflusst Installationsanleitung und CI/CD (Abschnitt 18) |
-
-### Optional
-
-| # | Frage | Kontext |
-|---|---|---|
-| 5 | Soll auf der Login-Seite direkt eine Sprachumschaltung (DE/EN) angeboten werden, oder bleibt diese wie bisher ausschliesslich in den Settings? | UX-Detail, kein Architektur-Einfluss |
+| 1 | Which Body-Stats should be supported in the initial scope in addition to weight and height? | Affects the level of detail on the Body-Stats page. |
+| 2 | Which Event types should be offered as a fixed set? | Affects Event selection and presentation. |
+| 3 | Should Events only be displayed on the Dashboard or also linked directly to individual activities? | Affects the domain relationship between Events and activities. |
+| 4 | Should the language already be switchable on the login page? | UX decision for the entry point. |
+| 5 | Which charts are mandatory for academic assessment? | Helps prioritize Dashboard functions. |
 
 ---
 
-*Ende des Dokuments – Softwarekonzept Athlify, Version 1.5*
+*End of document – Functional software concept Athlify, version 1.7*

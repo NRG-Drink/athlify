@@ -403,6 +403,7 @@ FodyWeavers.xsd
 *.msp
 
 # JetBrains Rider
+.idea
 *.sln.iml
 
 # Custom
@@ -411,3 +412,6 @@ FodyWeavers.xsd
 .test-results/
 *.csproj.lscache
 .obsidian
+
+# AI stuff
+.agents
