@@ -23,7 +23,7 @@ This list contains verified or explicitly agreed rules. Mark assumptions as open
 
 ## Documentation rules
 
-- Check new domain requirements in `../../athlify_concept.md` first and formulate them there only in domain terms.
+- Check new domain requirements in `../../concept/CONCEPT.md` first and formulate them there only in domain terms.
 - Add new backend decisions in this directory and shared technical decisions under `../../concept/`.
 - For conceptual changes, inspect the entire `docs/` tree for affected frontend, backend and shared documents and keep them synchronized.
 - Record Copilot-relevant, verified findings here concisely with a file path.

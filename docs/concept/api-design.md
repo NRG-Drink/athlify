@@ -1,6 +1,6 @@
 # Athlify – API Design
 
-Technical detail documentation for the functional concept in [`docs/athlify_concept.md`](../athlify_concept.md).
+Technical detail documentation for the functional concept in [`CONCEPT.md`](CONCEPT.md).
 
 The API follows REST conventions and provides JSON data. The concrete endpoints are organized around the domain modules.
 

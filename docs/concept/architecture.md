@@ -1,6 +1,6 @@
 # Athlify – Architecture
 
-Technical detail documentation for the functional concept in [`docs/athlify_concept.md`](../athlify_concept.md).
+Technical detail documentation for the functional concept in [`CONCEPT.md`](CONCEPT.md).
 
 ## Architecture overview
 

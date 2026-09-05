@@ -57,7 +57,7 @@ backend, technical, documentation-only or conceptual. For any conceptual
 change, inspect the complete `docs/` tree and update every affected document
 in the same change. At minimum, check:
 
-- `docs/athlify_concept.md` for the functional source of truth;
+- `docs/concept/CONCEPT.md` for the functional source of truth;
 - `docs/concept/` for shared architecture, data model, API, security,
   activity-management, technology and testing details;
 - `docs/frontend/copilot/` for frontend PRD, SAD and learnings;

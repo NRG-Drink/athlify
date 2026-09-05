@@ -6,7 +6,7 @@ frontend; backend decisions belong in
 [`../../../backend/copilot/adr/`](../../../backend/copilot/adr/).
 
 The functional source of truth is
-[`../../../athlify_concept.md`](../../../athlify_concept.md). Shared technical
+[`../../../concept/CONCEPT.md`](../../../concept/CONCEPT.md). Shared technical
 decisions belong in [`../../../concept/`](../../../concept/) and must be
 considered before creating a frontend-specific ADR.
 

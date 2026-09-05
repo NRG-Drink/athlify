@@ -25,7 +25,7 @@
 8. [Wireframes](#8-wireframes)
 9. [Roadmap](#9-roadmap)
 10. [Risks and mitigation](#10-risks-and-mitigation)
-11. [Technical detail documents](#11-technical-detail-documents)
+11. [Detailed and technical documents](#11-detailed-and-technical-documents)
 12. [Open questions](#12-open-questions)
 
 ---
@@ -38,7 +38,10 @@ Activities can be imported from Strava or entered manually. The Dashboard displa
 
 The application focuses on functionality for individual users. After a simple login, all personal data is assigned to the respective user.
 
-This document describes the functional big picture. Technical decisions and implementation details are maintained in separate documents under [`docs/concept/`](concept/).
+This document describes the functional big picture and is the functional
+source of truth for Athlify. Detailed functional specifications and technical
+implementation details are maintained in the other documents under
+[`docs/concept/`](./).
 
 ---
 
@@ -234,7 +237,7 @@ The user enters the type, date, title and description of an Event. The Event app
 | 9 | As a user, I want to switch between German and English so that I can use the application in my preferred language. | Should Have |
 | 10 | As an administrator, I want to manage users so that the local application can be administered. | Could Have |
 
-Detailed acceptance criteria are documented in [`docs/concept/user_stories.md`](concept/user_stories.md).
+Detailed acceptance criteria are documented in [`user_stories.md`](user_stories.md).
 
 ---
 
@@ -389,17 +392,19 @@ The calendar view displays activities by week and summarizes at least distance, 
 
 ---
 
-## 11. Technical detail documents
+## 11. Detailed and technical documents
 
-The following documents contain technical decisions and implementation details. They are intentionally separated from this functional concept:
+The following documents contain detailed functional specifications and
+technical implementation details. They are intentionally separated from this
+functional concept:
 
-- [Technology stack](concept/technology-stack.md)
-- [Architecture](concept/architecture.md)
-- [Data model](concept/data-model.md)
-- [Activity management](concept/activity-management.md)
-- [API design](concept/api-design.md)
-- [Security requirements](concept/security.md)
-- [Testing strategy and deployment](concept/testing-deployment.md)
+- [Technology stack](technology-stack.md)
+- [Architecture](architecture.md)
+- [Data model](data-model.md)
+- [Activity management](activity-management.md)
+- [API design](api-design.md)
+- [Security requirements](security.md)
+- [Testing strategy and deployment](testing-deployment.md)
 
 ---
 

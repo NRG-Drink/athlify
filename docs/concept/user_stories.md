@@ -1,6 +1,6 @@
 # Athlify – User Stories
 
-Derived from the functional software concept (`docs/athlify_concept.md`). Prioritized using MoSCoW (Must/Should/Could Have).
+Derived from the functional software concept (`CONCEPT.md`). Prioritized using MoSCoW (Must/Should/Could Have).
 
 | ID | Module | User story | Acceptance criteria | Priority |
 |---|---|---|---|:---:|
@@ -26,4 +26,6 @@ Derived from the functional software concept (`docs/athlify_concept.md`). Priori
 
 ## Reference
 
-The functional big picture, use cases and overarching requirements are in [`docs/athlify_concept.md`](../athlify_concept.md). Technical details are described in the other documents under `docs/concept/`.
+The functional big picture, use cases and overarching requirements are in
+[`CONCEPT.md`](CONCEPT.md). The other documents under `docs/concept/` contain
+detailed functional specifications and technical implementation details.

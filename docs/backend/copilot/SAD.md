@@ -2,7 +2,7 @@
 
 ## Scope
 
-This document describes the technical context for changes to the repository. The functional big picture is in [`../../athlify_concept.md`](../../athlify_concept.md); technical decisions are in [`../../concept/`](../../concept/).
+This document describes the technical context for changes to the repository. The functional big picture is in [`../../concept/CONCEPT.md`](../../concept/CONCEPT.md); technical decisions are in [`../../concept/`](../../concept/).
 
 ## Current repository state
 

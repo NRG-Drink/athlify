@@ -4,7 +4,7 @@
 
 Athlify is a self-hosted web application for cyclists. It records personal cycling activities, imports data from Strava and makes training, body and equipment data easy to analyze.
 
-The functional reference document is [`../../athlify_concept.md`](../../athlify_concept.md). This PRD summarizes the implementation-relevant scope for Copilot; it does not replace the concept.
+The functional reference document is [`../../concept/CONCEPT.md`](../../concept/CONCEPT.md). This PRD summarizes the implementation-relevant scope for Copilot; it does not replace the concept.
 
 ## Target audience and problem
 

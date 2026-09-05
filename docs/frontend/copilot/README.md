@@ -8,7 +8,7 @@ When statements conflict, use this order:
 
 1. The user's concrete task.
 2. `../../../AGENTS.md` and `.agents/` for working rules.
-3. [`../../athlify_concept.md`](../../athlify_concept.md) for the functional scope.
+3. [`../../concept/CONCEPT.md`](../../concept/CONCEPT.md) for the functional scope.
 4. [`../../concept/`](../../concept/) for technical decisions.
 5. The existing frontend code for the actually implemented state.
 6. These files as summarized frontend context.

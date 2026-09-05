@@ -16,7 +16,7 @@ Do not use this template for frontend or shared technical decisions:
 - Frontend decisions belong in
   `docs/frontend/copilot/adr/`.
 - Shared decisions belong in `docs/concept/`.
-- Functional requirements belong in `docs/athlify_concept.md`.
+- Functional requirements belong in `../../../concept/CONCEPT.md`.
 
 ```markdown
 # ADR-NNN: [Decision title]

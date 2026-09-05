@@ -2,7 +2,7 @@
 
 ## Scope
 
-This document describes the technical context for frontend changes. The functional big picture is in [`../../athlify_concept.md`](../../athlify_concept.md); shared technical decisions are in [`../../concept/`](../../concept/).
+This document describes the technical context for frontend changes. The functional big picture is in [`../../concept/CONCEPT.md`](../../concept/CONCEPT.md); shared technical decisions are in [`../../concept/`](../../concept/).
 
 ## Current frontend state
 
