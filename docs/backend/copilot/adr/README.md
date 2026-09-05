@@ -3,11 +3,11 @@
 Architecture Decision Records (ADRs) document significant, difficult-to-reverse
 decisions concerning the Athlify backend. This directory is scoped to the
 backend; frontend decisions belong in
-[`../../../frontend/copilot/adr/`](../../../frontend/copilot/adr/).
+[`../../../frontend/copilot/adr/README.md`](../../../frontend/copilot/adr/README.md).
 
 The functional source of truth is
 [`../../../concept/CONCEPT.md`](../../../concept/CONCEPT.md). Shared technical
-decisions belong in [`../../../concept/`](../../../concept/) and must be
+decisions belong in the concept documents and must be
 considered before creating a backend-specific ADR.
 
 ## Index
@@ -78,6 +78,6 @@ Recommended structure:
 - [`../SAD.md`](../SAD.md) — backend responsibilities and current status
 - [`../PRD.md`](../PRD.md) — backend-relevant product scope
 - [`../../../GLOSSARY.md`](../../../GLOSSARY.md) — shared project terminology
-- [`../../../concept/`](../../../concept/) — shared technical decisions
-- [`../../../frontend/copilot/adr/`](../../../frontend/copilot/adr/) —
+- [`../../../concept/CONCEPT.md`](../../../concept/CONCEPT.md) — shared technical decisions
+- [`../../../frontend/copilot/adr/README.md`](../../../frontend/copilot/adr/README.md) —
   frontend-specific decisions

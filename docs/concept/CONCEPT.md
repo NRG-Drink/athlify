@@ -41,7 +41,7 @@ The application focuses on functionality for individual users. After a simple lo
 This document describes the functional big picture and is the functional
 source of truth for Athlify. Detailed functional specifications and technical
 implementation details are maintained in the other documents under
-[`docs/concept/`](./).
+`docs/concept/`.
 
 ---
 

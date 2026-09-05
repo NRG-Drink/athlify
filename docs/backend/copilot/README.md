@@ -9,7 +9,7 @@ When statements conflict, use this order:
 1. The user's concrete task.
 2. `../../../AGENTS.md` and `.agents/` for working rules.
 3. [`../../concept/CONCEPT.md`](../../concept/CONCEPT.md) for the functional scope.
-4. [`../../concept/`](../../concept/) for technical decisions.
+4. The concept documents for technical decisions.
 5. The existing backend code for the actually implemented state.
 6. These files as summarized backend context.
 

@@ -2,7 +2,7 @@
 
 ## Scope
 
-This document describes the technical context for frontend changes. The functional big picture is in [`../../concept/CONCEPT.md`](../../concept/CONCEPT.md); shared technical decisions are in [`../../concept/`](../../concept/).
+This document describes the technical context for frontend changes. The functional big picture is in [`../../concept/CONCEPT.md`](../../concept/CONCEPT.md); shared technical decisions are listed in the concept documents.
 
 ## Current frontend state
 
