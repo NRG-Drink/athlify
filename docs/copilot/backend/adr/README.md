@@ -3,7 +3,7 @@
 Architecture Decision Records (ADRs) document significant, difficult-to-reverse
 decisions concerning the Athlify backend. This directory is scoped to the
 backend; frontend decisions belong in
-[`../../../frontend/copilot/adr/README.md`](../../../frontend/copilot/adr/README.md).
+[`../../frontend/README.md`](../../frontend/README.md).
 
 The functional source of truth is
 [`../../../concept/CONCEPT.md`](../../../concept/CONCEPT.md). Shared technical
@@ -79,5 +79,5 @@ Recommended structure:
 - [`../PRD.md`](../PRD.md) — backend-relevant product scope
 - [`../../../GLOSSARY.md`](../../../GLOSSARY.md) — shared project terminology
 - [`../../../concept/CONCEPT.md`](../../../concept/CONCEPT.md) — shared technical decisions
-- [`../../../frontend/copilot/adr/README.md`](../../../frontend/copilot/adr/README.md) —
+- [`../../frontend/adr/README.md`](../../frontend/adr/README.md) —
   frontend-specific decisions

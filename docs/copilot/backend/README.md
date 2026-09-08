@@ -1,6 +1,11 @@
 # Athlify Backend – Copilot documentation
 
-These files provide GitHub Copilot with the project context required for safe and consistent changes. They are not an additional domain specification, but a compact working index.
+These files provide GitHub Copilot with the project context required for safe
+and consistent changes. They are not an additional domain specification, but a
+compact working index.
+
+Start with the repository-wide [AI documentation index](../README.md)
+for source authority, loading order and update triggers.
 
 ## Source hierarchy
 
@@ -23,6 +28,7 @@ If a requirement is not supported by these sources, do not invent a function. Do
 | [`SAD.md`](SAD.md) | Current technical state, target architecture and boundaries for code changes |
 | [`../../GLOSSARY.md`](../../GLOSSARY.md) | Shared binding terminology; update it in the same change when adding terminology |
 | [`LEARNINGS.md`](LEARNINGS.md) | Verified findings and recurring pitfalls; actively review it at the end of every task and maintain it when new durable learnings arise |
+| [`../adr/README.md`](../adr/README.md) | Shared cross-cutting architecture decisions |
 
 ## Rules for Copilot
 

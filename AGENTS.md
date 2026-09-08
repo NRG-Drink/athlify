@@ -24,8 +24,8 @@ README.md (Table of Contents plus the relevant section) so it isn't
 orphaned. See docs/CONTRIBUTING.md and docs/CONFIGURATION.md for the
 current examples.
 
-For frontend work, read `docs/frontend/copilot/README.md`, and for backend
-work read `docs/backend/copilot/README.md`. When a frontend or backend
+For frontend work, read `docs/copilot/frontend/README.md`, and for backend
+work read `docs/copilot/backend/README.md`. When a frontend or backend
 change introduces, renames or changes the meaning of a user-facing term,
 domain concept, UI state, filter, route, API, data-model, integration or
 security term, update `docs/GLOSSARY.md` in the same change. Do not change
@@ -40,8 +40,8 @@ identifiers into German.
 
 At the end of every task, actively check whether a durable, verified
 repository learning was discovered. If so, update the matching
-`docs/frontend/copilot/LEARNINGS.md` or
-`docs/backend/copilot/LEARNINGS.md` in the same change without waiting for
+`docs/copilot/frontend/LEARNINGS.md` or
+`docs/copilot/backend/LEARNINGS.md` in the same change without waiting for
 the user to request it. Frontend learnings belong in the frontend file,
 backend learnings in the backend file, and cross-cutting learnings may be
 recorded in both when each context needs the information. Record the
@@ -60,8 +60,8 @@ in the same change. At minimum, check:
 - `docs/concept/CONCEPT.md` for the functional source of truth;
 - `docs/concept/` for shared architecture, data model, API, security,
   activity-management, technology and testing details;
-- `docs/frontend/copilot/` for frontend PRD, SAD and learnings;
-- `docs/backend/copilot/` for backend PRD, SAD and learnings;
+- `docs/copilot/frontend/` for frontend PRD, SAD and learnings;
+- `docs/copilot/backend/` for backend PRD, SAD and learnings;
 - `docs/GLOSSARY.md` for changed terminology;
 - the relevant ADR index and ADR records for architectural decisions;
 - links, indexes, user stories, acceptance criteria and open questions that

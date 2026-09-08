@@ -3,7 +3,7 @@
 Copy this file when creating a new frontend ADR. Do not edit this template in
 place.
 
-**File name**: `docs/frontend/copilot/adr/ADR-NNN-short-slug.md`
+**File name**: `docs/copilot/frontend/adr/ADR-NNN-short-slug.md`
 
 Use a zero-padded number (`001`, `002`, …) and a lowercase kebab-case slug.
 Find the highest existing frontend ADR number and increment it. Never reuse a
@@ -14,7 +14,7 @@ patterns and API-consumption strategies.
 Do not use this template for backend or shared technical decisions:
 
 - Backend decisions belong in
-  `docs/backend/copilot/adr/`.
+  `docs/copilot/backend/adr/`.
 - Shared decisions belong in `docs/concept/`.
 - Functional requirements belong in `../../../concept/CONCEPT.md`.
 

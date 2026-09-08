@@ -76,4 +76,4 @@ Authentication is required for personal areas. Authorization is not only a UI co
 - [`../../concept/activity-management.md`](../../concept/activity-management.md)
 - [`../../concept/security.md`](../../concept/security.md)
 - [`../../concept/testing-deployment.md`](../../concept/testing-deployment.md)
-- [`../../frontend/copilot/SAD.md`](../../frontend/copilot/SAD.md)
+- [`../frontend/SAD.md`](../frontend/SAD.md)

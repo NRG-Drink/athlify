@@ -58,4 +58,4 @@ Shared components for navigation, filters, forms, tables, charts, dialogs and fe
 - [`../../concept/activity-management.md`](../../concept/activity-management.md)
 - [`../../concept/security.md`](../../concept/security.md)
 - [`../../concept/testing-deployment.md`](../../concept/testing-deployment.md)
-- [`../../backend/copilot/SAD.md`](../../backend/copilot/SAD.md)
+- [`../backend/SAD.md`](../backend/SAD.md)
