@@ -1,0 +1,18 @@
+# Athlify Frontend – Copilot Learnings
+
+This file records durable, evidence-backed frontend knowledge. Planned
+behavior belongs in the concept and PRD; implemented behavior is confirmed
+against source code and tests. Each learning is one dated line following the
+[shared template](../../../.agents/skills/project-docs/references/learnings-template.md).
+
+## Learnings
+
+- 2026-09-08 - [frontend] [durable-rule] There is no independent frontend source code in the repository; `src/GettingStarted` is backend prototype code. Why: New UI structures must not be described as existing conventions or validated against backend prototype files. Evidence: [`SAD.md`](SAD.md), current repository source tree.
+- 2026-09-08 - [cross-cutting] [durable-rule] The frontend owns presentation and interaction but must consume backend-owned data shapes, calculations, authorization and synchronization behavior. Why: Duplicating domain rules in components creates divergent values and unsafe assumptions about personal data. Evidence: [`SAD.md`](SAD.md), [`../backend/SAD.md`](../backend/SAD.md).
+- 2026-09-08 - [frontend] [durable-rule] Every data-dependent view distinguishes loading, empty, error and populated states. Why: Empty or failed requests must not look like successful zero-valued data. Evidence: [`SAD.md`](SAD.md), [`PRD.md`](PRD.md).
+- 2026-09-08 - [frontend] [durable-rule] The UI supports German and English, while documentation, source code, routes, identifiers and technical terms remain in English. Why: Translation resources must handle visible text without making domain contracts or code identifiers ambiguous. Evidence: [`README.md`](README.md), [`../../GLOSSARY.md`](../../GLOSSARY.md).
+- 2026-09-08 - [frontend] [verified] The current source tree contains `src/GettingStarted` with GraphQL/Hot Chocolate and no frontend package or source tree. Why: Frontend planning must begin with an explicit framework and folder decision rather than inferred conventions. Evidence: `find src -maxdepth 4 -type f`, [`../backend/SAD.md`](../backend/SAD.md).
+- 2026-09-08 - [cross-cutting] [durable-rule] User-facing product documentation remains directly under `docs/`, while all AI implementation context is organized below `docs/copilot/`. Why: Contributors can find product scope without navigating agent-specific files, while AI work still has a single implementation entry point. Evidence: [`../../README.md`](../../README.md), [`../README.md`](../README.md).
+- 2026-09-08 - [frontend] [open] Which frontend framework, bundler, folder structure and state strategy will be selected? Why: This choice affects routing, API adapters, testing and component boundaries. Evidence: [`SAD.md`](SAD.md). Closure: Record the reviewed choice in the shared technology document and a frontend ADR if it is difficult to reverse.
+- 2026-09-09 - [frontend] [durable-rule] The initial frontend scaffold belongs under `src/frontend` and contains only a React/TypeScript/Vite app shell; it must not introduce API, routing, persistence or domain behavior. Why: This creates a reversible frontend seam without prematurely fixing backend contracts or product flows. Evidence: `.agents/planning/feature-concept/02-eng-review.md`, [`../../concept/technology-stack.md`](../../concept/technology-stack.md).
+- 2026-09-08 - [cross-cutting] [open] How are missing-data TSS, Indoor/Outdoor, tags and merge membership represented? Why: The frontend cannot safely design inputs or filters until the backend contract is explicit. Evidence: [`PRD.md`](PRD.md), [`../../concept/activity-management.md`](../../concept/activity-management.md). Closure: Resolve in the shared concept and backend contract first.
