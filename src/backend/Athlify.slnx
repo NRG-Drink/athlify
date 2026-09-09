@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Athlify.Api/Athlify.Api.csproj" />
+  <Project Path="Athlify.GettingStarted/GettingStarted.csproj" />
+</Solution>
