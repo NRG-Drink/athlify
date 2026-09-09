@@ -26,13 +26,12 @@ validation, or requirements already defined by the concept.
   records.
 - Keep credentials, tokens and personal activity data out of ADRs.
 
-## Naming and template
+## Naming
 
 Use `ADR-NNN-short-slug.md` with sequential zero-padded numbers. Each record
 should contain context, options considered, decision, consequences and
-implementation notes. The first shared decision should add the repository's
-standard template when it is actually needed; this index intentionally does
-not invent a placeholder decision.
+implementation notes. Use the structure documented in the ADR skill reference
+when a new decision is needed.
 
 ## Related context
 

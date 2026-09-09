@@ -27,7 +27,7 @@ If a requirement is not supported by these sources, do not invent a function. Do
 | [`PRD.md`](PRD.md) | Product scope, priorities, acceptance criteria and explicit non-goals |
 | [`SAD.md`](SAD.md) | Frontend architecture, UI states and boundaries for code changes |
 | [`../../GLOSSARY.md`](../../GLOSSARY.md) | Shared binding terminology; update it in the same change when adding terminology |
-| [`LEARNINGS.md`](LEARNINGS.md) | Verified findings and recurring pitfalls; actively review it at the end of every task and maintain it when new durable learnings arise |
+| [`LEARNINGS.md`](LEARNINGS.md) | Verified findings and recurring pitfalls, recorded as dated one-line entries; actively review it at the end of every task and maintain it when new durable learnings arise |
 | [`../adr/README.md`](../adr/README.md) | Shared cross-cutting architecture decisions |
 
 ## Rules for Copilot
@@ -45,6 +45,7 @@ If a requirement is not supported by these sources, do not invent a function. Do
 - When changing a domain function, check the affected user stories and technical detail documents for consistency.
 - Check documentation changes with `git diff --check`; for code changes, use the tests and build commands already present in the repository.
 - At the end of every task, check whether a new, verified and durable frontend learning has emerged. If so, update `LEARNINGS.md` in the same change; otherwise leave it unchanged.
+- Record each learning as one dated line using the shared [`learnings-template.md`](../../../.agents/skills/project-docs/references/learnings-template.md) format.
 - For conceptual changes, inspect the entire `docs/` tree and keep affected shared concept documents, user stories, glossary, frontend/backend context and links synchronized.
 - For a difficult-to-reverse frontend decision, check the ADR index and create an ADR, or create a new ADR superseding an existing Accepted ADR, without waiting for a separate request.
 

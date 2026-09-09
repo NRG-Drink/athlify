@@ -410,6 +410,4 @@ FodyWeavers.xsd
 .obsidian
 
 # AI stuff
-.agents
-.claude
-skills-lock.json
+.agents/planning

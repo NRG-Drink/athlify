@@ -1,55 +1,102 @@
-# Athlify – Glossary
+# Athlify — Glossary
 
-This shared glossary is the binding source for domain, user-facing and technical terms used by Athlify. English identifiers in code may differ, but they must retain the same meaning.
+> Definitions of the domain, technical and product terms used across Athlify
+> documentation. Link to this glossary rather than redefining a term elsewhere.
+>
+> Tag legend: **(open)** meaning still requires a product or technical
+> decision.
 
-## Language rule
+## A — C
 
-The application provides a German and English user interface. Project documentation under `docs/` is English-only. Source code, comments, identifiers, API names, database names and technical terms are written in English. Domain terms may be documented in this glossary with their user-facing meaning and English code spelling.
+**Activity** — A single cycling session, entered manually or imported from
+Strava. See [`activity-management.md`](concept/activity-management.md).
 
-## Maintenance
+**API contract** — The agreed inputs, outputs, errors and permission rules
+  exchanged between frontend and backend. See [`api-design.md`](concept/api-design.md).
 
-The root `AGENTS.md` requires Copilot to update this glossary in the same change whenever a new or renamed term is introduced or a meaning changes. This applies especially to user-facing terms, domain concepts, UI states, filters, routes, API, data-model, integration and security terms. Implementation-only changes without new terminology do not change the glossary. Unresolved terms are documented as open decisions and are not replaced with ad hoc synonyms.
+**ATL / Fatigue** — Acute Training Load, representing short-term training load.
+  See [`CONCEPT.md`](concept/CONCEPT.md).
 
-| Term | Meaning |
-|---|---|
-| Activity / activity | A single cycling session, entered manually or imported from Strava. |
-| Garage | Personal area for bicycles and gadgets. |
-| Bicycle / Vehicle | The bicycle used for cycling; code may use `Vehicle`. |
-| Gadget | Additional equipment such as a bike computer, heart-rate monitor or sensor. |
-| Event | A personal time-based event, e.g. accident, repair, injury, break or goal. |
-| Body-Stats | Personal body measurements recorded at multiple points in time. |
-| Dashboard | Central analysis view with metrics, charts, filters and timeline information. |
-| Track Metrics | Distance, time, elevation gain, TSS and speed. |
-| Fitness Metrics | Fitness/CTL, Fatigue/ATL and Form/TSB. |
-| Body Metrics | Weight, body-fat, muscle, water and bone percentage. |
-| TSS | Training Stress Score; a load value for an activity. |
-| CTL / Fitness | Chronic Training Load; long-term training load. |
-| ATL / Fatigue | Acute Training Load; short-term training load. |
-| TSB / Form | Training Stress Balance; relationship between Fitness and Fatigue. |
-| Strava synchronization | Import and update of the user's cycling data from Strava. |
-| Source | Origin of an Activity, especially `Strava` or `manual`. |
-| Soft delete | Technical deletion by marking; the record remains for synchronization and traceability rules. |
-| Merge | Grouping multiple Activities into one shared representation without removing the originals. |
-| Tag | A freely or administratively assigned label for an Activity; the exact variant is still open. |
-| Owner / User context | The user who owns a personal record and whose access must be checked. |
-| UI state | Loading, empty, error or populated state of a view. |
-| Filter | A selection that determines which data is displayed in a view. |
-| Form | UI for entering or editing data. |
-| Calendar view | Activity display by calendar week with a weekly summary. |
-| Toast / feedback | Short-lived visible information about an action's success or failure. |
-| API contract | Agreed inputs, outputs, errors and permission rules between backend and frontend. |
-| Resolver | Backend operation that executes a GraphQL query or mutation. |
-| Idempotency | Repeated execution of the same synchronization operation does not create an additional domain record. |
-| Open-source student project | Athlify is developed by a two-person team in an educational context; the scope intentionally remains limited. |
+**Body Metrics** — Personal measurements such as weight, body fat, muscle,
+  water and bone percentage. See [`data-model.md`](concept/data-model.md).
 
-## Spelling
+**Body-Stats** — Personal body measurements recorded at multiple points in time.
+  See [`CONCEPT.md`](concept/CONCEPT.md).
 
-- In English prose: **Activity**, **bicycle**, **Gadget**, **body data**.
-- In domain and technical field names: `Activity`, `Vehicle`, `BodyStat`,
-  `createdAt`, `updatedAt`.
-- `Indoor/Outdoor` denotes the activity type, not a separate sport.
-- Strava is an external data source; Athlify is the local target system.
-- UI text is maintained in German and English through translation resources;
-  technical field names must not appear unchecked in the interface.
-- Field names and enum values in the API contract remain stable or are changed
-  through a documented migration.
+**Calendar view** — An activity presentation organized by calendar week with a
+  weekly summary.
+
+**CTL / Fitness** — Chronic Training Load, representing long-term training load.
+  See [`CONCEPT.md`](concept/CONCEPT.md).
+
+## D — F
+
+**Dashboard** — The central analysis view containing metrics, charts, filters and
+  timeline information. See [`CONCEPT.md`](concept/CONCEPT.md).
+
+**Event** — A personal time-based record such as an accident, repair, injury,
+  break or goal. See [`CONCEPT.md`](concept/CONCEPT.md).
+
+**Filter** — A selection that determines which data is displayed in a view.
+
+**Fitness Metrics** — Training metrics such as Fitness/CTL, Fatigue/ATL and
+  Form/TSB. See [`CONCEPT.md`](concept/CONCEPT.md).
+
+**Form** — A user interface for entering or editing data.
+
+## G — L
+
+**Garage** — The personal area for managing bicycles and gadgets. See
+[`CONCEPT.md`](concept/CONCEPT.md).
+
+**Gadget** — Additional equipment such as a bike computer, heart-rate monitor
+  or sensor. See [`data-model.md`](concept/data-model.md).
+
+**Idempotency** — Repeated execution of the same synchronization operation does
+  not create an additional domain record. See [`api-design.md`](concept/api-design.md).
+
+**Indoor/Outdoor** **(open)** — The activity type indicating whether a cycling
+  session took place indoors or outdoors; the authoritative determination rule
+  is still open. See [`activity-management.md`](concept/activity-management.md).
+
+## M — R
+
+**Merge** — Grouping multiple activities into one shared representation without
+  removing the original activities. See [`activity-management.md`](concept/activity-management.md).
+
+**Owner / user context** — The user who owns a personal record and whose access
+  must be checked. See [`security.md`](concept/security.md).
+
+**Resolver** — A backend operation that executes a GraphQL query or mutation.
+  See [`api-design.md`](concept/api-design.md).
+
+## S — Z
+
+**Soft delete** — Deletion by marking a record so it remains available for
+  synchronization and traceability rules. See
+  [`activity-management.md`](concept/activity-management.md).
+
+**Source** — The origin of an activity, especially Strava or manual entry. See
+  [`activity-management.md`](concept/activity-management.md).
+
+**Strava synchronization** — Importing and updating a user's cycling data from
+  Strava while preserving ownership, external identifiers and deletion rules.
+  See [`activity-management.md`](concept/activity-management.md).
+
+**Tag** **(open)** — A freely or administratively assigned label for an
+  activity; the exact variant is still open. See
+  [`activity-management.md`](concept/activity-management.md).
+
+**Toast / feedback** — Short-lived visible information about an action's
+  success or failure.
+
+**Track Metrics** — Distance, time, elevation gain, TSS and speed. See
+  [`CONCEPT.md`](concept/CONCEPT.md).
+
+**TSB / Form** — Training Stress Balance, describing the relationship between
+  Fitness and Fatigue. See [`CONCEPT.md`](concept/CONCEPT.md).
+
+**TSS** — Training Stress Score, a load value for an activity. See
+  [`activity-management.md`](concept/activity-management.md).
+
+**UI state** — The loading, empty, error or populated state of a view.

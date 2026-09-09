@@ -37,13 +37,11 @@ functional concept.
 
 ## Process
 
-1. Copy the repository ADR template when one exists; otherwise use the
-   structure below.
-2. Use the next sequential number: `ADR-NNN-short-slug.md`.
-3. Start with status `Proposed`.
-4. Document context, considered options, decision and consequences.
-5. Add the record to the index above.
-6. Change the status to `Accepted` only after review by the project team.
+1. Use the next sequential number: `ADR-NNN-short-slug.md`.
+2. Start with status `Proposed`.
+3. Document context, considered options, decision and consequences.
+4. Add the record to the index above.
+5. Change the status to `Accepted` only after review by the project team.
 
 Recommended structure:
 

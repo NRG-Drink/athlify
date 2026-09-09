@@ -1,16 +1,20 @@
 # Athlify Backend – Product Requirements Document
 
+**Project**: Athlify
+**Last Updated**: 2026-09-09
+**Status**: Active
+
 ## Purpose
 
 Athlify is a self-hosted web application for cyclists. It records personal cycling activities, imports data from Strava and makes training, body and equipment data easy to analyze.
 
 The functional reference document is [`../../concept/CONCEPT.md`](../../concept/CONCEPT.md). This PRD summarizes the implementation-relevant scope for Copilot; it does not replace the concept.
 
-## Target audience and problem
+## Target Users and Problem
 
 The target audience is people who cycle recreationally or as a hobby. Strava provides activity records, but does not present the desired individual combination of activities, bicycles, gadgets, body data and Events in one view.
 
-## Product goals
+## Goals
 
 - capture and manage personal cycling data centrally;
 - synchronize Strava activities without creating duplicates;
@@ -19,7 +23,7 @@ The target audience is people who cycle recreationally or as a hobby. Strava pro
 - document bicycles, gadgets, Body-Stats and Events in a personal context;
 - deliver a limited scope that is realistic for a two-person student project.
 
-## Functional scope
+## Features
 
 The backend provides the reliable data and domain-logic contract for the frontend. It is responsible for ownership checks, calculations, persistence, synchronization and consistent error responses.
 
@@ -51,7 +55,7 @@ The backend provides the reliable data and domain-logic contract for the fronten
 - optional user-account administration;
 - additional convenience functions if they do not endanger the core scope.
 
-## Deliberate non-goals
+## Non-Goals
 
 - no live activity recording;
 - no support for other sports in the initial scope;
@@ -60,7 +64,7 @@ The backend provides the reliable data and domain-logic contract for the fronten
 - no demo mode without a user account;
 - no subscription or payment function.
 
-## Domain acceptance criteria
+## Success Metrics and Acceptance Criteria
 
 - A user sees and edits only their own personal data.
 - A synchronized record is not created twice during repeated synchronization.
@@ -82,3 +86,11 @@ When requirements compete, first preserve data ownership and safe activity manag
 - Are tags entered freely or selected from a managed list?
 - How is Indoor/Outdoor determined unambiguously from Strava?
 - May an Activity belong to multiple merges?
+
+## Constraints
+
+- The current implementation is a small GraphQL/Hot Chocolate prototype, not
+  the complete Athlify product.
+- The project remains limited to a realistic scope for a two-person student
+  project.
+- Personal data must remain isolated to the logged-in user.
