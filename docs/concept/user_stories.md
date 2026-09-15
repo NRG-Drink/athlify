@@ -2,11 +2,14 @@
 
 Derived from the functional software concept (`CONCEPT.md`). Prioritized using MoSCoW (Must/Should/Could Have).
 
+These stories describe planned product behavior. The repository currently has
+no implemented frontend or backend application.
+
 | ID | Module | User story | Acceptance criteria | Priority |
 |---|---|---|---|:---:|
 | US-01 | Auth | As a user, I want to register and log in so that my data is assigned to me. | Registration and login are possible; after successful login the personal dashboard opens; incorrect input is reported clearly. | Must Have |
-| US-02 | Activities | As a user, I want to synchronize my Strava activities so that my training data is imported automatically. | New and updated cycling activities are imported; duplicate activities are avoided; synchronization errors are displayed. | Must Have |
-| US-03 | Activities | As a user, I want to create, edit and delete activities manually so that I can manage data without Strava. | Activities can be displayed in a table, detail form and calendar view with weekly summary; all non-calculated fields are editable; system and calculated data are marked with `*`; deletion is a soft delete; activities can be merged. | Must Have |
+| US-02 | Activities | As a user, I want to synchronize my Strava activities so that my training data is imported automatically. | New and updated cycling activities are imported; internal and external IDs remain distinct; duplicate activities are avoided; soft-deleted activities are not reactivated; synchronization errors are displayed. | Must Have |
+| US-03 | Activities | As a user, I want to create, edit and delete activities manually so that I can manage data without Strava. | Activities can be displayed in a table, detail form and calendar view with weekly summary; all non-calculated fields are editable; system and calculated data are marked with `*`; deletion is a soft delete; activities can be merged subject to the unresolved merge-membership rule. | Must Have |
 | US-04 | Activities | As a user, I want to start Strava synchronization directly on the Activities page so that my activity list stays current. | A visible Strava sync button starts synchronization; the last synchronization time and error status are displayed; soft-deleted activities are not reactivated. | Must Have |
 | US-05 | Dashboard | As a user, I want to see a visually appealing dashboard with Track, Fitness and Body Metrics so that I can analyze my cycling data, training load and physical development. | Track Metrics, Fitness Metrics and Body Metrics are displayed with the defined metrics; trends over time and relevant events are visible; data can be filtered by period, tags, Indoor/Outdoor and bicycle; a clear empty state appears when data is missing. | Must Have |
 | US-06 | Garage | As a user, I want to manage bicycles in my Garage so that I can track their use. | Bicycles can be created, viewed, edited, synchronized and deleted; activities can be assigned to a bicycle. | Must Have |

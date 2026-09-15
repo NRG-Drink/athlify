@@ -2,14 +2,14 @@
 
 **Web-based application for visualizing and analyzing cycling activities**
 
-| | |
-|---|---|
-| Project | Athlify |
-| Context | CAS Frontend Engineering, OST – Eastern Switzerland University of Applied Sciences, Rapperswil |
-| Document type | Functional software concept / big picture |
-| Version | 1.7 |
-| Date | 5 September 2026 |
-| Authors | Beat Zimmermann & Marco Ebneter |
+|               |                                                                                                |
+| ------------- | ---------------------------------------------------------------------------------------------- |
+| Project       | Athlify                                                                                        |
+| Context       | CAS Frontend Engineering, OST – Eastern Switzerland University of Applied Sciences, Rapperswil |
+| Document type | Functional software concept / big picture                                                      |
+| Version       | 1.8                                                                                            |
+| Date          | 15 September 2026                                                                              |
+| Authors       | Beat Zimmermann & Marco Ebneter                                                                |
 
 ---
 
@@ -32,16 +32,28 @@
 
 ## 1. Management summary
 
-Athlify is an open-source student project developed by a two-person team. The application is intended for cyclists who want to record their activities clearly, analyze them visually and manage personal cycling data.
+Athlify is a personal cycling analysis and management application for
+recreational and hobby cyclists. It brings together activities imported from
+Strava and entered manually, then presents them alongside training metrics,
+bicycle and gadget information, Body-Stats and significant Events.
 
-Activities can be imported from Strava or entered manually. The Dashboard displays key metrics and trends in clear charts. Athlify also provides separate management for Activities, a Garage for bicycles and gadgets, Body-Stats and Events such as accidents or repairs. Events are displayed on the Dashboard in their chronological context.
+The central value is a coherent, user-owned view of cycling progress. A
+Dashboard makes distance, time, elevation, training load, body development and
+activity trends understandable through metrics, charts, filters and a
+chronological timeline. Dedicated views support safe activity management,
+Strava synchronization, Garage administration, Body-Stats and Events while
+preserving traceability and personal-data boundaries.
 
-The application focuses on functionality for individual users. After a simple login, all personal data is assigned to the respective user.
+Athlify is deliberately scoped for a two-person student project. The initial
+product supports individual users and cycling only; it does not record
+activities live and does not include social, group, subscription or payment
+features. Reliability depends on explicit loading, empty and error states,
+server-side ownership enforcement, idempotent synchronization and clear
+handling of incomplete data.
 
-This document describes the functional big picture and is the functional
-source of truth for Athlify. Detailed functional specifications and technical
-implementation details are maintained in the other documents under
-`docs/concept/`.
+This document is the functional source of truth for Athlify. Detailed
+functional and technical specifications are maintained in the linked documents
+under `docs/concept/`.
 
 ---
 
@@ -115,16 +127,21 @@ The Activities page contains a visible **Strava sync button**. The button starts
 
 An activity contains, from a domain perspective:
 
-- Date and activity type.
-- An optionally assigned bicycle and the gadgets used.
-- Time or duration, distance, average speed and elevation gain.
-- TSS (Training Stress Score).
-- Description and freely selectable tags.
-- Minimum, maximum and average heart rate.
-- Mood or personal well-being.
-- Effort.
-- Wind conditions.
-- Data source: Strava or manual.
+- date;
+- activity type (enum);
+- optionally assigned bicycle;
+- assigned gadgets;
+- time or duration;
+- distance;
+- average speed;
+- elevation gain;
+- TSS (Training Stress Score);
+- description;
+- tag;
+- minimum, maximum and average heart rate;
+- mood, describing how the user felt;
+- effort; and
+- wind conditions.
 
 Some values are maintained or calculated automatically by the application and are marked with `*` in the edit form. These values cannot be edited directly.
 
@@ -134,29 +151,124 @@ Multiple activities can be grouped into a merged activity. The original activiti
 
 ### 3.4 Strava synchronization
 
-Users can connect their account to Strava and start synchronization manually. New and updated cycling activities should be imported without creating duplicate entries. Bicycles or Strava Gear can also be imported. The synchronization status and possible errors are displayed clearly.
+Users can connect their Athlify account to Strava, disconnect it again and
+start synchronization manually from the Activities page or Settings. The
+connection status, last synchronization time and any synchronization error
+are visible to the user.
+
+Synchronization imports and updates the user's cycling activities and Strava
+Gear. Only relevant cycling activities are imported; unsupported sports remain
+outside the initial scope. Repeating synchronization must be idempotent:
+existing records are updated rather than duplicated, and internal Athlify IDs
+remain distinct from external Strava IDs.
+
+Locally maintained information, such as activity descriptions, tags, bicycle
+details or gadget assignments, must not be discarded by an import. A deleted
+activity must remain excluded and must not be reactivated by a later
+synchronization. Synchronization failures are reported clearly without
+presenting incomplete data as successfully imported.
 
 ### 3.5 Garage: bicycles and gadgets
 
-The Garage is the personal area for cycling equipment.
+The Garage is the personal area for managing the user's bicycles and gadgets.
+All Garage entries belong to the owning user and can be viewed, created,
+updated and deleted from the relevant Garage view.
 
-**Bicycles** can be imported from Strava or entered manually, viewed, added, edited, synchronized and deleted. Possible fields are name, bicycle type, brand, model, weight, purchase date, ridden kilometers, image and note.
+**Bicycles** can be entered manually or imported and synchronized from Strava.
+A bicycle contains:
 
-**Gadgets** are additional equipment such as bike computers, heart-rate monitors or sensors. Possible fields are name, category, brand, model, purchase date, description and image.
+- brand;
+- model;
+- nickname;
+- purchase date;
+- tag;
+- description;
+- deactivation date;
+- price; and
+- a separate maintenance-cycle record.
+
+Activities can be assigned to a bicycle so that its usage and mileage can be
+analyzed on the Dashboard. Locally maintained bicycle details remain editable
+after a Strava synchronization.
+
+When a bicycle is selected, the user can either open its detailed information
+or filter the Garage to show the gadgets assigned to that bicycle.
+
+**Gadgets** are additional equipment such as bike computers, heart-rate
+monitors or sensors. A gadget contains the same equipment information:
+
+- brand;
+- model;
+- nickname;
+- purchase date;
+- tag;
+- description;
+- deactivation date;
+- price; and
+- a separate maintenance-cycle record.
+
+Gadgets can be assigned to activities and can be managed independently of
+bicycles. The Garage must clearly distinguish manually entered data from data
+imported through Strava and must report synchronization errors without
+discarding local changes.
+
+When a gadget is selected, the user can view its details, all linked bicycles
+and its maintenance intervals. Selecting a maintenance interval filters the
+Garage to the linked bicycle or gadget so that the related equipment is shown
+directly.
 
 ### 3.6 Body-Stats
 
-The Body-Stats page lets users record and manage personal body data over time. Examples include measurement date, weight, body height, other personal values and an optional note. Multiple measurements are retained so that trends remain visible. Body-Stats are private data.
+The Body-Stats page lets users record and manage personal body data over time.
+Each measurement contains:
+
+- measurement date;
+- weight;
+- body height;
+- body-fat percentage;
+- muscle percentage;
+- water percentage;
+- bone mass; and
+- an optional note.
+
+Multiple dated measurements are retained so that body development and trends
+remain visible on the Dashboard. Each Body-Stats entry can be viewed, updated
+and deleted by its owner. Body-Stats are private data and are available only
+within the owning user's personal context. The final list of supported
+measurements may be extended, but any additional values must remain consistent
+with the Dashboard's Body Metrics.
 
 ### 3.7 Events
 
-The Events page lets users record notable events such as accidents, injuries, repairs, longer breaks, personal goals or other relevant incidents.
+The Events page lets users document notable incidents and milestones in their
+cycling history, such as accidents, injuries, repairs, longer breaks, personal
+goals or other relevant events.
 
-An Event contains at least a date, event type, title and description. Events can be created, viewed, edited and deleted. Relevant Events are included in the Dashboard's timeline overview.
+Each Event contains:
+
+- name;
+- description;
+- tag;
+- start date; and
+- end date.
+
+Events can be created, viewed, updated and deleted by their owner. They remain
+associated with the owning user's personal context and are shown in
+chronological order on the Events page. Relevant Events are also included in
+the Dashboard timeline so that users can interpret activity and training
+development in context.
 
 ### 3.8 Settings and language
 
-Users can manage personal details and their preferred language. The central interfaces are available in German and English.
+The Settings page lets users manage their personal account information and
+application preferences. Users can update their personal details, change their
+preferred language and manage their Strava connection, including connecting,
+disconnecting and reviewing synchronization status.
+
+The central interfaces, navigation, feedback messages and domain views are
+available in German and English. Changing the language applies consistently
+across the application and does not alter the user's personal data or
+preferences.
 
 ---
 
@@ -255,6 +367,8 @@ Detailed acceptance criteria are documented in [`user_stories.md`](user_stories.
 | Reliability | Input is not discarded without feedback. Failed actions are explained clearly. |
 | Consistency | The same terms and interaction patterns are used in all areas. |
 | Multilingual support | The central functions are available in German and English. |
+| Explicit states | Data-dependent views distinguish loading, empty, error and populated states. |
+| Ownership enforcement | Personal data access is restricted by the authenticated user context on the server side. |
 
 ---
 
@@ -340,7 +454,7 @@ The wireframes show the domain views of the application. They do not prescribe a
 
 The calendar view displays activities by week and summarizes at least distance, time, elevation gain and TSS per week. Individual activities can be opened directly from the calendar view.
 
-### 8.4 Garage
+### 8.6 Garage
 
 ```text
 ┌────────────────────────────────────────────────────┐
@@ -352,7 +466,7 @@ The calendar view displays activities by week and summarizes at least distance, 
 └────────────────────────────────────────────────────┘
 ```
 
-### 8.5 Body-Stats and Events
+### 8.7 Body-Stats and Events
 
 ```text
 ┌──────────────────────────────┐  ┌──────────────────────────────┐
@@ -417,7 +531,12 @@ functional concept:
 | 3 | Should Events only be displayed on the Dashboard or also linked directly to individual activities? | Affects the domain relationship between Events and activities. |
 | 4 | Should the language already be switchable on the login page? | UX decision for the entry point. |
 | 5 | Which charts are mandatory for academic assessment? | Helps prioritize Dashboard functions. |
+| 6 | How should TSS be calculated or represented when power or heart-rate data is missing? | Affects activity validation, analytics and transparency. |
+| 7 | How is Indoor/Outdoor determined reliably for imported Strava activities? | Affects filters, activity type mapping and synchronization. |
+| 8 | Are tags free-form values or selected from a managed list? | Affects data modeling, input and filtering. |
+| 9 | May an activity participate in multiple merges, or is merge membership exclusive? | Affects the merge relationship and user expectations. |
+| 10 | Which authentication, persistence and deployment choices will replace the planned baseline as implementation begins? | Affects the API contract, security boundaries and operational architecture. |
 
 ---
 
-*End of document – Functional software concept Athlify, version 1.7*
+*End of document – Functional software concept Athlify, version 1.8*

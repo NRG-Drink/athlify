@@ -2,6 +2,9 @@
 
 Technical detail documentation for the functional concept in [`CONCEPT.md`](CONCEPT.md).
 
+These are target security requirements. They are not implemented in the
+current repository, which contains no authentication or API source.
+
 ## Authentication and authorization
 
 - Login with email and password.
@@ -16,4 +19,8 @@ Technical detail documentation for the functional concept in [`CONCEPT.md`](CONC
 - Communication is encrypted.
 - Inputs are validated server-side.
 - Rate limiting protects login and synchronization from abuse.
-- CORS, XSS, CSRF and SQL injection protection are implemented as appropriate to the implementation.
+- CORS, XSS, CSRF and SQL injection protection must be addressed as
+  appropriate to the selected implementation.
+- UI filters are not an authorization boundary; every personal query,
+  mutation and synchronization must enforce the authenticated owner context
+  server-side.
