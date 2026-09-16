@@ -3,7 +3,8 @@
 Technical detail documentation for the functional concept in [`CONCEPT.md`](CONCEPT.md).
 
 This is the planned domain model. No entities or persistence implementation
-currently exist in the repository; the source tree contains only `src/.gitkeep`.
+currently exist in the repository; the frontend scaffold does not implement
+domain data storage.
 
 ## Entities
 

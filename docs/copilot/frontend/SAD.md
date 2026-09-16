@@ -20,7 +20,7 @@ bundler remain open decisions.
 
 | Layer | Technology | Rationale |
 | --- | --- | --- |
-| Frontend | React, TypeScript and Vite (planned baseline) | Documented starting point; no independent frontend source exists yet |
+| Frontend | React, JavaScript/JSX and Vite | Current scaffold; TypeScript remains the planned typed target |
 | Backend | ASP.NET Core with Hot Chocolate GraphQL prototype | Current repository contract and prototype |
 | Database | Backend-owned; final persistence is open | The frontend must not own domain persistence |
 | Auth | Backend-owned authentication and authorization | Personal data ownership must be enforced server-side |
@@ -42,9 +42,15 @@ This document describes the technical context for frontend changes. The function
 
 ## Current frontend state
 
-There is currently no independent frontend source code in the repository. The existing code under `../../../src/GettingStarted/` is backend prototype code. Frontend conventions must therefore not be inferred from it.
+The current frontend scaffold is under `../../../src/frontend/athlify/` and
+uses React, Vite and JavaScript/JSX. It contains template UI only; it does not
+yet implement routing, API integration, persistence or Athlify domain
+behavior. The existing code under `../../../src/GettingStarted/` is backend
+prototype code.
 
-The frontend technology, bundling and concrete folder structure are open technical decisions. When introduced, they must be recorded in `../../concept/technology-stack.md` and this document.
+The frontend technology and bundler are now established by the scaffold.
+TypeScript adoption, routing, state management and backend integration remain
+open decisions and must be recorded when introduced.
 
 ## Responsibility boundary
 
@@ -118,7 +124,7 @@ after the backend confirms the change.
 
 ## Scalability
 
-- Current capacity: No independent frontend implementation exists yet.
+- Current capacity: Template-only React/Vite scaffold; no product behavior.
 - Scaling strategy: Keep views and shared UI modules independently replaceable;
   defer deployment-specific scaling decisions.
 - Known bottlenecks: Backend API and synchronization performance are outside

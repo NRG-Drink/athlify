@@ -25,7 +25,8 @@ When statements conflict, use this order:
 
 The concept describes the intended product. Source code describes the current
 implementation. The current repository contains a small backend prototype and
-no independent frontend source; do not present planned features as complete.
+a React/Vite frontend scaffold under `src/frontend/athlify/`; do not present
+the scaffold as completed product functionality.
 
 ## Documentation map
 
@@ -91,5 +92,6 @@ ownership guidance instead so that the concept remains authoritative.
 
 The backend prototype is under `src/GettingStarted/` and uses ASP.NET Core,
 Hot Chocolate GraphQL and EF Core with an in-memory database. It contains
-getting-started book/author examples, not the complete Athlify product.
-Independent frontend source code is not present yet.
+getting-started book/author examples, not the complete Athlify product. The
+frontend scaffold is under `src/frontend/athlify/` and uses React, Vite and
+JavaScript/JSX; it currently contains template UI only.
