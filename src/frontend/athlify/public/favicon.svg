@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 460" width="350" height="460">
+  <defs>
+    <linearGradient id="athlifyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#00DCDC"/>
+      <stop offset="0.5" stop-color="#0093D0"/>
+      <stop offset="1" stop-color="#0026C2"/>
+    </linearGradient>
+  </defs>
+
+  <!-- A mark with lightning-bolt counter -->
+  <path fill="url(#athlifyGrad)" fill-rule="evenodd" d="
+    M0 362
+    L133 40 Q137 30 148 30
+    L222 30 Q233 30 237 40
+    L336 340
+    L272 340
+    L228 205
+    L50 340 Z
+    M185 95
+    L212 172
+    L251 158
+    L225 184
+    L130 222 Z"/>
+
+  <!-- Wordmark -->
+<!--  <text x="175" y="445" text-anchor="middle"-->
+<!--        font-family="Ubuntu, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif"-->
+<!--        font-size="88" font-weight="400" fill="#000">Athlify</text>-->
+</svg>

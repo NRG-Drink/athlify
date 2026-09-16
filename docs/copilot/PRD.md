@@ -48,7 +48,8 @@ context is a two-person student project.
 
 - The repository currently contains a small backend prototype, not the
   complete product.
-- No independent frontend source exists yet.
+- The frontend scaffold exists under `src/frontend/athlify/`, but product
+  functionality and backend integration are not implemented yet.
 - Personal data must remain isolated to the logged-in user.
 - The user interface is bilingual in German and English; documentation is
   English-only.

@@ -28,9 +28,9 @@ maintaining project context.
 
 ## Implementation context
 
-The repository contains a small backend prototype and no independent
-frontend source yet. The AI documentation explains how to work safely with
-that current state:
+The repository contains a small backend prototype and a React/Vite frontend
+scaffold. The AI documentation explains how to work safely with that current
+state:
 
 - [`copilot/README.md`](copilot/README.md) — central AI documentation index
 - [`copilot/frontend/README.md`](copilot/frontend/README.md) — frontend scope,

@@ -16,9 +16,10 @@ considered before creating a frontend-specific ADR.
 |---|---|---|
 | — | No frontend ADRs recorded yet | — |
 
-The repository currently has no independent frontend source code. Do not
-retroactively invent framework, routing, state-management or component-library
-decisions. Record those choices here when they are actually made.
+The repository now has a React/Vite JavaScript scaffold under
+`src/frontend/athlify/`. Do not infer routing, state-management or
+component-library decisions from the template. Record those choices here when
+they are actually made.
 
 ## When to write an ADR
 

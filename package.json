@@ -1,0 +1,18 @@
+{
+  "name": "athlify",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Athlify — personal cycling data analysis",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "src/frontend/athlify"
+  ],
+  "devDependencies": {
+    "lefthook": "^1.6.0"
+  },
+  "scripts": {
+    "prepare": "lefthook install"
+  }
+}

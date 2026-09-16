@@ -8,15 +8,16 @@ The application provides a German and English user interface. Project documentat
 
 | Layer | Technology | Status | Rationale |
 |---|---|---|---|
-| Frontend | React, TypeScript, Vite | Planned baseline | Component-based UI, type safety and fast development |
+| Frontend | React, JavaScript, Vite | Prototype scaffold | Component-based UI and fast development; TypeScript remains the planned typed target |
 | Backend | ASP.NET Core with C# | Planned target | Strongly typed web API and support for authentication and background tasks |
 | Database | PostgreSQL | Planned target | Relational data model and suitable time-series aggregations |
 | External API | Strava API | Planned integration | Source for activities and bicycles/Gear |
 | Authentication | JWT and OAuth 2.0 | Planned approach | User login and Strava connection |
 
-The repository currently contains no implementation or dependency manifests for
-these technologies. They are target choices and must not be described as
-implemented until source and build configuration exist.
+The repository contains a React/Vite frontend scaffold under
+`src/frontend/athlify/` and a separate backend prototype. The frontend
+scaffold currently uses JavaScript (`.jsx`) rather than the planned TypeScript
+baseline and does not yet implement the product domain or backend integration.
 
 ## Rationale
 

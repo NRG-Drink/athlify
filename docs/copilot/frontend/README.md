@@ -51,4 +51,8 @@ If a requirement is not supported by these sources, do not invent a function. Do
 
 ## Current implementation status
 
-There is currently no independent frontend source code in the repository. `../../../src/GettingStarted` is a .NET/Hot Chocolate backend prototype, not a frontend. New UI structures must not be presented as existing conventions; the choice of a frontend framework must be documented explicitly.
+The frontend scaffold is under `../../../src/frontend/athlify/` and uses
+React, Vite and JavaScript/JSX. It is currently template UI only and does not
+implement Athlify domain behavior or backend integration. The separate
+`../../../src/GettingStarted` directory is a .NET/Hot Chocolate backend
+prototype. Do not present template UI as completed product functionality.
