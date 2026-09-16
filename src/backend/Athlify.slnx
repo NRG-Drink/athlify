@@ -1,4 +1,4 @@
 <Solution>
+  <Project Path="Athlify.Api.Tests/Athlify.Api.Tests.csproj" Id="c0f29fa8-4e39-420f-a95f-94826ecacae0" />
   <Project Path="Athlify.Api/Athlify.Api.csproj" />
-  <Project Path="Athlify.GettingStarted/GettingStarted.csproj" />
 </Solution>
