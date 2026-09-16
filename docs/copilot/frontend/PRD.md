@@ -1,7 +1,7 @@
 # Athlify Frontend – Product Requirements Document
 
 **Project**: Athlify
-**Last Updated**: 2026-09-09
+**Last Updated**: 2026-09-16
 **Status**: Active
 
 ## Purpose
@@ -40,6 +40,8 @@ The frontend provides domain functions through an understandable, responsive use
   - filters for period, tags, Indoor/Outdoor and bicycle;
 - manage bicycles in the Garage;
 - assign personal data unambiguously to the logged-in user.
+- provide an Administrator user-management view while preserving the
+  Administrator's access to their own Dashboard and personal domain views;
 
 ### Should Have
 
@@ -52,7 +54,6 @@ The frontend provides domain functions through an understandable, responsive use
 
 ### Could Have
 
-- optional user-account administration;
 - additional convenience functions if they do not endanger the core scope.
 
 ## Non-Goals

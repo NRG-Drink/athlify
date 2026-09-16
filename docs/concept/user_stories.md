@@ -17,7 +17,7 @@ no implemented frontend or backend application.
 | US-08 | Body-Stats | As a user, I want to record and edit Body-Stats so that I can track personal development. | Multiple dated measurements can be stored, edited and deleted; the data remains private. | Should Have |
 | US-09 | Events | As a user, I want to record events such as accidents or repairs so that they appear in the timeline of my activities. | Events contain date, type, title and description; they appear on the Events page and Dashboard. | Should Have |
 | US-10 | Settings | As a user, I want to switch between German and English so that I can use the application in my preferred language. | Navigation, messages and central domain views are available in both languages. | Should Have |
-| US-11 | Administration | As an administrator, I want to manage users so that the local application can be administered. | User administration is available only to administrators; other users' personal data remains protected. | Could Have |
+| US-11 | Administration | As an administrator, I want to manage users while retaining the complete personal-user experience so that the local application can be administered without losing access to my own Dashboard and data. | An initial administrator account is provisioned; user administration is available only to administrators; administrators can use the same personal Dashboard and domain functions as regular users; other users' personal data remains protected. | Must Have |
 
 ## Out-of-scope requirements
 

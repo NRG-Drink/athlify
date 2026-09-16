@@ -12,7 +12,7 @@ those rules.
 | Area | Functions |
 |---|---|
 | Auth | Registration, login, logout and token renewal |
-| User | Own profile and optional user administration |
+| User | Own profile; Administrator-only user administration |
 | Strava | Connect, disconnect, status and synchronization |
 | Activities | List, view, create, edit, delete and synchronize |
 | Vehicles | List, create, edit, delete and synchronize |

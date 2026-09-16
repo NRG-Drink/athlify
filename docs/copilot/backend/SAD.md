@@ -149,7 +149,10 @@ are reconciled before records are exposed to the frontend.
 
 ## Security model
 
-Authentication is required for personal areas. Authorization is not only a UI concern: every server-side query and mutation must check the user reference. Administration is optional and must not implicitly grant normal users access to personal data.
+Authentication is required for personal areas. Authorization is not only a UI concern: every server-side query and mutation must check the user reference. Administrators have the same personal-area access as regular users and can
+additionally manage user accounts. Administrator privileges must not expose
+other users' personal data outside explicitly authorized user-management
+operations.
 
 ## Technical detail sources
 

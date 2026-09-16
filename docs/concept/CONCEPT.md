@@ -8,7 +8,7 @@
 | Context       | CAS Frontend Engineering, OST – Eastern Switzerland University of Applied Sciences, Rapperswil |
 | Document type | Functional software concept / big picture                                                      |
 | Version       | 1.8                                                                                            |
-| Date          | 15 September 2026                                                                              |
+| Date          | 16 September 2026                                                                              |
 | Authors       | Beat Zimmermann & Marco Ebneter                                                                |
 
 ---
@@ -91,7 +91,10 @@ Athlify is a supplementary analysis and management tool, not a replacement for S
 
 ### 3.1 Login and user account
 
-The login page is the application's entry point. A user can log in with an email address and password. An initial admin user is provided so that user administration can be added later. After a successful login, the Dashboard opens.
+The login page is the application's entry point. A user can log in with an
+email address and password. An initial Administrator account is provisioned
+with permission to manage users. The Administrator is also a full User and
+opens the personal Dashboard like any other user after login.
 
 - Login and logout.
 - Assign all personal data to the logged-in user.
@@ -274,21 +277,21 @@ preferences.
 
 ## 4. Roles and permissions
 
-| Role | Description |
-|---|---|
-| User | Manages their own Activities, bicycles, gadgets, Body-Stats, Events and Dashboard data. |
-| Administrator | Can manage user accounts and the local application. This role is optional and is not a central part of the core domain functions. |
+| Role          | Description                                                                                                                                    |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| User          | Manages their own Activities, bicycles, gadgets, Body-Stats, Events and Dashboard data.                                                        |
+| Administrator | Has all User permissions and can additionally manage user accounts and the local application. An initial Administrator account is provisioned. |
 
-| Function | User | Administrator |
-|---|:---:|:---:|
-| Register and log in | Yes | Yes |
-| Manage own Activities | Yes | Yes |
-| Connect and synchronize Strava | Yes | Yes |
-| Manage own bicycles and gadgets | Yes | Yes |
-| Manage own Body-Stats | Yes | Yes |
-| Manage own Events | Yes | Yes |
-| View own Dashboard | Yes | Yes |
-| Manage all users | No | Optional |
+| Function                        | User | Administrator |
+| ------------------------------- | :--: | :-----------: |
+| Register and log in             | Yes  |      Yes      |
+| Manage own Activities           | Yes  |      Yes      |
+| Connect and synchronize Strava  | Yes  |      Yes      |
+| Manage own bicycles and gadgets | Yes  |      Yes      |
+| Manage own Body-Stats           | Yes  |      Yes      |
+| Manage own Events               | Yes  |      Yes      |
+| View own Dashboard              | Yes  |      Yes      |
+| Manage all users                |  No  |      Yes      |
 
 Users may access only their own personal data. A public demo without a user account is not planned.
 
@@ -347,7 +350,7 @@ The user enters the type, date, title and description of an Event. The Event app
 | 7 | As a user, I want to record and edit Body-Stats so that I can track personal development. | Should Have |
 | 8 | As a user, I want to record Events such as accidents or repairs so that they appear in the timeline of my activities. | Should Have |
 | 9 | As a user, I want to switch between German and English so that I can use the application in my preferred language. | Should Have |
-| 10 | As an administrator, I want to manage users so that the local application can be administered. | Could Have |
+| 10 | As an administrator, I want to manage users while retaining the complete personal-user experience so that the local application can be administered without losing access to my own Dashboard and data. | Must Have |
 
 Detailed acceptance criteria are documented in [`user_stories.md`](user_stories.md).
 

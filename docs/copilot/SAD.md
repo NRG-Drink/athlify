@@ -1,7 +1,7 @@
 # Athlify — Software Architecture Document
 
 **Project**: Athlify  
-**Last Updated**: 2026-09-15  
+**Last Updated**: 2026-09-16
 **Version**: 1.0
 
 ## Overview
@@ -60,8 +60,10 @@ and ownership, and delegates to domain modules and persistence.
 
 ### Domain Modules
 
-The planned modules cover authentication and user assignment, Activities and
-Strava synchronization, Dashboard analysis, Garage, Body-Stats and Events.
+The planned modules cover authentication and user assignment, Administrator
+user management, Activities and Strava synchronization, Dashboard analysis,
+Garage, Body-Stats and Events. Administrators retain the complete personal
+user experience.
 
 ### Persistence and Integration Boundaries
 
@@ -79,6 +81,8 @@ before it is exposed to the frontend.
 ## Security Model
 
 - Authentication is required for personal areas.
+- Administrators have all regular-user permissions in addition to
+  Administrator-only user management.
 - Every server-side query and mutation enforces the owner context.
 - Frontend filters never replace backend authorization.
 - Credentials and tokens do not belong in source code, documentation,

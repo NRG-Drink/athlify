@@ -9,7 +9,9 @@ current repository, which contains no authentication or API source.
 
 - Login with email and password.
 - Short-lived access token and revocable refresh token.
-- Role-based permissions for optional administration.
+- Role-based permissions for user administration. Administrators retain all
+  permissions available to regular users and gain additional user-management
+  permissions.
 - Check user ownership for every personal resource.
 
 ## Protection of personal data

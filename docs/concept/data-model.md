@@ -20,7 +20,9 @@ currently exist in the repository; the source tree contains only `src/.gitkeep`.
 - **BodyStat**: measurement date, weight, body height and optional note.
 - **Event**: date, type, title and description.
 - **OAuthConnection**: connection of a user with Strava and synchronization status.
-- **Role**: user role for optional administration.
+- **Role**: user role distinguishing regular users from Administrators. An
+  Administrator retains all regular-user permissions and gains user-management
+  permissions.
 
 ## Relationships
 

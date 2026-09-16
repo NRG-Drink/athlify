@@ -1,7 +1,7 @@
 # Athlify — Product Requirements Document
 
 **Project**: Athlify  
-**Last Updated**: 2026-09-15  
+**Last Updated**: 2026-09-16
 **Status**: Active
 
 ## Vision
@@ -26,6 +26,8 @@ context is a two-person student project.
 - Support manual activity management and personal data ownership.
 - Provide understandable Dashboard metrics, trends, filters and timelines.
 - Manage bicycles, gadgets, Body-Stats and Events in the user's context.
+- Provision an initial Administrator who can manage user accounts and still
+  use the complete personal-user experience, including the Dashboard.
 - Deliver a feasible scope for the current student project.
 
 ## Non-Goals

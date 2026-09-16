@@ -19,7 +19,8 @@ flowchart LR
 
 ## Domain modules
 
-- Authentication and user administration
+- Authentication and user administration, including the provisioned
+  Administrator role
 - Activities
 - Strava synchronization
 - Garage with bicycles and gadgets
