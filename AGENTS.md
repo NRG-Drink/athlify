@@ -24,6 +24,8 @@ README.md (Table of Contents plus the relevant section) so it isn't
 orphaned. See docs/CONTRIBUTING.md and docs/CONFIGURATION.md for the
 current examples.
 
+The configured project documentation root is `docs/copilot/`; documentation
+skills must resolve and write through `$DOCS` rather than assuming `docs/`.
 For frontend work, read `docs/copilot/frontend/README.md`, and for backend
 work read `docs/copilot/backend/README.md`. When a frontend or backend
 change introduces, renames or changes the meaning of a user-facing term,
@@ -62,7 +64,9 @@ in the same change. At minimum, check:
   activity-management, technology and testing details;
 - `docs/copilot/frontend/` for frontend PRD, SAD and learnings;
 - `docs/copilot/backend/` for backend PRD, SAD and learnings;
-- `docs/GLOSSARY.md` for changed terminology;
+- `docs/GLOSSARY.md` for changed terminology. This existing shared glossary
+  remains the terminology source for the concept documents; do not create a
+  second glossary under `docs/copilot/`.
 - the relevant ADR index and ADR records for architectural decisions;
 - links, indexes, user stories, acceptance criteria and open questions that
   may have become inconsistent.

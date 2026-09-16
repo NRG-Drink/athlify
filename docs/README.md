@@ -6,23 +6,25 @@ maintaining project context.
 
 ## Start here
 
-| Document | Purpose |
-|---|---|
-| [`concept/CONCEPT.md`](concept/CONCEPT.md) | Functional scope, use cases, roadmap and quality requirements |
-| [`concept/user_stories.md`](concept/user_stories.md) | User stories, priorities and acceptance criteria |
-| [`GLOSSARY.md`](GLOSSARY.md) | Shared domain and user-facing terminology |
+| Document                                             | Purpose                                                       |
+| ---------------------------------------------------- | ------------------------------------------------------------- |
+| [`copilot/PRD.md`](copilot/PRD.md)                   | Canonical product requirements entry point                    |
+| [`copilot/SAD.md`](copilot/SAD.md)                   | Canonical architecture entry point                            |
+| [`concept/CONCEPT.md`](concept/CONCEPT.md)           | Functional scope, use cases, roadmap and quality requirements |
+| [`concept/user_stories.md`](concept/user_stories.md) | User stories, priorities and acceptance criteria              |
+| [`GLOSSARY.md`](GLOSSARY.md)                         | Shared domain and user-facing terminology                     |
 
 ## Product and technical documentation
 
-| Area | Document |
-|---|---|
-| Architecture | [`concept/architecture.md`](concept/architecture.md) |
-| Technology stack | [`concept/technology-stack.md`](concept/technology-stack.md) |
-| Data model | [`concept/data-model.md`](concept/data-model.md) |
-| Activity management | [`concept/activity-management.md`](concept/activity-management.md) |
-| API design | [`concept/api-design.md`](concept/api-design.md) |
-| Security | [`concept/security.md`](concept/security.md) |
-| Testing and deployment | [`concept/testing-deployment.md`](concept/testing-deployment.md) |
+| Area                   | Document                                                           |
+| ---------------------- | ------------------------------------------------------------------ |
+| Architecture           | [`concept/architecture.md`](concept/architecture.md)               |
+| Technology stack       | [`concept/technology-stack.md`](concept/technology-stack.md)       |
+| Data model             | [`concept/data-model.md`](concept/data-model.md)                   |
+| Activity management    | [`concept/activity-management.md`](concept/activity-management.md) |
+| API design             | [`concept/api-design.md`](concept/api-design.md)                   |
+| Security               | [`concept/security.md`](concept/security.md)                       |
+| Testing and deployment | [`concept/testing-deployment.md`](concept/testing-deployment.md)   |
 
 ## Implementation context
 

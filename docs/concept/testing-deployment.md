@@ -2,6 +2,9 @@
 
 Technical detail documentation for the functional concept in [`CONCEPT.md`](CONCEPT.md).
 
+The following strategy describes the target product. There is currently no
+application source, test project or deployment configuration in the repository.
+
 ## Testing strategy
 
 | Test level | Focus |
@@ -12,7 +15,10 @@ Technical detail documentation for the functional concept in [`CONCEPT.md`](CONC
 | End-to-end tests | Login, synchronization, activity management and dashboard |
 | Manual tests | Usability, responsive presentation and visual consistency |
 
-The most important user flows are login, synchronization, manual activity entry, Garage, Body-Stats, Events and Dashboard.
+The most important user flows are login, synchronization, manual activity
+entry, Garage, Body-Stats, Events and Dashboard. Tests must also cover
+ownership isolation, idempotent synchronization, soft-delete non-reactivation,
+explicit loading/empty/error states and bilingual central interfaces.
 
 ## Deployment
 

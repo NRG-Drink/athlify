@@ -1,7 +1,7 @@
 # Athlify Backend – Product Requirements Document
 
 **Project**: Athlify
-**Last Updated**: 2026-09-09
+**Last Updated**: 2026-09-16
 **Status**: Active
 
 ## Purpose
@@ -40,6 +40,8 @@ The backend provides the reliable data and domain-logic contract for the fronten
   - filters for period, tags, Indoor/Outdoor and bicycle;
 - manage bicycles in the Garage;
 - assign personal data unambiguously to the logged-in user.
+- provide Administrator-only user-account management while preserving the
+  Administrator's access to their own personal data and Dashboard;
 
 ### Should Have
 
@@ -52,7 +54,6 @@ The backend provides the reliable data and domain-logic contract for the fronten
 
 ### Could Have
 
-- optional user-account administration;
 - additional convenience functions if they do not endanger the core scope.
 
 ## Non-Goals

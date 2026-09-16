@@ -6,6 +6,10 @@ Technical detail documentation for the functional concept in [`CONCEPT.md`](CONC
 
 Athlify consists of a frontend, a web API and a database. The frontend communicates with the backend. The backend processes domain rules, stores personal data and integrates with Strava.
 
+This is the planned architecture. The current repository contains only
+`src/.gitkeep`; no frontend, API, database or Strava integration is currently
+implemented.
+
 ```mermaid
 flowchart LR
     FE[Frontend] --> API[Web API]
@@ -15,7 +19,8 @@ flowchart LR
 
 ## Domain modules
 
-- Authentication and user administration
+- Authentication and user administration, including the provisioned
+  Administrator role
 - Activities
 - Strava synchronization
 - Garage with bicycles and gadgets
@@ -35,8 +40,10 @@ flowchart LR
 
 ```text
 athlify/
-├── frontend/
-├── backend/
-├── database/
-└── docs/
+├── src/.gitkeep        # current empty source placeholder
+├── docs/concept/       # functional and technical concept
+└── docs/copilot/       # implementation context
 ```
+
+The target frontend, backend and database boundaries remain planned seams and
+must be introduced deliberately rather than inferred from the current tree.

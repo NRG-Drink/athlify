@@ -34,6 +34,9 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 **Dashboard** — The central analysis view containing metrics, charts, filters and
   timeline information. See [`CONCEPT.md`](concept/CONCEPT.md).
 
+**Administrator** — A User with all regular personal-area permissions plus
+  permission to manage user accounts. See [`CONCEPT.md`](concept/CONCEPT.md).
+
 **Event** — A personal time-based record such as an accident, repair, injury,
   break or goal. See [`CONCEPT.md`](concept/CONCEPT.md).
 
@@ -66,6 +69,9 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 
 **Owner / user context** — The user who owns a personal record and whose access
   must be checked. See [`security.md`](concept/security.md).
+
+**User** — An authenticated account that can access and manage its own
+  personal cycling data. See [`CONCEPT.md`](concept/CONCEPT.md).
 
 **Resolver** — A backend operation that executes a GraphQL query or mutation.
   See [`api-design.md`](concept/api-design.md).

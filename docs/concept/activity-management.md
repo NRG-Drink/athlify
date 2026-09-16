@@ -3,6 +3,9 @@
 Technical detail documentation for the functional concept in
 [`CONCEPT.md`](CONCEPT.md).
 
+These rules describe planned behavior. Activity management and Strava
+synchronization are not implemented in the current repository.
+
 ## Views and functions
 
 - List/table view with filtering and multi-activity selection.
@@ -29,7 +32,12 @@ Non-editable fields:
 
 ## Soft delete and Strava synchronization
 
-Deleted activities are not physically removed. Instead, `deletedAt` is set. Normal lists, detail views, calendar views and dashboard analyses include only active activities. During Strava synchronization, an activity that was already soft-deleted must not be created or reactivated as an active activity.
+Deleted activities are not physically removed. Instead, `deletedAt` is set.
+Normal lists, detail views, calendar views and dashboard analyses include only
+active activities. During Strava synchronization, an activity that was already
+soft-deleted must not be created or reactivated as an active activity.
+Synchronization matches external references within the authenticated owner
+context and reports failures explicitly.
 
 ## Activity fields
 
@@ -62,7 +70,10 @@ Deleted activities are not physically removed. Instead, `deletedAt` is set. Norm
 
 ## Merging activities
 
-Activities can be merged through a separate n:m relationship. A merge contains at least two activities. The original activities remain available and can still be displayed individually.
+Activities can be merged through a separate relationship. A merge contains at
+least two activities. The original activities remain available and can still
+be displayed individually. The final merge cardinality remains an open
+product decision.
 
 At least the following values are aggregated for the merged representation:
 
@@ -70,6 +81,9 @@ At least the following values are aggregated for the merged representation:
 - Distance
 - Elevation gain
 - TSS
+
+Whether merge membership is exclusive or whether an activity may appear in
+multiple merges remains open.
 
 ## Calendar weekly summary
 
