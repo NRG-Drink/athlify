@@ -8,6 +8,9 @@ public static partial class HelloWorldQuery
 }
 
 /* 
+## Endpoint URL
+http://localhost:5095/graphql/ [POST]
+
 ## Query: (Note the aliases greet1 and greet2 to differentiate the two calls to helloPerson)
 query Hello($varName : String) {
   greet1: helloPerson(name: "beat")
