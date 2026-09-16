@@ -1,6 +1,6 @@
 ﻿namespace Athlify.Api.Models;
 
-public class Comment
+public record Comment
 {
     public int Id { get; set; }
     public Guid Uid { get; set; } = Guid.NewGuid();
