@@ -411,3 +411,6 @@ FodyWeavers.xsd
 
 # AI stuff
 .agents/planning
+
+# Lefthook
+.lefthook-local/
