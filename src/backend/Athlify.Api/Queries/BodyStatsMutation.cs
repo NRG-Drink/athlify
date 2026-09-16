@@ -1,6 +1,5 @@
 ﻿using Athlify.Api.Database;
 using Athlify.Api.Models;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
 namespace Athlify.Api.Queries;

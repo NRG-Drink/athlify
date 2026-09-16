@@ -8,5 +8,7 @@ public record BodyStatsDto
     public double MusclePercentage { get; set; }
     public double WaterPercentage { get; set; }
     public double BoneMass { get; set; }
+    [UseSorting]
+    [UseFiltering]
     public ICollection<Comment> Comments { get; set; } = [];
 }
