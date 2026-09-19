@@ -1,4 +1,6 @@
-import ChartBodyStats from '../components/ChartBodyStats'
+import ChartBodyStatsChakra from '../components/ChartBodyStatsChakra'
+import ChartBodyStatsHybrid from '../components/ChartBodyStatsHybrid'
+import ChartBodyStatsRecharts from '../components/ChartBodyStatsRecharts'
 import DemoChakra from '../components/DemoChakra'
 
 function BodyStats() {
@@ -7,7 +9,12 @@ function BodyStats() {
       <p>Body Stats</p>
 
       <DemoChakra />
-      <ChartBodyStats />
+      <p>Recharts Chart</p>
+      <ChartBodyStatsRecharts />
+      <p>Chakra Chart</p>
+      <ChartBodyStatsChakra /> 
+      <p>Hybrid Chart</p>
+      <ChartBodyStatsHybrid />
     </div>
   )
 }
