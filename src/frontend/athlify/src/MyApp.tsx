@@ -8,6 +8,7 @@ import ColorModeToggle from './components/DarkModeToggle'
 import { ColorModeProvider } from './components/ui/color-mode'
 import { Provider } from './components/ui/provider'
 import DemoChakra from './components/DemoChakra'
+import LanguageSwitcher from './components/LanguageSwitcher'
 
 function MyApp() {
   console.log('Rendering MyApp component')
@@ -15,6 +16,7 @@ function MyApp() {
     <>
       <Provider>
         <ColorModeToggle />
+        <LanguageSwitcher />
         <nav>
           <Link to="/">Home</Link>
           <Link to="/bodystats">Body Stats</Link>

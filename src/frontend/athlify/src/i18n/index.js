@@ -7,10 +7,10 @@ import en from './locales/en.json'
 i18n.use(initReactI18next).init({
   resources: {
     de: {
-      translation: de,
+      translation: de.translation,
     },
     en: {
-      translation: en,
+      translation: en.translation,
     },
   },
   lng: 'de',

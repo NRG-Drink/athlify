@@ -1,6 +1,7 @@
 {
   "translation": {
     "hello": "Hallo",
-    "world": "Welt"
+    "world": "Welt",
+    "bodyStats": "Body Stats Titel"
   }
 }
