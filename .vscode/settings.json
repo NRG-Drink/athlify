@@ -1,0 +1,4 @@
+{
+  // Relay's config file and node_modules live in src/frontend/athlify, not the workspace root.
+  "relay.rootDirectory": "src/frontend/athlify"
+}
