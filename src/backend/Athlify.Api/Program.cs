@@ -22,6 +22,16 @@ public partial class Program
                 .EnableSensitiveDataLogging();
         });
 
+        // Allows the local Vite dev server to call the GraphQL endpoint during development.
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("FrontendDev", policy =>
+                policy
+                    .AllowAnyOrigin()
+                    .AllowAnyHeader()
+                    .AllowAnyMethod());
+        });
+
         builder
             .AddGraphQL()
             .AddTypes()
@@ -36,6 +46,8 @@ public partial class Program
             var seeder = scope.ServiceProvider.GetRequiredService<IDbSeeder>();
             seeder.Seed(db);
         }
+
+        app.UseCors("FrontendDev");
 
         app.MapGraphQL();
 

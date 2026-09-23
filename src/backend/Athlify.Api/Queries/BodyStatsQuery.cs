@@ -26,6 +26,7 @@ public static partial class BodyStatsQuery
         InMemoryDb db,
         CancellationToken cancellationToken)
     {
+        Console.WriteLine("Fetching BodyStats...");
         var result = await db.BodyStats
             .OrderBy(b => b.Id)
             .With(query.Include(e => e.Id))

@@ -12,12 +12,13 @@ function BodyStats() {
       <p>{t('bodyStats')}</p>
 
       <DemoChakra />
+      <p>Hybrid Chart</p>
+      <ChartBodyStatsHybrid />
+
       <p>Recharts Chart</p>
       <ChartBodyStatsRecharts />
       <p>Chakra Chart</p>
-      <ChartBodyStatsChakra /> 
-      <p>Hybrid Chart</p>
-      <ChartBodyStatsHybrid />
+      <ChartBodyStatsChakra />
     </div>
   )
 }
