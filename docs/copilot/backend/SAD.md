@@ -1,7 +1,7 @@
 # Athlify Backend – Software Architecture Document
 
 **Project**: Athlify
-**Last Updated**: 2026-09-09
+**Last Updated**: 2026-09-23
 **Version**: 1.0
 
 ## Overview
@@ -20,9 +20,10 @@ technical prototype and does not yet realize the complete target architecture.
 
 | Layer | Technology | Rationale |
 | --- | --- | --- |
-| Frontend | React, TypeScript and Vite (planned baseline) | Planned consumer of the backend contract |
-| Backend | ASP.NET Core with Hot Chocolate GraphQL 16.4.0 | Current API prototype |
-| Database | EF Core InMemory 10.0.9 (prototype) | Fast prototype feedback; final persistence is open |
+| Frontend | React, TypeScript and Vite | App shell exists; does not call the backend yet |
+| Backend | ASP.NET Core (.NET 10) with Hot Chocolate GraphQL 16.6 | Current API prototype; API style proposed in [shared ADR-001](../adr/ADR-001-graphql-api-contract.md) |
+| Database | EF Core InMemory 10.0 (prototype); PostgreSQL planned | Fast prototype feedback; final persistence is open |
+| Tests | TUnit 1.x with `TUnit.AspNetCore` | Endpoint tests against `/graphql` |
 | Auth | Backend-owned authentication and authorization (planned) | Personal data ownership must be enforced server-side |
 | Hosting | Open | Deployment architecture is not yet decided |
 
@@ -46,14 +47,38 @@ This document describes the technical context for changes to the repository. The
 
 The current source code is a small .NET web prototype:
 
-- Solution: `../../../src/Athlify.slnx`
-- Project: `../../../src/GettingStarted/GettingStarted.csproj`
-- Target framework: `net10.0`
-- Nullable reference types and implicit usings are enabled.
-- GraphQL is provided with Hot Chocolate 16.4.0.
-- Entity Framework Core 10.0.9 with an in-memory database is used.
-- Filtering, sorting, mutation conventions and paging are registered.
-- `Program.cs` seeds `TestDb` at startup and maps the GraphQL endpoint.
+```text
+src/backend/
+├── Athlify.slnx                    # solution (API + tests)
+├── Athlify.Api/
+│   ├── Program.cs                  # DI, EF Core InMemory, GraphQL, seeding, MapGraphQL
+│   ├── Database/                   # InMemoryDb (DbContext), IDbSeeder, DbSeeder
+│   ├── Models/                     # BodyStats, BodyStatsDto, Comment, AppSettings
+│   ├── Queries/                    # BodyStatsQuery, BodyStatsMutation, HelloWorldQuery
+│   └── Properties/                 # launchSettings.json (http://localhost:5095), ModuleInfo.cs
+└── Athlify.Api.Tests/              # TUnit endpoint tests (BodyStatsQueryTests)
+```
+
+- Target framework: `net10.0`, with nullable reference types and implicit
+  usings enabled.
+- Hot Chocolate source generation: `[QueryType]` / `[MutationType]` static
+  partial classes are registered through `AddTypes()`, which is generated
+  from `[assembly: Module("Types")]`.
+- Projections, filtering and sorting are registered. `bodyStats` supports
+  filtering and sorting, and so do the nested `comments`.
+- Body-Stats support create, read, update and delete through
+  `addBodyStats`, `bodyStats`, `bodyStatsById`, `updateBodyStats` and
+  `deleteBodyStats`.
+- `Program.cs` always seeds sample Body-Stats at startup through `IDbSeeder`.
+  `AppSettings.ShouldSeedDb` exists but is not read yet.
+- There is no authentication, user ownership, PostgreSQL persistence or
+  Strava integration yet.
+
+The prototype Body-Stats model differs from the
+[functional concept](../../concept/CONCEPT.md#36-body-stats). It has no body
+height and no owner, and it uses a list of `Comment` records instead of a
+single optional note. Align the model with the concept, or change the
+concept on purpose, before building product features on it.
 
 The product modules from the PRD are not yet fully present in the current code. No change may present a prototype state as a completed product architecture.
 
@@ -131,9 +156,17 @@ are reconciled before records are exposed to the frontend.
 | ------- | ------- | -------------- |
 | Strava | Import and update cycling activities | Backend-managed OAuth/token flow |
 
+## Security Model
+
+Authentication is required for personal areas. Authorization is not only a UI concern: every server-side query and mutation must check the user reference. Administrators have the same personal-area access as regular users and can
+additionally manage user accounts. Administrator privileges must not expose
+other users' personal data outside explicitly authorized user-management
+operations.
+
+
 ## Scalability
 
-- Current capacity: Small in-memory prototype with seeded test data.
+- Current capacity: Small in-memory prototype with seeded Body-Stats sample data.
 - Scaling strategy: Select persistence and deployment scaling after the open
   architecture decisions are resolved.
 - Known bottlenecks: In-memory persistence and prototype-only domain coverage.
@@ -146,13 +179,6 @@ are reconciled before records are exposed to the frontend.
 - Handle errors explicitly and clearly for users; do not use silent fallbacks.
 - Keep changes to the schema or data model synchronized with affected tests and documents.
 - Use the smallest existing build or test command that covers the change.
-
-## Security model
-
-Authentication is required for personal areas. Authorization is not only a UI concern: every server-side query and mutation must check the user reference. Administrators have the same personal-area access as regular users and can
-additionally manage user accounts. Administrator privileges must not expose
-other users' personal data outside explicitly authorized user-management
-operations.
 
 ## Technical detail sources
 

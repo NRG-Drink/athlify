@@ -1,7 +1,7 @@
 # Athlify Frontend – Software Architecture Document
 
 **Project**: Athlify
-**Last Updated**: 2026-09-09
+**Last Updated**: 2026-09-23
 **Version**: 1.0
 
 ## Overview
@@ -12,19 +12,25 @@ own persistence, authorization or domain calculations.
 
 ## Architecture Style
 
-The target architecture is a modular client application composed of separated
-domain views and shared presentation modules. The concrete framework and
-bundler remain open decisions.
+The target architecture is a modular single-page application built from
+separate domain views and shared presentation modules. It uses React 19,
+TypeScript and Vite.
 
 ## Technology Stack
 
-| Layer | Technology | Rationale |
+| Layer | Technology | Status |
 | --- | --- | --- |
-| Frontend | React, JavaScript/JSX and Vite | Current scaffold; TypeScript remains the planned typed target |
-| Backend | ASP.NET Core with Hot Chocolate GraphQL prototype | Current repository contract and prototype |
-| Database | Backend-owned; final persistence is open | The frontend must not own domain persistence |
-| Auth | Backend-owned authentication and authorization | Personal data ownership must be enforced server-side |
-| Hosting | Open | Deployment architecture is not yet decided |
+| Framework | React 19, TypeScript 6 (`tsc -b` project references), Vite 8 | Implemented |
+| Components and theming | Chakra UI v3 with Emotion and `next-themes` color mode | Proposed in [ADR-002](adr/ADR-002-chakra-ui-component-system.md) |
+| Styling utilities | Tailwind CSS v4 through `@tailwindcss/vite` | Loaded; coexistence with Chakra is open |
+| Charts | Recharts 3 and `@chakra-ui/charts` | Being evaluated with prototype variants |
+| Routing | `react-router-dom` v7 (`BrowserRouter`, declarative `Routes`) | Implemented as prototype; no ADR |
+| Localization | i18next with react-i18next (`de` default, `en` fallback) | Proposed in [ADR-003](adr/ADR-003-i18next-localization.md) |
+| Icons | `react-icons` (Lucide set) | Implemented |
+| Tooling | ESLint 10 + typescript-eslint, Prettier, Lefthook pre-commit hooks | Implemented |
+| Backend contract | Hot Chocolate GraphQL | Proposed in [shared ADR-001](../adr/ADR-001-graphql-api-contract.md); no client integration yet |
+| Auth | Backend-owned authentication and authorization | Planned |
+| Hosting | Open | Not decided |
 
 ## System Components
 
@@ -42,15 +48,29 @@ This document describes the technical context for frontend changes. The function
 
 ## Current frontend state
 
-The current frontend scaffold is under `../../../src/frontend/athlify/` and
-uses React, Vite and JavaScript/JSX. It contains template UI only; it does not
-yet implement routing, API integration, persistence or Athlify domain
-behavior. The existing code under `../../../src/GettingStarted/` is backend
-prototype code.
+The frontend is under `../../../src/frontend/athlify/`. It is an npm
+workspace of the root `package.json`. It is an app shell used for technology
+exploration. No Athlify domain behavior is implemented, and it does not call
+the backend yet.
 
-The frontend technology and bundler are now established by the scaffold.
-TypeScript adoption, routing, state management and backend integration remain
-open decisions and must be recorded when introduced.
+```text
+src/frontend/athlify/src/
+├── main.tsx          # entry: StrictMode, BrowserRouter, i18n init, MyApp
+├── MyApp.tsx         # Chakra Provider, color-mode toggle, language switcher, routes
+├── App.tsx           # leftover Vite template page (route "/")
+├── app/              # route-level views (BodyStats.tsx at "/bodystats")
+├── components/       # shared components (charts, toggles, switcher)
+│   └── ui/           # generated Chakra UI snippets (provider, color-mode, toaster, tooltip)
+├── hooks/            # shared hooks (empty)
+├── types/            # shared types (empty)
+├── i18n/             # i18next setup and de/en locale resources
+└── index.css         # Tailwind import and global CSS variables
+```
+
+The `/bodystats` view renders hard-coded sample chart data. It compares
+three chart variants and does not load real Body-Stats. Routing, state
+management, the GraphQL client and the Tailwind/Chakra boundary are still
+open decisions. Record them as ADRs when they are made.
 
 ## Responsibility boundary
 
@@ -124,7 +144,7 @@ after the backend confirms the change.
 
 ## Scalability
 
-- Current capacity: Template-only React/Vite scaffold; no product behavior.
+- Current capacity: Technology-exploration app shell; no product behavior.
 - Scaling strategy: Keep views and shared UI modules independently replaceable;
   defer deployment-specific scaling decisions.
 - Known bottlenecks: Backend API and synchronization performance are outside

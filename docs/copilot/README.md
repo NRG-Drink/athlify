@@ -24,9 +24,10 @@ When statements conflict, use this order:
    operational knowledge.
 
 The concept describes the intended product. Source code describes the current
-implementation. The current repository contains a small backend prototype and
-a React/Vite frontend scaffold under `src/frontend/athlify/`; do not present
-the scaffold as completed product functionality.
+implementation. The current repository contains a Body-Stats GraphQL backend
+prototype under `src/backend/` and a React/TypeScript exploration app shell
+under `src/frontend/athlify/`. Do not present either one as completed product
+functionality.
 
 ## Documentation map
 
@@ -90,8 +91,19 @@ ownership guidance instead so that the concept remains authoritative.
 
 ## Current implementation status
 
-The backend prototype is under `src/GettingStarted/` and uses ASP.NET Core,
-Hot Chocolate GraphQL and EF Core with an in-memory database. It contains
-getting-started book/author examples, not the complete Athlify product. The
-frontend scaffold is under `src/frontend/athlify/` and uses React, Vite and
-JavaScript/JSX; it currently contains template UI only.
+```text
+src/
+├── backend/            # .NET 10 solution Athlify.slnx
+│   ├── Athlify.Api/        # ASP.NET Core + Hot Chocolate GraphQL + EF Core InMemory
+│   └── Athlify.Api.Tests/  # TUnit endpoint tests
+└── frontend/athlify/   # React 19 + TypeScript + Vite (npm workspace)
+```
+
+- **Backend**: Body-Stats queries and mutations at `/graphql`, with seeded
+  sample data and no authentication or ownership. See
+  [`backend/SAD.md`](backend/SAD.md).
+- **Frontend**: Chakra UI, Tailwind CSS, react-router-dom and i18next app
+  shell with prototype charts built from sample data. It does not call the
+  backend yet. See [`frontend/SAD.md`](frontend/SAD.md).
+- **Tooling**: the root `package.json` declares the npm workspace and
+  installs Lefthook pre-commit hooks for frontend format, lint and typecheck.

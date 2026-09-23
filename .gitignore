@@ -418,3 +418,5 @@ FodyWeavers.xsd
 
 # Lefthook
 .lefthook-local/
+# Machine-local documentation root (see docs/CONFIGURATION.md)
+.agents/docs-root.local

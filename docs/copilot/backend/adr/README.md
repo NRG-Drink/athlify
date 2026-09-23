@@ -3,7 +3,7 @@
 Architecture Decision Records (ADRs) document significant, difficult-to-reverse
 decisions concerning the Athlify backend. This directory is scoped to the
 backend; frontend decisions belong in
-[`../../frontend/README.md`](../../frontend/README.md).
+[`../../frontend/adr/README.md`](../../frontend/adr/README.md).
 
 The functional source of truth is
 [`../../../concept/CONCEPT.md`](../../../concept/CONCEPT.md). Shared technical
@@ -14,12 +14,13 @@ considered before creating a backend-specific ADR.
 
 | ADR | Title | Status |
 |---|---|---|
-| — | No backend ADRs recorded yet | — |
+| — | No backend-specific ADRs recorded yet | — |
 
-The current backend code is a small GraphQL/Hot Chocolate prototype under
-`src/GettingStarted/`. Existing implementation details are not automatically
-accepted architectural decisions. Record a decision here only when it has
-actually been chosen for Athlify.
+The API style is a shared decision; see
+[shared ADR-001](../../adr/ADR-001-graphql-api-contract.md). The backend
+prototype is under `src/backend/Athlify.Api/`. An implementation detail there
+(for example EF Core InMemory) is not an accepted architectural decision until
+it is recorded here.
 
 ## When to write an ADR
 
@@ -39,25 +40,15 @@ documents.
 
 ## Process
 
-1. Use the next sequential number: `ADR-NNN-short-slug.md`.
+1. Use the next free number across all ADR directories (shared, frontend
+   and backend share one sequence): `ADR-NNN-short-slug.md`.
 2. Start with status `Proposed`.
 3. Document context, considered options, decision and consequences.
 4. Add the record to the index above.
 5. Change the status to `Accepted` only after review by the project team.
 
-Recommended structure:
-
-```markdown
-# ADR-NNN: Title
-
-- Status: Proposed
-- Date: YYYY-MM-DD
-
-## Context
-## Options considered
-## Decision
-## Consequences
-```
+Use the structure from the shared
+[ADR template](../../../../.agents/skills/project-docs/references/adr-template.md).
 
 ## Binding rules
 

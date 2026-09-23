@@ -11,20 +11,27 @@
 **Activity** — A single cycling session, entered manually or imported from
 Strava. See [`activity-management.md`](concept/activity-management.md).
 
+**Administrator** — A User with all regular personal-area permissions plus
+  permission to manage user accounts. See [`CONCEPT.md`](concept/CONCEPT.md).
+
 **API contract** — The agreed inputs, outputs, errors and permission rules
   exchanged between frontend and backend. See [`api-design.md`](concept/api-design.md).
 
 **ATL / Fatigue** — Acute Training Load, representing short-term training load.
   See [`CONCEPT.md`](concept/CONCEPT.md).
 
-**Body Metrics** — Personal measurements such as weight, body fat, muscle,
-  water and bone percentage. See [`data-model.md`](concept/data-model.md).
+**Body Metrics** — Personal measurements such as weight, body height, body-fat,
+  muscle and water percentage, and bone mass. See [`data-model.md`](concept/data-model.md).
 
 **Body-Stats** — Personal body measurements recorded at multiple points in time.
   See [`CONCEPT.md`](concept/CONCEPT.md).
 
 **Calendar view** — An activity presentation organized by calendar week with a
   weekly summary.
+
+**Color mode** — The light or dark appearance of the user interface, which the
+  user can switch in the app header. See
+  [ADR-002](copilot/frontend/adr/ADR-002-chakra-ui-component-system.md).
 
 **CTL / Fitness** — Chronic Training Load, representing long-term training load.
   See [`CONCEPT.md`](concept/CONCEPT.md).
@@ -33,9 +40,6 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 
 **Dashboard** — The central analysis view containing metrics, charts, filters and
   timeline information. See [`CONCEPT.md`](concept/CONCEPT.md).
-
-**Administrator** — A User with all regular personal-area permissions plus
-  permission to manage user accounts. See [`CONCEPT.md`](concept/CONCEPT.md).
 
 **Event** — A personal time-based record such as an accident, repair, injury,
   break or goal. See [`CONCEPT.md`](concept/CONCEPT.md).
@@ -49,11 +53,15 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 
 ## G — L
 
+**Gadget** — Additional equipment such as a bike computer, heart-rate monitor
+  or sensor. See [`data-model.md`](concept/data-model.md).
+
 **Garage** — The personal area for managing bicycles and gadgets. See
 [`CONCEPT.md`](concept/CONCEPT.md).
 
-**Gadget** — Additional equipment such as a bike computer, heart-rate monitor
-  or sensor. See [`data-model.md`](concept/data-model.md).
+**GraphQL schema** — The typed set of queries and mutations the backend
+  exposes. It is the API contract between frontend and backend. See
+  [ADR-001](copilot/adr/ADR-001-graphql-api-contract.md).
 
 **Idempotency** — Repeated execution of the same synchronization operation does
   not create an additional domain record. See [`api-design.md`](concept/api-design.md).
@@ -62,6 +70,10 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
   session took place indoors or outdoors; the authoritative determination rule
   is still open. See [`activity-management.md`](concept/activity-management.md).
 
+**Language switcher** — The UI control that switches the interface language
+  between German and English. See
+  [ADR-003](copilot/frontend/adr/ADR-003-i18next-localization.md).
+
 ## M — R
 
 **Merge** — Grouping multiple activities into one shared representation without
@@ -69,9 +81,6 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 
 **Owner / user context** — The user who owns a personal record and whose access
   must be checked. See [`security.md`](concept/security.md).
-
-**User** — An authenticated account that can access and manage its own
-  personal cycling data. See [`CONCEPT.md`](concept/CONCEPT.md).
 
 **Resolver** — A backend operation that executes a GraphQL query or mutation.
   See [`api-design.md`](concept/api-design.md).
@@ -106,3 +115,6 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
   [`activity-management.md`](concept/activity-management.md).
 
 **UI state** — The loading, empty, error or populated state of a view.
+
+**User** — An authenticated account that can access and manage its own
+  personal cycling data. See [`CONCEPT.md`](concept/CONCEPT.md).

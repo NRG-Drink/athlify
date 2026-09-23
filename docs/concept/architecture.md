@@ -7,12 +7,14 @@ Technical detail documentation for the functional concept in [`CONCEPT.md`](CONC
 Athlify consists of a frontend, a web API and a database. The frontend communicates with the backend. The backend processes domain rules, stores personal data and integrates with Strava.
 
 This is the planned architecture. The current repository contains a
-React/Vite frontend scaffold, but no implemented domain behavior, API,
-database or Strava integration.
+React/TypeScript frontend app shell and a GraphQL backend prototype with
+Body-Stats operations on an in-memory database. There is no authentication,
+persistent database or Strava integration yet, and the frontend does not call
+the backend.
 
 ```mermaid
 flowchart LR
-    FE[Frontend] --> API[Web API]
+    FE[Frontend] --> API[Web API / GraphQL]
     API --> DB[(Database)]
     API --> STRAVA[Strava API]
 ```
@@ -40,9 +42,13 @@ flowchart LR
 
 ```text
 athlify/
-├── docs/concept/       # functional and technical concept
-└── docs/copilot/       # implementation context
+├── docs/concept/            # functional and technical concept
+├── docs/copilot/            # implementation context, PRD/SAD, ADRs, learnings
+├── src/backend/             # .NET solution: Athlify.Api and Athlify.Api.Tests
+├── src/frontend/athlify/    # React/TypeScript/Vite app (npm workspace)
+├── package.json             # npm workspace root and Lefthook install
+└── lefthook.yml             # pre-commit hooks for frontend format/lint/typecheck
 ```
 
-The target frontend, backend and database boundaries remain planned seams and
-must be introduced deliberately rather than inferred from the current tree.
+Database, reverse proxy and Strava integration boundaries are still planned.
+Introduce them deliberately rather than inferring them from the current tree.

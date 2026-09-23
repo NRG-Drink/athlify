@@ -3,11 +3,8 @@
 import { Link, Route, Routes } from 'react-router-dom'
 import App from './App'
 import BodyStats from './app/BodyStats'
-import { ChakraProvider, defaultSystem } from '@chakra-ui/react'
 import ColorModeToggle from './components/DarkModeToggle'
-import { ColorModeProvider } from './components/ui/color-mode'
 import { Provider } from './components/ui/provider'
-import DemoChakra from './components/DemoChakra'
 import LanguageSwitcher from './components/LanguageSwitcher'
 
 function MyApp() {
