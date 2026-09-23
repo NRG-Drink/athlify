@@ -15,7 +15,7 @@ function BodyStats() {
       <p>Recharts Chart</p>
       <ChartBodyStatsRecharts />
       <p>Chakra Chart</p>
-      <ChartBodyStatsChakra /> 
+      <ChartBodyStatsChakra />
       <p>Hybrid Chart</p>
       <ChartBodyStatsHybrid />
     </div>

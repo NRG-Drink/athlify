@@ -22,35 +22,35 @@ function ChartBodyStatsRecharts() {
       <p>Body Stats Chart</p>
 
       {/* <Chart.Root maxH="sm" chart={chart}> */}
-        <LineChart style={{ width: '100%', height: 300 }} data={chart.data} responsive>
-          <CartesianGrid stroke={chart.color('border')} vertical={false} />
-          <XAxis
-            axisLine={false}
-            dataKey={chart.key('month')}
-            tickFormatter={(value) => value.slice(0, 3)}
-            stroke={chart.color('border')}
-          />
-          <YAxis axisLine={false} tickLine={false} tickMargin={10} stroke={chart.color('border')} />
-          <Tooltip animationDuration={100} cursor={false} />
-          <Line
-            key="buy"
-            type="linear"
-            isAnimationActive={false}
-            dataKey={chart.key('buy')}
-            stroke={chart.color('blue.solid')}
-            strokeWidth={2}
-            dot={true}
-          />
-          <Line
-            key="sale"
-            type="bump"
-            isAnimationActive={false}
-            dataKey={chart.key('sale')}
-            stroke={chart.color('teal.solid')}
-            strokeWidth={2}
-            dot={true}
-          />
-        </LineChart>
+      <LineChart style={{ width: '100%', height: 300 }} data={chart.data} responsive>
+        <CartesianGrid stroke={chart.color('border')} vertical={false} />
+        <XAxis
+          axisLine={false}
+          dataKey={chart.key('month')}
+          tickFormatter={(value) => value.slice(0, 3)}
+          stroke={chart.color('border')}
+        />
+        <YAxis axisLine={false} tickLine={false} tickMargin={10} stroke={chart.color('border')} />
+        <Tooltip animationDuration={100} cursor={false} />
+        <Line
+          key="buy"
+          type="linear"
+          isAnimationActive={false}
+          dataKey={chart.key('buy')}
+          stroke={chart.color('blue.solid')}
+          strokeWidth={2}
+          dot={true}
+        />
+        <Line
+          key="sale"
+          type="bump"
+          isAnimationActive={false}
+          dataKey={chart.key('sale')}
+          stroke={chart.color('teal.solid')}
+          strokeWidth={2}
+          dot={true}
+        />
+      </LineChart>
       {/* </Chart.Root> */}
     </div>
   )
