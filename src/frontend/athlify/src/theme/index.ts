@@ -44,6 +44,13 @@ const config = defineConfig({
     semanticTokens: {
       colors: toSemanticTokens(semanticColors as unknown as PairTree),
       gradients: {
+        // Faint cyan "headlight" on the canvas, dark mode only.
+        headlight: {
+          value: {
+            base: 'none',
+            _dark: 'radial-gradient(40rem circle at 0 0, rgba(0, 220, 220, 0.06), transparent 70%)',
+          },
+        },
         indicator: {
           value: {
             base: linear('90deg', gradientStops.indicator.base),

@@ -11,15 +11,7 @@ export function AppLayout({ children }: { children?: ReactNode }) {
   const { t } = useTranslation()
 
   return (
-    <Box
-      minH="100dvh"
-      bg="bg"
-      colorPalette="brand"
-      _dark={{
-        bgImage: 'radial-gradient(40rem circle at 0 0, rgba(0, 220, 220, 0.06), transparent 70%)',
-        bgRepeat: 'no-repeat',
-      }}
-    >
+    <Box minH="100dvh" bgColor="bg" bgImage="headlight" bgRepeat="no-repeat" colorPalette="brand">
       <SkipNavLink id={mainContentId}>{t('layout.skipToContent')}</SkipNavLink>
       <AppHeader />
       <SkipNavContent as="main" id={mainContentId}>

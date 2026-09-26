@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import ChartBodyStatsChakra from '../components/ChartBodyStatsChakra'
 import ChartBodyStatsHybrid from '../components/ChartBodyStatsHybrid'
 import ChartBodyStatsRecharts from '../components/ChartBodyStatsRecharts'
-import DemoChakra from '../components/DemoChakra'
 import { Page } from '../components/Page'
 
 function BodyStats() {
@@ -12,7 +11,6 @@ function BodyStats() {
   return (
     <Page title={t('nav.bodyStats')}>
       <Stack gap="10">
-        <DemoChakra />
         <Stack gap="4">
           <Heading as="h2" fontSize="1.5rem" lineHeight="1.2">
             Hybrid Chart

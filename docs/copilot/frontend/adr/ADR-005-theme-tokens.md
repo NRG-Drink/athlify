@@ -78,7 +78,8 @@ and lets tests enforce the contrast rules in both modes.
   - the `brand` palette (`solid`, `contrast`, `fg`, `subtle`, `muted`,
     `emphasized`, `focusRing`) and `spark.{fg,solid}`;
   - `chart.{primary,secondary,effort,form}`;
-  - the gradients `volt`, `voltAcross`, `indicator` and `indicatorDown`;
+  - the gradients `volt`, `voltAcross`, `indicator`, `indicatorDown` and
+    `headlight` (the dark-mode canvas glow);
   - the text styles `kicker` and `kpi`.
 - Views never use hex values or Chakra's built-in palettes (`teal.*`,
   `blue.*`) for meaning.

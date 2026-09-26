@@ -30,8 +30,8 @@ function ChartBodyStatsHybridContent() {
       date: new Date(entry.date as string).toLocaleDateString(),
     })),
     series: [
-      { name: 'weight', color: 'chart.secondary' },
-      { name: 'bodyFatPercentage', color: 'chart.primary' },
+      { name: 'weight', color: 'chart.primary' },
+      { name: 'bodyFatPercentage', color: 'chart.secondary' },
       { name: 'musclePercentage', color: 'orange.solid' },
       { name: 'waterPercentage', color: 'cyan.solid' },
       { name: 'boneMass', color: 'purple.solid' },
