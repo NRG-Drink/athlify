@@ -12,8 +12,8 @@ function ChartBodyStatsChakra() {
       { buy: 25, sale: 90, month: 'August' },
     ],
     series: [
-      { name: 'buy', color: 'blue.solid' },
-      { name: 'sale', color: 'teal.solid' },
+      { name: 'buy', color: 'chart.secondary' },
+      { name: 'sale', color: 'chart.primary' },
     ],
   })
 

@@ -17,15 +17,15 @@ describe('routes', () => {
   })
 
   test.each([
-    [paths.dashboard, 'Dashboard'],
-    [paths.activities, 'Aktivitäten'],
-    [paths.garage, 'Garage'],
-    [paths.events, 'Events'],
-    [paths.settings, 'Einstellungen'],
-  ])('%s renders a coming-soon placeholder titled %s', async (path, title) => {
+    [paths.dashboard, 'Dashboard', /Distanz, Zeit, Höhenmeter/],
+    [paths.activities, 'Aktivitäten', /alle Aktivitäten/],
+    [paths.garage, 'Garage', /deine Velos und Gadgets/],
+    [paths.events, 'Events', /Stürze, Reparaturen/],
+    [paths.settings, 'Einstellungen', /dein Konto/],
+  ])('%s renders a coming-soon placeholder titled %s', async (path, title, areaMessage) => {
     renderRoute(path)
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument()
-    expect(screen.getByText(/Demnächst verfügbar/)).toBeInTheDocument()
+    expect(screen.getByText(/Demnächst verfügbar/)).toHaveTextContent(areaMessage)
   })
 
   test('unknown URL shows Not Found inside the layout without an active nav item', async () => {

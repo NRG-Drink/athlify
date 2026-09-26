@@ -22,7 +22,7 @@
       "empty": "Noch keine Daten vorhanden.",
       "error": "Die Daten konnten nicht geladen werden.",
       "retry": "Erneut versuchen",
-      "comingSoon": "Demnächst verfügbar. Dieser Bereich wird gerade entwickelt."
+      "comingSoon": "Demnächst verfügbar."
     },
     "notFound": {
       "title": "Seite nicht gefunden",
@@ -31,7 +31,14 @@
     },
     "routeError": {
       "title": "Etwas ist schiefgelaufen",
-      "message": "Diese Seite konnte nicht angezeigt werden. Bitte versuchen Sie es erneut."
+      "message": "Diese Seite konnte nicht angezeigt werden. Bitte versuche es erneut."
+    },
+    "placeholder": {
+      "dashboard": "Hier siehst du bald Distanz, Zeit, Höhenmeter und Trainingsbelastung auf einen Blick.",
+      "activities": "Hier verwaltest du bald alle Aktivitäten, aus Strava importiert oder manuell erfasst.",
+      "garage": "Hier erfasst du bald deine Velos und Gadgets.",
+      "events": "Hier dokumentierst du bald Stürze, Reparaturen, Pausen und andere Ereignisse.",
+      "settings": "Hier verwaltest du bald dein Konto und die Verbindung zu Strava."
     }
   }
 }

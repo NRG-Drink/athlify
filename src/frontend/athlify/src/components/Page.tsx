@@ -11,6 +11,7 @@ import {
 } from '@chakra-ui/react'
 import { useEffect, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { IconType } from 'react-icons'
 import { LuInbox } from 'react-icons/lu'
 
 export type PageStatus = 'ready' | 'loading' | 'empty' | 'error'
@@ -21,6 +22,8 @@ export interface PageProps {
   actions?: ReactNode
   status?: PageStatus
   emptyMessage?: string
+  /** Decorative icon of the empty state; defaults to an inbox. */
+  emptyIcon?: IconType
   errorMessage?: string
   onRetry?: () => void
   children?: ReactNode
@@ -42,6 +45,7 @@ export function Page({
   actions,
   status = 'ready',
   emptyMessage,
+  emptyIcon: EmptyIcon = LuInbox,
   errorMessage,
   onRetry,
   children,
@@ -82,8 +86,13 @@ export function Page({
       {status === 'empty' && (
         <EmptyState.Root borderWidth="1px" borderStyle="dashed" borderRadius="l3">
           <EmptyState.Content>
-            <EmptyState.Indicator>
-              <LuInbox />
+            <EmptyState.Indicator
+              bg="colorPalette.subtle"
+              color="colorPalette.fg"
+              borderRadius="l3"
+              p="3"
+            >
+              <EmptyIcon aria-hidden />
             </EmptyState.Indicator>
             <EmptyState.Description>{emptyMessage ?? t('page.empty')}</EmptyState.Description>
           </EmptyState.Content>

@@ -22,7 +22,7 @@
       "empty": "No data yet.",
       "error": "The data could not be loaded.",
       "retry": "Try again",
-      "comingSoon": "Coming soon. This area is under development."
+      "comingSoon": "Coming soon."
     },
     "notFound": {
       "title": "Page not found",
@@ -32,6 +32,13 @@
     "routeError": {
       "title": "Something went wrong",
       "message": "This page could not be displayed. Please try again."
+    },
+    "placeholder": {
+      "dashboard": "Soon you will see distance, time, elevation and training load at a glance.",
+      "activities": "Soon you will manage all activities here, imported from Strava or entered manually.",
+      "garage": "Soon you will record your bicycles and gadgets here.",
+      "events": "Soon you will document crashes, repairs, breaks and other events here.",
+      "settings": "Soon you will manage your account and the Strava connection here."
     }
   }
 }
