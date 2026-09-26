@@ -55,7 +55,8 @@ The frontend is under `../../../src/frontend/athlify/`. It uses React 19,
 TypeScript, Vite, Chakra UI v3, Tailwind CSS v4, react-router-dom and
 i18next. It provides the App Layout (header with Primary Navigation, User
 Menu with language switcher and color mode, mobile drawer), the `Page` frame
-and placeholder pages, plus prototype Body-Stats charts. It has no Athlify
+and placeholder pages, the "Night Ride" theme in `src/theme/`
+([ADR-005](adr/ADR-005-theme-tokens.md)), plus prototype Body-Stats charts. It has no Athlify
 domain behavior; only the hybrid chart prototype queries the backend. The backend prototype is under `../../../src/backend/`. See
 [`SAD.md`](SAD.md) for the folder layout and open decisions. Do not present
 the exploration UI as completed product functionality.

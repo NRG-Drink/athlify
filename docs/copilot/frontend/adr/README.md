@@ -17,6 +17,7 @@ considered before creating a frontend-specific ADR.
 | [ADR-002](ADR-002-chakra-ui-component-system.md) | Chakra UI v3 as the frontend component system | Proposed |
 | [ADR-003](ADR-003-i18next-localization.md) | i18next for the bilingual user interface | Proposed |
 | [ADR-004](ADR-004-react-router-data-mode.md) | React Router data mode with a nested app-layout route | Proposed |
+| [ADR-005](ADR-005-theme-tokens.md) | "Night Ride" theme as Chakra semantic tokens | Proposed |
 
 The API style is a shared decision; see
 [shared ADR-001](../../adr/ADR-001-graphql-api-contract.md). State

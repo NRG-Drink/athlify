@@ -30,7 +30,8 @@ with an empty database.
 | --- | --- | --- |
 | Dev server | `vite.config.ts` | Vite defaults (`http://localhost:5173`) |
 | UI language | `src/i18n/index.js` | Default `de`, fallback `en`; not persisted |
-| Color mode | `src/components/ui/color-mode.tsx` | `next-themes`, class-based light/dark |
+| Color mode | `src/components/ui/color-mode.tsx` | `next-themes`, class-based light/dark; follows the system until the user picks a mode, which is stored in `localStorage` (`theme`) |
+| Theme | `src/theme/` | Colors, gradients, radii, text styles and self-hosted fonts ([ADR-005](copilot/frontend/adr/ADR-005-theme-tokens.md)) |
 | TypeScript | `tsconfig.app.json`, `tsconfig.node.json` | Project references; unused locals/parameters are errors |
 | Lint and format | `eslint.config.js`, `.prettierrc.json` | No semicolons, single quotes, width 100 |
 

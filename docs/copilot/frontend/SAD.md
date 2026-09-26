@@ -21,7 +21,8 @@ TypeScript and Vite.
 | Layer | Technology | Status |
 | --- | --- | --- |
 | Framework | React 19, TypeScript 6 (`tsc -b` project references), Vite 8 | Implemented |
-| Components and theming | Chakra UI v3 with Emotion and `next-themes` color mode | Proposed in [ADR-002](adr/ADR-002-chakra-ui-component-system.md) |
+| Components and theming | Chakra UI v3 with Emotion and `next-themes` color mode; custom "Night Ride" theme in `src/theme/` | Proposed in [ADR-002](adr/ADR-002-chakra-ui-component-system.md) and [ADR-005](adr/ADR-005-theme-tokens.md) |
+| Fonts | Inter (variable) and Barlow Semi Condensed, self-hosted via `@fontsource` | Implemented |
 | Styling utilities | Tailwind CSS v4 through `@tailwindcss/vite` | Loaded; coexistence with Chakra is open |
 | Charts | Recharts 3 and `@chakra-ui/charts` | Being evaluated with prototype variants |
 | Routing | `react-router-dom` v7 data mode (`createBrowserRouter`, nested app-layout route) | Proposed in [ADR-004](adr/ADR-004-react-router-data-mode.md) |
@@ -61,7 +62,8 @@ src/frontend/athlify/src/
 ├── navigation/       # paths.ts (URL constants), navItems.ts (Primary Navigation)
 ├── layouts/          # AppLayout, AppHeader, PrimaryNav, MobileNav, UserMenu
 ├── app/              # route-level views (BodyStats, PlaceholderPage, NotFoundPage, RouteErrorPage)
-├── components/       # shared components (Page, charts, toggles, switcher)
+├── theme/            # Chakra system: palette, semantic tokens, fonts (ADR-005)
+├── components/       # shared components (Page, BrandMark, charts, toggles, switcher)
 │   └── ui/           # generated Chakra UI snippets (provider, color-mode, toaster, tooltip)
 ├── tests/            # all Vitest tests, mirroring src/ (plus setup.ts and utils/renderRoute.tsx)
 ├── hooks/            # shared hooks (empty)
@@ -83,7 +85,7 @@ The frontend is responsible for navigation, presentation, input, local UI states
 
 ## Language and naming conventions
 
-The user interface supports German and English. Visible text is maintained through translations and is not hard-coded as a single language in components. Documentation is English-only; source code, components, variables, routes and API names are named in English.
+The user interface supports German and English. Visible text is maintained through translations and is not hard-coded as a single language in components. German UI text addresses the user as "du" (for example, "Hier erfasst du bald deine Velos und Gadgets."). Documentation is English-only; source code, components, variables, routes and API names are named in English.
 
 ## UI structure
 
@@ -127,7 +129,35 @@ Every view wraps its content in `Page` (`src/components/Page.tsx`). It
 renders the `h1` title, an optional description and an actions area, and it
 sets the document title. Its `status` prop (`ready`, `loading`, `empty`,
 `error`) selects exactly one body. Children render only when the status is
-`ready`, so stale content never looks like current data.
+`ready`, so stale content never looks like current data. Views pass their
+own `emptyMessage` (and optionally an `emptyIcon`) instead of relying on the
+generic default. A page has at most one primary action (`Button` variant
+`solid`) in `actions`; other actions use `outline` or `ghost`.
+
+### Theme
+
+The "Night Ride" theme ([ADR-005](adr/ADR-005-theme-tokens.md)) is derived
+from the favicon's cyan-to-cobalt gradient. It is designed dark-first, and
+the default color mode follows the operating system, so both modes are
+tuned.
+
+- **Color meaning:** blue (`brand`) is the app and interaction; orange
+  (`spark`) is only for effort and power data such as TSS. Views use only
+  semantic tokens (`bg*`, `fg*`, `border`, `brand`, `spark`, `chart.*`),
+  never hex values or Chakra's built-in palettes.
+- **Contrast:** text reaches at least 4.5:1 and graphics at least 3:1 in
+  both modes. Brand cyan is never text in light mode. These rules are
+  tested in `src/tests/theme/contrast.test.ts`.
+- **Signature:** the active navigation item is marked by a skewed bar in
+  the `indicator` gradient on the header's bottom edge (a vertical bar in
+  the drawer). Use at most one gradient element per visible area.
+- **Typography:** Chakra `Heading`s use Barlow Semi Condensed; all other
+  text uses Inter. Both are self-hosted; no external font CDN. KPI numbers
+  use the `kpi` text style (italic, tabular numbers) together with a unit,
+  a label and a comparison period. Missing data shows "—", never `0`.
+- **Charts:** series colors come from `chart.primary`, `chart.secondary`,
+  `chart.effort` and `chart.form`; `secondary` and `form` never share a
+  chart, and series are never distinguished by color alone.
 
 ## Key Components
 

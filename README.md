@@ -37,7 +37,7 @@ The product is not implemented yet. The repository currently contains:
 
 | Area     | Technology                                                                                  |
 | -------- | ------------------------------------------------------------------------------------------- |
-| Frontend | React 19, TypeScript, Vite, Chakra UI v3, Tailwind CSS v4, react-router-dom, i18next, Recharts |
+| Frontend | React 19, TypeScript, Vite, Chakra UI v3 (custom theme), Tailwind CSS v4, react-router-dom, i18next, Recharts, self-hosted Inter and Barlow Semi Condensed |
 | Backend  | .NET 10, ASP.NET Core, Hot Chocolate GraphQL 16, EF Core InMemory (PostgreSQL planned)      |
 | Testing  | TUnit (backend); Vitest + React Testing Library, ESLint, Prettier and `tsc` (frontend)      |
 
