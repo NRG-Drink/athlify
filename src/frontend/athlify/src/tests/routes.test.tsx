@@ -55,6 +55,5 @@ describe('routes', () => {
       'Diese Seite konnte nicht angezeigt werden',
     )
     expect(primaryNav()).toBeInTheDocument()
-    vi.restoreAllMocks()
   })
 })
