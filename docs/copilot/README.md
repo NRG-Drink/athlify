@@ -103,7 +103,8 @@ src/
   sample data and no authentication or ownership. See
   [`backend/SAD.md`](backend/SAD.md).
 - **Frontend**: Chakra UI, Tailwind CSS, react-router-dom and i18next app
-  shell with prototype charts built from sample data. It does not call the
-  backend yet. See [`frontend/SAD.md`](frontend/SAD.md).
+  shell with the App Layout, placeholder pages and prototype Body-Stats
+  charts. Only the hybrid chart prototype queries the backend. See [`frontend/SAD.md`](frontend/SAD.md).
 - **Tooling**: the root `package.json` declares the npm workspace and
-  installs Lefthook pre-commit hooks for frontend format, lint and typecheck.
+  installs Lefthook. Its pre-commit commands for frontend format, lint and
+  typecheck are currently commented out in `lefthook.yml`.

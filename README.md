@@ -39,7 +39,7 @@ The product is not implemented yet. The repository currently contains:
 | -------- | ------------------------------------------------------------------------------------------- |
 | Frontend | React 19, TypeScript, Vite, Chakra UI v3, Tailwind CSS v4, react-router-dom, i18next, Recharts |
 | Backend  | .NET 10, ASP.NET Core, Hot Chocolate GraphQL 16, EF Core InMemory (PostgreSQL planned)      |
-| Testing  | TUnit (backend); ESLint, Prettier and `tsc` via Lefthook pre-commit hooks (frontend)        |
+| Testing  | TUnit (backend); Vitest + React Testing Library, ESLint, Prettier and `tsc` (frontend)      |
 
 ```text
 src/
@@ -97,6 +97,7 @@ Common checks:
 
 ```bash
 dotnet run --project src/backend/Athlify.Api.Tests   # backend tests (TUnit)
+npm test --workspace athlify
 npm run typecheck --workspace athlify
 npm run lint --workspace athlify
 npm run build --workspace athlify
@@ -107,9 +108,9 @@ This is a prototype. Do not treat it as the completed Athlify product.
 ## Contributing
 
 This is a private, GitHub-hosted student project by a two-person team.
-Work on a feature branch and open a pull request into `develop`. Before each
-commit, the Lefthook pre-commit hooks format, lint and type-check staged
-frontend files. Keep the functional concept, the technical documents and the
+Work on a feature branch and open a pull request into `develop`. Lefthook is
+installed, but its pre-commit commands are currently disabled in
+`lefthook.yml`, so run the checks above before committing. Keep the functional concept, the technical documents and the
 glossary in sync with your change, and follow [AGENTS.md](AGENTS.md). See
 the [contributing guide](docs/CONTRIBUTING.md) for details.
 

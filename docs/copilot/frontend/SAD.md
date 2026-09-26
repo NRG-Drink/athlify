@@ -1,7 +1,7 @@
 # Athlify Frontend – Software Architecture Document
 
 **Project**: Athlify
-**Last Updated**: 2026-09-23
+**Last Updated**: 2026-09-26
 **Version**: 1.0
 
 ## Overview
@@ -24,10 +24,11 @@ TypeScript and Vite.
 | Components and theming | Chakra UI v3 with Emotion and `next-themes` color mode | Proposed in [ADR-002](adr/ADR-002-chakra-ui-component-system.md) |
 | Styling utilities | Tailwind CSS v4 through `@tailwindcss/vite` | Loaded; coexistence with Chakra is open |
 | Charts | Recharts 3 and `@chakra-ui/charts` | Being evaluated with prototype variants |
-| Routing | `react-router-dom` v7 (`BrowserRouter`, declarative `Routes`) | Implemented as prototype; no ADR |
+| Routing | `react-router-dom` v7 data mode (`createBrowserRouter`, nested app-layout route) | Proposed in [ADR-004](adr/ADR-004-react-router-data-mode.md) |
 | Localization | i18next with react-i18next (`de` default, `en` fallback) | Proposed in [ADR-003](adr/ADR-003-i18next-localization.md) |
 | Icons | `react-icons` (Lucide set) | Implemented |
-| Tooling | ESLint 10 + typescript-eslint, Prettier, Lefthook pre-commit hooks | Implemented |
+| Testing | Vitest + React Testing Library + user-event in jsdom (`npm test`) | Implemented |
+| Tooling | ESLint 10 + typescript-eslint, Prettier; Lefthook installed, but all hook commands in `lefthook.yml` are currently commented out | Implemented |
 | Backend contract | Hot Chocolate GraphQL | Proposed in [shared ADR-001](../adr/ADR-001-graphql-api-contract.md); no client integration yet |
 | Auth | Backend-owned authentication and authorization | Planned |
 | Hosting | Open | Not decided |
@@ -55,22 +56,26 @@ the backend yet.
 
 ```text
 src/frontend/athlify/src/
-├── main.tsx          # entry: StrictMode, BrowserRouter, i18n init, MyApp
-├── MyApp.tsx         # Chakra Provider, color-mode toggle, language switcher, routes
-├── App.tsx           # leftover Vite template page (route "/")
-├── app/              # route-level views (BodyStats.tsx at "/bodystats")
-├── components/       # shared components (charts, toggles, switcher)
+├── main.tsx          # entry: StrictMode, Relay, Chakra Provider, RouterProvider
+├── routes.tsx        # route table (RouteObject[]) shared by app and tests
+├── navigation/       # paths.ts (URL constants), navItems.ts (Primary Navigation)
+├── layouts/          # AppLayout, AppHeader, PrimaryNav, MobileNav, UserMenu
+├── app/              # route-level views (BodyStats, PlaceholderPage, NotFoundPage, RouteErrorPage)
+├── components/       # shared components (Page, charts, toggles, switcher)
 │   └── ui/           # generated Chakra UI snippets (provider, color-mode, toaster, tooltip)
+├── test/             # Vitest setup (jsdom stubs) and renderRoute helper
 ├── hooks/            # shared hooks (empty)
 ├── types/            # shared types (empty)
 ├── i18n/             # i18next setup and de/en locale resources
-└── index.css         # Tailwind import and global CSS variables
+└── index.css         # Tailwind import only
 ```
 
-The `/bodystats` view renders hard-coded sample chart data. It compares
-three chart variants and does not load real Body-Stats. Routing, state
-management, the GraphQL client and the Tailwind/Chakra boundary are still
-open decisions. Record them as ADRs when they are made.
+The App Layout and routing are implemented. Dashboard, Activities, Garage,
+Events and Settings render placeholder pages. The `/body-stats` view compares
+three prototype chart variants; the hybrid variant queries the backend
+prototype through Relay. State management, the GraphQL client and the
+Tailwind/Chakra boundary are still open decisions. Record them as ADRs when
+they are made.
 
 ## Responsibility boundary
 
@@ -92,6 +97,37 @@ The domain areas are implemented as independent views or clearly separated UI mo
 6. Events
 
 Shared components for navigation, filters, forms, tables, charts, dialogs and feedback should be reused.
+
+### App Layout and routes
+
+All views render inside the App Layout (`src/layouts/AppLayout.tsx`): a skip
+link, a sticky header with the brand, the Primary Navigation and the User
+Menu, and the `main` content area. Below the `md` breakpoint the Primary
+Navigation moves into a drawer opened by a menu button. The User Menu holds
+Settings, the language switcher and the color-mode toggle. Render errors of a
+view are shown inside the layout through the route `errorElement`
+([ADR-004](adr/ADR-004-react-router-data-mode.md)).
+
+| Path | View | Navigation |
+| --- | --- | --- |
+| `/` | redirects to `/dashboard` | – |
+| `/dashboard` | Dashboard (placeholder) | Primary Navigation |
+| `/activities` | Activities (placeholder) | Primary Navigation |
+| `/garage` | Garage (placeholder) | Primary Navigation |
+| `/body-stats` | Body-Stats (chart prototype) | Primary Navigation |
+| `/events` | Events (placeholder) | Primary Navigation |
+| `/settings` | Settings (placeholder) | User Menu |
+| any other | Not Found page | – |
+
+There is no Administration entry until the backend exposes user roles.
+
+### Page frame
+
+Every view wraps its content in `Page` (`src/components/Page.tsx`). It
+renders the `h1` title, an optional description and an actions area, and it
+sets the document title. Its `status` prop (`ready`, `loading`, `empty`,
+`error`) selects exactly one body. Children render only when the status is
+`ready`, so stale content never looks like current data.
 
 ## Key Components
 

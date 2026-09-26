@@ -17,6 +17,10 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 **API contract** — The agreed inputs, outputs, errors and permission rules
   exchanged between frontend and backend. See [`api-design.md`](concept/api-design.md).
 
+**App Layout** — The shared frame around every view: a skip link, a header
+  with the brand, the Primary Navigation and the User Menu, and the main
+  content area. See [`SAD.md`](copilot/frontend/SAD.md#app-layout-and-routes).
+
 **ATL / Fatigue** — Acute Training Load, representing short-term training load.
   See [`CONCEPT.md`](concept/CONCEPT.md).
 
@@ -30,7 +34,7 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
   weekly summary.
 
 **Color mode** — The light or dark appearance of the user interface, which the
-  user can switch in the app header. See
+  user can switch in the User Menu. See
   [ADR-002](copilot/frontend/adr/ADR-002-chakra-ui-component-system.md).
 
 **CTL / Fitness** — Chronic Training Load, representing long-term training load.
@@ -70,8 +74,8 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
   session took place indoors or outdoors; the authoritative determination rule
   is still open. See [`activity-management.md`](concept/activity-management.md).
 
-**Language switcher** — The UI control that switches the interface language
-  between German and English. See
+**Language switcher** — The UI control in the User Menu that switches the
+  interface language between German and English. See
   [ADR-003](copilot/frontend/adr/ADR-003-i18next-localization.md).
 
 ## M — R
@@ -81,6 +85,14 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 
 **Owner / user context** — The user who owns a personal record and whose access
   must be checked. See [`security.md`](concept/security.md).
+
+**Page** — The frame each view renders inside the App Layout: title, optional
+  description and actions, and exactly one UI state body (loading, empty,
+  error or ready). See [`SAD.md`](copilot/frontend/SAD.md#page-frame).
+
+**Primary Navigation** — The header navigation between the personal areas
+  Dashboard, Activities, Garage, Body-Stats and Events. On small screens it
+  opens as a drawer. See [`SAD.md`](copilot/frontend/SAD.md#app-layout-and-routes).
 
 **Resolver** — A backend operation that executes a GraphQL query or mutation.
   See [`api-design.md`](concept/api-design.md).
@@ -118,3 +130,7 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 
 **User** — An authenticated account that can access and manage its own
   personal cycling data. See [`CONCEPT.md`](concept/CONCEPT.md).
+
+**User Menu** — The header menu for Settings, the language switcher and the
+  color mode. It will hold logout once authentication exists. See
+  [`SAD.md`](copilot/frontend/SAD.md#app-layout-and-routes).

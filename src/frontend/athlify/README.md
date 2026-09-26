@@ -5,6 +5,7 @@ Tailwind CSS v4, react-router-dom and i18next.
 
 ```bash
 npm run dev        # Vite dev server
+npm test           # Vitest (jsdom) component and routing tests
 npm run typecheck  # tsc -b --noEmit
 npm run lint       # ESLint
 npm run format     # Prettier

@@ -47,7 +47,7 @@ athlify/
 ├── src/backend/             # .NET solution: Athlify.Api and Athlify.Api.Tests
 ├── src/frontend/athlify/    # React/TypeScript/Vite app (npm workspace)
 ├── package.json             # npm workspace root and Lefthook install
-└── lefthook.yml             # pre-commit hooks for frontend format/lint/typecheck
+└── lefthook.yml             # pre-commit hooks (commands currently commented out)
 ```
 
 Database, reverse proxy and Strava integration boundaries are still planned.

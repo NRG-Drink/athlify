@@ -53,13 +53,14 @@ If a requirement is not supported by these sources, do not invent a function. Do
 
 The frontend is under `../../../src/frontend/athlify/`. It uses React 19,
 TypeScript, Vite, Chakra UI v3, Tailwind CSS v4, react-router-dom and
-i18next. It is an app shell for technology exploration, with a color-mode
-toggle, a German/English language switcher and prototype Body-Stats charts
-built from sample data. It has no backend integration and no Athlify domain
-behavior. The backend prototype is under `../../../src/backend/`. See
+i18next. It provides the App Layout (header with Primary Navigation, User
+Menu with language switcher and color mode, mobile drawer), the `Page` frame
+and placeholder pages, plus prototype Body-Stats charts. It has no Athlify
+domain behavior; only the hybrid chart prototype queries the backend. The backend prototype is under `../../../src/backend/`. See
 [`SAD.md`](SAD.md) for the folder layout and open decisions. Do not present
 the exploration UI as completed product functionality.
 
-Verify frontend changes with `npm run typecheck`, `npm run lint` and
-`npm run build` in `src/frontend/athlify/`. Lefthook runs format, lint and
-typecheck on staged frontend files before each commit.
+Verify frontend changes with `npm test`, `npm run typecheck`, `npm run lint`
+and `npm run build` in `src/frontend/athlify/`. The Lefthook pre-commit
+commands are currently commented out in `lefthook.yml`, so run these checks
+yourself before committing.

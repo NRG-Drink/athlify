@@ -23,13 +23,15 @@ existing history: `feat:`, `chore:`, `test:`, `deps:`, `docs:`.
 ## Local checks and git hooks
 
 `npm install` in the repository root installs the frontend workspace and the
-[Lefthook](../lefthook.yml) git hooks. Before each commit, the hooks run
-Prettier, ESLint and the TypeScript type check on staged frontend files, and
-a failing check blocks the commit.
+[Lefthook](../lefthook.yml) git hooks. The hooks are meant to run Prettier,
+ESLint and the TypeScript type check on staged frontend files, but all
+commands in `lefthook.yml` are currently commented out, so nothing runs
+before a commit.
 
 Run the checks manually with:
 
 ```bash
+npm test --workspace athlify              # frontend tests (Vitest)
 npm run typecheck --workspace athlify
 npm run lint --workspace athlify
 npm run build --workspace athlify
