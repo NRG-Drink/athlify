@@ -60,11 +60,15 @@ export function Page({
         justify="space-between"
         gap="4"
       >
-        <Stack gap="1">
-          <Heading as="h1" size="2xl" letterSpacing="tight">
+        <Stack gap="2">
+          <Heading as="h1" fontSize={{ base: '2rem', md: '2.5rem' }} lineHeight="1.1">
             {title}
           </Heading>
-          {description && <Text color="fg.muted">{description}</Text>}
+          {description && (
+            <Text color="fg.muted" maxW="65ch">
+              {description}
+            </Text>
+          )}
         </Stack>
         {actions && (
           <Flex gap="2" wrap="wrap">

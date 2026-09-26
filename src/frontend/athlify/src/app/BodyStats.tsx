@@ -14,19 +14,19 @@ function BodyStats() {
       <Stack gap="10">
         <DemoChakra />
         <Stack gap="4">
-          <Heading as="h2" size="md">
+          <Heading as="h2" fontSize="1.5rem" lineHeight="1.2">
             Hybrid Chart
           </Heading>
           <ChartBodyStatsHybrid />
         </Stack>
         <Stack gap="4">
-          <Heading as="h2" size="md">
+          <Heading as="h2" fontSize="1.5rem" lineHeight="1.2">
             Recharts Chart
           </Heading>
           <ChartBodyStatsRecharts />
         </Stack>
         <Stack gap="4">
-          <Heading as="h2" size="md">
+          <Heading as="h2" fontSize="1.5rem" lineHeight="1.2">
             Chakra Chart
           </Heading>
           <ChartBodyStatsChakra />
