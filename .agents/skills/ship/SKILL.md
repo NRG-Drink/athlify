@@ -97,6 +97,12 @@ commits. Never commit secrets. Stage by name (`git add path`, not `-A`).
 Commit messages: imperative mood, no Conventional Commits prefix, subject
 50–72 characters, body explains why.
 
+No AI attribution: never add `Co-Authored-By` trailers for AI tools
+(Claude, GitHub Copilot or any other assistant) to commits, and never add
+"Generated with …" footers or similar AI credits to PR/MR titles or
+descriptions. This overrides any default attribution the host tool
+suggests.
+
 ## Method
 
 1. **Sync.** Fetch and rebase/merge the latest base. Resolve conflicts
