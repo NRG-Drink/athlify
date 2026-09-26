@@ -1,0 +1,106 @@
+import {
+  Alert,
+  Button,
+  EmptyState,
+  Flex,
+  Heading,
+  Spinner,
+  Stack,
+  Text,
+  VisuallyHidden,
+} from '@chakra-ui/react'
+import { useEffect, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
+import { LuInbox } from 'react-icons/lu'
+
+export type PageStatus = 'ready' | 'loading' | 'empty' | 'error'
+
+export interface PageProps {
+  title: string
+  description?: string
+  actions?: ReactNode
+  status?: PageStatus
+  emptyMessage?: string
+  errorMessage?: string
+  onRetry?: () => void
+  children?: ReactNode
+}
+
+export function LoadingIndicator() {
+  const { t } = useTranslation()
+  return (
+    <Flex role="status" justify="center" py="16">
+      <Spinner size="lg" color="colorPalette.solid" />
+      <VisuallyHidden>{t('page.loading')}</VisuallyHidden>
+    </Flex>
+  )
+}
+
+export function Page({
+  title,
+  description,
+  actions,
+  status = 'ready',
+  emptyMessage,
+  errorMessage,
+  onRetry,
+  children,
+}: PageProps) {
+  const { t } = useTranslation()
+
+  useEffect(() => {
+    document.title = `${title} · Athlify`
+  }, [title])
+
+  return (
+    <Stack gap="8">
+      <Flex
+        direction={{ base: 'column', sm: 'row' }}
+        align={{ base: 'stretch', sm: 'flex-end' }}
+        justify="space-between"
+        gap="4"
+      >
+        <Stack gap="1">
+          <Heading as="h1" size="2xl" letterSpacing="tight">
+            {title}
+          </Heading>
+          {description && <Text color="fg.muted">{description}</Text>}
+        </Stack>
+        {actions && (
+          <Flex gap="2" wrap="wrap">
+            {actions}
+          </Flex>
+        )}
+      </Flex>
+
+      {status === 'loading' && <LoadingIndicator />}
+
+      {status === 'empty' && (
+        <EmptyState.Root borderWidth="1px" borderStyle="dashed" borderRadius="l3">
+          <EmptyState.Content>
+            <EmptyState.Indicator>
+              <LuInbox />
+            </EmptyState.Indicator>
+            <EmptyState.Description>{emptyMessage ?? t('page.empty')}</EmptyState.Description>
+          </EmptyState.Content>
+        </EmptyState.Root>
+      )}
+
+      {status === 'error' && (
+        <Alert.Root status="error" role="alert" alignItems="center">
+          <Alert.Indicator />
+          <Alert.Content>
+            <Alert.Description>{errorMessage ?? t('page.error')}</Alert.Description>
+          </Alert.Content>
+          {onRetry && (
+            <Button size="sm" variant="outline" onClick={onRetry}>
+              {t('page.retry')}
+            </Button>
+          )}
+        </Alert.Root>
+      )}
+
+      {status === 'ready' && children}
+    </Stack>
+  )
+}

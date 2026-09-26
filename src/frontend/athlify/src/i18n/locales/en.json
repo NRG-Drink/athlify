@@ -1,7 +1,37 @@
 {
   "translation": {
-    "hello": "Hello",
-    "world": "World",
-    "bodyStats": "Body Stats Title"
+    "nav": {
+      "primaryLabel": "Main navigation",
+      "dashboard": "Dashboard",
+      "activities": "Activities",
+      "garage": "Garage",
+      "bodyStats": "Body-Stats",
+      "events": "Events",
+      "settings": "Settings"
+    },
+    "layout": {
+      "skipToContent": "Skip to content",
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu",
+      "userMenu": "User menu",
+      "colorMode": "Toggle color mode",
+      "language": "Language"
+    },
+    "page": {
+      "loading": "Loading …",
+      "empty": "No data yet.",
+      "error": "The data could not be loaded.",
+      "retry": "Try again",
+      "comingSoon": "Coming soon. This area is under development."
+    },
+    "notFound": {
+      "title": "Page not found",
+      "message": "This page does not exist or has been moved.",
+      "backToDashboard": "Back to Dashboard"
+    },
+    "routeError": {
+      "title": "Something went wrong",
+      "message": "This page could not be displayed. Please try again."
+    }
   }
 }
