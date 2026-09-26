@@ -2,8 +2,11 @@
 
 Technical detail documentation for the functional concept in [`CONCEPT.md`](CONCEPT.md).
 
-The following strategy describes the target product. There is currently no
-application source, test project or deployment configuration in the repository.
+The following strategy describes the target product. Currently the backend
+has TUnit endpoint tests (`src/backend/Athlify.Api.Tests/`) against the
+GraphQL endpoint. The frontend has Vitest + React Testing Library component
+and routing tests (`npm test`), plus type checking and linting. There
+are no git hooks. There is no deployment configuration.
 
 ## Testing strategy
 

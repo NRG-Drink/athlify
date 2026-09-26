@@ -30,8 +30,8 @@ function ChartBodyStatsHybridContent() {
       date: new Date(entry.date as string).toLocaleDateString(),
     })),
     series: [
-      { name: 'weight', color: 'blue.solid' },
-      { name: 'bodyFatPercentage', color: 'teal.solid' },
+      { name: 'weight', color: 'chart.primary' },
+      { name: 'bodyFatPercentage', color: 'chart.secondary' },
       { name: 'musclePercentage', color: 'orange.solid' },
       { name: 'waterPercentage', color: 'cyan.solid' },
       { name: 'boneMass', color: 'purple.solid' },
@@ -53,7 +53,7 @@ function ChartBodyStatsHybridContent() {
             type="monotone"
             isAnimationActive={false}
             dataKey={chart.key('weight')}
-            stroke={chart.color('teal.solid')}
+            stroke={chart.color('chart.primary')}
             strokeWidth={2}
             dot={true}
           />
@@ -61,9 +61,9 @@ function ChartBodyStatsHybridContent() {
             key="bodyFatPercentage"
             isAnimationActive={false}
             dataKey={chart.key('bodyFatPercentage')}
-            stroke={chart.color('blue.solid')}
+            stroke={chart.color('chart.secondary')}
             strokeWidth={2}
-            fill={chart.color('blue.solid')}
+            fill={chart.color('chart.secondary')}
             barSize={20}
           />
         </LineChart>

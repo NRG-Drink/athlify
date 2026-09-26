@@ -1,7 +1,7 @@
 # Athlify Frontend – Software Architecture Document
 
 **Project**: Athlify
-**Last Updated**: 2026-09-09
+**Last Updated**: 2026-09-26
 **Version**: 1.0
 
 ## Overview
@@ -12,19 +12,27 @@ own persistence, authorization or domain calculations.
 
 ## Architecture Style
 
-The target architecture is a modular client application composed of separated
-domain views and shared presentation modules. The concrete framework and
-bundler remain open decisions.
+The target architecture is a modular single-page application built from
+separate domain views and shared presentation modules. It uses React 19,
+TypeScript and Vite.
 
 ## Technology Stack
 
-| Layer | Technology | Rationale |
+| Layer | Technology | Status |
 | --- | --- | --- |
-| Frontend | React, JavaScript/JSX and Vite | Current scaffold; TypeScript remains the planned typed target |
-| Backend | ASP.NET Core with Hot Chocolate GraphQL prototype | Current repository contract and prototype |
-| Database | Backend-owned; final persistence is open | The frontend must not own domain persistence |
-| Auth | Backend-owned authentication and authorization | Personal data ownership must be enforced server-side |
-| Hosting | Open | Deployment architecture is not yet decided |
+| Framework | React 19, TypeScript 6 (`tsc -b` project references), Vite 8 | Implemented |
+| Components and theming | Chakra UI v3 with Emotion and `next-themes` color mode; custom "Night Ride" theme in `src/theme/` | Proposed in [ADR-002](adr/ADR-002-chakra-ui-component-system.md) and [ADR-005](adr/ADR-005-theme-tokens.md) |
+| Fonts | Inter (variable) and Barlow Semi Condensed, self-hosted via `@fontsource` | Implemented |
+| Styling utilities | Tailwind CSS v4 through `@tailwindcss/vite` | Loaded; coexistence with Chakra is open |
+| Charts | Recharts 3 and `@chakra-ui/charts` | Being evaluated with prototype variants |
+| Routing | `react-router-dom` v7 data mode (`createBrowserRouter`, nested app-layout route) | Proposed in [ADR-004](adr/ADR-004-react-router-data-mode.md) |
+| Localization | i18next with react-i18next (`de` default, `en` fallback) | Proposed in [ADR-003](adr/ADR-003-i18next-localization.md) |
+| Icons | `react-icons` (Lucide set) | Implemented |
+| Testing | Vitest + React Testing Library + user-event in jsdom (`npm test`) | Implemented |
+| Tooling | ESLint 10 + typescript-eslint, Prettier; no git hooks | Implemented |
+| Backend contract | Hot Chocolate GraphQL | Proposed in [shared ADR-001](../adr/ADR-001-graphql-api-contract.md); no client integration yet |
+| Auth | Backend-owned authentication and authorization | Planned |
+| Hosting | Open | Not decided |
 
 ## System Components
 
@@ -42,15 +50,34 @@ This document describes the technical context for frontend changes. The function
 
 ## Current frontend state
 
-The current frontend scaffold is under `../../../src/frontend/athlify/` and
-uses React, Vite and JavaScript/JSX. It contains template UI only; it does not
-yet implement routing, API integration, persistence or Athlify domain
-behavior. The existing code under `../../../src/GettingStarted/` is backend
-prototype code.
+The frontend is under `../../../src/frontend/athlify/`. It is a standalone
+npm package with its own `package.json` and `package-lock.json`. It is an app
+shell used for technology exploration. No Athlify domain behavior is
+implemented; only the hybrid Body-Stats chart prototype queries the backend.
 
-The frontend technology and bundler are now established by the scaffold.
-TypeScript adoption, routing, state management and backend integration remain
-open decisions and must be recorded when introduced.
+```text
+src/frontend/athlify/src/
+├── main.tsx          # entry: StrictMode, Relay, Chakra Provider, RouterProvider
+├── routes.tsx        # route table (RouteObject[]) shared by app and tests
+├── navigation/       # paths.ts (URL constants), navItems.ts (Primary Navigation)
+├── layouts/          # AppLayout, AppHeader, PrimaryNav, MobileNav, UserMenu
+├── app/              # route-level views (BodyStats, PlaceholderPage, NotFoundPage, RouteErrorPage)
+├── theme/            # Chakra system: palette, semantic tokens, fonts (ADR-005)
+├── components/       # shared components (Page, BrandMark, charts, toggles, switcher)
+│   └── ui/           # generated Chakra UI snippets (provider, color-mode, toaster, tooltip)
+├── tests/            # all Vitest tests, mirroring src/ (plus setup.ts and utils/renderRoute.tsx)
+├── hooks/            # shared hooks (empty)
+├── types/            # shared types (empty)
+├── i18n/             # i18next setup and de/en locale resources
+└── index.css         # Tailwind import only
+```
+
+The App Layout and routing are implemented. Dashboard, Activities, Garage,
+Events and Settings render placeholder pages. The `/body-stats` view compares
+three prototype chart variants; the hybrid variant queries the backend
+prototype through Relay. State management, the GraphQL client and the
+Tailwind/Chakra boundary are still open decisions. Record them as ADRs when
+they are made.
 
 ## Responsibility boundary
 
@@ -58,7 +85,7 @@ The frontend is responsible for navigation, presentation, input, local UI states
 
 ## Language and naming conventions
 
-The user interface supports German and English. Visible text is maintained through translations and is not hard-coded as a single language in components. Documentation is English-only; source code, components, variables, routes and API names are named in English.
+The user interface supports German and English. Visible text is maintained through translations and is not hard-coded as a single language in components. German UI text addresses the user as "du" (for example, "Hier erfasst du bald deine Velos und Gadgets."). Documentation is English-only; source code, components, variables, routes and API names are named in English.
 
 ## UI structure
 
@@ -72,6 +99,65 @@ The domain areas are implemented as independent views or clearly separated UI mo
 6. Events
 
 Shared components for navigation, filters, forms, tables, charts, dialogs and feedback should be reused.
+
+### App Layout and routes
+
+All views render inside the App Layout (`src/layouts/AppLayout.tsx`): a skip
+link, a sticky header with the brand, the Primary Navigation and the User
+Menu, and the `main` content area. Below the `md` breakpoint the Primary
+Navigation moves into a drawer opened by a menu button. The User Menu holds
+Settings, the language switcher and the color-mode toggle. Render errors of a
+view are shown inside the layout through the route `errorElement`
+([ADR-004](adr/ADR-004-react-router-data-mode.md)).
+
+| Path | View | Navigation |
+| --- | --- | --- |
+| `/` | redirects to `/dashboard` | – |
+| `/dashboard` | Dashboard (placeholder) | Primary Navigation |
+| `/activities` | Activities (placeholder) | Primary Navigation |
+| `/garage` | Garage (placeholder) | Primary Navigation |
+| `/body-stats` | Body-Stats (chart prototype) | Primary Navigation |
+| `/events` | Events (placeholder) | Primary Navigation |
+| `/settings` | Settings (placeholder) | User Menu |
+| any other | Not Found page | – |
+
+There is no Administration entry until the backend exposes user roles.
+
+### Page frame
+
+Every view wraps its content in `Page` (`src/components/Page.tsx`). It
+renders the `h1` title, an optional description and an actions area, and it
+sets the document title. Its `status` prop (`ready`, `loading`, `empty`,
+`error`) selects exactly one body. Children render only when the status is
+`ready`, so stale content never looks like current data. Views pass their
+own `emptyMessage` (and optionally an `emptyIcon`) instead of relying on the
+generic default. A page has at most one primary action (`Button` variant
+`solid`) in `actions`; other actions use `outline` or `ghost`.
+
+### Theme
+
+The "Night Ride" theme ([ADR-005](adr/ADR-005-theme-tokens.md)) is derived
+from the favicon's cyan-to-cobalt gradient. It is designed dark-first, and
+the default color mode follows the operating system, so both modes are
+tuned.
+
+- **Color meaning:** blue (`brand`) is the app and interaction; orange
+  (`spark`) is only for effort and power data such as TSS. Views use only
+  semantic tokens (`bg*`, `fg*`, `border`, `brand`, `spark`, `chart.*`),
+  never hex values or Chakra's built-in palettes.
+- **Contrast:** text reaches at least 4.5:1 and graphics at least 3:1 in
+  both modes. Brand cyan is never text in light mode. These rules are
+  tested in `src/tests/theme/contrast.test.ts`.
+- **Signature:** the active navigation item is marked by a skewed bar in
+  the `indicator` gradient on the header's bottom edge (a vertical bar in
+  the drawer). Use at most one gradient element per visible area.
+- **Typography:** Chakra `Heading`s use Barlow Semi Condensed; all other
+  text uses Inter. Both are self-hosted; no external font CDN. KPI numbers
+  use the `kpi` text style (italic, tabular numbers) together with a unit,
+  a label and a comparison period. Missing data shows "—", never `0`.
+- **Charts:** series colors come from `chart.primary`, `chart.secondary`,
+  `chart.effort` and `chart.form`; `secondary` and `form` never share a
+  chart, and series are never distinguished by color alone.
 
 ## Key Components
 
@@ -124,7 +210,7 @@ after the backend confirms the change.
 
 ## Scalability
 
-- Current capacity: Template-only React/Vite scaffold; no product behavior.
+- Current capacity: Technology-exploration app shell; no product behavior.
 - Scaling strategy: Keep views and shared UI modules independently replaceable;
   defer deployment-specific scaling decisions.
 - Known bottlenecks: Backend API and synchronization performance are outside

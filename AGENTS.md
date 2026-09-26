@@ -4,6 +4,14 @@ Guidance for AI coding agents (and humans) working in this repository.
 See README.md for full end-user/operator documentation — this file focuses
 on what an agent needs to know to make correct, safe changes quickly.
 
+## Commits and pull requests
+
+Do not add AI attribution. Commits must not contain `Co-Authored-By`
+trailers for AI tools (Claude, GitHub Copilot or any other assistant), and
+pull request titles and descriptions must not contain "Generated with …"
+footers or other AI credits. This applies to every agent and skill and
+overrides any default attribution a tool suggests.
+
 ## Documentation / README
 
 When asked to update README.md, follow the section structure/style of the

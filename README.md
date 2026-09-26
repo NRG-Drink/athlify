@@ -1,5 +1,12 @@
 # Athlify
 
+![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)
+![GraphQL](https://img.shields.io/badge/GraphQL-Hot%20Chocolate-E10098?logo=graphql&logoColor=white)
+![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
+![Status](https://img.shields.io/badge/status-prototype-orange)
+
 ## Table of Contents
 
 - [Overview & Features](#overview--features)
@@ -7,80 +14,115 @@
 - [Documentation](#documentation)
 - [Getting Started & Installation](#getting-started--installation)
 - [Usage](#usage)
-- [AI Documentation](#ai-documentation)
 - [Contributing](#contributing)
 - [Issues](#issues)
 - [License](#license)
 
 ## Overview & Features
 
-Athlify is a self-hosted web application for cyclists. It is intended to
-import activities from Strava, support manual activity management and provide
-personal analysis of training, bicycles, body data and relevant events.
+Athlify is a self-hosted web application for cyclists. It will import
+activities from Strava, support manual activity management and provide
+personal analysis of training, bicycles, body data and relevant events. The
+functional scope is defined in the [software concept](docs/concept/CONCEPT.md).
 
-The functional scope is defined in the
-[software concept](docs/concept/CONCEPT.md). The current repository contains a
-small backend prototype; the complete product is not implemented yet.
+The product is not implemented yet. The repository currently contains:
+
+- **Backend prototype**: a GraphQL API with Body-Stats queries and mutations
+  on an in-memory database with seeded sample data, plus endpoint tests.
+- **Frontend app shell**: a React app with light/dark color mode, a
+  German/English language switcher, routing and prototype Body-Stats charts
+  built from sample data. It does not call the backend yet.
 
 ## Tech Stack & Sources
 
-The current prototype is a .NET 10 web application using ASP.NET Core,
-Hot Chocolate GraphQL 16 and Entity Framework Core with an in-memory database.
-The planned product architecture and technology direction are documented in
-the [concept technical documents](docs/concept/technology-stack.md).
+| Area     | Technology                                                                                  |
+| -------- | ------------------------------------------------------------------------------------------- |
+| Frontend | React 19, TypeScript, Vite, Chakra UI v3 (custom theme), Tailwind CSS v4, react-router-dom, i18next, Recharts, self-hosted Inter and Barlow Semi Condensed |
+| Backend  | .NET 10, ASP.NET Core, Hot Chocolate GraphQL 16, EF Core InMemory (PostgreSQL planned)      |
+| Testing  | TUnit (backend); Vitest + React Testing Library, ESLint, Prettier and `tsc` (frontend)      |
 
-Additional implementation context is available in the
-[frontend Copilot documentation](docs/copilot/frontend/README.md) and
-[backend Copilot documentation](docs/copilot/backend/README.md).
+```text
+src/
+├── backend/              # Athlify.slnx: Athlify.Api + Athlify.Api.Tests
+└── frontend/athlify/     # React/Vite app (standalone npm package)
+```
+
+The planned target stack is described in the
+[technology stack](docs/concept/technology-stack.md). Architecture decisions
+are recorded as ADRs (see [Documentation](#documentation)).
 
 ## Documentation
 
-The [documentation hub](docs/README.md) puts user-relevant product,
-requirements and technical documents first. AI-assisted implementation
-guidance is collected in the [Copilot documentation index](docs/copilot/README.md).
+- [Documentation hub](docs/README.md): product, requirements and technical
+  documents.
+- [AI documentation index](docs/copilot/README.md): source authority,
+  frontend/backend context, ADRs and learnings for AI-assisted work.
+- [Glossary](docs/GLOSSARY.md): shared domain and UI terminology.
+- [Personas](docs/copilot/personas.md): who the UI is designed for.
+- [Configuration](docs/CONFIGURATION.md): ports, settings and tooling
+  configuration.
+- [Contributing guide](docs/CONTRIBUTING.md): branches, commits, hooks and
+  documentation rules.
 
 ## Getting Started & Installation
 
 ### Prerequisites
 
 - .NET 10 SDK
+- Node.js 20 or later with npm
 
-### Run the prototype
+### Install
 
 ```bash
-dotnet run --project src/GettingStarted/GettingStarted.csproj
+cd src/frontend/athlify
+npm install       # installs the frontend dependencies
+npm run relay     # generates the git-ignored Relay artifacts
 ```
 
-The application exposes the GraphQL endpoint configured by the ASP.NET Core
-project. See `src/GettingStarted/Properties/launchSettings.json` for local
-development URLs.
+### Run
+
+```bash
+# Backend: GraphQL endpoint at http://localhost:5095/graphql
+dotnet run --project src/backend/Athlify.Api
+
+# Frontend: Vite dev server (http://localhost:5173 by default)
+cd src/frontend/athlify && npm run dev
+```
 
 ## Usage
 
-Use the prototype to explore the current GraphQL getting-started surface. Do
-not treat it as the completed Athlify product; product requirements and
-acceptance criteria remain in the
-[software concept](docs/concept/CONCEPT.md).
+- Open `http://localhost:5095/graphql` to explore the schema in the
+  Hot Chocolate GraphQL IDE (for example, `bodyStats`, `addBodyStats`).
+- Open the frontend and go to **Body-Stats** to see the prototype charts.
+  Use the user menu in the header to switch the color mode and the language.
 
-## AI Documentation
+Common checks:
 
-The repository-local [AI documentation index](docs/copilot/README.md)
-explains source authority, frontend/backend boundaries, architecture
-decisions and evidence-backed learnings.
+```bash
+dotnet run --project src/backend/Athlify.Api.Tests   # backend tests (TUnit)
+cd src/frontend/athlify
+npm test
+npm run typecheck
+npm run lint
+npm run build
+```
+
+This is a prototype. Do not treat it as the completed Athlify product.
 
 ## Contributing
 
-This is a private GitHub-hosted student project. Coordinate changes with the
-project team, keep the functional concept and related technical documents
-synchronized, and follow the repository guidance in
-[AGENTS.md](AGENTS.md).
+This is a private, GitHub-hosted student project by a two-person team.
+Work on a feature branch and open a pull request into `develop`. There are no
+git hooks, so run the checks above before committing. Keep the functional
+concept, the technical documents and the glossary in sync with your change, and follow [AGENTS.md](AGENTS.md). See
+the [contributing guide](docs/CONTRIBUTING.md) for details.
 
 ## Issues
 
 Report defects and propose changes through the repository's private GitHub
-issue and pull-request workflow.
+issues and pull requests.
 
 ## License
 
-This repository does not currently declare an open-source license. All rights
-are reserved unless the project owners provide separate permission.
+This repository does not declare an open-source license. All rights are
+reserved unless the project owners give separate permission.
