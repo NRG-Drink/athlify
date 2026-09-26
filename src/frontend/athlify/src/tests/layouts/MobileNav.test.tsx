@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, test } from 'vitest'
-import { paths } from '../navigation/paths'
-import { renderRoute } from '../test/renderRoute'
+import { paths } from '../../navigation/paths'
+import { renderRoute } from '../utils/renderRoute'
 
 describe('MobileNav', () => {
   test('opens a drawer with the areas and closes after navigating', async () => {

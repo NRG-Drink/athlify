@@ -1,9 +1,9 @@
 import { screen, within } from '@testing-library/react'
 import type { RouteObject } from 'react-router-dom'
 import { describe, expect, test, vi } from 'vitest'
-import { paths } from './navigation/paths'
-import { routes } from './routes'
-import { renderRoute } from './test/renderRoute'
+import { paths } from '../navigation/paths'
+import { routes } from '../routes'
+import { renderRoute } from './utils/renderRoute'
 
 function primaryNav() {
   return screen.getByRole('navigation', { name: 'Hauptnavigation' })

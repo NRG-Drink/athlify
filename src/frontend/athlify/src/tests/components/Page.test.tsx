@@ -2,8 +2,8 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactElement } from 'react'
 import { describe, expect, test, vi } from 'vitest'
-import { Page } from './Page'
-import { Provider } from './ui/provider'
+import { Page } from '../../components/Page'
+import { Provider } from '../../components/ui/provider'
 
 function renderPage(ui: ReactElement) {
   return render(<Provider>{ui}</Provider>)

@@ -63,7 +63,7 @@ src/frontend/athlify/src/
 ├── app/              # route-level views (BodyStats, PlaceholderPage, NotFoundPage, RouteErrorPage)
 ├── components/       # shared components (Page, charts, toggles, switcher)
 │   └── ui/           # generated Chakra UI snippets (provider, color-mode, toaster, tooltip)
-├── test/             # Vitest setup (jsdom stubs) and renderRoute helper
+├── tests/            # all Vitest tests, mirroring src/ (plus setup.ts and utils/renderRoute.tsx)
 ├── hooks/            # shared hooks (empty)
 ├── types/            # shared types (empty)
 ├── i18n/             # i18next setup and de/en locale resources

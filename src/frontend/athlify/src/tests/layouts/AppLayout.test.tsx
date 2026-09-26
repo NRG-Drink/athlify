@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react'
 import { describe, expect, test } from 'vitest'
-import { paths } from '../navigation/paths'
-import { renderRoute } from '../test/renderRoute'
+import { paths } from '../../navigation/paths'
+import { renderRoute } from '../utils/renderRoute'
 
 function primaryNav() {
   return screen.getByRole('navigation', { name: 'Hauptnavigation' })
