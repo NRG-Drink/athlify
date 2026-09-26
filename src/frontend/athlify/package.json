@@ -2,6 +2,10 @@
   "name": "athlify",
   "private": true,
   "version": "0.0.0",
+  "description": "Athlify — personal cycling data analysis",
+  "engines": {
+    "node": ">=20"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",

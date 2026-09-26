@@ -45,9 +45,7 @@ athlify/
 ├── docs/concept/            # functional and technical concept
 ├── docs/copilot/            # implementation context, PRD/SAD, ADRs, learnings
 ├── src/backend/             # .NET solution: Athlify.Api and Athlify.Api.Tests
-├── src/frontend/athlify/    # React/TypeScript/Vite app (npm workspace)
-├── package.json             # npm workspace root and Lefthook install
-└── lefthook.yml             # pre-commit hooks (commands currently commented out)
+└── src/frontend/athlify/    # React/TypeScript/Vite app (standalone npm package)
 ```
 
 Database, reverse proxy and Strava integration boundaries are still planned.

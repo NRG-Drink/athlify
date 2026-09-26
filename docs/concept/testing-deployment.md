@@ -5,8 +5,8 @@ Technical detail documentation for the functional concept in [`CONCEPT.md`](CONC
 The following strategy describes the target product. Currently the backend
 has TUnit endpoint tests (`src/backend/Athlify.Api.Tests/`) against the
 GraphQL endpoint. The frontend has Vitest + React Testing Library component
-and routing tests (`npm test`), plus type checking and linting. Its Lefthook
-pre-commit hooks are currently disabled. There is no deployment configuration.
+and routing tests (`npm test`), plus type checking and linting. There
+are no git hooks. There is no deployment configuration.
 
 ## Testing strategy
 

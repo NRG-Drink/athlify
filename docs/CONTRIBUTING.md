@@ -20,21 +20,19 @@ rules for documentation and AI-assisted work are in [`AGENTS.md`](../AGENTS.md).
 Use a short conventional prefix followed by an imperative summary, as in the
 existing history: `feat:`, `chore:`, `test:`, `deps:`, `docs:`.
 
-## Local checks and git hooks
+## Local checks
 
-`npm install` in the repository root installs the frontend workspace and the
-[Lefthook](../lefthook.yml) git hooks. The hooks are meant to run Prettier,
-ESLint and the TypeScript type check on staged frontend files, but all
-commands in `lefthook.yml` are currently commented out, so nothing runs
-before a commit.
-
-Run the checks manually with:
+The frontend is a standalone npm package: run `npm install` in
+`src/frontend/athlify/`. There is no `package.json` in the repository root.
+The project uses no git hooks, so run the checks yourself before committing:
 
 ```bash
-npm test --workspace athlify              # frontend tests (Vitest)
-npm run typecheck --workspace athlify
-npm run lint --workspace athlify
-npm run build --workspace athlify
+cd src/frontend/athlify
+npm test              # frontend tests (Vitest)
+npm run typecheck
+npm run lint
+npm run build
+cd ../../..
 dotnet run --project src/backend/Athlify.Api.Tests   # backend tests (TUnit)
 ```
 

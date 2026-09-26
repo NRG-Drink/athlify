@@ -40,8 +40,7 @@ The frontend has no backend URL or environment variables yet.
 
 | Setting | Location | Purpose |
 | --- | --- | --- |
-| npm workspace | root `package.json` | Declares `src/frontend/athlify`; Node.js 20 or later |
-| Git hooks | `lefthook.yml` | Pre-commit format, lint and type check of frontend files |
+| npm package | `src/frontend/athlify/package.json` | Frontend dependencies, scripts and Node.js 20 or later (no root `package.json`) |
 | Documentation root | `.agents/docs-root` | Points AI documentation skills to `docs/copilot` |
 
 The documentation root is resolved in this order, with the last one that is

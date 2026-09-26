@@ -96,7 +96,7 @@ src/
 ├── backend/            # .NET 10 solution Athlify.slnx
 │   ├── Athlify.Api/        # ASP.NET Core + Hot Chocolate GraphQL + EF Core InMemory
 │   └── Athlify.Api.Tests/  # TUnit endpoint tests
-└── frontend/athlify/   # React 19 + TypeScript + Vite (npm workspace)
+└── frontend/athlify/   # React 19 + TypeScript + Vite (standalone npm package)
 ```
 
 - **Backend**: Body-Stats queries and mutations at `/graphql`, with seeded
@@ -105,6 +105,6 @@ src/
 - **Frontend**: Chakra UI, Tailwind CSS, react-router-dom and i18next app
   shell with the App Layout, placeholder pages and prototype Body-Stats
   charts. Only the hybrid chart prototype queries the backend. See [`frontend/SAD.md`](frontend/SAD.md).
-- **Tooling**: the root `package.json` declares the npm workspace and
-  installs Lefthook. Its pre-commit commands for frontend format, lint and
-  typecheck are currently commented out in `lefthook.yml`.
+- **Tooling**: the frontend is a standalone npm package with its own
+  `package.json` and lockfile; the repository root has none. There are no
+  git hooks; frontend checks run manually.

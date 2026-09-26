@@ -44,7 +44,7 @@ The product is not implemented yet. The repository currently contains:
 ```text
 src/
 ├── backend/              # Athlify.slnx: Athlify.Api + Athlify.Api.Tests
-└── frontend/athlify/     # React/Vite app (npm workspace)
+└── frontend/athlify/     # React/Vite app (standalone npm package)
 ```
 
 The planned target stack is described in the
@@ -73,7 +73,9 @@ are recorded as ADRs (see [Documentation](#documentation)).
 ### Install
 
 ```bash
-npm install   # installs the frontend workspace and the Lefthook git hooks
+cd src/frontend/athlify
+npm install       # installs the frontend dependencies
+npm run relay     # generates the git-ignored Relay artifacts
 ```
 
 ### Run
@@ -83,24 +85,25 @@ npm install   # installs the frontend workspace and the Lefthook git hooks
 dotnet run --project src/backend/Athlify.Api
 
 # Frontend: Vite dev server (http://localhost:5173 by default)
-npm run dev --workspace athlify
+cd src/frontend/athlify && npm run dev
 ```
 
 ## Usage
 
 - Open `http://localhost:5095/graphql` to explore the schema in the
   Hot Chocolate GraphQL IDE (for example, `bodyStats`, `addBodyStats`).
-- Open the frontend and go to **Body Stats** to see the prototype charts.
-  Use the header controls to switch the color mode and the language.
+- Open the frontend and go to **Body-Stats** to see the prototype charts.
+  Use the user menu in the header to switch the color mode and the language.
 
 Common checks:
 
 ```bash
 dotnet run --project src/backend/Athlify.Api.Tests   # backend tests (TUnit)
-npm test --workspace athlify
-npm run typecheck --workspace athlify
-npm run lint --workspace athlify
-npm run build --workspace athlify
+cd src/frontend/athlify
+npm test
+npm run typecheck
+npm run lint
+npm run build
 ```
 
 This is a prototype. Do not treat it as the completed Athlify product.
@@ -108,10 +111,9 @@ This is a prototype. Do not treat it as the completed Athlify product.
 ## Contributing
 
 This is a private, GitHub-hosted student project by a two-person team.
-Work on a feature branch and open a pull request into `develop`. Lefthook is
-installed, but its pre-commit commands are currently disabled in
-`lefthook.yml`, so run the checks above before committing. Keep the functional concept, the technical documents and the
-glossary in sync with your change, and follow [AGENTS.md](AGENTS.md). See
+Work on a feature branch and open a pull request into `develop`. There are no
+git hooks, so run the checks above before committing. Keep the functional
+concept, the technical documents and the glossary in sync with your change, and follow [AGENTS.md](AGENTS.md). See
 the [contributing guide](docs/CONTRIBUTING.md) for details.
 
 ## Issues

@@ -28,7 +28,7 @@ TypeScript and Vite.
 | Localization | i18next with react-i18next (`de` default, `en` fallback) | Proposed in [ADR-003](adr/ADR-003-i18next-localization.md) |
 | Icons | `react-icons` (Lucide set) | Implemented |
 | Testing | Vitest + React Testing Library + user-event in jsdom (`npm test`) | Implemented |
-| Tooling | ESLint 10 + typescript-eslint, Prettier; Lefthook installed, but all hook commands in `lefthook.yml` are currently commented out | Implemented |
+| Tooling | ESLint 10 + typescript-eslint, Prettier; no git hooks | Implemented |
 | Backend contract | Hot Chocolate GraphQL | Proposed in [shared ADR-001](../adr/ADR-001-graphql-api-contract.md); no client integration yet |
 | Auth | Backend-owned authentication and authorization | Planned |
 | Hosting | Open | Not decided |
@@ -49,10 +49,10 @@ This document describes the technical context for frontend changes. The function
 
 ## Current frontend state
 
-The frontend is under `../../../src/frontend/athlify/`. It is an npm
-workspace of the root `package.json`. It is an app shell used for technology
-exploration. No Athlify domain behavior is implemented, and it does not call
-the backend yet.
+The frontend is under `../../../src/frontend/athlify/`. It is a standalone
+npm package with its own `package.json` and `package-lock.json`. It is an app
+shell used for technology exploration. No Athlify domain behavior is
+implemented; only the hybrid Body-Stats chart prototype queries the backend.
 
 ```text
 src/frontend/athlify/src/

@@ -61,6 +61,5 @@ domain behavior; only the hybrid chart prototype queries the backend. The backen
 the exploration UI as completed product functionality.
 
 Verify frontend changes with `npm test`, `npm run typecheck`, `npm run lint`
-and `npm run build` in `src/frontend/athlify/`. The Lefthook pre-commit
-commands are currently commented out in `lefthook.yml`, so run these checks
-yourself before committing.
+and `npm run build` in `src/frontend/athlify/`. There are no git hooks, so
+run these checks yourself before committing.
