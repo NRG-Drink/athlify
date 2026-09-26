@@ -2,6 +2,7 @@ import { Box, CloseButton, Drawer, IconButton, Portal } from '@chakra-ui/react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LuMenu } from 'react-icons/lu'
+import { BrandMark } from '../components/BrandMark'
 import { NavLinks } from './PrimaryNav'
 
 export function MobileNav() {
@@ -19,9 +20,17 @@ export function MobileNav() {
         <Portal>
           <Drawer.Backdrop />
           <Drawer.Positioner>
-            <Drawer.Content>
+            <Drawer.Content
+              bg="bg.panel"
+              borderEndWidth="1px"
+              borderEndRadius="l3"
+              _dark={{ shadow: 'none' }}
+            >
               <Drawer.Header>
-                <Drawer.Title>Athlify</Drawer.Title>
+                <Drawer.Title display="flex" alignItems="center" gap="2">
+                  <BrandMark boxSize="6" />
+                  Athlify
+                </Drawer.Title>
               </Drawer.Header>
               <Drawer.Body>
                 <Box as="nav" aria-label={t('nav.primaryLabel')}>

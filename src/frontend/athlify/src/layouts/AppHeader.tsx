@@ -1,6 +1,6 @@
 import { Box, Container, Flex, Link } from '@chakra-ui/react'
-import { LuBike } from 'react-icons/lu'
 import { Link as RouterLink } from 'react-router-dom'
+import { BrandMark } from '../components/BrandMark'
 import { paths } from '../navigation/paths'
 import { MobileNav } from './MobileNav'
 import { PrimaryNav } from './PrimaryNav'
@@ -14,7 +14,7 @@ export function AppHeader() {
       top="0"
       zIndex="sticky"
       borderBottomWidth="1px"
-      bg="bg/80"
+      bg="bg.panel/80"
       backdropFilter="blur(8px)"
     >
       <Container maxW="7xl">
@@ -26,25 +26,15 @@ export function AppHeader() {
             alignItems="center"
             gap="2"
             fontWeight="bold"
-            fontSize="lg"
-            letterSpacing="tight"
+            fontSize="1.125rem"
+            letterSpacing="-0.02em"
             color="fg"
             textDecoration="none"
             focusRing="outside"
             _hover={{ textDecoration: 'none' }}
           >
             <RouterLink to={paths.dashboard}>
-              <Flex
-                as="span"
-                align="center"
-                justify="center"
-                boxSize="8"
-                borderRadius="l2"
-                bg="colorPalette.solid"
-                color="colorPalette.contrast"
-              >
-                <LuBike aria-hidden />
-              </Flex>
+              <BrandMark boxSize="7" />
               Athlify
             </RouterLink>
           </Link>

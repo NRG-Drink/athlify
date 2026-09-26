@@ -24,7 +24,14 @@ export function UserMenu() {
       </Popover.Trigger>
       <Portal>
         <Popover.Positioner>
-          <Popover.Content width="64" aria-label={t('layout.userMenu')}>
+          <Popover.Content
+            width="64"
+            aria-label={t('layout.userMenu')}
+            bg="bg.panel"
+            borderWidth="1px"
+            borderRadius="l3"
+            _dark={{ shadow: 'none' }}
+          >
             <Popover.Body p="2">
               <Stack gap="1">
                 <Button asChild variant="ghost" justifyContent="flex-start" size="sm">

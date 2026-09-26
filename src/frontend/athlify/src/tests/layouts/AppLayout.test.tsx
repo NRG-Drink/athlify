@@ -47,6 +47,14 @@ describe('AppLayout', () => {
     expect(document.title).toBe('Events · Athlify')
   })
 
+  test('brand link is named only by its wordmark and leads to the Dashboard', async () => {
+    renderRoute(paths.garage)
+    await screen.findByRole('heading', { level: 1 })
+    const brandLink = screen.getByRole('link', { name: 'Athlify' })
+    expect(brandLink).toHaveAccessibleName('Athlify')
+    expect(brandLink).toHaveAttribute('href', paths.dashboard)
+  })
+
   test('skip link is the first focusable element and targets main', async () => {
     const { user } = renderRoute(paths.dashboard)
     await screen.findByRole('heading', { level: 1 })
