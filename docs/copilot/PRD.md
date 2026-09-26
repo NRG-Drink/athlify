@@ -18,7 +18,8 @@ requirements entry point for the configured documentation root.
 
 The primary users are recreational or hobby cyclists who want a personal
 overview of their cycling history and related data. The immediate project
-context is a two-person student project.
+context is a two-person student project. The concrete persona used for
+design and UI decisions is described in [`personas.md`](personas.md).
 
 ## Goals
 

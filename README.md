@@ -58,6 +58,7 @@ are recorded as ADRs (see [Documentation](#documentation)).
 - [AI documentation index](docs/copilot/README.md): source authority,
   frontend/backend context, ADRs and learnings for AI-assisted work.
 - [Glossary](docs/GLOSSARY.md): shared domain and UI terminology.
+- [Personas](docs/copilot/personas.md): who the UI is designed for.
 - [Configuration](docs/CONFIGURATION.md): ports, settings and tooling
   configuration.
 - [Contributing guide](docs/CONTRIBUTING.md): branches, commits, hooks and

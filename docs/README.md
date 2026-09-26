@@ -9,6 +9,7 @@ maintaining project context.
 | Document                                             | Purpose                                                       |
 | ---------------------------------------------------- | ------------------------------------------------------------- |
 | [`copilot/PRD.md`](copilot/PRD.md)                   | Canonical product requirements entry point                    |
+| [`copilot/personas.md`](copilot/personas.md)         | Personas the UI is designed for                               |
 | [`copilot/SAD.md`](copilot/SAD.md)                   | Canonical architecture entry point                            |
 | [`concept/CONCEPT.md`](concept/CONCEPT.md)           | Functional scope, use cases, roadmap and quality requirements |
 | [`concept/user_stories.md`](concept/user_stories.md) | User stories, priorities and acceptance criteria              |

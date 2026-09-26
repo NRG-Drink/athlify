@@ -34,6 +34,7 @@ functionality.
 | Area | Entry point | Responsibility |
 |---|---|---|
 | Product requirements | [`PRD.md`](PRD.md) | Canonical requirements entry point |
+| Personas | [`personas.md`](personas.md) | Who the UI is designed for; read before design and UI work |
 | Architecture | [`SAD.md`](SAD.md) | Canonical architecture entry point |
 | Shared product | [`../concept/CONCEPT.md`](../concept/CONCEPT.md) | Functional scope, use cases and quality requirements |
 | Shared technical context | [`../concept/`](../concept/CONCEPT.md) | Architecture, data model, API, security and deployment details |
