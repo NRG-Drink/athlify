@@ -1,7 +1,4 @@
 using Athlify.Api.Database;
-using Athlify.Api.Models;
-using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 
 /* Created using the following sources
  * YouTube: https://www.youtube.com/watch?v=YL07NyBXC7M
@@ -14,13 +11,9 @@ public partial class Program
         var builder = WebApplication.CreateBuilder(args);
         builder.Configuration.AddJsonFile("appsettings.json", optional: true);
         builder.Services.AddSingleton<IDbSeeder, DbSeeder>();
-        builder.Services.AddDbContext<InMemoryDb>(options =>
-        {
-            options
-                .UseInMemoryDatabase("InMemoryDb")
-                //.LogTo(Console.WriteLine, LogLevel.Trace)
-                .EnableSensitiveDataLogging();
-        });
+
+
+        builder.AddNpgsqlDbContext<InMemoryDb>("postgres-db");
 
         // Allows the local Vite dev server to call the GraphQL endpoint during development.
         builder.Services.AddCors(options =>
@@ -43,6 +36,7 @@ public partial class Program
         {
             await using var scope = app.Services.CreateAsyncScope();
             var db = scope.ServiceProvider.GetRequiredService<InMemoryDb>();
+            await db.Database.EnsureCreatedAsync();
             var seeder = scope.ServiceProvider.GetRequiredService<IDbSeeder>();
             seeder.Seed(db);
         }
