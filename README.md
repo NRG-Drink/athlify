@@ -9,14 +9,19 @@
 
 ## Table of Contents
 
-- [Overview & Features](#overview--features)
-- [Tech Stack & Sources](#tech-stack--sources)
-- [Documentation](#documentation)
-- [Getting Started & Installation](#getting-started--installation)
-- [Usage](#usage)
-- [Contributing](#contributing)
-- [Issues](#issues)
-- [License](#license)
+- [Athlify](#athlify)
+  - [Table of Contents](#table-of-contents)
+  - [Overview \& Features](#overview--features)
+  - [Tech Stack \& Sources](#tech-stack--sources)
+  - [Documentation](#documentation)
+  - [Getting Started \& Installation](#getting-started--installation)
+    - [Prerequisites](#prerequisites)
+    - [Install](#install)
+    - [Run](#run)
+  - [Usage](#usage)
+  - [Contributing](#contributing)
+  - [Issues](#issues)
+  - [License](#license)
 
 ## Overview & Features
 
@@ -70,6 +75,7 @@ are recorded as ADRs (see [Documentation](#documentation)).
 
 - .NET 10 SDK
 - Node.js 20 or later with npm
+- Docker
 
 ### Install
 
@@ -80,14 +86,8 @@ npm run relay     # generates the git-ignored Relay artifacts
 ```
 
 ### Run
-
-```bash
-# Backend: GraphQL endpoint at http://localhost:5095/graphql
-dotnet run --project src/backend/Athlify.Api
-
-# Frontend: Vite dev server (http://localhost:5173 by default)
-cd src/frontend/athlify && npm run dev
-```
+1. Start Docker
+2. `aspire run` or `dotnet run --project ./src/backend/Athlify.AppHost/Athlify.AppHost.csproj`
 
 ## Usage
 
