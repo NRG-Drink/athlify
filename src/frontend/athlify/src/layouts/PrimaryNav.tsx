@@ -83,7 +83,7 @@ export function NavLinks({ direction = 'row', onNavigate }: NavLinksProps) {
             whiteSpace="nowrap"
             fontWeight="medium"
             textDecoration="none"
-            focusRing="outside"
+            focusVisibleRing="outside"
             {...(isRow ? rowLinkStyles : columnLinkStyles)}
           >
             <NavLink to={item.path} onClick={onNavigate}>

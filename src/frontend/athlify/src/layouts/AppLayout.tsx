@@ -12,7 +12,9 @@ export function AppLayout({ children }: { children?: ReactNode }) {
 
   return (
     <Box minH="100dvh" bgColor="bg" bgImage="headlight" bgRepeat="no-repeat" colorPalette="brand">
-      <SkipNavLink id={mainContentId}>{t('layout.skipToContent')}</SkipNavLink>
+      <SkipNavLink id={mainContentId} zIndex="skipNav">
+        {t('layout.skipToContent')}
+      </SkipNavLink>
       <AppHeader />
       <SkipNavContent as="main" id={mainContentId}>
         <Container maxW="7xl" py={{ base: '6', md: '10' }}>
