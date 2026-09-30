@@ -5,11 +5,12 @@ import { RelayEnvironmentProvider } from 'react-relay'
 import { Environment, Network, RecordSource, Store } from 'relay-runtime'
 import { describe, expect, it, vi } from 'vitest'
 import { AddBodyStatsDialog } from '../../components/AddBodyStatsDialog'
+import type { BodyStatsEntry } from '../../components/bodyStatsTypes'
 import { Provider } from '../../components/ui/provider'
 
 type Fetch = Parameters<typeof Network.create>[0]
 
-function setup(fetchFn: Fetch) {
+function setup(fetchFn: Fetch, latest?: BodyStatsEntry) {
   const onCreated = vi.fn()
   const environment = new Environment({
     network: Network.create(fetchFn),
@@ -17,7 +18,14 @@ function setup(fetchFn: Fetch) {
   })
   function Harness() {
     const [open, setOpen] = useState(true)
-    return <AddBodyStatsDialog open={open} onOpenChange={setOpen} onCreated={onCreated} />
+    return (
+      <AddBodyStatsDialog
+        open={open}
+        onOpenChange={setOpen}
+        onCreated={onCreated}
+        latest={latest}
+      />
+    )
   }
   render(
     <RelayEnvironmentProvider environment={environment}>
@@ -105,5 +113,28 @@ describe('AddBodyStatsDialog', () => {
     await waitFor(() => expect(fetchFn).toHaveBeenCalledTimes(1))
     expect(onCreated).not.toHaveBeenCalled()
     expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+
+  it('prefills the measurements from the latest entry and keeps today as date', async () => {
+    const latest: BodyStatsEntry = {
+      uid: 'l',
+      date: '2026-01-01T00:00:00Z',
+      weight: 81.5,
+      bodyFatPercentage: 19,
+      musclePercentage: 41,
+      waterPercentage: 56,
+      boneMass: 3.3,
+    }
+    setup(vi.fn(() => ({ data: {} })) as unknown as Fetch, latest)
+    const dialog = await screen.findByRole('dialog')
+
+    expect(within(dialog).getByLabelText(/^Gewicht/)).toHaveValue(81.5)
+    expect(within(dialog).getByLabelText(/^Körperfett/)).toHaveValue(19)
+    expect(within(dialog).getByLabelText(/^Muskeln/)).toHaveValue(41)
+    expect(within(dialog).getByLabelText(/^Wasser/)).toHaveValue(56)
+    expect(within(dialog).getByLabelText(/^Knochenmasse/)).toHaveValue(3.3)
+    expect(within(dialog).getByLabelText(/^Datum/)).toHaveValue(
+      new Date().toISOString().slice(0, 10),
+    )
   })
 })

@@ -11,6 +11,7 @@ import {
 import { useState, type SubmitEventHandler } from 'react'
 import { graphql, useMutation } from 'react-relay'
 import { useTranslation } from 'react-i18next'
+import type { BodyStatsEntry } from './bodyStatsTypes'
 import { toaster } from './ui/toaster'
 import type { AddBodyStatsDialogMutation } from './__generated__/AddBodyStatsDialogMutation.graphql'
 
@@ -43,34 +44,44 @@ type FormValues = Record<NumericField, string> & { date: string }
 
 const today = () => new Date().toISOString().slice(0, 10)
 
-const emptyValues = (): FormValues => ({
+const initialValues = (latest?: BodyStatsEntry): FormValues => ({
   date: today(),
-  weight: '',
-  bodyFatPercentage: '',
-  musclePercentage: '',
-  waterPercentage: '',
-  boneMass: '',
+  weight: latest ? String(latest.weight) : '',
+  bodyFatPercentage: latest ? String(latest.bodyFatPercentage) : '',
+  musclePercentage: latest ? String(latest.musclePercentage) : '',
+  waterPercentage: latest ? String(latest.waterPercentage) : '',
+  boneMass: latest ? String(latest.boneMass) : '',
 })
 
 export interface AddBodyStatsDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onCreated: () => void
+  /** Most recent entry; its measurements prefill the form each time the dialog opens. */
+  latest?: BodyStatsEntry
 }
 
-export function AddBodyStatsDialog({ open, onOpenChange, onCreated }: AddBodyStatsDialogProps) {
+export function AddBodyStatsDialog({
+  open,
+  onOpenChange,
+  onCreated,
+  latest,
+}: AddBodyStatsDialogProps) {
   const { t } = useTranslation()
-  const [values, setValues] = useState<FormValues>(emptyValues)
+  const [values, setValues] = useState<FormValues>(() => initialValues(latest))
   const [errors, setErrors] = useState<Partial<Record<keyof FormValues, string>>>({})
   const [commit, isInFlight] = useMutation<AddBodyStatsDialogMutation>(addBodyStatsMutation)
 
-  const close = (next: boolean) => {
-    if (!next) {
-      setValues(emptyValues())
+  const [wasOpen, setWasOpen] = useState(open)
+  if (open !== wasOpen) {
+    setWasOpen(open)
+    if (open) {
+      setValues(initialValues(latest))
       setErrors({})
     }
-    onOpenChange(next)
   }
+
+  const close = (next: boolean) => onOpenChange(next)
 
   const validate = () => {
     const found: Partial<Record<keyof FormValues, string>> = {}

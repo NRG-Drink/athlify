@@ -6,6 +6,7 @@ import { LuPlus } from 'react-icons/lu'
 import { AddBodyStatsDialog } from '../components/AddBodyStatsDialog'
 import ChartBodyStats from '../components/ChartBodyStats'
 import { LoadingIndicator, Page } from '../components/Page'
+import type { BodyStatsEntry } from '../components/bodyStatsTypes'
 import TableBodyStats from '../components/TableBodyStats'
 import type { BodyStatsQuery } from './__generated__/BodyStatsQuery.graphql'
 
@@ -23,11 +24,32 @@ const bodyStatsQuery = graphql`
   }
 `
 
-function BodyStatsContent({ fetchKey }: { fetchKey: number }) {
+interface BodyStatsContentProps {
+  fetchKey: number
+  dialogOpen: boolean
+  onDialogOpenChange: (open: boolean) => void
+  onCreated: () => void
+}
+
+function BodyStatsContent({
+  fetchKey,
+  dialogOpen,
+  onDialogOpenChange,
+  onCreated,
+}: BodyStatsContentProps) {
   const { bodyStats } = useLazyLoadQuery<BodyStatsQuery>(
     bodyStatsQuery,
     {},
     { fetchKey, fetchPolicy: 'network-only' },
+  )
+
+  const latest = bodyStats.reduce<BodyStatsEntry | undefined>(
+    (newest, entry) =>
+      !newest ||
+      new Date(entry.date as string).getTime() > new Date(newest.date as string).getTime()
+        ? entry
+        : newest,
+    undefined,
   )
 
   return (
@@ -38,6 +60,12 @@ function BodyStatsContent({ fetchKey }: { fetchKey: number }) {
       <Stack gap="4">
         <TableBodyStats bodyStats={bodyStats} />
       </Stack>
+      <AddBodyStatsDialog
+        open={dialogOpen}
+        onOpenChange={onDialogOpenChange}
+        onCreated={onCreated}
+        latest={latest}
+      />
     </Stack>
   )
 }
@@ -58,13 +86,13 @@ function BodyStats() {
       }
     >
       <Suspense fallback={<LoadingIndicator />}>
-        <BodyStatsContent fetchKey={fetchKey} />
+        <BodyStatsContent
+          fetchKey={fetchKey}
+          dialogOpen={dialogOpen}
+          onDialogOpenChange={setDialogOpen}
+          onCreated={() => setFetchKey((key) => key + 1)}
+        />
       </Suspense>
-      <AddBodyStatsDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        onCreated={() => setFetchKey((key) => key + 1)}
-      />
     </Page>
   )
 }

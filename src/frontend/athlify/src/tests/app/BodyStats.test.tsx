@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { RelayEnvironmentProvider } from 'react-relay'
 import { Environment, Network, RecordSource, Store } from 'relay-runtime'
@@ -55,5 +55,26 @@ describe('BodyStats', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Eintrag hinzufügen' }))
 
     expect(await screen.findByRole('dialog')).toBeInTheDocument()
+  })
+
+  it('prefills the dialog with the entry that has the newest date', async () => {
+    const older = { ...bodyStats[0], uid: 'uid-2', date: '2025-01-01T00:00:00Z', weight: 70 }
+    const environment = new Environment({
+      network: Network.create(() => ({ data: { bodyStats: [bodyStats[0], older] } })),
+      store: new Store(new RecordSource()),
+    })
+
+    render(
+      <RelayEnvironmentProvider environment={environment}>
+        <Provider>
+          <BodyStats />
+        </Provider>
+      </RelayEnvironmentProvider>,
+    )
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Eintrag hinzufügen' }))
+    const dialog = await screen.findByRole('dialog')
+
+    expect(within(dialog).getByLabelText(/^Gewicht/)).toHaveValue(80.25)
   })
 })
