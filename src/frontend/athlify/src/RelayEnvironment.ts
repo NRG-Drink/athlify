@@ -7,7 +7,9 @@ import {
   type GraphQLResponse,
 } from 'relay-runtime'
 
-const GRAPHQL_ENDPOINT = import.meta.env.VITE_GRAPHQL_ENDPOINT ?? 'http://localhost:5095/graphql/'
+// Relative by default so requests stay same-origin and go through the dev-server
+// proxy (see vite.config.ts); override with VITE_GRAPHQL_ENDPOINT for production builds.
+const GRAPHQL_ENDPOINT = import.meta.env.VITE_GRAPHQL_ENDPOINT ?? '/graphql/'
 
 const fetchGraphQL: FetchFunction = async (params, variables) => {
   const response = await fetch(GRAPHQL_ENDPOINT, {
