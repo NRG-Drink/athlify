@@ -1,5 +1,5 @@
 import { Button, Stack } from '@chakra-ui/react'
-import { Suspense, useState } from 'react'
+import { Suspense, startTransition, useState } from 'react'
 import { graphql, useLazyLoadQuery } from 'react-relay'
 import { useTranslation } from 'react-i18next'
 import { LuPlus } from 'react-icons/lu'
@@ -90,7 +90,7 @@ function BodyStats() {
           fetchKey={fetchKey}
           dialogOpen={dialogOpen}
           onDialogOpenChange={setDialogOpen}
-          onCreated={() => setFetchKey((key) => key + 1)}
+          onCreated={() => startTransition(() => setFetchKey((key) => key + 1))}
         />
       </Suspense>
     </Page>
