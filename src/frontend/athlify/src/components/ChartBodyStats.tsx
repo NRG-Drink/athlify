@@ -57,16 +57,16 @@ function ChartBodyStats({ bodyStats }: ChartBodyStatsProps) {
             dot={true}
           />
           <Line
-            key="weight"
+            key="bodyFatPercentage"
             type="monotone"
             isAnimationActive={false}
             dataKey={chart.key('bodyFatPercentage')}
-            stroke={chart.color('chart.primary')}
+            stroke={chart.color('chart.secondary')}
             strokeWidth={2}
             dot={true}
           />
           <Line
-            key="weight"
+            key="musclePercentage"
             type="monotone"
             isAnimationActive={false}
             dataKey={chart.key('musclePercentage')}
@@ -74,13 +74,22 @@ function ChartBodyStats({ bodyStats }: ChartBodyStatsProps) {
             strokeWidth={2}
             dot={true}
           />
-          <Bar
-            key="bodyFatPercentage"
+          <Line
+            key="waterPercentage"
+            type="monotone"
             isAnimationActive={false}
-            dataKey={chart.key('bodyFatPercentage')}
-            stroke={chart.color('chart.secondary')}
+            dataKey={chart.key('waterPercentage')}
+            stroke={chart.color('cyan.solid')}
             strokeWidth={2}
-            fill={chart.color('chart.secondary')}
+            dot={true}
+          />
+          <Bar
+            key="boneMass"
+            isAnimationActive={false}
+            dataKey={chart.key('boneMass')}
+            stroke={chart.color('purple.solid')}
+            strokeWidth={2}
+            fill={chart.color('purple.solid')}
             barSize={20}
           />
         </LineChart>
