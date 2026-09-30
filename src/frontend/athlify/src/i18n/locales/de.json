@@ -39,6 +39,37 @@
       "garage": "Hier erfasst du bald deine Velos und Gadgets.",
       "events": "Hier dokumentierst du bald Stürze, Reparaturen, Pausen und andere Ereignisse.",
       "settings": "Hier verwaltest du bald dein Konto und die Verbindung zu Strava."
+    },
+    "bodyStats": {
+      "add": {
+        "open": "Eintrag hinzufügen",
+        "title": "Neuer Eintrag",
+        "cancel": "Abbrechen",
+        "save": "Speichern",
+        "success": "Eintrag gespeichert.",
+        "errors": {
+          "required": "Pflichtfeld.",
+          "range": "Bitte einen gültigen Wert eingeben.",
+          "saveFailed": "Der Eintrag konnte nicht gespeichert werden."
+        }
+      },
+      "fields": {
+        "date": "Datum",
+        "weight": "Gewicht (kg)",
+        "bodyFatPercentage": "Körperfett (%)",
+        "musclePercentage": "Muskeln (%)",
+        "waterPercentage": "Wasser (%)",
+        "boneMass": "Knochenmasse (kg)"
+      },
+      "columns": {
+        "date": "Datum",
+        "weight": "Gewicht",
+        "bodyFatPercentage": "Fett",
+        "musclePercentage": "Muskeln",
+        "waterPercentage": "Wasser",
+        "boneMass": "Knochen"
+      },
+      "empty": "Noch keine Einträge vorhanden."
     }
   }
 }

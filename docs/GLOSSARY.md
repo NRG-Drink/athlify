@@ -45,6 +45,13 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 **Dashboard** — The central analysis view containing metrics, charts, filters and
   timeline information. See [`CONCEPT.md`](concept/CONCEPT.md).
 
+**Dialog** — A modal window layered over a page that collects input or asks for
+  confirmation without leaving the page, for example the Body-Stats Add-Entry
+  Dialog.
+
+**Entry** — A single Body-Stats record (one measurement on one date). Users
+  create entries through a Dialog. See [`CONCEPT.md`](concept/CONCEPT.md).
+
 **Event** — A personal time-based record such as an accident, repair, injury,
   break or goal. See [`CONCEPT.md`](concept/CONCEPT.md).
 

@@ -6,70 +6,62 @@ import {
   tableFeatures,
   useTable,
 } from '@tanstack/react-table'
-import { Suspense, useMemo } from 'react'
-import { graphql, useLazyLoadQuery } from 'react-relay'
-import type { TableBodyStatsQuery } from './__generated__/TableBodyStatsQuery.graphql'
-
-const bodyStatsQuery = graphql`
-  query TableBodyStatsQuery {
-    bodyStats {
-      uid
-      date
-      weight
-      bodyFatPercentage
-      musclePercentage
-      waterPercentage
-      boneMass
-    }
-  }
-`
-
-type BodyStatsRow = TableBodyStatsQuery['response']['bodyStats'][number]
+import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { BodyStatsEntry } from './bodyStatsTypes'
 
 const features = tableFeatures({
   rowSortingFeature,
   sortedRowModel: createSortedRowModel(),
 })
 
-const columnHelper = createColumnHelper<typeof features, BodyStatsRow>()
+const columnHelper = createColumnHelper<typeof features, BodyStatsEntry>()
 
 const formatNumber = (value: number, unit: string) => `${value.toFixed(1)} ${unit}`
-
-const columns = columnHelper.columns([
-  columnHelper.accessor((row) => new Date(row.date as string).getTime(), {
-    id: 'date',
-    header: 'Date',
-    cell: (info) => new Date(info.getValue()).toLocaleDateString(),
-  }),
-  columnHelper.accessor('weight', {
-    header: 'Weight',
-    cell: (info) => formatNumber(info.getValue(), 'kg'),
-  }),
-  columnHelper.accessor('bodyFatPercentage', {
-    header: 'Fat',
-    cell: (info) => formatNumber(info.getValue(), '%'),
-  }),
-  columnHelper.accessor('musclePercentage', {
-    header: 'Muscle',
-    cell: (info) => formatNumber(info.getValue(), '%'),
-  }),
-  columnHelper.accessor('waterPercentage', {
-    header: 'Water',
-    cell: (info) => formatNumber(info.getValue(), '%'),
-  }),
-  columnHelper.accessor('boneMass', {
-    header: 'Bone',
-    cell: (info) => formatNumber(info.getValue(), 'kg'),
-  }),
-])
 
 const isNumeric = (columnId: string) => columnId !== 'date'
 
 const sortIndicator = { asc: ' ▲', desc: ' ▼' } as const
 
-function TableBodyStatsContent() {
-  const { bodyStats } = useLazyLoadQuery<TableBodyStatsQuery>(bodyStatsQuery, {})
+interface TableBodyStatsProps {
+  bodyStats: ReadonlyArray<BodyStatsEntry>
+}
+
+function TableBodyStats({ bodyStats }: TableBodyStatsProps) {
+  const { t } = useTranslation()
   const data = useMemo(() => [...bodyStats], [bodyStats])
+
+  const columns = useMemo(
+    () =>
+      columnHelper.columns([
+        columnHelper.accessor((row) => new Date(row.date as string).getTime(), {
+          id: 'date',
+          header: t('bodyStats.columns.date'),
+          cell: (info) => new Date(info.getValue()).toLocaleDateString(),
+        }),
+        columnHelper.accessor('weight', {
+          header: t('bodyStats.columns.weight'),
+          cell: (info) => formatNumber(info.getValue(), 'kg'),
+        }),
+        columnHelper.accessor('bodyFatPercentage', {
+          header: t('bodyStats.columns.bodyFatPercentage'),
+          cell: (info) => formatNumber(info.getValue(), '%'),
+        }),
+        columnHelper.accessor('musclePercentage', {
+          header: t('bodyStats.columns.musclePercentage'),
+          cell: (info) => formatNumber(info.getValue(), '%'),
+        }),
+        columnHelper.accessor('waterPercentage', {
+          header: t('bodyStats.columns.waterPercentage'),
+          cell: (info) => formatNumber(info.getValue(), '%'),
+        }),
+        columnHelper.accessor('boneMass', {
+          header: t('bodyStats.columns.boneMass'),
+          cell: (info) => formatNumber(info.getValue(), 'kg'),
+        }),
+      ]),
+    [t],
+  )
 
   const table = useTable({
     features,
@@ -80,7 +72,7 @@ function TableBodyStatsContent() {
   })
 
   if (data.length === 0) {
-    return <Text>No entries yet.</Text>
+    return <Text>{t('bodyStats.empty')}</Text>
   }
 
   return (
@@ -114,10 +106,7 @@ function TableBodyStatsContent() {
           {table.getRowModel().rows.map((row) => (
             <Table.Row key={row.id}>
               {row.getAllCells().map((cell) => (
-                <Table.Cell
-                  key={cell.id}
-                  textAlign={isNumeric(cell.column.id) ? 'end' : 'start'}
-                >
+                <Table.Cell key={cell.id} textAlign={isNumeric(cell.column.id) ? 'end' : 'start'}>
                   <table.FlexRender cell={cell} />
                 </Table.Cell>
               ))}
@@ -126,14 +115,6 @@ function TableBodyStatsContent() {
         </Table.Body>
       </Table.Root>
     </Table.ScrollArea>
-  )
-}
-
-function TableBodyStats() {
-  return (
-    <Suspense fallback={<p>Loading body stats…</p>}>
-      <TableBodyStatsContent />
-    </Suspense>
   )
 }
 

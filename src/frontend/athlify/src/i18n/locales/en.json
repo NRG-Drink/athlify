@@ -39,6 +39,37 @@
       "garage": "Soon you will record your bicycles and gadgets here.",
       "events": "Soon you will document crashes, repairs, breaks and other events here.",
       "settings": "Soon you will manage your account and the Strava connection here."
+    },
+    "bodyStats": {
+      "add": {
+        "open": "Add entry",
+        "title": "New entry",
+        "cancel": "Cancel",
+        "save": "Save",
+        "success": "Entry saved.",
+        "errors": {
+          "required": "Required.",
+          "range": "Please enter a valid value.",
+          "saveFailed": "The entry could not be saved."
+        }
+      },
+      "fields": {
+        "date": "Date",
+        "weight": "Weight (kg)",
+        "bodyFatPercentage": "Body fat (%)",
+        "musclePercentage": "Muscle (%)",
+        "waterPercentage": "Water (%)",
+        "boneMass": "Bone mass (kg)"
+      },
+      "columns": {
+        "date": "Date",
+        "weight": "Weight",
+        "bodyFatPercentage": "Fat",
+        "musclePercentage": "Muscle",
+        "waterPercentage": "Water",
+        "boneMass": "Bone"
+      },
+      "empty": "No entries yet."
     }
   }
 }

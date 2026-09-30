@@ -1,25 +1,14 @@
 import { Chart, useChart } from '@chakra-ui/charts'
-import { Suspense } from 'react'
-import { graphql, useLazyLoadQuery } from 'react-relay'
+import { useTranslation } from 'react-i18next'
 import { Bar, CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
-import type { ChartBodyStatsHybridQuery } from './__generated__/ChartBodyStatsHybridQuery.graphql'
+import type { BodyStatsEntry } from './bodyStatsTypes'
 
-const bodyStatsQuery = graphql`
-  query ChartBodyStatsHybridQuery {
-    bodyStats {
-      date
-      weight
-      bodyFatPercentage
-      musclePercentage
-      waterPercentage
-      boneMass
-    }
-  }
-`
+interface ChartBodyStatsProps {
+  bodyStats: ReadonlyArray<BodyStatsEntry>
+}
 
-function ChartBodyStatsHybridContent() {
-  const { bodyStats } = useLazyLoadQuery<ChartBodyStatsHybridQuery>(bodyStatsQuery, {})
-
+function ChartBodyStats({ bodyStats }: ChartBodyStatsProps) {
+  const { t } = useTranslation()
   const chart = useChart({
     data: bodyStats.map((entry) => ({
       weight: entry.weight,
@@ -30,18 +19,28 @@ function ChartBodyStatsHybridContent() {
       date: new Date(entry.date as string).toLocaleDateString(),
     })),
     series: [
-      { name: 'weight', color: 'chart.primary' },
-      { name: 'bodyFatPercentage', color: 'chart.secondary' },
-      { name: 'musclePercentage', color: 'orange.solid' },
-      { name: 'waterPercentage', color: 'cyan.solid' },
-      { name: 'boneMass', color: 'purple.solid' },
+      { name: 'weight', label: t('bodyStats.fields.weight'), color: 'chart.primary' },
+      {
+        name: 'bodyFatPercentage',
+        label: t('bodyStats.fields.bodyFatPercentage'),
+        color: 'chart.secondary',
+      },
+      {
+        name: 'musclePercentage',
+        label: t('bodyStats.fields.musclePercentage'),
+        color: 'orange.solid',
+      },
+      {
+        name: 'waterPercentage',
+        label: t('bodyStats.fields.waterPercentage'),
+        color: 'cyan.solid',
+      },
+      { name: 'boneMass', label: t('bodyStats.fields.boneMass'), color: 'purple.solid' },
     ],
   })
 
   return (
     <div>
-      <p>Body Stats Chart Hybrid</p>
-
       <Chart.Root maxH="sm" chart={chart}>
         <LineChart style={{ width: '100%', height: 300 }} data={chart.data} responsive>
           <CartesianGrid stroke={chart.color('border')} vertical={false} />
@@ -54,6 +53,24 @@ function ChartBodyStatsHybridContent() {
             isAnimationActive={false}
             dataKey={chart.key('weight')}
             stroke={chart.color('chart.primary')}
+            strokeWidth={2}
+            dot={true}
+          />
+          <Line
+            key="weight"
+            type="monotone"
+            isAnimationActive={false}
+            dataKey={chart.key('bodyFatPercentage')}
+            stroke={chart.color('chart.primary')}
+            strokeWidth={2}
+            dot={true}
+          />
+          <Line
+            key="weight"
+            type="monotone"
+            isAnimationActive={false}
+            dataKey={chart.key('musclePercentage')}
+            stroke={chart.color('orange.solid')}
             strokeWidth={2}
             dot={true}
           />
@@ -72,12 +89,4 @@ function ChartBodyStatsHybridContent() {
   )
 }
 
-function ChartBodyStatsHybrid() {
-  return (
-    <Suspense fallback={<p>Loading body stats…</p>}>
-      <ChartBodyStatsHybridContent />
-    </Suspense>
-  )
-}
-
-export default ChartBodyStatsHybrid
+export default ChartBodyStats

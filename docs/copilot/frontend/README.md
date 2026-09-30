@@ -57,7 +57,8 @@ i18next. It provides the App Layout (header with Primary Navigation, User
 Menu with language switcher and color mode, mobile drawer), the `Page` frame
 and placeholder pages, the "Night Ride" theme in `src/theme/`
 ([ADR-005](adr/ADR-005-theme-tokens.md)), plus prototype Body-Stats charts. It has no Athlify
-domain behavior; only the hybrid chart prototype queries the backend. The backend prototype is under `../../../src/backend/`. See
+domain behavior beyond Body-Stats: the prototype queries the backend and an
+Add-Entry Dialog creates Body-Stats entries through the `addBodyStats` mutation. The backend prototype is under `../../../src/backend/`. See
 [`SAD.md`](SAD.md) for the folder layout and open decisions. Do not present
 the exploration UI as completed product functionality.
 

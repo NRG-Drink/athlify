@@ -63,8 +63,8 @@ src/frontend/athlify/src/
 ├── layouts/          # AppLayout, AppHeader, PrimaryNav, MobileNav, UserMenu
 ├── app/              # route-level views (BodyStats, PlaceholderPage, NotFoundPage, RouteErrorPage)
 ├── theme/            # Chakra system: palette, semantic tokens, fonts (ADR-005)
-├── components/       # shared components (Page, BrandMark, charts, toggles, switcher)
-│   └── ui/           # generated Chakra UI snippets (provider, color-mode, toaster, tooltip)
+├── components/       # shared components (Page, BrandMark, charts, AddBodyStatsDialog, toggles, switcher)
+│   └── ui/           # generated Chakra UI snippets (provider, color-mode, toaster, tooltip; the Provider mounts the Toaster)
 ├── tests/            # all Vitest tests, mirroring src/ (plus setup.ts and utils/renderRoute.tsx)
 ├── hooks/            # shared hooks (empty)
 ├── types/            # shared types (empty)
