@@ -30,7 +30,7 @@ export function AppHeader() {
             letterSpacing="-0.02em"
             color="fg"
             textDecoration="none"
-            focusRing="outside"
+            focusVisibleRing="outside"
             _hover={{ textDecoration: 'none' }}
           >
             <RouterLink to={paths.dashboard}>
