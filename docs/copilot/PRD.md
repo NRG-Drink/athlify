@@ -1,7 +1,7 @@
 # Athlify — Product Requirements Document
 
 **Project**: Athlify  
-**Last Updated**: 2026-09-16
+**Last Updated**: 2026-09-23
 **Status**: Active
 
 ## Vision
@@ -18,7 +18,8 @@ requirements entry point for the configured documentation root.
 
 The primary users are recreational or hobby cyclists who want a personal
 overview of their cycling history and related data. The immediate project
-context is a two-person student project.
+context is a two-person student project. The concrete persona used for
+design and UI decisions is described in [`personas.md`](personas.md).
 
 ## Goals
 
@@ -37,6 +38,29 @@ context is a two-person student project.
 - Group, club, social, subscription or payment features.
 - A public demo without a user account.
 
+## Features
+
+The functional scope of each feature area is defined in the concept:
+
+- [Login and user account](../concept/CONCEPT.md#31-login-and-user-account)
+- [Dashboard](../concept/CONCEPT.md#32-dashboard)
+- [Activity management](../concept/CONCEPT.md#33-activity-management)
+- [Strava synchronization](../concept/CONCEPT.md#34-strava-synchronization)
+- [Garage: bicycles and gadgets](../concept/CONCEPT.md#35-garage-bicycles-and-gadgets)
+- [Body-Stats](../concept/CONCEPT.md#36-body-stats)
+- [Events](../concept/CONCEPT.md#37-events)
+- [Settings and language](../concept/CONCEPT.md#38-settings-and-language)
+
+Priorities (Must/Should/Could Have) are in the
+[user stories](../concept/user_stories.md).
+
+## Success Metrics
+
+- The acceptance criteria of all Must Have
+  [user stories](../concept/user_stories.md) are met.
+- The [quality requirements](../concept/CONCEPT.md#7-quality-requirements) are met, including
+  server-side ownership enforcement and idempotent synchronization.
+
 ## Detailed Requirements
 
 - [Functional concept](../concept/CONCEPT.md)
@@ -46,9 +70,9 @@ context is a two-person student project.
 
 ## Constraints
 
-- The repository currently contains a small backend prototype, not the
-  complete product.
-- The frontend scaffold exists under `src/frontend/athlify/`, but product
+- The repository currently contains a Body-Stats GraphQL backend prototype
+  under `src/backend/`, not the complete product.
+- The frontend app shell exists under `src/frontend/athlify/`, but product
   functionality and backend integration are not implemented yet.
 - Personal data must remain isolated to the logged-in user.
 - The user interface is bilingual in German and English; documentation is

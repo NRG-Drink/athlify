@@ -3,7 +3,7 @@
 Architecture Decision Records (ADRs) document significant, difficult-to-reverse
 decisions concerning the Athlify frontend. This directory is scoped to the
 frontend; backend decisions belong in
-[`../../backend/README.md`](../../backend/README.md).
+[`../../backend/adr/README.md`](../../backend/adr/README.md).
 
 The functional source of truth is
 [`../../../concept/CONCEPT.md`](../../../concept/CONCEPT.md). Shared technical
@@ -14,12 +14,16 @@ considered before creating a frontend-specific ADR.
 
 | ADR | Title | Status |
 |---|---|---|
-| — | No frontend ADRs recorded yet | — |
+| [ADR-002](ADR-002-chakra-ui-component-system.md) | Chakra UI v3 as the frontend component system | Proposed |
+| [ADR-003](ADR-003-i18next-localization.md) | i18next for the bilingual user interface | Proposed |
+| [ADR-004](ADR-004-react-router-data-mode.md) | React Router data mode with a nested app-layout route | Proposed |
+| [ADR-005](ADR-005-theme-tokens.md) | "Night Ride" theme as Chakra semantic tokens | Proposed |
 
-The repository now has a React/Vite JavaScript scaffold under
-`src/frontend/athlify/`. Do not infer routing, state-management or
-component-library decisions from the template. Record those choices here when
-they are actually made.
+The API style is a shared decision; see
+[shared ADR-001](../../adr/ADR-001-graphql-api-contract.md). State
+management, the GraphQL client and the Tailwind/Chakra coexistence have not
+been decided. Record them here once they
+are decided.
 
 ## When to write an ADR
 
@@ -38,25 +42,15 @@ functional concept.
 
 ## Process
 
-1. Use the next sequential number: `ADR-NNN-short-slug.md`.
+1. Use the next free number across all ADR directories (shared, frontend
+   and backend share one sequence): `ADR-NNN-short-slug.md`.
 2. Start with status `Proposed`.
 3. Document context, considered options, decision and consequences.
 4. Add the record to the index above.
 5. Change the status to `Accepted` only after review by the project team.
 
-Recommended structure:
-
-```markdown
-# ADR-NNN: Title
-
-- Status: Proposed
-- Date: YYYY-MM-DD
-
-## Context
-## Options considered
-## Decision
-## Consequences
-```
+Use the structure from the shared
+[ADR template](../../../../.agents/skills/project-docs/references/adr-template.md).
 
 ## Binding rules
 

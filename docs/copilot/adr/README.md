@@ -5,6 +5,12 @@ cross the frontend/backend boundary. Decisions specific to one area remain in
 the relevant [`frontend ADRs`](../frontend/adr/README.md) or
 [`backend ADRs`](../backend/adr/README.md).
 
+## Index
+
+| ADR | Title | Status |
+|---|---|---|
+| [ADR-001](ADR-001-graphql-api-contract.md) | GraphQL as the frontend/backend API contract | Proposed |
+
 ## When to create an ADR
 
 Create a shared ADR only when all of these conditions apply:
@@ -28,10 +34,12 @@ validation, or requirements already defined by the concept.
 
 ## Naming
 
-Use `ADR-NNN-short-slug.md` with sequential zero-padded numbers. Each record
+Use `ADR-NNN-short-slug.md` with sequential zero-padded numbers. Numbers form
+one sequence across the shared, frontend and backend ADR directories, so each
+number is unique repository-wide. Each record
 should contain context, options considered, decision, consequences and
-implementation notes. Use the structure documented in the ADR skill reference
-when a new decision is needed.
+implementation notes. Use the structure from the
+[ADR template](../../../.agents/skills/project-docs/references/adr-template.md).
 
 ## Related context
 

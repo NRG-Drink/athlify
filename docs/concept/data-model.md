@@ -2,9 +2,10 @@
 
 Technical detail documentation for the functional concept in [`CONCEPT.md`](CONCEPT.md).
 
-This is the planned domain model. No entities or persistence implementation
-currently exist in the repository; the frontend scaffold does not implement
-domain data storage.
+This is the planned domain model. The backend prototype implements only a
+Body-Stats entity on EF Core InMemory, without an owner. See the
+[backend SAD](../copilot/backend/SAD.md) for how it differs from this model.
+The frontend does not store domain data.
 
 ## Entities
 
@@ -18,7 +19,8 @@ domain data storage.
   deactivation date, price, maintenance cycle and source.
 - **MaintenanceCycle**: a separate maintenance schedule associated with a
   vehicle or gadget.
-- **BodyStat**: measurement date, weight, body height and optional note.
+- **BodyStat**: measurement date, weight, body height, body-fat percentage,
+  muscle percentage, water percentage, bone mass and optional note.
 - **Event**: date, type, title and description.
 - **OAuthConnection**: connection of a user with Strava and synchronization status.
 - **Role**: user role distinguishing regular users from Administrators. An

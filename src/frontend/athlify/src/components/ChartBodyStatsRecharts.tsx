@@ -12,8 +12,8 @@ function ChartBodyStatsRecharts() {
       { buy: 25, sale: 90, month: 'August' },
     ],
     series: [
-      { name: 'buy', color: 'blue.solid' },
-      { name: 'sale', color: 'teal.solid' },
+      { name: 'buy', color: 'chart.secondary' },
+      { name: 'sale', color: 'chart.primary' },
     ],
   })
 
@@ -37,7 +37,7 @@ function ChartBodyStatsRecharts() {
           type="linear"
           isAnimationActive={false}
           dataKey={chart.key('buy')}
-          stroke={chart.color('blue.solid')}
+          stroke={chart.color('chart.secondary')}
           strokeWidth={2}
           dot={true}
         />
@@ -46,7 +46,7 @@ function ChartBodyStatsRecharts() {
           type="bump"
           isAnimationActive={false}
           dataKey={chart.key('sale')}
-          stroke={chart.color('teal.solid')}
+          stroke={chart.color('chart.primary')}
           strokeWidth={2}
           dot={true}
         />

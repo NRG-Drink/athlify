@@ -2,14 +2,17 @@
 
 Technical detail documentation for the functional concept in [`CONCEPT.md`](CONCEPT.md).
 
-The API follows REST conventions and provides JSON data. The concrete endpoints are organized around the domain modules.
+The API is a GraphQL schema served by Hot Chocolate at `/graphql` (proposed
+in [ADR-001](../copilot/adr/ADR-001-graphql-api-contract.md), which replaces
+the earlier REST plan). Queries and mutations are organized around the domain
+modules. The Strava OAuth callback may still need a plain HTTP endpoint.
 
-This is a planned API contract. No API implementation currently exists in the
-repository. The backend must remain authoritative for validation, calculated
+This is a planned API contract. The backend prototype implements Body-Stats
+queries and mutations only, without authentication or ownership. The backend must remain authoritative for validation, calculated
 values, synchronization and ownership; the frontend must not infer or replace
 those rules.
 
-| Area | Functions |
+| Area | Queries and mutations |
 |---|---|
 | Auth | Registration, login, logout and token renewal |
 | User | Own profile; Administrator-only user administration |
@@ -22,9 +25,9 @@ those rules.
 | Dashboard | Metrics, charts and analyses |
 
 All personal endpoints verify authentication and ownership of the requested
-data server-side. Errors are returned explicitly so clients can distinguish
-validation, authorization, synchronization and infrastructure failures from
-successful empty results.
+data server-side. Errors are returned explicitly in the GraphQL `errors` array so
+clients can distinguish validation, authorization, synchronization and
+infrastructure failures from successful empty results.
 
 ## Activities
 

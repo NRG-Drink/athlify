@@ -8,16 +8,19 @@ The application provides a German and English user interface. Project documentat
 
 | Layer | Technology | Status | Rationale |
 |---|---|---|---|
-| Frontend | React, JavaScript, Vite | Prototype scaffold | Component-based UI and fast development; TypeScript remains the planned typed target |
-| Backend | ASP.NET Core with C# | Planned target | Strongly typed web API and support for authentication and background tasks |
-| Database | PostgreSQL | Planned target | Relational data model and suitable time-series aggregations |
+| Frontend | React, TypeScript, Vite | Prototype app shell | Component-based UI, static typing and fast development |
+| UI components | Chakra UI v3 | Proposed | Accessible components, theming and light/dark mode ([ADR-002](../copilot/frontend/adr/ADR-002-chakra-ui-component-system.md)) |
+| Localization | i18next / react-i18next | Proposed | German and English UI from translation resources ([ADR-003](../copilot/frontend/adr/ADR-003-i18next-localization.md)) |
+| Backend | ASP.NET Core with C# (.NET 10) | Prototype | Strongly typed web API and support for authentication and background tasks |
+| API | GraphQL with Hot Chocolate | Proposed; prototype | One typed schema for all domain modules ([ADR-001](../copilot/adr/ADR-001-graphql-api-contract.md)) |
+| Database | PostgreSQL | Planned target | Relational data model and suitable time-series aggregations; the prototype uses EF Core InMemory |
 | External API | Strava API | Planned integration | Source for activities and bicycles/Gear |
 | Authentication | JWT and OAuth 2.0 | Planned approach | User login and Strava connection |
 
-The repository contains a React/Vite frontend scaffold under
-`src/frontend/athlify/` and a separate backend prototype. The frontend
-scaffold currently uses JavaScript (`.jsx`) rather than the planned TypeScript
-baseline and does not yet implement the product domain or backend integration.
+The repository contains a React/TypeScript frontend app shell under
+`src/frontend/athlify/` and an ASP.NET Core GraphQL backend prototype under
+`src/backend/`. Neither implements the product domain yet, and the frontend
+does not call the backend.
 
 ## Rationale
 

@@ -91,8 +91,8 @@ When requirements compete, first preserve data ownership and safe activity manag
 
 ## Constraints
 
-- The frontend is not currently implemented independently from the backend
-  prototype.
+- The frontend is an exploration app shell under `src/frontend/athlify/`
+  and is not yet integrated with the backend prototype.
 - The project remains limited to a realistic scope for a two-person student
   project.
 - Personal data must remain isolated to the logged-in user.

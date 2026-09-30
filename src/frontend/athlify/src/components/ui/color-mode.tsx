@@ -26,7 +26,6 @@ export function useColorMode(): UseColorModeReturn {
   const colorMode = forcedTheme || resolvedTheme
   const toggleColorMode = () => {
     const next = resolvedTheme === 'dark' ? 'light' : 'dark'
-    console.log(`Switching color mode to: ${next}`)
     setTheme(next)
   }
   return {

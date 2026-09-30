@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 const displayNames = new Intl.DisplayNames([navigator.language], { type: 'language' })
 
 const LanguageSwitcher = () => {
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   // Supported languages come from the loaded i18next resources, not a hard-coded list.
   const supportedLanguages = Object.keys(i18n.options.resources ?? {})
 
@@ -13,7 +13,7 @@ const LanguageSwitcher = () => {
       <NativeSelect.Field
         value={i18n.resolvedLanguage}
         onChange={(event) => void i18n.changeLanguage(event.target.value)}
-        aria-label="Language"
+        aria-label={t('layout.language')}
       >
         {supportedLanguages.map((language) => (
           <option key={language} value={language}>
