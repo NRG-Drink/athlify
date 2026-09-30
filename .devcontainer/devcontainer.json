@@ -1,0 +1,31 @@
+{
+  "name": "Athlify",
+  "image": "mcr.microsoft.com/devcontainers/dotnet:1-10.0",
+  "features": {
+    // Aspire starts PostgreSQL as a container, so the container needs the host's Docker.
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+    "ghcr.io/devcontainers/features/node:1": { "version": "22" },
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "forwardPorts": [5095, 5096, 15163, 17244],
+  "portsAttributes": {
+    "5095": { "label": "API (GraphQL)" },
+    "5096": { "label": "Frontend (Vite)" },
+    "15163": { "label": "Aspire dashboard (http)" },
+    "17244": { "label": "Aspire dashboard (https)", "protocol": "https" }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csdevkit",
+        "ms-dotnettools.csharp",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "GraphQL.vscode-graphql",
+        "meta.relay"
+      ]
+    }
+  }
+}

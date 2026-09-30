@@ -17,6 +17,7 @@
   - [Getting Started \& Installation](#getting-started--installation)
     - [Prerequisites](#prerequisites)
     - [Install](#install)
+    - [Dev Container](#dev-container)
     - [Run](#run)
   - [Usage](#usage)
   - [Contributing](#contributing)
@@ -84,6 +85,14 @@ cd src/frontend/athlify
 npm install       # installs the frontend dependencies
 npm run relay     # generates the git-ignored Relay artifacts
 ```
+
+### Dev Container
+
+`.devcontainer/` provides a ready-to-use environment (.NET 10 SDK, Node.js 22,
+Docker access, Aspire CLI). Open the repository in VS Code and choose
+**Reopen in Container**; dependencies are installed and the Relay artifacts
+generated automatically. The host's Docker daemon must be running, because
+Aspire starts PostgreSQL as a container.
 
 ### Run
 1. Start Docker
