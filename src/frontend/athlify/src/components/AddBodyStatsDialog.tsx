@@ -42,10 +42,15 @@ const numericFields: { name: NumericField; max?: number; step: string }[] = [
 
 type FormValues = Record<NumericField, string> & { date: string }
 
-const today = () => new Date().toISOString().slice(0, 10)
+/** Current local date and time in the `datetime-local` input format (YYYY-MM-DDTHH:mm). */
+const now = () => {
+  const d = new Date()
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
+  return d.toISOString().slice(0, 16)
+}
 
 const initialValues = (latest?: BodyStatsEntry): FormValues => ({
-  date: today(),
+  date: now(),
   weight: latest ? String(latest.weight) : '',
   bodyFatPercentage: latest ? String(latest.bodyFatPercentage) : '',
   musclePercentage: latest ? String(latest.musclePercentage) : '',
@@ -108,7 +113,7 @@ export function AddBodyStatsDialog({
     commit({
       variables: {
         bodyStats: {
-          date: new Date(`${values.date}T00:00:00Z`).toISOString(),
+          date: new Date(values.date).toISOString(),
           weight: Number(values.weight),
           bodyFatPercentage: Number(values.bodyFatPercentage),
           musclePercentage: Number(values.musclePercentage),
@@ -150,7 +155,7 @@ export function AddBodyStatsDialog({
                   <Field.Root required invalid={!!errors.date}>
                     <Field.Label>{t('bodyStats.fields.date')}</Field.Label>
                     <Input
-                      type="date"
+                      type="datetime-local"
                       value={values.date}
                       onChange={(e) => setValues({ ...values, date: e.target.value })}
                     />

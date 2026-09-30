@@ -40,7 +40,7 @@ function setup(fetchFn: Fetch, latest?: BodyStatsEntry) {
 async function fillForm(user: ReturnType<typeof userEvent.setup>) {
   const dialog = await screen.findByRole('dialog')
   const values: Record<string, string> = {
-    Datum: '2026-02-03',
+    Datum: '2026-02-03T10:30',
     'Gewicht (kg)': '80.5',
     'Körperfett (%)': '20',
     'Muskeln (%)': '40',
@@ -79,7 +79,7 @@ describe('AddBodyStatsDialog', () => {
     const [, variables] = fetchFn.mock.calls[0] as unknown as [unknown, unknown]
     expect(variables).toEqual({
       bodyStats: {
-        date: '2026-02-03T00:00:00.000Z',
+        date: new Date('2026-02-03T10:30').toISOString(),
         weight: 80.5,
         bodyFatPercentage: 20,
         musclePercentage: 40,
@@ -115,8 +115,9 @@ describe('AddBodyStatsDialog', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 
-  it('prefills the measurements from the latest entry and keeps today as date', async () => {
+  it('prefills the measurements from the latest entry and keeps the current date and time', async () => {
     const latest: BodyStatsEntry = {
+      dbId: 9,
       uid: 'l',
       date: '2026-01-01T00:00:00Z',
       weight: 81.5,
@@ -134,7 +135,7 @@ describe('AddBodyStatsDialog', () => {
     expect(within(dialog).getByLabelText(/^Wasser/)).toHaveValue(56)
     expect(within(dialog).getByLabelText(/^Knochenmasse/)).toHaveValue(3.3)
     expect(within(dialog).getByLabelText(/^Datum/)).toHaveValue(
-      new Date().toISOString().slice(0, 10),
+      new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16),
     )
   })
 })

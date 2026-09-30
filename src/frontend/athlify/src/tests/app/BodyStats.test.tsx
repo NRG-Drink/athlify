@@ -8,6 +8,7 @@ import { Provider } from '../../components/ui/provider'
 
 const bodyStats = [
   {
+    dbId: 1,
     uid: 'uid-1',
     date: '2026-01-01T00:00:00Z',
     weight: 80.25,
@@ -34,7 +35,7 @@ describe('BodyStats', () => {
       </RelayEnvironmentProvider>,
     )
 
-    expect(await screen.findByText('80.3 kg')).toBeInTheDocument()
+    expect(await screen.findByText('80.3')).toBeInTheDocument()
     expect(fetchFn).toHaveBeenCalledTimes(1)
   })
 
@@ -58,7 +59,13 @@ describe('BodyStats', () => {
   })
 
   it('prefills the dialog with the entry that has the newest date', async () => {
-    const older = { ...bodyStats[0], uid: 'uid-2', date: '2025-01-01T00:00:00Z', weight: 70 }
+    const older = {
+      ...bodyStats[0],
+      dbId: 2,
+      uid: 'uid-2',
+      date: '2025-01-01T00:00:00Z',
+      weight: 70,
+    }
     const environment = new Environment({
       network: Network.create(() => ({ data: { bodyStats: [bodyStats[0], older] } })),
       store: new Store(new RecordSource()),

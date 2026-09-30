@@ -69,6 +69,14 @@
         "waterPercentage": "Wasser",
         "boneMass": "Knochen"
       },
+      "delete": {
+        "action": "Eintrag löschen",
+        "column": "Aktionen",
+        "success": "Eintrag gelöscht.",
+        "errors": {
+          "failed": "Der Eintrag konnte nicht gelöscht werden."
+        }
+      },
       "empty": "Noch keine Einträge vorhanden."
     }
   }

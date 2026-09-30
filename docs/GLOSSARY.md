@@ -50,7 +50,7 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
   Dialog.
 
 **Entry** — A single Body-Stats record (one measurement on one date). Users
-  create entries through a Dialog. See [`CONCEPT.md`](concept/CONCEPT.md).
+  create entries through a Dialog and delete them with the trash button at the end of a row, shown on hover. See [`CONCEPT.md`](concept/CONCEPT.md).
 
 **Event** — A personal time-based record such as an accident, repair, injury,
   break or goal. See [`CONCEPT.md`](concept/CONCEPT.md).

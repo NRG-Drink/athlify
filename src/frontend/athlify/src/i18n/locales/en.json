@@ -69,6 +69,14 @@
         "waterPercentage": "Water",
         "boneMass": "Bone"
       },
+      "delete": {
+        "action": "Delete entry",
+        "column": "Actions",
+        "success": "Entry deleted.",
+        "errors": {
+          "failed": "The entry could not be deleted."
+        }
+      },
       "empty": "No entries yet."
     }
   }

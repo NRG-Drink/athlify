@@ -1,4 +1,4 @@
-import { Table, Text } from '@chakra-ui/react'
+import { IconButton, Table, Text } from '@chakra-ui/react'
 import {
   createColumnHelper,
   createSortedRowModel,
@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-table'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { LuTrash2 } from 'react-icons/lu'
 import type { BodyStatsEntry } from './bodyStatsTypes'
 
 const features = tableFeatures({
@@ -17,7 +18,25 @@ const features = tableFeatures({
 
 const columnHelper = createColumnHelper<typeof features, BodyStatsEntry>()
 
-const formatNumber = (value: number, unit: string) => `${value.toFixed(1)} ${unit}`
+const formatNumber = (value: number) => value.toFixed(1)
+
+const units: Record<string, string> = {
+  weight: 'kg',
+  bodyFatPercentage: '%',
+  musclePercentage: '%',
+  waterPercentage: '%',
+  boneMass: 'kg',
+}
+
+/** Formats a timestamp using the host's locale (e.g. 03.02.2026, 10:30 for de-CH/de-DE). */
+const formatDateTime = (timestamp: number) =>
+  new Date(timestamp).toLocaleString(undefined, {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 
 const isNumeric = (columnId: string) => columnId !== 'date'
 
@@ -25,9 +44,12 @@ const sortIndicator = { asc: ' ▲', desc: ' ▼' } as const
 
 interface TableBodyStatsProps {
   bodyStats: ReadonlyArray<BodyStatsEntry>
+  onDelete?: (entry: BodyStatsEntry) => void
+  /** Uid of the entry whose deletion is in flight. */
+  deletingUid?: string | null
 }
 
-function TableBodyStats({ bodyStats }: TableBodyStatsProps) {
+function TableBodyStats({ bodyStats, onDelete, deletingUid }: TableBodyStatsProps) {
   const { t } = useTranslation()
   const data = useMemo(() => [...bodyStats], [bodyStats])
 
@@ -37,27 +59,27 @@ function TableBodyStats({ bodyStats }: TableBodyStatsProps) {
         columnHelper.accessor((row) => new Date(row.date as string).getTime(), {
           id: 'date',
           header: t('bodyStats.columns.date'),
-          cell: (info) => new Date(info.getValue()).toLocaleDateString(),
+          cell: (info) => formatDateTime(info.getValue()),
         }),
         columnHelper.accessor('weight', {
           header: t('bodyStats.columns.weight'),
-          cell: (info) => formatNumber(info.getValue(), 'kg'),
+          cell: (info) => formatNumber(info.getValue()),
         }),
         columnHelper.accessor('bodyFatPercentage', {
           header: t('bodyStats.columns.bodyFatPercentage'),
-          cell: (info) => formatNumber(info.getValue(), '%'),
+          cell: (info) => formatNumber(info.getValue()),
         }),
         columnHelper.accessor('musclePercentage', {
           header: t('bodyStats.columns.musclePercentage'),
-          cell: (info) => formatNumber(info.getValue(), '%'),
+          cell: (info) => formatNumber(info.getValue()),
         }),
         columnHelper.accessor('waterPercentage', {
           header: t('bodyStats.columns.waterPercentage'),
-          cell: (info) => formatNumber(info.getValue(), '%'),
+          cell: (info) => formatNumber(info.getValue()),
         }),
         columnHelper.accessor('boneMass', {
           header: t('bodyStats.columns.boneMass'),
-          cell: (info) => formatNumber(info.getValue(), 'kg'),
+          cell: (info) => formatNumber(info.getValue()),
         }),
       ]),
     [t],
@@ -96,20 +118,59 @@ function TableBodyStats({ bodyStats }: TableBodyStatsProps) {
                   >
                     <table.FlexRender header={header} />
                     {sorted ? sortIndicator[sorted] : null}
+                    {units[header.column.id] && (
+                      <Text
+                        as="span"
+                        display="block"
+                        fontSize="xs"
+                        fontWeight="normal"
+                        color="fg.muted"
+                      >
+                        [{units[header.column.id]}]
+                      </Text>
+                    )}
                   </Table.ColumnHeader>
                 )
               })}
+              {onDelete && <Table.ColumnHeader w="1" aria-label={t('bodyStats.delete.column')} />}
             </Table.Row>
           ))}
         </Table.Header>
         <Table.Body>
           {table.getRowModel().rows.map((row) => (
-            <Table.Row key={row.id}>
+            <Table.Row
+              key={row.id}
+              css={{
+                '&&:hover td': { bg: 'colorPalette.subtle' },
+                '& [data-delete]': { opacity: 0 },
+                '&:hover [data-delete], & [data-delete]:focus-visible, & [data-delete][data-busy]':
+                  {
+                    opacity: 1,
+                  },
+                '@media (hover: none)': { '& [data-delete]': { opacity: 1 } },
+              }}
+            >
               {row.getAllCells().map((cell) => (
                 <Table.Cell key={cell.id} textAlign={isNumeric(cell.column.id) ? 'end' : 'start'}>
                   <table.FlexRender cell={cell} />
                 </Table.Cell>
               ))}
+              {onDelete && (
+                <Table.Cell w="1" ps="0">
+                  <IconButton
+                    data-delete
+                    data-busy={deletingUid === row.original.uid ? '' : undefined}
+                    size="xs"
+                    variant="ghost"
+                    colorPalette="red"
+                    aria-label={t('bodyStats.delete.action')}
+                    disabled={deletingUid === row.original.uid}
+                    onClick={() => onDelete(row.original)}
+                  >
+                    <LuTrash2 />
+                  </IconButton>
+                </Table.Cell>
+              )}
             </Table.Row>
           ))}
         </Table.Body>

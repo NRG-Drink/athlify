@@ -1,6 +1,6 @@
 import { Chart, useChart } from '@chakra-ui/charts'
 import { useTranslation } from 'react-i18next'
-import { Bar, CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
+import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
 import type { BodyStatsEntry } from './bodyStatsTypes'
 
 interface ChartBodyStatsProps {
@@ -16,7 +16,7 @@ function ChartBodyStats({ bodyStats }: ChartBodyStatsProps) {
       musclePercentage: entry.musclePercentage,
       waterPercentage: entry.waterPercentage,
       boneMass: entry.boneMass,
-      date: new Date(entry.date as string).toLocaleDateString(),
+      date: new Date(entry.date as string).toLocaleString(),
     })),
     series: [
       { name: 'weight', label: t('bodyStats.fields.weight'), color: 'chart.primary' },
@@ -83,14 +83,14 @@ function ChartBodyStats({ bodyStats }: ChartBodyStatsProps) {
             strokeWidth={2}
             dot={true}
           />
-          <Bar
+          <Line
             key="boneMass"
+            type="monotone"
             isAnimationActive={false}
             dataKey={chart.key('boneMass')}
             stroke={chart.color('purple.solid')}
             strokeWidth={2}
-            fill={chart.color('purple.solid')}
-            barSize={20}
+            dot={true}
           />
         </LineChart>
       </Chart.Root>
