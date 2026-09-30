@@ -1,12 +1,13 @@
 {
   "name": "Athlify",
-  "image": "mcr.microsoft.com/devcontainers/dotnet:1-10.0",
+  "build": { "dockerfile": "Dockerfile" },
   // Skips the extra "uidUpdate" image build, which fails when the Docker daemon
   // cannot see the host's /tmp (snap/rootless Docker, remote daemon).
   "updateRemoteUserUID": false,
   "features": {
     // Aspire starts PostgreSQL as a container, so the container needs the host's Docker.
-    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+    // moby:false uses Docker CE packages; the Moby packages are unavailable on newer Debian bases.
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": { "moby": false },
     "ghcr.io/devcontainers/features/node:1": { "version": "22" },
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },
