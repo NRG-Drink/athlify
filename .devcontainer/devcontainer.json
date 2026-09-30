@@ -1,6 +1,9 @@
 {
   "name": "Athlify",
   "image": "mcr.microsoft.com/devcontainers/dotnet:1-10.0",
+  // Skips the extra "uidUpdate" image build, which fails when the Docker daemon
+  // cannot see the host's /tmp (snap/rootless Docker, remote daemon).
+  "updateRemoteUserUID": false,
   "features": {
     // Aspire starts PostgreSQL as a container, so the container needs the host's Docker.
     "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
