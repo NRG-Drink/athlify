@@ -10,6 +10,7 @@
       "aspNetCoreRuntimeVersions": "10.0"
     }
   },
+  "runArgs": ["--network=host"],
   "postCreateCommand": "bash .devcontainer/post-create.sh",
   "customizations": {
     "vscode": {
@@ -23,12 +24,12 @@
         "meta.relay"
       ],
       "settings": {
-				"remote.autoForwardPorts": true,
- 				"remote.autoForwardPortsSource": "hybrid",
-				"remote.otherPortsAttributes": {
-					"onAutoForward": "ignore"
-				},
-				"dotnet.defaultSolution": "disable"
+        "remote.autoForwardPorts": true,
+        "remote.autoForwardPortsSource": "hybrid",
+        "remote.otherPortsAttributes": {
+          "onAutoForward": "ignore"
+        },
+        "dotnet.defaultSolution": "disable"
       }
     }
   }
