@@ -48,6 +48,16 @@ database names and technical implementation terms are written in English,
 unless an external contract requires another spelling. Do not translate code
 identifiers into German.
 
+Never hard-code user-visible text in frontend components. Every new or
+changed UI string (labels, buttons, titles, placeholders, validation and
+error messages, toasts, `aria-label`s, empty states) must go through
+i18next (`useTranslation()` / `t('…')`), and the key must be added or
+updated in the same change in both `src/frontend/athlify/src/i18n/locales/de.json`
+and `en.json`, with the same key structure in both files. Before finishing a
+frontend task, check that no component contains untranslated literal UI text
+and that `de.json` and `en.json` have identical key sets. Tests run in German
+(see `docs/copilot/frontend/LEARNINGS.md`), so assert against the German text.
+
 At the end of every task, actively check whether a durable, verified
 repository learning was discovered. If so, update the matching
 `docs/copilot/frontend/LEARNINGS.md` or
