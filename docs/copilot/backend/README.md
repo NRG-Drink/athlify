@@ -52,7 +52,7 @@ If a requirement is not supported by these sources, do not invent a function. Do
 
 The backend is under `../../../src/backend/`. The solution
 `Athlify.slnx` contains `Athlify.Api` (ASP.NET Core, Hot Chocolate GraphQL,
-EF Core InMemory) and `Athlify.Api.Tests` (TUnit). It exposes a Body-Stats
+EF Core, PostgreSQL) and `Athlify.Api.Tests` (TUnit). It exposes a Body-Stats
 GraphQL prototype without authentication or ownership. It is a technical
 prototype, not the complete Athlify functionality from the concept. Copilot
 must not present the prototype as an implemented product function. See

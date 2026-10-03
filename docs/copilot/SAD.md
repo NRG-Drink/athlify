@@ -8,9 +8,9 @@
 
 Athlify is planned as a web application with a bilingual frontend, a backend
 API, persistent personal data and a Strava integration. The current repository
-contains a small ASP.NET Core, Hot Chocolate GraphQL and EF Core InMemory
-backend prototype (`src/backend/`) and a React/TypeScript frontend app shell
-(`src/frontend/athlify/`) that are not yet connected. Planned architecture must
+contains a small ASP.NET Core, Hot Chocolate GraphQL and PostgreSQL (EF Core, Npgsql)
+backend prototype (`src/backend/`) and a React/TypeScript frontend
+(`src/frontend/athlify/`); the Body-Stats page already calls the API. Planned architecture must
 not be presented as implemented behavior.
 
 This document is the canonical architecture entry point for the configured
@@ -41,8 +41,8 @@ flowchart LR
 | Localization | i18next ([ADR-003](frontend/adr/ADR-003-i18next-localization.md)) | Proposed |
 | API contract | GraphQL via Hot Chocolate ([ADR-001](adr/ADR-001-graphql-api-contract.md)) | Proposed; prototype |
 | Backend | ASP.NET Core (.NET 10) | Prototype |
-| Database | PostgreSQL | Planned target |
-| Prototype persistence | EF Core InMemory | Current prototype |
+| Database | PostgreSQL | Used by the prototype through Aspire; schema via `EnsureCreated`, no migrations yet |
+| Test persistence | EF Core InMemory | Endpoint tests only |
 | Tests | TUnit (backend); frontend test runner not chosen | Backend prototype |
 | Authentication | Backend-owned authentication and authorization | Planned |
 | External integration | Strava API through backend synchronization | Planned |
@@ -104,8 +104,8 @@ See the [security concept](../concept/security.md) and
 
 ## Scalability
 
-- Current capacity: in-memory backend prototype with seeded sample data; the
-  frontend does not call the backend yet.
+- Current capacity: backend prototype on a single PostgreSQL instance with seeded
+  sample data; the Body-Stats page calls it.
 - Scaling strategy: self-hosted for individual users. Persistence and
   deployment scaling are decided together with the planned PostgreSQL and
   Docker Compose setup ([testing and deployment](../concept/testing-deployment.md)).

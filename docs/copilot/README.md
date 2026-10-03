@@ -95,7 +95,7 @@ ownership guidance instead so that the concept remains authoritative.
 ```text
 src/
 ├── backend/            # .NET 10 solution Athlify.slnx
-│   ├── Athlify.Api/        # ASP.NET Core + Hot Chocolate GraphQL + EF Core InMemory
+│   ├── Athlify.Api/        # ASP.NET Core + Hot Chocolate GraphQL + EF Core (PostgreSQL)
 │   └── Athlify.Api.Tests/  # TUnit endpoint tests
 └── frontend/athlify/   # React 19 + TypeScript + Vite (standalone npm package)
 ```
@@ -104,8 +104,9 @@ src/
   sample data and no authentication or ownership. See
   [`backend/SAD.md`](backend/SAD.md).
 - **Frontend**: Chakra UI, Tailwind CSS, react-router-dom and i18next app
-  shell with the App Layout, placeholder pages and prototype Body-Stats
-  charts. Only the hybrid chart prototype queries the backend. See [`frontend/SAD.md`](frontend/SAD.md).
+  shell with the App Layout, placeholder pages and the Body-Stats domain
+  page, which reads and changes data through the GraphQL API. See
+  [`frontend/SAD.md`](frontend/SAD.md).
 - **Tooling**: the frontend is a standalone npm package with its own
   `package.json` and lockfile; the repository root has none. There are no
   git hooks; frontend checks run manually.

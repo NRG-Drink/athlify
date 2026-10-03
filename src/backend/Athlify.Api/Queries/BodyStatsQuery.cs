@@ -1,6 +1,7 @@
-﻿using Athlify.Api.Database;
+using Athlify.Api.Database;
 using Athlify.Api.Models;
 using GreenDonut.Data;
+using HotChocolate.Types.Relay;
 using Microsoft.EntityFrameworkCore;
 
 namespace Athlify.Api.Queries;
@@ -9,11 +10,12 @@ namespace Athlify.Api.Queries;
 public static partial class BodyStatsQuery
 {
     public static async Task<BodyStats?> GetBodyStatsById(
-        int id,
+        [ID<BodyStats>] int id,
         InMemoryDb db,
         CancellationToken cancellationToken)
     {
         var result = await db.BodyStats
+            .Include(e => e.Comments)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
 
         return result;
@@ -26,9 +28,9 @@ public static partial class BodyStatsQuery
         InMemoryDb db,
         CancellationToken cancellationToken)
     {
-        Console.WriteLine("Fetching BodyStats...");
         var result = await db.BodyStats
-            .OrderBy(b => b.Id)
+            .Include(b => b.Comments)
+            .OrderByDescending(b => b.Date)
             .With(query.Include(e => e.Id))
             .ToListAsync(cancellationToken);
 

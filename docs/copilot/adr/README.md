@@ -10,6 +10,7 @@ the relevant [`frontend ADRs`](../frontend/adr/README.md) or
 | ADR | Title | Status |
 |---|---|---|
 | [ADR-001](ADR-001-graphql-api-contract.md) | GraphQL as the frontend/backend API contract | Proposed |
+| [ADR-006](ADR-006-relay-global-ids.md) | Relay global IDs for all API entities | Proposed |
 
 ## When to create an ADR
 

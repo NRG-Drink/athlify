@@ -1,7 +1,7 @@
 # Athlify Backend – Software Architecture Document
 
 **Project**: Athlify
-**Last Updated**: 2026-09-23
+**Last Updated**: 2026-10-03
 **Version**: 1.0
 
 ## Overview
@@ -20,24 +20,21 @@ technical prototype and does not yet realize the complete target architecture.
 
 | Layer | Technology | Rationale |
 | --- | --- | --- |
-| Frontend | React, TypeScript and Vite | App shell exists; does not call the backend yet |
+| Frontend | React, TypeScript, Vite and Relay | The Body-Stats page calls this API |
 | Backend | ASP.NET Core (.NET 10) with Hot Chocolate GraphQL 16.6 | Current API prototype; API style proposed in [shared ADR-001](../adr/ADR-001-graphql-api-contract.md) |
-| Database | EF Core InMemory 10.0 (prototype); PostgreSQL planned | Fast prototype feedback; final persistence is open |
+| Database | PostgreSQL through EF Core 10 and Npgsql (Aspire); EF Core InMemory in tests | Real database in the prototype, fast isolated endpoint tests; schema via `EnsureCreated`, migrations are still open |
 | Tests | TUnit 1.x with `TUnit.AspNetCore` | Endpoint tests against `/graphql` |
 | Auth | Backend-owned authentication and authorization (planned) | Personal data ownership must be enforced server-side |
 | Hosting | Open | Deployment architecture is not yet decided |
 
 ## System Components
 
-    Frontend
-        |
-        v
-    Hot Chocolate GraphQL API
-        |
-        v
-    Domain modules and persistence
-        |
-        +--> Strava synchronization
+```mermaid
+flowchart TD
+    FE[Frontend] --> API[Hot Chocolate GraphQL API]
+    API --> DOMAIN[Domain modules and persistence]
+    DOMAIN --> STRAVA[Strava synchronization]
+```
 
 ## Scope
 
@@ -51,12 +48,12 @@ The current source code is a small .NET web prototype:
 src/backend/
 ├── Athlify.slnx                    # solution (API + tests)
 ├── Athlify.Api/
-│   ├── Program.cs                  # DI, EF Core InMemory, GraphQL, seeding, MapGraphQL
+│   ├── Program.cs                  # DI, Npgsql DbContext, GraphQL, seeding, MapGraphQL
 │   ├── Database/                   # InMemoryDb (DbContext), IDbSeeder, DbSeeder
-│   ├── Models/                     # BodyStats, BodyStatsDto, Comment, AppSettings
-│   ├── Queries/                    # BodyStatsQuery, BodyStatsMutation, HelloWorldQuery
+│   ├── Models/                     # BodyStats, BodyStatsDto, Comment, CommentDto, AppSettings
+│   ├── Queries/                    # BodyStatsQuery, BodyStatsMutation, BodyStatsNode, BodyStatsValidation, HelloWorldQuery
 │   └── Properties/                 # launchSettings.json (http://localhost:5095), ModuleInfo.cs
-└── Athlify.Api.Tests/              # TUnit endpoint tests (BodyStatsQueryTests)
+└── Athlify.Api.Tests/              # TUnit endpoint tests (BodyStatsQueryTests, BodyStatsMutationTests)
 ```
 
 - Target framework: `net10.0`, with nullable reference types and implicit
@@ -68,17 +65,24 @@ src/backend/
   filtering and sorting, and so do the nested `comments`.
 - Body-Stats support create, read, update and delete through
   `addBodyStats`, `bodyStats`, `bodyStatsById`, `updateBodyStats` and
-  `deleteBodyStats`.
+  `deleteBodyStats`. Ids are Relay global IDs
+  ([ADR-006](../adr/ADR-006-relay-global-ids.md)), `node(id:)` resolves a
+  Body-Stats entry, and the list is ordered by date, newest first.
+- Input is separated from the entity (`BodyStatsDto`, `CommentDto`): the
+  client cannot set identity or timestamps. `updateBodyStats` synchronizes the
+  notes (edit, add, remove) and sets `ModifiedAt`; `deleteBodyStats` removes
+  the notes explicitly and returns the deleted id. The frontend uses one note
+  per entry; the API still accepts a list. `BodyStatsValidation`
+  rejects invalid values with the code `VALIDATION_ERROR`.
 - `Program.cs` always seeds sample Body-Stats at startup through `IDbSeeder`.
   `AppSettings.ShouldSeedDb` exists but is not read yet.
 - There is no authentication, user ownership, PostgreSQL persistence or
   Strava integration yet.
 
-The prototype Body-Stats model differs from the
-[functional concept](../../concept/CONCEPT.md#36-body-stats). It has no body
-height and no owner, and it uses a list of `Comment` records instead of a
-single optional note. Align the model with the concept, or change the
-concept on purpose, before building product features on it.
+The prototype Body-Stats model matches the
+[functional concept](../../concept/CONCEPT.md#36-body-stats) (body height is
+deliberately not recorded; notes are stored as `Comment` records) except for
+ownership: it has no owner yet, so every request sees every entry.
 
 The product modules from the PRD are not yet fully present in the current code. No change may present a prototype state as a completed product architecture.
 

@@ -8,9 +8,9 @@ Athlify consists of a frontend, a web API and a database. The frontend communica
 
 This is the planned architecture. The current repository contains a
 React/TypeScript frontend app shell and a GraphQL backend prototype with
-Body-Stats operations on an in-memory database. There is no authentication,
-persistent database or Strava integration yet, and the frontend does not call
-the backend.
+Body-Stats operations. There is no authentication or Strava integration yet.
+The Body-Stats page of the frontend calls the backend; the other areas are
+placeholders.
 
 ```mermaid
 flowchart LR
@@ -32,11 +32,20 @@ flowchart LR
 
 ## Data flow
 
-1. The user logs in.
-2. The frontend sends domain requests to the backend.
-3. The backend checks the user and permissions.
-4. The domain logic reads or changes the personal data.
-5. Dashboard analyses are built from activities, Body-Stats and events.
+```mermaid
+sequenceDiagram
+    actor User
+    participant FE as Frontend
+    participant BE as Backend
+    participant DB as Database
+    User->>FE: Log in
+    FE->>BE: Domain requests
+    BE->>BE: Check user and permissions
+    BE->>DB: Read or change personal data
+    DB-->>BE: Personal data
+    BE-->>FE: Result
+    Note over BE,DB: Dashboard analyses are built from activities, Body-Stats and events
+```
 
 ## Folder structure
 

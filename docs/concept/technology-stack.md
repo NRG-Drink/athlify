@@ -13,7 +13,7 @@ The application provides a German and English user interface. Project documentat
 | Localization | i18next / react-i18next | Proposed | German and English UI from translation resources ([ADR-003](../copilot/frontend/adr/ADR-003-i18next-localization.md)) |
 | Backend | ASP.NET Core with C# (.NET 10) | Prototype | Strongly typed web API and support for authentication and background tasks |
 | API | GraphQL with Hot Chocolate | Proposed; prototype | One typed schema for all domain modules ([ADR-001](../copilot/adr/ADR-001-graphql-api-contract.md)) |
-| Database | PostgreSQL | Planned target | Relational data model and suitable time-series aggregations; the prototype uses EF Core InMemory |
+| Database | PostgreSQL | Used by the prototype | Relational data model and suitable time-series aggregations; the prototype runs on it through Aspire, the endpoint tests use EF Core InMemory |
 | External API | Strava API | Planned integration | Source for activities and bicycles/Gear |
 | Authentication | JWT and OAuth 2.0 | Planned approach | User login and Strava connection |
 

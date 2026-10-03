@@ -72,8 +72,9 @@ Priorities (Must/Should/Could Have) are in the
 
 - The repository currently contains a Body-Stats GraphQL backend prototype
   under `src/backend/`, not the complete product.
-- The frontend app shell exists under `src/frontend/athlify/`, but product
-  functionality and backend integration are not implemented yet.
+- The frontend app shell exists under `src/frontend/athlify/`. Only the
+  Body-Stats page is implemented and talks to the backend; the other areas are
+  placeholders.
 - Personal data must remain isolated to the logged-in user.
 - The user interface is bilingual in German and English; documentation is
   English-only.

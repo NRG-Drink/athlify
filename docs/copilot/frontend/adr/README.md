@@ -18,12 +18,14 @@ considered before creating a frontend-specific ADR.
 | [ADR-003](ADR-003-i18next-localization.md) | i18next for the bilingual user interface | Proposed |
 | [ADR-004](ADR-004-react-router-data-mode.md) | React Router data mode with a nested app-layout route | Proposed |
 | [ADR-005](ADR-005-theme-tokens.md) | "Night Ride" theme as Chakra semantic tokens | Proposed |
+| [ADR-007](ADR-007-domain-page-pattern.md) | Domain pages as feature folders with Relay fragments | Proposed |
 
 The API style is a shared decision; see
-[shared ADR-001](../../adr/ADR-001-graphql-api-contract.md). State
-management, the GraphQL client and the Tailwind/Chakra coexistence have not
-been decided. Record them here once they
-are decided.
+[shared ADR-001](../../adr/ADR-001-graphql-api-contract.md), and the
+identifier convention is [shared ADR-006](../../adr/ADR-006-relay-global-ids.md).
+The GraphQL client (Relay) is recorded in ADR-007. State management beyond the
+Relay store and the Tailwind/Chakra coexistence have not been decided. Record
+them here once they are decided.
 
 ## When to write an ADR
 

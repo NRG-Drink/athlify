@@ -1,7 +1,7 @@
 # Athlify Frontend – Software Architecture Document
 
 **Project**: Athlify
-**Last Updated**: 2026-09-26
+**Last Updated**: 2026-10-03
 **Version**: 1.0
 
 ## Overview
@@ -24,25 +24,24 @@ TypeScript and Vite.
 | Components and theming | Chakra UI v3 with Emotion and `next-themes` color mode; custom "Night Ride" theme in `src/theme/` | Proposed in [ADR-002](adr/ADR-002-chakra-ui-component-system.md) and [ADR-005](adr/ADR-005-theme-tokens.md) |
 | Fonts | Inter (variable) and Barlow Semi Condensed, self-hosted via `@fontsource` | Implemented |
 | Styling utilities | Tailwind CSS v4 through `@tailwindcss/vite` | Loaded; coexistence with Chakra is open |
-| Charts | Recharts 3 and `@chakra-ui/charts` | Being evaluated with prototype variants |
+| Charts | Recharts 3 behind `MetricChart`, colored through the theme's CSS variables | Implemented ([ADR-007](adr/ADR-007-domain-page-pattern.md)) |
 | Routing | `react-router-dom` v7 data mode (`createBrowserRouter`, nested app-layout route) | Proposed in [ADR-004](adr/ADR-004-react-router-data-mode.md) |
 | Localization | i18next with react-i18next (`de` default, `en` fallback) | Proposed in [ADR-003](adr/ADR-003-i18next-localization.md) |
 | Icons | `react-icons` (Lucide set) | Implemented |
 | Testing | Vitest + React Testing Library + user-event in jsdom (`npm test`) | Implemented |
 | Tooling | ESLint 10 + typescript-eslint, Prettier; no git hooks | Implemented |
-| Backend contract | Hot Chocolate GraphQL | Proposed in [shared ADR-001](../adr/ADR-001-graphql-api-contract.md); no client integration yet |
+| Backend contract | Hot Chocolate GraphQL | Proposed in [shared ADR-001](../adr/ADR-001-graphql-api-contract.md); IDs follow [shared ADR-006](../adr/ADR-006-relay-global-ids.md) |
+| GraphQL client | Relay (`react-relay`, `relay-compiler`, committed `schema.graphql`) | Proposed in [ADR-007](adr/ADR-007-domain-page-pattern.md) |
 | Auth | Backend-owned authentication and authorization | Planned |
 | Hosting | Open | Not decided |
 
 ## System Components
 
-    User
-      |
-      v
-    Frontend views and shared UI
-      |
-      v
-    Backend API / GraphQL contract
+```mermaid
+flowchart TD
+    USER[User] --> VIEWS[Frontend views and shared UI]
+    VIEWS --> API[Backend API / GraphQL contract]
+```
 
 ## Scope
 
@@ -52,8 +51,9 @@ This document describes the technical context for frontend changes. The function
 
 The frontend is under `../../../src/frontend/athlify/`. It is a standalone
 npm package with its own `package.json` and `package-lock.json`. It is an app
-shell used for technology exploration. No Athlify domain behavior is
-implemented; only the hybrid Body-Stats chart prototype queries the backend.
+shell with one finished domain page: Body-Stats, which is the reference for
+all further domain pages (see [Domain page pattern](#domain-page-pattern)).
+The other areas are placeholders.
 
 ```text
 src/frontend/athlify/src/
@@ -61,23 +61,26 @@ src/frontend/athlify/src/
 ├── routes.tsx        # route table (RouteObject[]) shared by app and tests
 ├── navigation/       # paths.ts (URL constants), navItems.ts (Primary Navigation)
 ├── layouts/          # AppLayout, AppHeader, PrimaryNav, MobileNav, UserMenu
-├── app/              # route-level views (BodyStats, PlaceholderPage, NotFoundPage, RouteErrorPage)
+├── app/              # views without a domain (PlaceholderPage, NotFoundPage, RouteErrorPage)
+├── features/         # one folder per domain area; body-stats/ is the reference (ADR-007)
 ├── theme/            # Chakra system: palette, semantic tokens, fonts (ADR-005)
-├── components/       # shared components (Page, BrandMark, charts, AddBodyStatsDialog, toggles, switcher)
+├── components/       # domain-free building blocks (Page, QueryBoundary, DataTable, MetricChart,
+│                     #   KpiTile, PeriodPicker, FormDialog, ConfirmDialog, BrandMark, toggles, switcher)
 │   └── ui/           # generated Chakra UI snippets (provider, color-mode, toaster, tooltip; the Provider mounts the Toaster)
-├── tests/            # all Vitest tests, mirroring src/ (plus setup.ts and utils/renderRoute.tsx)
+├── lib/              # pure functions: metrics, period, ticks
+├── relay/            # Relay environment and the store updaters for root lists
+├── tests/            # all Vitest tests, mirroring src/ (plus setup.ts and utils/)
 ├── hooks/            # shared hooks (empty)
 ├── types/            # shared types (empty)
-├── i18n/             # i18next setup and de/en locale resources
+├── i18n/             # i18next setup, de/en locale resources and useFormat
 └── index.css         # Tailwind import only
 ```
 
 The App Layout and routing are implemented. Dashboard, Activities, Garage,
-Events and Settings render placeholder pages. The `/body-stats` view compares
-three prototype chart variants; the hybrid variant queries the backend
-prototype through Relay. State management, the GraphQL client and the
-Tailwind/Chakra boundary are still open decisions. Record them as ADRs when
-they are made.
+Events and Settings render placeholder pages. The `/body-stats` view is a
+domain page backed by the GraphQL API. State management beyond the Relay store
+and the Tailwind/Chakra boundary are still open decisions. Record them as ADRs
+when they are made.
 
 ## Responsibility boundary
 
@@ -116,7 +119,7 @@ view are shown inside the layout through the route `errorElement`
 | `/dashboard` | Dashboard (placeholder) | Primary Navigation |
 | `/activities` | Activities (placeholder) | Primary Navigation |
 | `/garage` | Garage (placeholder) | Primary Navigation |
-| `/body-stats` | Body-Stats (chart prototype) | Primary Navigation |
+| `/body-stats` | Body-Stats (domain page; `?metric=` and `?period=` select the view) | Primary Navigation |
 | `/events` | Events (placeholder) | Primary Navigation |
 | `/settings` | Settings (placeholder) | User Menu |
 | any other | Not Found page | – |
@@ -133,6 +136,43 @@ sets the document title. Its `status` prop (`ready`, `loading`, `empty`,
 own `emptyMessage` (and optionally an `emptyIcon`) instead of relying on the
 generic default. A page has at most one primary action (`Button` variant
 `solid`) in `actions`; other actions use `outline` or `ghost`.
+
+`PageEmptyState` and `PageErrorState` are exported for pages that find out
+inside their content that there is nothing to show or that loading failed.
+`QueryBoundary` connects a data component to these states: Suspense shows a
+skeleton or spinner, a render error shows `PageErrorState` with a retry, and
+the page header stays visible in both.
+
+### Domain page pattern
+
+A domain page follows [ADR-007](adr/ADR-007-domain-page-pattern.md); the
+reference is `src/features/body-stats/`.
+
+- **Data:** the page runs one query. Each component that shows data declares a
+  plural Relay fragment (`bodyStatsSeries_entries`, `BodyStatsTable_entries`).
+  A mutation selects every field those fragments read through one shared
+  fragment (`useBodyStatsMutations_entry`) so that a saved record is complete
+  in the store.
+- **Changes:** `use<Area>Mutations` adds, updates and deletes. Updates merge by
+  global ID; add and delete change the root list with `relay/rootList.ts` once
+  the server confirmed. There is no refetch and no optimistic update.
+- **View state:** the selected metric and period live in the URL.
+- **Formatting:** numbers, units and dates come from `useFormat()` in the active
+  language; missing values show "—".
+- **Tiles and chart:** one `KpiTile` per measurement shows the latest value and
+  its change since the start of the selected period. Selecting a tile switches
+  `MetricChart`, which draws one measurement with its own unit and axis in
+  `chart.primary`. A period without data keeps the chart's height and offers
+  the whole period.
+- **Table:** `DataTable` sorts with the keyboard through header buttons. Row
+  actions (edit, delete) are always visible; clicking a row also opens the
+  editor. Columns drop out below `sm`, `md` and `lg` so that a phone shows date,
+  weight and the actions.
+- **Dialogs:** `FormDialog` (a bottom sheet on phones) and `ConfirmDialog`
+  (`alertdialog`, Cancel focused). Neither can be dismissed while a request is
+  in flight.
+- **Boundaries:** `components/`, `lib/` and `relay/` do not import from
+  `features/`; ESLint enforces it.
 
 ### Theme
 
@@ -157,7 +197,8 @@ tuned.
   a label and a comparison period. Missing data shows "—", never `0`.
 - **Charts:** series colors come from `chart.primary`, `chart.secondary`,
   `chart.effort` and `chart.form`; `secondary` and `form` never share a
-  chart, and series are never distinguished by color alone.
+  chart, and series are never distinguished by color alone. A chart shows one
+  measurement; values with different units never share an axis.
 
 ## Key Components
 
@@ -192,6 +233,21 @@ Views request data from the backend contract, render explicit loading, empty,
 error and populated states, and submit mutations through backend-owned
 validation. A successful mutation refreshes or updates affected views only
 after the backend confirms the change.
+
+```mermaid
+flowchart LR
+    API[(GraphQL API)]
+    STORE[Relay store]
+    PAGE[Page query]
+    VIEW[Tiles, chart and table]
+    MUT[Mutation hook]
+    PAGE -->|loads| API
+    API -->|records| STORE
+    STORE -->|fragments| VIEW
+    VIEW -->|user action| MUT
+    MUT -->|mutation| API
+    API -->|confirmed result| STORE
+```
 
 ## External Integrations
 

@@ -36,15 +36,15 @@ The product is not implemented yet. The repository currently contains:
 - **Backend prototype**: a GraphQL API with Body-Stats queries and mutations
   on an in-memory database with seeded sample data, plus endpoint tests.
 - **Frontend app shell**: a React app with light/dark color mode, a
-  German/English language switcher, routing and prototype Body-Stats charts
-  built from sample data. It does not call the backend yet.
+  German/English language switcher, routing and a Body-Stats page (summary
+  tiles, chart, history table, add/edit/delete) that uses the backend API.
 
 ## Tech Stack & Sources
 
 | Area     | Technology                                                                                  |
 | -------- | ------------------------------------------------------------------------------------------- |
 | Frontend | React 19, TypeScript, Vite, Chakra UI v3 (custom theme), Tailwind CSS v4, react-router-dom, i18next, Recharts, self-hosted Inter and Barlow Semi Condensed |
-| Backend  | .NET 10, ASP.NET Core, Hot Chocolate GraphQL 16, EF Core InMemory (PostgreSQL planned)      |
+| Backend  | .NET 10, ASP.NET Core, Hot Chocolate GraphQL 16, EF Core + PostgreSQL (Aspire)              |
 | Testing  | TUnit (backend); Vitest + React Testing Library, ESLint, Prettier and `tsc` (frontend)      |
 
 ```text
@@ -102,7 +102,8 @@ Aspire starts PostgreSQL as a container.
 
 - Open `http://localhost:5095/graphql` to explore the schema in the
   Hot Chocolate GraphQL IDE (for example, `bodyStats`, `addBodyStats`).
-- Open the frontend and go to **Body-Stats** to see the prototype charts.
+- Open the frontend and go to **Body-Stats** to see the measurements, add,
+  edit or delete one, and switch the chart between measurements and periods.
   Use the user menu in the header to switch the color mode and the language.
 
 Common checks:

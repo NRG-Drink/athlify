@@ -28,6 +28,7 @@ public partial class Program
         builder
             .AddGraphQL()
             .AddTypes()
+            .AddGlobalObjectIdentification()
             .AddProjections()
             .AddFiltering()
             .AddSorting();

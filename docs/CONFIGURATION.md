@@ -12,7 +12,7 @@ commit credentials or tokens.
 | Local URL | `Properties/launchSettings.json` (`http` profile) | `http://localhost:5095`, GraphQL IDE at `/graphql` |
 | Environment | `ASPNETCORE_ENVIRONMENT` in `launchSettings.json` | `Development` |
 | Logging | `appsettings.json`, `appsettings.Development.json` | `Information`; `Microsoft.AspNetCore` at `Warning` |
-| Database | `Program.cs` | EF Core InMemory database `InMemoryDb`; data is lost on restart |
+| Database | `Program.cs` | PostgreSQL through `AddNpgsqlDbContext` (connection `postgres-db`, provided by the Aspire AppHost); the schema is created with `EnsureCreated`. Endpoint tests swap in EF Core InMemory |
 | Seeding | `Program.cs`, `Database/DbSeeder.cs` | Sample Body-Stats are always seeded at startup |
 | `ShouldSeedDb` | `Models/AppSettings.cs` | Defined (default `false`) but not read yet |
 
