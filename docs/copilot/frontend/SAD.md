@@ -68,7 +68,7 @@ src/frontend/athlify/src/
 │                     #   KpiTile, PeriodPicker, FormDialog, ConfirmDialog, BrandMark, toggles, switcher)
 │   └── ui/           # generated Chakra UI snippets (provider, color-mode, toaster, tooltip; the Provider mounts the Toaster)
 ├── lib/              # pure functions: metrics, period, ticks
-├── relay/            # Relay environment and the store updaters for root lists
+├── relay/            # Relay environment
 ├── tests/            # all Vitest tests, mirroring src/ (plus setup.ts and utils/)
 ├── hooks/            # shared hooks (empty)
 ├── types/            # shared types (empty)
@@ -154,8 +154,14 @@ reference is `src/features/body-stats/`.
   fragment (`useBodyStatsMutations_entry`) so that a saved record is complete
   in the store.
 - **Changes:** `use<Area>Mutations` adds, updates and deletes. Updates merge by
-  global ID; add and delete change the root list with `relay/rootList.ts` once
-  the server confirmed. There is no refetch and no optimistic update.
+  global ID; add and delete change the Relay connection (`@prependNode`,
+  `@deleteEdge`) once the server confirmed. There is no refetch and no
+  optimistic update.
+- **Lists:** a list is a Relay connection (`@connection` in a `@refetchable`
+  fragment on the page) with cursor paging from the API. The Body-Stats page
+  needs the whole history for chart and tiles, so it loads pages of 200 and
+  keeps calling `loadNext` until `hasNext` is false. A page that only needs the
+  newest entries stops after the first page.
 - **View state:** the selected metric and period live in the URL.
 - **Formatting:** numbers, units and dates come from `useFormat()` in the active
   language; missing values show "—".

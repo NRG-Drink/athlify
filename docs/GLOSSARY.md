@@ -45,6 +45,11 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 **Dashboard** — The central analysis view containing metrics, charts, filters and
   timeline information. See [`CONCEPT.md`](concept/CONCEPT.md).
 
+**Connection** — The paged form of a list in the API (`edges`, `pageInfo`, cursors),
+  following the Relay convention. Lists such as `bodyStats(first, after)` are
+  connections; a page holds at most 200 entries. See
+  [`ADR-007`](copilot/frontend/adr/ADR-007-domain-page-pattern.md).
+
 **Dialog** — A modal window layered over a page that collects input or asks for
   confirmation without leaving the page, for example the Body-Stats form
   dialog.

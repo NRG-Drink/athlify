@@ -31,7 +31,12 @@ public partial class Program
             .AddGlobalObjectIdentification()
             .AddProjections()
             .AddFiltering()
-            .AddSorting();
+            .AddSorting()
+            .ModifyPagingOptions(options =>
+            {
+                options.DefaultPageSize = 100;
+                options.MaxPageSize = 200;
+            });
 
         var app = builder.Build();
         {

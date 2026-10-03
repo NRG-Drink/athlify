@@ -88,7 +88,7 @@ public class BodyStatsMutationTests : WebApiTestBase
 
         var first = (await DataAsync(client, DeleteMutation, new { id })).GetProperty("deleteBodyStats");
         var second = (await DataAsync(client, DeleteMutation, new { id })).GetProperty("deleteBodyStats");
-        var remaining = (await DataAsync(client, ListQuery)).GetProperty("bodyStats");
+        var remaining = (await DataAsync(client, ListQuery)).GetProperty("bodyStats").GetProperty("nodes");
 
         await Assert.That(first.GetString()).IsEqualTo(id);
         await Assert.That(second.ValueKind).IsEqualTo(JsonValueKind.Null);
@@ -114,7 +114,7 @@ public class BodyStatsMutationTests : WebApiTestBase
         });
 
         await Assert.That(root.TryGetProperty("errors", out _)).IsTrue();
-        var listed = (await DataAsync(client, ListQuery)).GetProperty("bodyStats");
+        var listed = (await DataAsync(client, ListQuery)).GetProperty("bodyStats").GetProperty("nodes");
         await Assert.That(listed.GetArrayLength()).IsEqualTo(0);
     }
 
@@ -142,7 +142,7 @@ public class BodyStatsMutationTests : WebApiTestBase
         });
 
         await Assert.That(root.TryGetProperty("errors", out _)).IsTrue();
-        var listed = (await DataAsync(client, ListQuery)).GetProperty("bodyStats");
+        var listed = (await DataAsync(client, ListQuery)).GetProperty("bodyStats").GetProperty("nodes");
         await Assert.That(listed.GetArrayLength()).IsEqualTo(0);
     }
 

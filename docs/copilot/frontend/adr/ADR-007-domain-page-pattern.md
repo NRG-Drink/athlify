@@ -52,8 +52,8 @@ Relay confirmed as the GraphQL client.
 3. Only `<Area>Page` runs a query. Every component that shows domain data
    declares its own fragment.
 4. Mutations live in one `use<Area>Mutations` hook. They update the Relay
-   store from the mutation result (`relay/rootList.ts`) and never refetch the
-   list. Success and error toasts are raised in that hook.
+   store from the mutation result (`@prependNode` / `@deleteEdge` on the
+   page's `@connection`) and never refetch the list. Success and error toasts are raised in that hook.
 5. A data page renders `Page` → `QueryBoundary` → content. The boundary maps
    Suspense to a skeleton and a render error to `PageErrorState` with retry;
    an empty list renders `PageEmptyState` with the page's primary action.
@@ -79,8 +79,11 @@ Relay confirmed as the GraphQL client.
   the mutation selects them through one shared fragment that must stay in sync.
 - Tests build a real Relay environment with a fetch handler
   (`src/tests/utils/relay.tsx`); `relay-test-utils` is not used.
-- The pattern assumes lists small enough to load at once; paging needs its own
-  decision when Activities arrive.
+- Lists are Relay connections with cursor paging from the first page on. A page
+  that needs the whole list (Body-Stats: chart and tiles) loads all pages in a
+  loop; pages with long lists (Activities) show one page and use
+  `usePaginationFragment` with `loadNext` on demand. The server caps a page at
+  200 entries (`ModifyPagingOptions`) to stay inside the query cost limits.
 
 ## Implementation Notes
 
@@ -88,5 +91,5 @@ Relay confirmed as the GraphQL client.
 - Shared building blocks: `src/components/` (`DataTable`, `MetricChart`,
   `KpiTile`, `PeriodPicker`, `FormDialog`, `ConfirmDialog`, `QueryBoundary`,
   `Page`), `src/lib/` (`metrics`, `period`, `ticks`), `src/relay/`
-  (`environment`, `rootList`), `src/i18n/useFormat.ts`.
+  (`environment`), `src/i18n/useFormat.ts`.
 - The identifier convention is [ADR-006](../../adr/ADR-006-relay-global-ids.md).

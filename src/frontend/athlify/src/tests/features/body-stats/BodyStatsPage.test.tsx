@@ -5,6 +5,7 @@ import { BodyStatsPage } from '../../../features/body-stats/BodyStatsPage'
 import { renderWithRelay } from '../../utils/relay'
 
 const QUERY = 'BodyStatsPageQuery'
+const MORE = 'BodyStatsPageMoreQuery'
 const ADD = 'useBodyStatsMutationsAddMutation'
 const UPDATE = 'useBodyStatsMutationsUpdateMutation'
 const DELETE = 'useBodyStatsMutationsDeleteMutation'
@@ -47,7 +48,17 @@ const seed = [oldest, newest, longAgo, middle]
 const page = (handler: Parameters<typeof renderWithRelay>[1], path = '/body-stats') =>
   renderWithRelay(<BodyStatsPage />, handler, { path, routePath: '/body-stats' })
 
-const okQuery = (entries: Entry[] = seed) => ({ data: { bodyStats: entries } })
+const connection = (entries: Entry[], hasNextPage = false) => ({
+  edges: entries.map((node) => ({ cursor: node.id, node })),
+  pageInfo: {
+    hasNextPage,
+    endCursor: entries.at(-1)?.id ?? null,
+    hasPreviousPage: false,
+    startCursor: entries[0]?.id ?? null,
+  },
+})
+
+const okQuery = (entries: Entry[] = seed) => ({ data: { bodyStats: connection(entries) } })
 
 // Looked up by structure, not by name: the names change with the language, and a modal dialog hides
 // the page behind it from the accessibility tree, so these are called while no dialog is open.
@@ -88,6 +99,34 @@ describe('BodyStatsPage', () => {
       await tiles().findByRole('button', { name: /Gewicht/ })
 
       expect(calls(QUERY)).toHaveLength(1)
+    })
+
+    it('keeps loading pages until the whole history is there', async () => {
+      const { calls } = page((operation) =>
+        operation === MORE
+          ? { data: { bodyStats: connection([oldest, longAgo]) } }
+          : { data: { bodyStats: connection([newest, middle], true) } },
+      )
+
+      await waitFor(() => expect(rowCount()).toBe(4))
+
+      expect(calls(MORE)).toEqual([{ first: 200, after: 'bs-b' }])
+      expect(calls(QUERY)).toHaveLength(1)
+    })
+
+    it('stops loading and tells the user when a further page fails', async () => {
+      const { calls } = page((operation) =>
+        operation === MORE
+          ? { data: null, errors: [{ message: 'boom' }] }
+          : { data: { bodyStats: connection([newest, middle], true) } },
+      )
+
+      expect(
+        await screen.findByText('Body-Stats konnten nicht geladen werden.'),
+      ).toBeInTheDocument()
+
+      expect(rowCount()).toBe(2)
+      expect(calls(MORE)).toHaveLength(1)
     })
 
     it('draws the chart from oldest to newest even when the server order differs', async () => {
@@ -309,6 +348,7 @@ describe('BodyStatsPage', () => {
             boneMass: 3.2,
             comments: [{ content: 'neu' }],
           },
+          connections: [expect.stringContaining('BodyStatsPage_bodyStats')],
         },
       ])
       expect(rowCount()).toBe(5)
@@ -483,7 +523,9 @@ describe('BodyStatsPage', () => {
       await user.click(within(confirm).getByRole('button', { name: 'Löschen' }))
 
       await waitFor(() => expect(rowCount()).toBe(3))
-      expect(calls(DELETE)).toEqual([{ id: 'bs-a' }])
+      expect(calls(DELETE)).toEqual([
+        { id: 'bs-a', connections: [expect.stringContaining('BodyStatsPage_bodyStats')] },
+      ])
       expect(await screen.findByText('Messung gelöscht.')).toBeInTheDocument()
       expect(calls(QUERY)).toHaveLength(1)
     })

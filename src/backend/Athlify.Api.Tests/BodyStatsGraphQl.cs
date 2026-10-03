@@ -20,7 +20,7 @@ public static class BodyStatsGraphQl
         """;
 
     public static readonly string ListQuery = $$"""
-        query { bodyStats { {{Fields}} } }
+        query { bodyStats(first: 200) { nodes { {{Fields}} } } }
         """;
 
     public static readonly string NodeQuery = $$"""

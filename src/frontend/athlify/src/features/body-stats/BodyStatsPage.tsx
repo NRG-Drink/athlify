@@ -1,6 +1,6 @@
 import { Button, Flex, Heading, Stack } from '@chakra-ui/react'
-import { useMemo, useState, startTransition } from 'react'
-import { graphql, useLazyLoadQuery } from 'react-relay'
+import { useEffect, useMemo, useState, startTransition } from 'react'
+import { graphql, useLazyLoadQuery, usePaginationFragment } from 'react-relay'
 import { useTranslation } from 'react-i18next'
 import { LuActivity, LuPlus } from 'react-icons/lu'
 import { useSearchParams } from 'react-router-dom'
@@ -10,6 +10,9 @@ import { QueryBoundary } from '../../components/QueryBoundary'
 import { useFormat } from '../../i18n/useFormat'
 import { latest } from '../../lib/metrics'
 import { parsePeriod, type Period } from '../../lib/period'
+import { toaster } from '../../components/ui/toaster'
+import type { BodyStatsPage_list$key } from './__generated__/BodyStatsPage_list.graphql'
+import type { BodyStatsPageMoreQuery } from './__generated__/BodyStatsPageMoreQuery.graphql'
 import type { BodyStatsPageQuery } from './__generated__/BodyStatsPageQuery.graphql'
 import { BodyStatsChart } from './BodyStatsChart'
 import { emptyValues, toInputValue, type BodyStatsFormValues } from './bodyStatsForm'
@@ -23,12 +26,28 @@ import { useBodyStatsMutations } from './useBodyStatsMutations'
 
 const DEFAULT_PERIOD: Period = '90d'
 
+// The page works on the whole history (chart, tiles, table), so it asks for big pages and keeps
+// loading until the connection is complete. The key must match BODY_STATS_CONNECTION_KEY.
+const PAGE_SIZE = 200
+
 const pageQuery = graphql`
   query BodyStatsPageQuery {
-    bodyStats {
-      id
-      ...bodyStatsSeries_entries
-      ...BodyStatsTable_entries
+    ...BodyStatsPage_list
+  }
+`
+
+const listFragment = graphql`
+  fragment BodyStatsPage_list on Query
+  @refetchable(queryName: "BodyStatsPageMoreQuery")
+  @argumentDefinitions(first: { type: "Int", defaultValue: 200 }, after: { type: "String" }) {
+    bodyStats(first: $first, after: $after) @connection(key: "BodyStatsPage_bodyStats") {
+      edges {
+        node {
+          id
+          ...bodyStatsSeries_entries
+          ...BodyStatsTable_entries
+        }
+      }
     }
   }
 `
@@ -60,11 +79,32 @@ function BodyStatsContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
   const [searchParams, setSearchParams] = useSearchParams()
   const [deleting, setDeleting] = useState<BodyStatsRow | null>(null)
 
-  const { bodyStats } = useLazyLoadQuery<BodyStatsPageQuery>(
+  const queryData = useLazyLoadQuery<BodyStatsPageQuery>(
     pageQuery,
     {},
     { fetchKey, fetchPolicy: 'network-only' },
   )
+  const { data, hasNext, isLoadingNext, loadNext } = usePaginationFragment<
+    BodyStatsPageMoreQuery,
+    BodyStatsPage_list$key
+  >(listFragment, queryData)
+  const bodyStats = useMemo(
+    () => (data.bodyStats?.edges ?? []).map((edge) => edge.node),
+    [data.bodyStats],
+  )
+
+  // Fetch the remaining pages, so chart and tiles never show a silently cut-off history.
+  const [pagingFailed, setPagingFailed] = useState(false)
+  useEffect(() => {
+    if (!hasNext || isLoadingNext || pagingFailed) return
+    loadNext(PAGE_SIZE, {
+      onComplete: (error) => {
+        if (!error) return
+        setPagingFailed(true)
+        toaster.create({ type: 'error', title: t('bodyStats.loadFailed') })
+      },
+    })
+  }, [hasNext, isLoadingNext, pagingFailed, loadNext, t])
   const series = useBodyStatsSeries(bodyStats)
   // Periods count back from the moment the data was last loaded or changed.
   // eslint-disable-next-line react-hooks/exhaustive-deps

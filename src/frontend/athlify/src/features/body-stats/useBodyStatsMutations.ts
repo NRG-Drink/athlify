@@ -1,7 +1,7 @@
 import { graphql, useMutation } from 'react-relay'
+import { ConnectionHandler, ROOT_ID } from 'relay-runtime'
 import { useTranslation } from 'react-i18next'
 import { toaster } from '../../components/ui/toaster'
-import { appendToRootList, removeFromRootList } from '../../relay/rootList'
 import type { useBodyStatsMutationsAddMutation } from './__generated__/useBodyStatsMutationsAddMutation.graphql'
 import type { useBodyStatsMutationsDeleteMutation } from './__generated__/useBodyStatsMutationsDeleteMutation.graphql'
 import type { useBodyStatsMutationsUpdateMutation } from './__generated__/useBodyStatsMutationsUpdateMutation.graphql'
@@ -25,8 +25,9 @@ export const bodyStatsRecordFragment = graphql`
 `
 
 const addMutation = graphql`
-  mutation useBodyStatsMutationsAddMutation($input: BodyStatsDtoInput!) {
-    addBodyStats(bodyStats: $input) {
+  mutation useBodyStatsMutationsAddMutation($input: BodyStatsDtoInput!, $connections: [ID!]!) {
+    addBodyStats(bodyStats: $input)
+      @prependNode(connections: $connections, edgeTypeName: "BodyStatsEdge") {
       ...useBodyStatsMutations_entry
     }
   }
@@ -41,14 +42,17 @@ const updateMutation = graphql`
 `
 
 const deleteMutation = graphql`
-  mutation useBodyStatsMutationsDeleteMutation($id: ID!) {
-    deleteBodyStats(id: $id)
+  mutation useBodyStatsMutationsDeleteMutation($id: ID!, $connections: [ID!]!) {
+    deleteBodyStats(id: $id) @deleteEdge(connections: $connections)
   }
 `
 
 export type BodyStatsInput = useBodyStatsMutationsAddMutation['variables']['input']
 
-const LIST_FIELD = 'bodyStats'
+/** Key of the `@connection` in `BodyStatsPage`; the mutations edit that list in the store. */
+export const BODY_STATS_CONNECTION_KEY = 'BodyStatsPage_bodyStats'
+
+const connectionIds = () => [ConnectionHandler.getConnectionID(ROOT_ID, BODY_STATS_CONNECTION_KEY)]
 
 interface Callbacks {
   /** Called after the server confirmed the change, so the dialog can close. */
@@ -61,8 +65,8 @@ interface DeleteCallbacks {
 }
 
 /**
- * Add, update and delete for Body-Stats. The store is updated from the mutation payload, never by
- * refetching the list, and the user gets a toast for every outcome.
+ * Add, update and delete for Body-Stats. The Relay connection is updated from the mutation payload
+ * (`@prependNode`, `@deleteEdge`), never by refetching the list, and the user gets a toast for every outcome.
  */
 export function useBodyStatsMutations() {
   const { t } = useTranslation()
@@ -78,11 +82,7 @@ export function useBodyStatsMutations() {
 
   const add = (input: BodyStatsInput, { onSuccess }: Callbacks) =>
     commitAdd({
-      variables: { input },
-      updater: (store) => {
-        const record = store.getRootField('addBodyStats')
-        if (record) appendToRootList(store, LIST_FIELD, record)
-      },
+      variables: { input, connections: connectionIds() },
       onCompleted: (response, errors) => {
         if (errors?.length || !response.addBodyStats) {
           fail('bodyStats.add.errors.saveFailed')
@@ -99,7 +99,11 @@ export function useBodyStatsMutations() {
       variables: { id, input },
       updater: (store, data) => {
         // The entry vanished on the server: drop it here as well.
-        if (data && !data.updateBodyStats) removeFromRootList(store, LIST_FIELD, id)
+        if (!data || data.updateBodyStats) return
+        const [connectionId] = connectionIds()
+        const connection = store.get(connectionId)
+        if (connection) ConnectionHandler.deleteNode(connection, id)
+        store.delete(id)
       },
       onCompleted: (response, errors) => {
         if (errors?.length) {
@@ -119,8 +123,8 @@ export function useBodyStatsMutations() {
 
   const remove = (id: string, { onSettled }: DeleteCallbacks) =>
     commitDelete({
-      variables: { id },
-      updater: (store) => removeFromRootList(store, LIST_FIELD, id),
+      variables: { id, connections: connectionIds() },
+      updater: (store) => store.delete(id),
       onCompleted: (_response, errors) => {
         if (errors?.length) fail('bodyStats.delete.errors.failed')
         else toaster.create({ type: 'success', title: t('bodyStats.delete.success') })

@@ -55,7 +55,7 @@ build it, and `node(id:)` resolves any entity that implements `Node`.
 
 | Operation | Behavior |
 |---|---|
-| `bodyStats` | All measurements, newest first; supports filtering and sorting. Includes their notes. |
+| `bodyStats(first, after)` | Relay connection of measurements, newest first (ties by `id`); cursor paging with at most 200 per page (default 100); supports filtering and sorting. Includes their notes. |
 | `bodyStatsById(id)` | One measurement, or `null`. |
 | `addBodyStats(bodyStats)` | Creates a measurement with its notes and returns it. |
 | `updateBodyStats(id, bodyStats)` | Replaces the measurement values and synchronizes the notes; returns `null` if the measurement does not exist. |

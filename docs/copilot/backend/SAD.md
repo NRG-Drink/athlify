@@ -67,7 +67,9 @@ src/backend/
   `addBodyStats`, `bodyStats`, `bodyStatsById`, `updateBodyStats` and
   `deleteBodyStats`. Ids are Relay global IDs
   ([ADR-006](../adr/ADR-006-relay-global-ids.md)), `node(id:)` resolves a
-  Body-Stats entry, and the list is ordered by date, newest first.
+  Body-Stats entry. `bodyStats` is a Relay connection with keyset cursors
+  (`ToPageAsync`, returned as `PageConnection<T>`), ordered by date and id,
+  newest first, at most 200 entries per page.
 - Input is separated from the entity (`BodyStatsDto`, `CommentDto`): the
   client cannot set identity or timestamps. `updateBodyStats` synchronizes the
   notes (edit, add, remove) and sets `ModifiedAt`; `deleteBodyStats` removes

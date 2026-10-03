@@ -1,6 +1,7 @@
 using Athlify.Api.Database;
 using Athlify.Api.Models;
 using GreenDonut.Data;
+using HotChocolate.Types.Pagination;
 using HotChocolate.Types.Relay;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,20 +22,27 @@ public static partial class BodyStatsQuery
         return result;
     }
 
+    // The id is the tie-breaker, so the cursor is stable for measurements with the same date.
+    private static readonly Func<SortDefinition<BodyStats>, SortDefinition<BodyStats>> DefaultOrder =
+        sort => sort.AddDescending(b => b.Date).AddDescending(b => b.Id);
+
+    /// <summary>
+    /// Relay connection (cursor paging), newest first. A page of 200 stays well inside the query
+    /// cost limits; clients that need the whole history load further pages.
+    /// </summary>
     [UseFiltering]
     [UseSorting]
-    public static async Task<IEnumerable<BodyStats>> GetBodyStats(
+    public static async Task<PageConnection<BodyStats>> GetBodyStats(
+        PagingArguments pagingArgs,
         QueryContext<BodyStats> query,
         InMemoryDb db,
         CancellationToken cancellationToken)
     {
-        var result = await db.BodyStats
+        var page = await db.BodyStats
             .Include(b => b.Comments)
-            .OrderByDescending(b => b.Date)
-            .With(query.Include(e => e.Id))
-            .ToListAsync(cancellationToken);
+            .With(query.Include(e => e.Id), DefaultOrder)
+            .ToPageAsync(pagingArgs, cancellationToken);
 
-        return result;
+        return new PageConnection<BodyStats>(page);
     }
 }
-
