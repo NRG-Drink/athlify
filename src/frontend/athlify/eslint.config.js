@@ -21,6 +21,23 @@ export default defineConfig([
     },
   },
   {
+    // Shared building blocks stay free of domain code: a feature may use them, never the reverse.
+    files: ['src/components/**/*.{ts,tsx}', 'src/lib/**/*.{ts,tsx}', 'src/relay/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '(^|/)features/',
+              message: 'Shared code must not import from features/. Move the shared part down instead.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // Generated Chakra UI snippets (npx @chakra-ui/cli snippet add); keep them as generated.
     files: ['src/components/ui/**/*.{ts,tsx}'],
     rules: {

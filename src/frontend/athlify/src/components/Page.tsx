@@ -39,6 +39,63 @@ export function LoadingIndicator() {
   )
 }
 
+export interface PageEmptyStateProps {
+  message?: string
+  /** Decorative icon; defaults to an inbox. */
+  icon?: IconType
+  title?: string
+  /** The page's primary action, repeated where the user would otherwise be stuck. */
+  action?: ReactNode
+}
+
+export function PageEmptyState({
+  message,
+  icon: Icon = LuInbox,
+  title,
+  action,
+}: PageEmptyStateProps) {
+  const { t } = useTranslation()
+  return (
+    <EmptyState.Root borderWidth="1px" borderStyle="dashed" borderRadius="l3">
+      <EmptyState.Content>
+        <EmptyState.Indicator
+          bg="colorPalette.subtle"
+          color="colorPalette.fg"
+          borderRadius="l3"
+          p="3"
+        >
+          <Icon aria-hidden />
+        </EmptyState.Indicator>
+        {title && <EmptyState.Title>{title}</EmptyState.Title>}
+        <EmptyState.Description>{message ?? t('page.empty')}</EmptyState.Description>
+        {action}
+      </EmptyState.Content>
+    </EmptyState.Root>
+  )
+}
+
+export interface PageErrorStateProps {
+  message?: string
+  onRetry?: () => void
+}
+
+export function PageErrorState({ message, onRetry }: PageErrorStateProps) {
+  const { t } = useTranslation()
+  return (
+    <Alert.Root status="error" role="alert" alignItems="center">
+      <Alert.Indicator />
+      <Alert.Content>
+        <Alert.Description>{message ?? t('page.error')}</Alert.Description>
+      </Alert.Content>
+      {onRetry && (
+        <Button size="sm" variant="outline" onClick={onRetry}>
+          {t('page.retry')}
+        </Button>
+      )}
+    </Alert.Root>
+  )
+}
+
 export function Page({
   title,
   description,
@@ -50,8 +107,6 @@ export function Page({
   onRetry,
   children,
 }: PageProps) {
-  const { t } = useTranslation()
-
   useEffect(() => {
     document.title = `${title} · Athlify`
   }, [title])
@@ -83,35 +138,9 @@ export function Page({
 
       {status === 'loading' && <LoadingIndicator />}
 
-      {status === 'empty' && (
-        <EmptyState.Root borderWidth="1px" borderStyle="dashed" borderRadius="l3">
-          <EmptyState.Content>
-            <EmptyState.Indicator
-              bg="colorPalette.subtle"
-              color="colorPalette.fg"
-              borderRadius="l3"
-              p="3"
-            >
-              <EmptyIcon aria-hidden />
-            </EmptyState.Indicator>
-            <EmptyState.Description>{emptyMessage ?? t('page.empty')}</EmptyState.Description>
-          </EmptyState.Content>
-        </EmptyState.Root>
-      )}
+      {status === 'empty' && <PageEmptyState message={emptyMessage} icon={EmptyIcon} />}
 
-      {status === 'error' && (
-        <Alert.Root status="error" role="alert" alignItems="center">
-          <Alert.Indicator />
-          <Alert.Content>
-            <Alert.Description>{errorMessage ?? t('page.error')}</Alert.Description>
-          </Alert.Content>
-          {onRetry && (
-            <Button size="sm" variant="outline" onClick={onRetry}>
-              {t('page.retry')}
-            </Button>
-          )}
-        </Alert.Root>
-      )}
+      {status === 'error' && <PageErrorState message={errorMessage} onRetry={onRetry} />}
 
       {status === 'ready' && children}
     </Stack>

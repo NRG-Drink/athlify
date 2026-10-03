@@ -1,9 +1,9 @@
 import { LuSettings } from 'react-icons/lu'
 import { Navigate, type RouteObject } from 'react-router-dom'
-import BodyStats from './app/BodyStats'
 import { NotFoundPage } from './app/NotFoundPage'
 import { PlaceholderPage } from './app/PlaceholderPage'
 import { RouteErrorPage } from './app/RouteErrorPage'
+import { BodyStatsPage } from './features/body-stats/BodyStatsPage'
 import { AppLayout } from './layouts/AppLayout'
 import { primaryNavItems, type NavItemId } from './navigation/navItems'
 import { paths } from './navigation/paths'
@@ -28,7 +28,7 @@ export const routes: RouteObject[] = [
       { path: paths.dashboard, element: areaPlaceholder('dashboard') },
       { path: paths.activities, element: areaPlaceholder('activities') },
       { path: paths.garage, element: areaPlaceholder('garage') },
-      { path: paths.bodyStats, element: <BodyStats /> },
+      { path: paths.bodyStats, element: <BodyStatsPage /> },
       { path: paths.events, element: areaPlaceholder('events') },
       {
         path: paths.settings,

@@ -6,7 +6,7 @@ import './theme/fonts'
 import './index.css'
 import './i18n'
 import { Provider } from './components/ui/provider'
-import RelayEnvironment from './RelayEnvironment.ts'
+import RelayEnvironment from './relay/environment.ts'
 import { routes } from './routes.tsx'
 
 const rootElement = document.getElementById('root')

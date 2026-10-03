@@ -24,6 +24,37 @@
       "retry": "Erneut versuchen",
       "comingSoon": "Demnächst verfügbar."
     },
+    "form": {
+      "cancel": "Abbrechen",
+      "save": "Speichern",
+      "errors": {
+        "required": "Pflichtfeld.",
+        "number": "Bitte eine Zahl eingeben.",
+        "positive": "Bitte einen Wert grösser als 0 eingeben.",
+        "percentage": "Bitte einen Wert zwischen 0 und 100 eingeben."
+      }
+    },
+    "period": {
+      "label": "Zeitraum",
+      "short": {
+        "30d": "30 T",
+        "90d": "90 T",
+        "1y": "1 J",
+        "all": "Alle"
+      },
+      "long": {
+        "30d": "Letzte 30 Tage",
+        "90d": "Letzte 90 Tage",
+        "1y": "Letztes Jahr",
+        "all": "Gesamter Zeitraum"
+      },
+      "in": {
+        "30d": "in 30 Tagen",
+        "90d": "in 90 Tagen",
+        "1y": "im letzten Jahr",
+        "all": "seit der ersten Messung"
+      }
+    },
     "notFound": {
       "title": "Seite nicht gefunden",
       "message": "Diese Seite existiert nicht oder wurde verschoben.",
@@ -41,43 +72,74 @@
       "settings": "Hier verwaltest du bald dein Konto und die Verbindung zu Strava."
     },
     "bodyStats": {
-      "add": {
-        "open": "Eintrag hinzufügen",
-        "title": "Neuer Eintrag",
-        "cancel": "Abbrechen",
-        "save": "Speichern",
-        "success": "Eintrag gespeichert.",
-        "errors": {
-          "required": "Pflichtfeld.",
-          "range": "Bitte einen gültigen Wert eingeben.",
-          "saveFailed": "Der Eintrag konnte nicht gespeichert werden."
-        }
+      "metrics": {
+        "weight": "Gewicht",
+        "bodyFatPercentage": "Körperfett",
+        "musclePercentage": "Muskelanteil",
+        "waterPercentage": "Wasseranteil",
+        "boneMass": "Knochenmasse"
       },
       "fields": {
         "date": "Datum",
-        "weight": "Gewicht (kg)",
-        "bodyFatPercentage": "Körperfett (%)",
-        "musclePercentage": "Muskeln (%)",
-        "waterPercentage": "Wasser (%)",
-        "boneMass": "Knochenmasse (kg)"
+        "note": "Notiz"
       },
       "columns": {
-        "date": "Datum",
-        "weight": "Gewicht",
-        "bodyFatPercentage": "Fett",
-        "musclePercentage": "Muskeln",
-        "waterPercentage": "Wasser",
-        "boneMass": "Knochen"
+        "date": "Datum"
       },
-      "delete": {
-        "action": "Eintrag löschen",
-        "column": "Aktionen",
-        "success": "Eintrag gelöscht.",
+      "kpi": {
+        "group": "Messwerte",
+        "noData": "Keine Messung",
+        "noPeriodData": "Keine Messung im Zeitraum",
+        "notEnoughData": "Zu wenig Daten im Zeitraum",
+        "lastMeasured": "Letzte Messung: {{date}}"
+      },
+      "chart": {
+        "summary_one": "{{metric}}, {{period}}: {{from}}, 1 Messung",
+        "summary_other": "{{metric}}, {{period}}: von {{from}} auf {{to}}, {{count}} Messungen",
+        "empty": {
+          "30d": "Keine Messungen in den letzten 30 Tagen",
+          "90d": "Keine Messungen in den letzten 90 Tagen",
+          "1y": "Keine Messungen im letzten Jahr",
+          "all": "Noch keine Messungen"
+        },
+        "showAll": "Ganzen Zeitraum anzeigen"
+      },
+      "history": "Verlauf",
+      "add": {
+        "open": "Messung erfassen",
+        "title": "Neue Messung",
+        "success": "Messung gespeichert.",
         "errors": {
-          "failed": "Der Eintrag konnte nicht gelöscht werden."
+          "saveFailed": "Speichern fehlgeschlagen. Bitte versuche es nochmals."
         }
       },
-      "empty": "Noch keine Einträge vorhanden."
+      "edit": {
+        "title": "Messung bearbeiten",
+        "success": "Messung aktualisiert.",
+        "errors": {
+          "notFound": "Diese Messung existiert nicht mehr."
+        }
+      },
+      "delete": {
+        "title": "Messung löschen?",
+        "description": "Die Messung vom {{date}} ({{weight}}) und ihre Notiz werden endgültig gelöscht.",
+        "confirm": "Löschen",
+        "success": "Messung gelöscht.",
+        "errors": {
+          "failed": "Löschen fehlgeschlagen. Bitte versuche es nochmals."
+        }
+      },
+      "row": {
+        "actionsColumn": "Aktionen",
+        "edit": "Messung vom {{date}} bearbeiten",
+        "delete": "Messung vom {{date}} löschen"
+      },
+      "empty": {
+        "title": "Noch keine Messungen",
+        "message": "Erfasse deine erste Messung, um Gewicht und Körperwerte über die Zeit zu sehen.",
+        "action": "Erste Messung erfassen"
+      },
+      "loadFailed": "Body-Stats konnten nicht geladen werden."
     }
   }
 }

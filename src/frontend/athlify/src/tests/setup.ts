@@ -36,5 +36,9 @@ beforeEach(async () => {
 
 afterEach(() => {
   cleanup()
+  // A modal that is still open when a test ends leaves these on <body>, which would block the
+  // pointer interactions of the next test.
+  document.body.removeAttribute('style')
+  document.body.removeAttribute('data-inert')
   vi.restoreAllMocks()
 })

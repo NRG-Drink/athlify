@@ -24,6 +24,37 @@
       "retry": "Try again",
       "comingSoon": "Coming soon."
     },
+    "form": {
+      "cancel": "Cancel",
+      "save": "Save",
+      "errors": {
+        "required": "Required.",
+        "number": "Please enter a number.",
+        "positive": "Please enter a value greater than 0.",
+        "percentage": "Please enter a value between 0 and 100."
+      }
+    },
+    "period": {
+      "label": "Period",
+      "short": {
+        "30d": "30 d",
+        "90d": "90 d",
+        "1y": "1 y",
+        "all": "All"
+      },
+      "long": {
+        "30d": "Last 30 days",
+        "90d": "Last 90 days",
+        "1y": "Last year",
+        "all": "Whole period"
+      },
+      "in": {
+        "30d": "in 30 days",
+        "90d": "in 90 days",
+        "1y": "in the last year",
+        "all": "since the first measurement"
+      }
+    },
     "notFound": {
       "title": "Page not found",
       "message": "This page does not exist or has been moved.",
@@ -41,43 +72,74 @@
       "settings": "Soon you will manage your account and the Strava connection here."
     },
     "bodyStats": {
-      "add": {
-        "open": "Add entry",
-        "title": "New entry",
-        "cancel": "Cancel",
-        "save": "Save",
-        "success": "Entry saved.",
-        "errors": {
-          "required": "Required.",
-          "range": "Please enter a valid value.",
-          "saveFailed": "The entry could not be saved."
-        }
+      "metrics": {
+        "weight": "Weight",
+        "bodyFatPercentage": "Body fat",
+        "musclePercentage": "Muscle",
+        "waterPercentage": "Water",
+        "boneMass": "Bone mass"
       },
       "fields": {
         "date": "Date",
-        "weight": "Weight (kg)",
-        "bodyFatPercentage": "Body fat (%)",
-        "musclePercentage": "Muscle (%)",
-        "waterPercentage": "Water (%)",
-        "boneMass": "Bone mass (kg)"
+        "note": "Note"
       },
       "columns": {
-        "date": "Date",
-        "weight": "Weight",
-        "bodyFatPercentage": "Fat",
-        "musclePercentage": "Muscle",
-        "waterPercentage": "Water",
-        "boneMass": "Bone"
+        "date": "Date"
       },
-      "delete": {
-        "action": "Delete entry",
-        "column": "Actions",
-        "success": "Entry deleted.",
+      "kpi": {
+        "group": "Measurements",
+        "noData": "No measurement",
+        "noPeriodData": "No measurement in this period",
+        "notEnoughData": "Not enough data in this period",
+        "lastMeasured": "Last measured: {{date}}"
+      },
+      "chart": {
+        "summary_one": "{{metric}}, {{period}}: {{from}}, 1 measurement",
+        "summary_other": "{{metric}}, {{period}}: from {{from}} to {{to}}, {{count}} measurements",
+        "empty": {
+          "30d": "No measurements in the last 30 days",
+          "90d": "No measurements in the last 90 days",
+          "1y": "No measurements in the last year",
+          "all": "No measurements yet"
+        },
+        "showAll": "Show the whole period"
+      },
+      "history": "History",
+      "add": {
+        "open": "Add measurement",
+        "title": "New measurement",
+        "success": "Measurement saved.",
         "errors": {
-          "failed": "The entry could not be deleted."
+          "saveFailed": "Saving failed. Please try again."
         }
       },
-      "empty": "No entries yet."
+      "edit": {
+        "title": "Edit measurement",
+        "success": "Measurement updated.",
+        "errors": {
+          "notFound": "This measurement no longer exists."
+        }
+      },
+      "delete": {
+        "title": "Delete measurement?",
+        "description": "The measurement from {{date}} ({{weight}}) and its note will be deleted permanently.",
+        "confirm": "Delete",
+        "success": "Measurement deleted.",
+        "errors": {
+          "failed": "Deleting failed. Please try again."
+        }
+      },
+      "row": {
+        "actionsColumn": "Actions",
+        "edit": "Edit measurement from {{date}}",
+        "delete": "Delete measurement from {{date}}"
+      },
+      "empty": {
+        "title": "No measurements yet",
+        "message": "Add your first measurement to see weight and body values over time.",
+        "action": "Add first measurement"
+      },
+      "loadFailed": "Body stats could not be loaded."
     }
   }
 }
