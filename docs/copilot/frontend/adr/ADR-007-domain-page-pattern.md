@@ -49,8 +49,9 @@ Relay confirmed as the GraphQL client.
 2. `src/components/`, `src/lib/` and `src/relay/` never import from
    `src/features/` (ESLint `no-restricted-imports`). Features do not import
    from each other; shared code moves down.
-3. Only `<Area>Page` runs a query. Every component that shows domain data
-   declares its own fragment.
+3. Only `<Area>Page` runs a query, with its `fetchKey` from `useFetchKey()`
+   so that a remounted page never replays an old load error. Every component
+   that shows domain data declares its own fragment.
 4. Mutations live in one `use<Area>Mutations` hook. They update the Relay
    store from the mutation result (`@prependNode` / `@deleteEdge` on the
    page's `@connection`) and never refetch the list. Success and error toasts are raised in that hook.

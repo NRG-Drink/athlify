@@ -1,5 +1,5 @@
 import { Button, Flex, Heading, Stack } from '@chakra-ui/react'
-import { useEffect, useMemo, useState, startTransition } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { graphql, useLazyLoadQuery, usePaginationFragment } from 'react-relay'
 import { useTranslation } from 'react-i18next'
 import { LuActivity, LuPlus } from 'react-icons/lu'
@@ -8,6 +8,7 @@ import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { Page, PageEmptyState } from '../../components/Page'
 import { QueryBoundary } from '../../components/QueryBoundary'
 import { useFormat } from '../../i18n/useFormat'
+import { useFetchKey } from '../../relay/useFetchKey'
 import { latest } from '../../lib/metrics'
 import { parsePeriod, type Period } from '../../lib/period'
 import { toaster } from '../../components/ui/toaster'
@@ -230,12 +231,12 @@ function BodyStatsContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
 export function BodyStatsPage() {
   const { t } = useTranslation()
   const [dialog, setDialog] = useState<Dialog>({ kind: 'closed' })
-  const [fetchKey, setFetchKey] = useState(0)
+  const [fetchKey, retry] = useFetchKey()
 
   return (
     <Page title={t('nav.bodyStats')}>
       <QueryBoundary
-        onRetry={() => startTransition(() => setFetchKey((key) => key + 1))}
+        onRetry={retry}
         fallback={<BodyStatsSkeleton />}
         errorMessage={t('bodyStats.loadFailed')}
       >

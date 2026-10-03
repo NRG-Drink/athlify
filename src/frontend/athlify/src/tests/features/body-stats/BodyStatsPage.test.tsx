@@ -275,6 +275,34 @@ describe('BodyStatsPage', () => {
     })
   })
 
+  describe('returning to the page', () => {
+    it('loads again instead of showing the old load error', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+      let attempt = 0
+      const { router, calls } = renderWithRelay(
+        <BodyStatsPage />,
+        () => {
+          attempt += 1
+          return attempt === 1 ? Promise.reject(new Error('offline')) : Promise.resolve(okQuery())
+        },
+        {
+          path: '/body-stats',
+          routePath: '/body-stats',
+          otherRoutes: [{ path: '/other', element: <p>Andere Seite</p> }],
+        },
+      )
+      await screen.findByRole('alert')
+
+      await act(() => router.navigate('/other'))
+      await screen.findByText('Andere Seite')
+      await act(() => router.navigate('/body-stats'))
+
+      expect(await tiles().findByRole('button', { name: /Gewicht/ })).toBeInTheDocument()
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+      expect(calls(QUERY)).toHaveLength(2)
+    })
+  })
+
   describe('adding', () => {
     const added = entry('bs-new', '2026-10-03T10:00:00Z', 72.5, [{ id: 'c-new', content: 'neu' }])
 

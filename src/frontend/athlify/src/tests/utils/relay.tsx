@@ -40,10 +40,14 @@ export function createTestEnvironment(handler: Handler) {
 export function renderWithRelay(
   ui: ReactElement,
   handler: Handler,
-  { path = '/', routePath = '/' }: { path?: string; routePath?: string } = {},
+  {
+    path = '/',
+    routePath = '/',
+    otherRoutes = [],
+  }: { path?: string; routePath?: string; otherRoutes?: RouteObject[] } = {},
 ) {
   const test = createTestEnvironment(handler)
-  const routes: RouteObject[] = [{ path: routePath, element: ui }]
+  const routes: RouteObject[] = [{ path: routePath, element: ui }, ...otherRoutes]
   const router = createMemoryRouter(routes, { initialEntries: [path] })
   const user = userEvent.setup()
   const result = render(
