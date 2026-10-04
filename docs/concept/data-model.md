@@ -2,9 +2,10 @@
 
 Technical detail documentation for the functional concept in [`CONCEPT.md`](CONCEPT.md).
 
-This is the planned domain model. No entities or persistence implementation
-currently exist in the repository; the frontend scaffold does not implement
-domain data storage.
+This is the planned domain model. The backend prototype implements only
+Body-Stats with their note, without an owner. See the
+[backend SAD](../copilot/backend/SAD.md) for how it differs from this model.
+The frontend does not store domain data.
 
 ## Entities
 
@@ -18,7 +19,11 @@ domain data storage.
   deactivation date, price, maintenance cycle and source.
 - **MaintenanceCycle**: a separate maintenance schedule associated with a
   vehicle or gadget.
-- **BodyStat**: measurement date, weight, body height and optional note.
+- **BodyStat**: measurement date, weight, body-fat percentage, muscle
+  percentage, water percentage and bone mass.
+- **Note**: free text with creation and modification timestamps, attached to
+  one Body-Stat. The product has one note per Body-Stat; the prototype API
+  still stores a list of them.
 - **Event**: date, type, title and description.
 - **OAuthConnection**: connection of a user with Strava and synchronization status.
 - **Role**: user role distinguishing regular users from Administrators. An
@@ -28,6 +33,8 @@ domain data storage.
 ## Relationships
 
 - A user owns any number of activities, bicycles, gadgets, Body-Stats and events.
+- A Body-Stat has at most one note in the product (the prototype API accepts a
+  list); deleting the Body-Stat deletes its note.
 - An activity can optionally be assigned to a bicycle.
 - An activity can be assigned to multiple gadgets.
 - A bicycle can be linked to multiple gadgets, and a gadget can be linked to
@@ -84,29 +91,37 @@ totals for time, distance, elevation gain and TSS.
 
 ## Example activity structure
 
-```text
-Activity
-├── id*
-├── date
-├── type
-├── vehicle
-├── gadgets[]
-├── time
-├── distance
-├── averageSpeed*
-├── elevationGain
-├── tss*
-├── description
-├── tags[]
-├── heartRate: { min, max, average }
-├── mood
-├── effort
-├── wind
-├── source
-├── stravaActivityId
-├── createdAt*
-├── updatedAt*
-└── deletedAt*
+```mermaid
+classDiagram
+    class Activity {
+        +id
+        +date
+        +type
+        +vehicle
+        +gadgets
+        +time
+        +distance
+        +averageSpeed
+        +elevationGain
+        +tss
+        +description
+        +tags
+        +mood
+        +effort
+        +wind
+        +source
+        +stravaActivityId
+        +createdAt
+        +updatedAt
+        +deletedAt
+    }
+    class HeartRate {
+        +min
+        +max
+        +average
+    }
+    Activity *-- HeartRate : heartRate
+    note for Activity "System-managed or calculated: id, averageSpeed, tss, createdAt, updatedAt and deletedAt. gadgets and tags are lists."
 ```
 
 ```mermaid
@@ -115,6 +130,7 @@ erDiagram
     USER ||--o{ VEHICLE : owns
     USER ||--o{ GADGET : owns
     USER ||--o{ BODYSTAT : records
+    BODYSTAT ||--o| NOTE : has
     USER ||--o{ EVENT : records
     USER ||--o| OAUTHCONNECTION : connects
     VEHICLE ||--o{ ACTIVITY : used_for

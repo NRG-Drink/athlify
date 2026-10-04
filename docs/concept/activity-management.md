@@ -39,6 +39,17 @@ soft-deleted must not be created or reactivated as an active activity.
 Synchronization matches external references within the authenticated owner
 context and reports failures explicitly.
 
+```mermaid
+stateDiagram-v2
+    [*] --> Active: Created manually or imported from Strava
+    Active --> SoftDeleted: Deleted, deletedAt is set
+    SoftDeleted --> SoftDeleted: Strava synchronization skips it
+    note right of SoftDeleted
+        Hidden from lists, details, calendar and dashboard.
+        Never reactivated by synchronization.
+    end note
+```
+
 ## Activity fields
 
 | Field | Type/relationship | Editable |

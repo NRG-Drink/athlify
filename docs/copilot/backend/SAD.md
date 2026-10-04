@@ -1,7 +1,7 @@
 # Athlify Backend – Software Architecture Document
 
 **Project**: Athlify
-**Last Updated**: 2026-09-09
+**Last Updated**: 2026-10-03
 **Version**: 1.0
 
 ## Overview
@@ -20,23 +20,21 @@ technical prototype and does not yet realize the complete target architecture.
 
 | Layer | Technology | Rationale |
 | --- | --- | --- |
-| Frontend | React, TypeScript and Vite (planned baseline) | Planned consumer of the backend contract |
-| Backend | ASP.NET Core with Hot Chocolate GraphQL 16.4.0 | Current API prototype |
-| Database | EF Core InMemory 10.0.9 (prototype) | Fast prototype feedback; final persistence is open |
+| Frontend | React, TypeScript, Vite and Relay | The Body-Stats page calls this API |
+| Backend | ASP.NET Core (.NET 10) with Hot Chocolate GraphQL 16.6 | Current API prototype; API style proposed in [shared ADR-001](../adr/ADR-001-graphql-api-contract.md) |
+| Database | PostgreSQL through EF Core 10 and Npgsql (Aspire); EF Core InMemory in tests | Real database in the prototype, fast isolated endpoint tests; schema via `EnsureCreated`, migrations are still open |
+| Tests | TUnit 1.x with `TUnit.AspNetCore` | Endpoint tests against `/graphql` |
 | Auth | Backend-owned authentication and authorization (planned) | Personal data ownership must be enforced server-side |
 | Hosting | Open | Deployment architecture is not yet decided |
 
 ## System Components
 
-    Frontend
-        |
-        v
-    Hot Chocolate GraphQL API
-        |
-        v
-    Domain modules and persistence
-        |
-        +--> Strava synchronization
+```mermaid
+flowchart TD
+    FE[Frontend] --> API[Hot Chocolate GraphQL API]
+    API --> DOMAIN[Domain modules and persistence]
+    DOMAIN --> STRAVA[Strava synchronization]
+```
 
 ## Scope
 
@@ -46,14 +44,47 @@ This document describes the technical context for changes to the repository. The
 
 The current source code is a small .NET web prototype:
 
-- Solution: `../../../src/Athlify.slnx`
-- Project: `../../../src/GettingStarted/GettingStarted.csproj`
-- Target framework: `net10.0`
-- Nullable reference types and implicit usings are enabled.
-- GraphQL is provided with Hot Chocolate 16.4.0.
-- Entity Framework Core 10.0.9 with an in-memory database is used.
-- Filtering, sorting, mutation conventions and paging are registered.
-- `Program.cs` seeds `TestDb` at startup and maps the GraphQL endpoint.
+```text
+src/backend/
+├── Athlify.slnx                    # solution (API + tests)
+├── Athlify.Api/
+│   ├── Program.cs                  # DI, Npgsql DbContext, GraphQL, seeding, MapGraphQL
+│   ├── Database/                   # InMemoryDb (DbContext), IDbSeeder, DbSeeder
+│   ├── Models/                     # BodyStats, BodyStatsDto, Comment, CommentDto, AppSettings
+│   ├── Queries/                    # BodyStatsQuery, BodyStatsMutation, BodyStatsNode, BodyStatsValidation, HelloWorldQuery
+│   └── Properties/                 # launchSettings.json (http://localhost:5095), ModuleInfo.cs
+└── Athlify.Api.Tests/              # TUnit endpoint tests (BodyStatsQueryTests, BodyStatsMutationTests)
+```
+
+- Target framework: `net10.0`, with nullable reference types and implicit
+  usings enabled.
+- Hot Chocolate source generation: `[QueryType]` / `[MutationType]` static
+  partial classes are registered through `AddTypes()`, which is generated
+  from `[assembly: Module("Types")]`.
+- Projections, filtering and sorting are registered. `bodyStats` supports
+  filtering and sorting, and so do the nested `comments`.
+- Body-Stats support create, read, update and delete through
+  `addBodyStats`, `bodyStats`, `bodyStatsById`, `updateBodyStats` and
+  `deleteBodyStats`. Ids are Relay global IDs
+  ([ADR-006](../adr/ADR-006-relay-global-ids.md)), `node(id:)` resolves a
+  Body-Stats entry. `bodyStats` is a Relay connection with keyset cursors
+  (`ToPageAsync`, returned as `PageConnection<T>`), ordered by date and id,
+  newest first, at most 200 entries per page.
+- Input is separated from the entity (`BodyStatsDto`, `CommentDto`): the
+  client cannot set identity or timestamps. `updateBodyStats` synchronizes the
+  notes (edit, add, remove) and sets `ModifiedAt`; `deleteBodyStats` removes
+  the notes explicitly and returns the deleted id. The frontend uses one note
+  per entry; the API still accepts a list. `BodyStatsValidation`
+  rejects invalid values with the code `VALIDATION_ERROR`.
+- `Program.cs` always seeds sample Body-Stats at startup through `IDbSeeder`.
+  `AppSettings.ShouldSeedDb` exists but is not read yet.
+- There is no authentication, user ownership, PostgreSQL persistence or
+  Strava integration yet.
+
+The prototype Body-Stats model matches the
+[functional concept](../../concept/CONCEPT.md#36-body-stats) (body height is
+deliberately not recorded; notes are stored as `Comment` records) except for
+ownership: it has no owner yet, so every request sees every entry.
 
 The product modules from the PRD are not yet fully present in the current code. No change may present a prototype state as a completed product architecture.
 
@@ -131,9 +162,17 @@ are reconciled before records are exposed to the frontend.
 | ------- | ------- | -------------- |
 | Strava | Import and update cycling activities | Backend-managed OAuth/token flow |
 
+## Security Model
+
+Authentication is required for personal areas. Authorization is not only a UI concern: every server-side query and mutation must check the user reference. Administrators have the same personal-area access as regular users and can
+additionally manage user accounts. Administrator privileges must not expose
+other users' personal data outside explicitly authorized user-management
+operations.
+
+
 ## Scalability
 
-- Current capacity: Small in-memory prototype with seeded test data.
+- Current capacity: Small in-memory prototype with seeded Body-Stats sample data.
 - Scaling strategy: Select persistence and deployment scaling after the open
   architecture decisions are resolved.
 - Known bottlenecks: In-memory persistence and prototype-only domain coverage.
@@ -146,13 +185,6 @@ are reconciled before records are exposed to the frontend.
 - Handle errors explicitly and clearly for users; do not use silent fallbacks.
 - Keep changes to the schema or data model synchronized with affected tests and documents.
 - Use the smallest existing build or test command that covers the change.
-
-## Security model
-
-Authentication is required for personal areas. Authorization is not only a UI concern: every server-side query and mutation must check the user reference. Administrators have the same personal-area access as regular users and can
-additionally manage user accounts. Administrator privileges must not expose
-other users' personal data outside explicitly authorized user-management
-operations.
 
 ## Technical detail sources
 

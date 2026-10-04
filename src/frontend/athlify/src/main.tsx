@@ -1,13 +1,25 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { RelayEnvironmentProvider } from 'react-relay'
+import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import './theme/fonts'
 import './index.css'
-import App from './App.tsx'
+import './i18n'
+import { Provider } from './components/ui/provider'
+import RelayEnvironment from './relay/environment.ts'
+import { routes } from './routes.tsx'
 
 const rootElement = document.getElementById('root')
 if (!rootElement) throw new Error('Root element not found')
 
+const router = createBrowserRouter(routes)
+
 createRoot(rootElement).render(
   <StrictMode>
-    <App />
+    <RelayEnvironmentProvider environment={RelayEnvironment}>
+      <Provider>
+        <RouterProvider router={router} />
+      </Provider>
+    </RelayEnvironmentProvider>
   </StrictMode>,
 )

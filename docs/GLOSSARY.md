@@ -11,20 +11,31 @@
 **Activity** — A single cycling session, entered manually or imported from
 Strava. See [`activity-management.md`](concept/activity-management.md).
 
+**Administrator** — A User with all regular personal-area permissions plus
+  permission to manage user accounts. See [`CONCEPT.md`](concept/CONCEPT.md).
+
 **API contract** — The agreed inputs, outputs, errors and permission rules
   exchanged between frontend and backend. See [`api-design.md`](concept/api-design.md).
+
+**App Layout** — The shared frame around every view: a skip link, a header
+  with the brand, the Primary Navigation and the User Menu, and the main
+  content area. See [`SAD.md`](copilot/frontend/SAD.md#app-layout-and-routes).
 
 **ATL / Fatigue** — Acute Training Load, representing short-term training load.
   See [`CONCEPT.md`](concept/CONCEPT.md).
 
-**Body Metrics** — Personal measurements such as weight, body fat, muscle,
-  water and bone percentage. See [`data-model.md`](concept/data-model.md).
+**Body Metrics** — Personal measurements such as weight, body-fat, muscle and
+  water percentage, and bone mass. See [`data-model.md`](concept/data-model.md).
 
 **Body-Stats** — Personal body measurements recorded at multiple points in time.
   See [`CONCEPT.md`](concept/CONCEPT.md).
 
 **Calendar view** — An activity presentation organized by calendar week with a
   weekly summary.
+
+**Color mode** — The light or dark appearance of the user interface, which the
+  user can switch in the User Menu. See
+  [ADR-002](copilot/frontend/adr/ADR-002-chakra-ui-component-system.md).
 
 **CTL / Fitness** — Chronic Training Load, representing long-term training load.
   See [`CONCEPT.md`](concept/CONCEPT.md).
@@ -34,8 +45,25 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 **Dashboard** — The central analysis view containing metrics, charts, filters and
   timeline information. See [`CONCEPT.md`](concept/CONCEPT.md).
 
-**Administrator** — A User with all regular personal-area permissions plus
-  permission to manage user accounts. See [`CONCEPT.md`](concept/CONCEPT.md).
+**Connection** — The paged form of a list in the API (`edges`, `pageInfo`, cursors),
+  following the Relay convention. Lists such as `bodyStats(first, after)` are
+  connections; a page holds at most 200 entries. See
+  [`ADR-007`](copilot/frontend/adr/ADR-007-domain-page-pattern.md).
+
+**Dialog** — A modal window layered over a page that collects input or asks for
+  confirmation without leaving the page, for example the Body-Stats form
+  dialog.
+
+**Domain page** — A route-level view of one domain area (Body-Stats today; Events
+  and Garage next) that lives in its own folder under `src/features/`, loads its
+  data with one query, gives each component its own fragment and updates the
+  store after changes instead of refetching. See
+  [`ADR-007`](copilot/frontend/adr/ADR-007-domain-page-pattern.md).
+
+**Entry** — A single Body-Stats record (one measurement on one date), called
+  "measurement" in the UI. Users create and edit entries through a Dialog and
+  delete them with the trash button at the end of a row, after confirming. See
+  [`CONCEPT.md`](concept/CONCEPT.md).
 
 **Event** — A personal time-based record such as an accident, repair, injury,
   break or goal. See [`CONCEPT.md`](concept/CONCEPT.md).
@@ -49,11 +77,19 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 
 ## G — L
 
+**Gadget** — Additional equipment such as a bike computer, heart-rate monitor
+  or sensor. See [`data-model.md`](concept/data-model.md).
+
 **Garage** — The personal area for managing bicycles and gadgets. See
 [`CONCEPT.md`](concept/CONCEPT.md).
 
-**Gadget** — Additional equipment such as a bike computer, heart-rate monitor
-  or sensor. See [`data-model.md`](concept/data-model.md).
+**Global ID** — The opaque, type-aware identifier that the API returns as `id`
+  for every entity. Clients never parse or build it. See
+  [`ADR-006`](copilot/adr/ADR-006-relay-global-ids.md).
+
+**GraphQL schema** — The typed set of queries and mutations the backend
+  exposes. It is the API contract between frontend and backend. See
+  [ADR-001](copilot/adr/ADR-001-graphql-api-contract.md).
 
 **Idempotency** — Repeated execution of the same synchronization operation does
   not create an additional domain record. See [`api-design.md`](concept/api-design.md).
@@ -62,16 +98,37 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
   session took place indoors or outdoors; the authoritative determination rule
   is still open. See [`activity-management.md`](concept/activity-management.md).
 
+**KPI tile** — A large, self-explaining value on a page: label, latest value
+  with unit, change within the selected Period and the comparison period. A
+  missing value is shown as a dash, never as zero. On Body-Stats a tile also
+  selects the measurement shown in the chart.
+
+**Language switcher** — The UI control in the User Menu that switches the
+  interface language between German and English. See
+  [ADR-003](copilot/frontend/adr/ADR-003-i18next-localization.md).
+
 ## M — R
 
 **Merge** — Grouping multiple activities into one shared representation without
   removing the original activities. See [`activity-management.md`](concept/activity-management.md).
 
+**Note** — The one optional free-text field of a Body-Stats entry. The API stores
+  it as a comment; the UI reads and writes the first one.
+
 **Owner / user context** — The user who owns a personal record and whose access
   must be checked. See [`security.md`](concept/security.md).
 
-**User** — An authenticated account that can access and manage its own
-  personal cycling data. See [`CONCEPT.md`](concept/CONCEPT.md).
+**Page** — The frame each view renders inside the App Layout: title, optional
+  description and actions, and exactly one UI state body (loading, empty,
+  error or ready). See [`SAD.md`](copilot/frontend/SAD.md#page-frame).
+
+**Period** — The time span that a view looks at: the last 30 days, 90 days, one
+  year or the whole history. It is part of the URL (`?period=`), so a view can
+  be reloaded and shared.
+
+**Primary Navigation** — The header navigation between the personal areas
+  Dashboard, Activities, Garage, Body-Stats and Events. On small screens it
+  opens as a drawer. See [`SAD.md`](copilot/frontend/SAD.md#app-layout-and-routes).
 
 **Resolver** — A backend operation that executes a GraphQL query or mutation.
   See [`api-design.md`](concept/api-design.md).
@@ -106,3 +163,10 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
   [`activity-management.md`](concept/activity-management.md).
 
 **UI state** — The loading, empty, error or populated state of a view.
+
+**User** — An authenticated account that can access and manage its own
+  personal cycling data. See [`CONCEPT.md`](concept/CONCEPT.md).
+
+**User Menu** — The header menu for Settings, the language switcher and the
+  color mode. It will hold logout once authentication exists. See
+  [`SAD.md`](copilot/frontend/SAD.md#app-layout-and-routes).

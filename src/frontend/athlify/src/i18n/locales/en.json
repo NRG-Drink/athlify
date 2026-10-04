@@ -1,6 +1,145 @@
 {
   "translation": {
-    "hello": "Hello",
-    "world": "World"
+    "nav": {
+      "primaryLabel": "Main navigation",
+      "dashboard": "Dashboard",
+      "activities": "Activities",
+      "garage": "Garage",
+      "bodyStats": "Body-Stats",
+      "events": "Events",
+      "settings": "Settings"
+    },
+    "layout": {
+      "skipToContent": "Skip to content",
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu",
+      "userMenu": "User menu",
+      "colorMode": "Toggle color mode",
+      "language": "Language"
+    },
+    "page": {
+      "loading": "Loading …",
+      "empty": "No data yet.",
+      "error": "The data could not be loaded.",
+      "retry": "Try again",
+      "comingSoon": "Coming soon."
+    },
+    "form": {
+      "cancel": "Cancel",
+      "save": "Save",
+      "errors": {
+        "required": "Required.",
+        "number": "Please enter a number.",
+        "positive": "Please enter a value greater than 0.",
+        "percentage": "Please enter a value between 0 and 100."
+      }
+    },
+    "period": {
+      "label": "Period",
+      "short": {
+        "30d": "30 d",
+        "90d": "90 d",
+        "1y": "1 y",
+        "all": "All"
+      },
+      "long": {
+        "30d": "Last 30 days",
+        "90d": "Last 90 days",
+        "1y": "Last year",
+        "all": "Whole period"
+      },
+      "in": {
+        "30d": "in 30 days",
+        "90d": "in 90 days",
+        "1y": "in the last year",
+        "all": "since the first measurement"
+      }
+    },
+    "notFound": {
+      "title": "Page not found",
+      "message": "This page does not exist or has been moved.",
+      "backToDashboard": "Back to Dashboard"
+    },
+    "routeError": {
+      "title": "Something went wrong",
+      "message": "This page could not be displayed. Please try again."
+    },
+    "placeholder": {
+      "dashboard": "Soon you will see distance, time, elevation and training load at a glance.",
+      "activities": "Soon you will manage all activities here, imported from Strava or entered manually.",
+      "garage": "Soon you will record your bicycles and gadgets here.",
+      "events": "Soon you will document crashes, repairs, breaks and other events here.",
+      "settings": "Soon you will manage your account and the Strava connection here."
+    },
+    "bodyStats": {
+      "metrics": {
+        "weight": "Weight",
+        "bodyFatPercentage": "Body fat",
+        "musclePercentage": "Muscle",
+        "waterPercentage": "Water",
+        "boneMass": "Bone mass"
+      },
+      "fields": {
+        "date": "Date",
+        "note": "Note"
+      },
+      "columns": {
+        "date": "Date"
+      },
+      "kpi": {
+        "group": "Measurements",
+        "noData": "No measurement",
+        "noPeriodData": "No measurement in this period",
+        "notEnoughData": "Not enough data in this period",
+        "lastMeasured": "Last measured: {{date}}"
+      },
+      "chart": {
+        "summary_one": "{{metric}}, {{period}}: {{from}}, 1 measurement",
+        "summary_other": "{{metric}}, {{period}}: from {{from}} to {{to}}, {{count}} measurements",
+        "empty": {
+          "30d": "No measurements in the last 30 days",
+          "90d": "No measurements in the last 90 days",
+          "1y": "No measurements in the last year",
+          "all": "No measurements yet"
+        },
+        "showAll": "Show the whole period"
+      },
+      "history": "History",
+      "add": {
+        "open": "Add measurement",
+        "title": "New measurement",
+        "success": "Measurement saved.",
+        "errors": {
+          "saveFailed": "Saving failed. Please try again."
+        }
+      },
+      "edit": {
+        "title": "Edit measurement",
+        "success": "Measurement updated.",
+        "errors": {
+          "notFound": "This measurement no longer exists."
+        }
+      },
+      "delete": {
+        "title": "Delete measurement?",
+        "description": "The measurement from {{date}} ({{weight}}) and its note will be deleted permanently.",
+        "confirm": "Delete",
+        "success": "Measurement deleted.",
+        "errors": {
+          "failed": "Deleting failed. Please try again."
+        }
+      },
+      "row": {
+        "actionsColumn": "Actions",
+        "edit": "Edit measurement from {{date}}",
+        "delete": "Delete measurement from {{date}}"
+      },
+      "empty": {
+        "title": "No measurements yet",
+        "message": "Add your first measurement to see weight and body values over time.",
+        "action": "Add first measurement"
+      },
+      "loadFailed": "Body stats could not be loaded."
+    }
   }
 }

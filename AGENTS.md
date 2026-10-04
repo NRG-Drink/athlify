@@ -4,6 +4,14 @@ Guidance for AI coding agents (and humans) working in this repository.
 See README.md for full end-user/operator documentation — this file focuses
 on what an agent needs to know to make correct, safe changes quickly.
 
+## Commits and pull requests
+
+Do not add AI attribution. Commits must not contain `Co-Authored-By`
+trailers for AI tools (Claude, GitHub Copilot or any other assistant), and
+pull request titles and descriptions must not contain "Generated with …"
+footers or other AI credits. This applies to every agent and skill and
+overrides any default attribution a tool suggests.
+
 ## Documentation / README
 
 When asked to update README.md, follow the section structure/style of the
@@ -39,6 +47,16 @@ implemented bilingually in German and English. Project documentation under
 database names and technical implementation terms are written in English,
 unless an external contract requires another spelling. Do not translate code
 identifiers into German.
+
+Never hard-code user-visible text in frontend components. Every new or
+changed UI string (labels, buttons, titles, placeholders, validation and
+error messages, toasts, `aria-label`s, empty states) must go through
+i18next (`useTranslation()` / `t('…')`), and the key must be added or
+updated in the same change in both `src/frontend/athlify/src/i18n/locales/de.json`
+and `en.json`, with the same key structure in both files. Before finishing a
+frontend task, check that no component contains untranslated literal UI text
+and that `de.json` and `en.json` have identical key sets. Tests run in German
+(see `docs/copilot/frontend/LEARNINGS.md`), so assert against the German text.
 
 At the end of every task, actively check whether a durable, verified
 repository learning was discovered. If so, update the matching

@@ -227,16 +227,26 @@ Each measurement contains:
 
 - measurement date;
 - weight;
-- body height;
 - body-fat percentage;
 - muscle percentage;
 - water percentage;
 - bone mass; and
-- an optional note.
+- an optional note (one free-text field).
+
+Body height is not recorded per measurement because it hardly changes.
 
 Multiple dated measurements are retained so that body development and trends
 remain visible on the Dashboard. Each Body-Stats entry can be viewed, updated
-and deleted by its owner. Body-Stats are private data and are available only
+and deleted by its owner. Deleting asks for confirmation.
+
+The Body-Stats page opens with one summary tile per measurement. A tile shows
+the latest value and its change within the selected period; a missing value is
+shown as a dash, never as zero. Selecting a tile shows that measurement over
+time in a chart with its own unit and axis. The period can be set to the last
+30 days, 90 days, one year or the whole history. Below the chart, the history
+table lists all measurements and offers edit and delete for each one; the note
+is shown only in the edit form, not in the table. The button for a new
+measurement sits next to the table heading. Body-Stats are private data and are available only
 within the owning user's personal context. The final list of supported
 measurements may be extended, but any additional values must remain consistent
 with the Dashboard's Body Metrics.
@@ -475,8 +485,8 @@ The calendar view displays activities by week and summarizes at least distance, 
 ┌──────────────────────────────┐  ┌──────────────────────────────┐
 │ Body-Stats          [+ New]  │  │ Events              [+ New]  │
 ├──────────────────────────────┤  ├──────────────────────────────┤
-│ Date    Weight   Height      │  │ Date    Type       Title       │
-│ 01.08.  75.4 kg  180 cm     │  │ 15.07.  Accident   Fall        │
+│ Date    Weight   Body fat    │  │ Date    Type       Title       │
+│ 01.08.  75.4 kg  15.2 %     │  │ 15.07.  Accident   Fall        │
 └──────────────────────────────┘  └──────────────────────────────┘
 ```
 
@@ -529,7 +539,7 @@ functional concept:
 
 | # | Question | Significance |
 |---|---|---|
-| 1 | Which Body-Stats should be supported in the initial scope in addition to weight and height? | Affects the level of detail on the Body-Stats page. |
+| 1 | Should body height be recorded once (for example as a profile setting) to derive values such as BMI? | Affects the level of detail on the Body-Stats page. |
 | 2 | Which Event types should be offered as a fixed set? | Affects Event selection and presentation. |
 | 3 | Should Events only be displayed on the Dashboard or also linked directly to individual activities? | Affects the domain relationship between Events and activities. |
 | 4 | Should the language already be switchable on the login page? | UX decision for the entry point. |

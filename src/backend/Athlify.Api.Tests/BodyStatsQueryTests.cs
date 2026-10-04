@@ -1,239 +1,86 @@
-﻿using Athlify.Api.Models;
-using System.Net.Http.Json;
+using TUnit.Assertions.Enums;
 using System.Text.Json;
+using static Athlify.Api.Tests.BodyStatsGraphQl;
 
 namespace Athlify.Api.Tests;
 
 public class BodyStatsQueryTests : WebApiTestBase
 {
-    private static readonly BodyStatsDto _testBodyStats = new BodyStatsDto
-    {
-        Date = DateTime.UtcNow,
-        Weight = 70.5,
-        BodyFatPercentage = 15.2,
-        MusclePercentage = 40.0,
-        WaterPercentage = 60.0,
-    };
-
-    private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
-    {
-        PropertyNameCaseInsensitive = true,
-    };
-
-    private static readonly string _bodyStatsProps = $$"""
-        {{nameof(BodyStats.Id).ToCamelCase()}}
-        {{nameof(BodyStats.CreatedAt).ToCamelCase()}}
-        {{nameof(BodyStats.ModifiedAt).ToCamelCase()}}
-        {{nameof(BodyStats.Date).ToCamelCase()}}
-        {{nameof(BodyStats.Weight).ToCamelCase()}}
-        {{nameof(BodyStats.BodyFatPercentage).ToCamelCase()}}
-        {{nameof(BodyStats.MusclePercentage).ToCamelCase()}}
-        {{nameof(BodyStats.WaterPercentage).ToCamelCase()}}
-        {{nameof(BodyStats.BoneMass).ToCamelCase()}}
-        {{nameof(BodyStats.Comments).ToCamelCase()}} {
-            {{nameof(Comment.Id).ToCamelCase()}}
-            {{nameof(Comment.Content).ToCamelCase()}}
-            {{nameof(Comment.CreatedAt).ToCamelCase()}}
-            {{nameof(Comment.ModifiedAt).ToCamelCase()}}
-        }
-        """;
-
-    private static readonly string _getBodyStatsQuery = $$"""
-        query BodyStats {
-            bodyStats { 
-                {{_bodyStatsProps}}
-            } 
-        }
-        """;
-
     [Test]
-    public async Task GetBodyStatsBefore()
+    public async Task ListIsEmptyWithoutData()
     {
-        var client = Factory.CreateClient();
+        var data = await DataAsync(Factory.CreateClient(), ListQuery);
 
-        var request = new
-        {
-            query = _getBodyStatsQuery,
-        };
-
-        var response = await client.PostAsJsonAsync("/graphql", request);
-        response.EnsureSuccessStatusCode();
-
-        using var body = await response.Content.ReadFromJsonAsync<JsonDocument>();
-        var bodyStats = body!.RootElement.GetProperty("data").GetProperty("bodyStats");
-        Console.WriteLine(bodyStats.ToString());
-        await Assert.That(bodyStats).IsNotNull()
-            .And.Member(e => e.GetArrayLength(), e => e.IsEqualTo(0));
+        await Assert.That(data.GetProperty("bodyStats").GetProperty("nodes").GetArrayLength()).IsEqualTo(0);
     }
 
     [Test]
-    [DependsOn(nameof(GetBodyStatsBefore))]
-    public async Task AddBodyStats()
+    public async Task IdsAreGlobalIdsAndNodeResolvesTheSameEntry()
     {
         var client = Factory.CreateClient();
-        var request = new
-        {
-            query = $$"""
-                mutation AddBodyStats($input: BodyStatsDtoInput!) { 
-                    addBodyStats(bodyStats: $input) { 
-                        {{_bodyStatsProps}} 
-                    } 
-                }
-                """,
-            variables = new { input = _testBodyStats }
-        };
+        var added = await AddAsync(client, Input(weight: 66.6));
 
-        var response = await client.PostAsJsonAsync("/graphql", request);
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            Assert.Fail($"Request failed with status code: {response.StatusCode}. Content: {errorContent}");
-        }
+        var listed = (await DataAsync(client, ListQuery)).GetProperty("bodyStats").GetProperty("nodes").EnumerateArray().Single();
+        var id = listed.GetProperty("id").GetString()!;
+        await Assert.That(id).IsEqualTo(added.GetProperty("id").GetString());
+        await Assert.That(int.TryParse(id, out _)).IsFalse();
 
-        using var body = await response.Content.ReadFromJsonAsync<JsonDocument>();
-        var addedBodyStatsId = body!.RootElement.GetProperty("data").GetProperty("addBodyStats").GetProperty("id").GetInt32();
-        Console.WriteLine($"Added BodyStats ID: {addedBodyStatsId}");
-        await Assert.That(addedBodyStatsId).IsGreaterThan(0);
-
-        var addedBodyStats = body!.RootElement.GetProperty("data").GetProperty("addBodyStats");
-        var addedBodyStatsText = addedBodyStats.GetRawText();
-        var addedBodyStatsObj = addedBodyStats.Deserialize<BodyStats>(_jsonSerializerOptions);
-        await Assert.That(addedBodyStatsObj).IsNotNull()
-            .And.Member(e => e.Weight, e => e.IsEqualTo(_testBodyStats.Weight))
-            .And.Member(e => e.BodyFatPercentage, e => e.IsEqualTo(_testBodyStats.BodyFatPercentage))
-            .And.Member(e => e.MusclePercentage, e => e.IsEqualTo(_testBodyStats.MusclePercentage))
-            .And.Member(e => e.WaterPercentage, e => e.IsEqualTo(_testBodyStats.WaterPercentage));
+        var node = (await DataAsync(client, NodeQuery, new { id })).GetProperty("node");
+        await Assert.That(node.GetProperty("weight").GetDouble()).IsEqualTo(66.6);
     }
 
     [Test]
-    [DependsOn(nameof(AddBodyStats))]
-    public async Task GetBodyStatsAfter()
+    public async Task CommentsAreReturnedWithTheList()
     {
         var client = Factory.CreateClient();
+        await AddAsync(client, Input(comments: [NewComment("first")]));
 
-        var request = new
-        {
-            query = _getBodyStatsQuery,
-        };
+        var listed = (await DataAsync(client, ListQuery)).GetProperty("bodyStats").GetProperty("nodes").EnumerateArray().Single();
 
-        var response = await client.PostAsJsonAsync("/graphql", request);
-
-        using var body = await response.Content.ReadFromJsonAsync<JsonDocument>();
-        var bodyStats = body!.RootElement.GetProperty("data").GetProperty("bodyStats");
-        var addedBodyStatsText = bodyStats.GetRawText();
-        var addedBodyStatsObjs = bodyStats.Deserialize <BodyStats[]>(_jsonSerializerOptions);
-        var addedBodyStatsObj = await Assert.That(addedBodyStatsObjs).HasSingleItem();
-        await Assert.That(addedBodyStatsObj).IsNotNull()
-            .And.Member(e => e.Weight, e => e.IsEqualTo(_testBodyStats.Weight))
-            .And.Member(e => e.BodyFatPercentage, e => e.IsEqualTo(_testBodyStats.BodyFatPercentage))
-            .And.Member(e => e.MusclePercentage, e => e.IsEqualTo(_testBodyStats.MusclePercentage))
-            .And.Member(e => e.WaterPercentage, e => e.IsEqualTo(_testBodyStats.WaterPercentage));
+        await Assert.That(CommentContents(listed)).IsEquivalentTo(new[] { "first" });
     }
 
     [Test]
-    [DependsOn(nameof(AddBodyStats))]
-    public async Task GetBodyStatById()
+    public async Task ListIsOrderedByDateDescending()
     {
         var client = Factory.CreateClient();
-        var request = new
-        {
-            query = $$"""
-                query BodyStatsById($id: Int!) {
-                    bodyStatsById(id: $id) { 
-                        {{_bodyStatsProps}} 
-                    } 
-                }
-                """,
-            variables = new { id = 1 }
-        };
-        var response = await client.PostAsJsonAsync("/graphql", request);
-        response.EnsureSuccessStatusCode();
-        using var body = await response.Content.ReadFromJsonAsync<JsonDocument>();
-        var bodyStatsById = body!.RootElement.GetProperty("data").GetProperty("bodyStatsById");
-        var bodyStatsByIdObj = bodyStatsById.Deserialize<BodyStats>(_jsonSerializerOptions);
-        await Assert.That(bodyStatsByIdObj).IsNotNull()
-            .And.Member(e => e.Weight, e => e.IsEqualTo(_testBodyStats.Weight))
-            .And.Member(e => e.BodyFatPercentage, e => e.IsEqualTo(_testBodyStats.BodyFatPercentage))
-            .And.Member(e => e.MusclePercentage, e => e.IsEqualTo(_testBodyStats.MusclePercentage))
-            .And.Member(e => e.WaterPercentage, e => e.IsEqualTo(_testBodyStats.WaterPercentage));
+        var today = DateTime.UtcNow.Date;
+        await AddAsync(client, Input(date: today.AddDays(-2), weight: 72));
+        await AddAsync(client, Input(date: today, weight: 70));
+        await AddAsync(client, Input(date: today.AddDays(-1), weight: 71));
+
+        var weights = (await DataAsync(client, ListQuery)).GetProperty("bodyStats").GetProperty("nodes")
+            .EnumerateArray().Select(e => e.GetProperty("weight").GetDouble()).ToList();
+
+        await Assert.That(weights).IsEquivalentTo(new[] { 70.0, 71.0, 72.0 }, CollectionOrdering.Matching);
     }
 
     [Test]
-    [DependsOn(nameof(GetBodyStatsAfter))]
-    public async Task UpdateBodyStats()
+    public async Task ListIsAConnectionThatPagesWithoutSkippingOrRepeating()
     {
         var client = Factory.CreateClient();
-        var updatedBodyStats = _testBodyStats with { Weight = 66.6 };
-        var request = new
-        {
-            query = $$"""
-                mutation UpdateBodyStats($id: Int!, $input: BodyStatsDtoInput!) { 
-                    updateBodyStats(id: $id, bodyStats: $input) { 
-                        {{_bodyStatsProps}} 
-                    } 
-                }
-                """,
-            variables = new { id = 1, input = updatedBodyStats }
-        };
-        var response = await client.PostAsJsonAsync("/graphql", request);
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            Assert.Fail($"Request failed with status code: {response.StatusCode}. Content: {errorContent}");
-        }
+        var sameDay = DateTime.UtcNow.Date;
+        // Equal dates: the id decides the order, so the cursor must not skip or repeat entries.
+        foreach (var weight in new[] { 70.0, 71.0, 72.0 })
+            await AddAsync(client, Input(date: sameDay, weight: weight));
 
-        using var body = await response.Content.ReadFromJsonAsync<JsonDocument>();
-        var updatedBodyStatsObj = body!.RootElement.GetProperty("data").GetProperty("updateBodyStats").Deserialize<BodyStats>(_jsonSerializerOptions);
-        await Assert.That(updatedBodyStatsObj).IsNotNull()
-            .And.Member(e => e.Weight, e => e.IsEqualTo(updatedBodyStats.Weight))
-            .And.Member(e => e.BodyFatPercentage, e => e.IsEqualTo(_testBodyStats.BodyFatPercentage))
-            .And.Member(e => e.MusclePercentage, e => e.IsEqualTo(_testBodyStats.MusclePercentage))
-            .And.Member(e => e.WaterPercentage, e => e.IsEqualTo(_testBodyStats.WaterPercentage));
-    }
+        const string page = """
+            query($after: String) {
+              bodyStats(first: 2, after: $after) {
+                edges { cursor node { weight } }
+                pageInfo { hasNextPage endCursor }
+              }
+            }
+            """;
+        var first = (await DataAsync(client, page)).GetProperty("bodyStats");
+        var cursor = first.GetProperty("pageInfo").GetProperty("endCursor").GetString();
+        var second = (await DataAsync(client, page, new { after = cursor })).GetProperty("bodyStats");
 
-    [Test]
-    [DependsOn(nameof(UpdateBodyStats))]
-    public async Task DeleteBodyStats()
-    {
-        var client = Factory.CreateClient();
-        var request = new
-        {
-            query = $$"""
-                mutation DeleteBodyStats($id: Int!) { 
-                    deleteBodyStats(id: $id) 
-                }
-                """,
-            variables = new { id = 1 }
-        };
-
-        var response = await client.PostAsJsonAsync("/graphql", request);
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            Assert.Fail($"Request failed with status code: {response.StatusCode}. Content: {errorContent}");
-        }
-
-        using var body = await response.Content.ReadFromJsonAsync<JsonDocument>();
-        var deleteResult = body!.RootElement.GetProperty("data").GetProperty("deleteBodyStats").GetBoolean();
-        await Assert.That(deleteResult).IsTrue();
-    }
-
-    [Test]
-    [DependsOn(nameof(DeleteBodyStats))]
-    public async Task GetBodyStatsAfterDelete()
-    {
-        var client = Factory.CreateClient();
-
-        var request = new
-        {
-            query = _getBodyStatsQuery,
-        };
-
-        var response = await client.PostAsJsonAsync("/graphql", request);
-
-        using var body = await response.Content.ReadFromJsonAsync<JsonDocument>();
-        var bodyStats = body!.RootElement.GetProperty("data").GetProperty("bodyStats");
-        var addedBodyStatsObjs = bodyStats.Deserialize <BodyStats[]>(_jsonSerializerOptions);
-        await Assert.That(addedBodyStatsObjs).IsEmpty();
+        var weights = first.GetProperty("edges").EnumerateArray()
+            .Concat(second.GetProperty("edges").EnumerateArray())
+            .Select(e => e.GetProperty("node").GetProperty("weight").GetDouble()).ToList();
+        await Assert.That(first.GetProperty("pageInfo").GetProperty("hasNextPage").GetBoolean()).IsTrue();
+        await Assert.That(second.GetProperty("pageInfo").GetProperty("hasNextPage").GetBoolean()).IsFalse();
+        await Assert.That(weights.Distinct().Count()).IsEqualTo(3);
     }
 }

@@ -51,8 +51,19 @@ If a requirement is not supported by these sources, do not invent a function. Do
 
 ## Current implementation status
 
-The frontend scaffold is under `../../../src/frontend/athlify/` and uses
-React, Vite and JavaScript/JSX. It is currently template UI only and does not
-implement Athlify domain behavior or backend integration. The separate
-`../../../src/GettingStarted` directory is a .NET/Hot Chocolate backend
-prototype. Do not present template UI as completed product functionality.
+The frontend is under `../../../src/frontend/athlify/`. It uses React 19,
+TypeScript, Vite, Chakra UI v3, Tailwind CSS v4, react-router-dom and
+i18next. It provides the App Layout (header with Primary Navigation, User
+Menu with language switcher and color mode, mobile drawer), the `Page` frame
+and placeholder pages, the "Night Ride" theme in `src/theme/`
+([ADR-005](adr/ADR-005-theme-tokens.md)), plus the Body-Stats domain page
+([ADR-007](adr/ADR-007-domain-page-pattern.md)): summary tiles, a chart of the
+selected measurement over a selectable period, and a history table with add,
+edit and delete against the backend API. New entries are prefilled from the
+entry with the newest date. The other areas are placeholders. The backend prototype is under `../../../src/backend/`. See
+[`SAD.md`](SAD.md) for the folder layout and open decisions. Do not present
+the exploration UI as completed product functionality.
+
+Verify frontend changes with `npm test`, `npm run typecheck`, `npm run lint`
+and `npm run build` in `src/frontend/athlify/`. There are no git hooks, so
+run these checks yourself before committing.
