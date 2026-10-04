@@ -19,6 +19,15 @@ export default defineConfig([
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
+    rules: {
+      // https://eslint.org/docs/latest/rules/no-unused-vars
+      '@typescript-eslint/no-unused-vars': 'warn',
+      // https://archive.eslint.org/docs/4.0.0/rules/prefer-const
+      'prefer-const': ['warn', {
+          'destructuring': 'all',
+          'ignoreReadBeforeAssign': false,
+      }],
+    },
   },
   {
     // Shared building blocks stay free of domain code: a feature may use them, never the reverse.
