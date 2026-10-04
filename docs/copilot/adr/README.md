@@ -11,6 +11,7 @@ the relevant [`frontend ADRs`](../frontend/adr/README.md) or
 |---|---|---|
 | [ADR-001](ADR-001-graphql-api-contract.md) | GraphQL as the frontend/backend API contract | Proposed |
 | [ADR-006](ADR-006-relay-global-ids.md) | Relay global IDs for all API entities | Proposed |
+| [ADR-008](ADR-008-domain-data-model.md) | Domain data model: per-user tags, exclusive merges, separate equipment tables | Proposed |
 
 ## When to create an ADR
 

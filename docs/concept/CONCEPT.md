@@ -7,8 +7,8 @@
 | Project       | Athlify                                                                                        |
 | Context       | CAS Frontend Engineering, OST – Eastern Switzerland University of Applied Sciences, Rapperswil |
 | Document type | Functional software concept / big picture                                                      |
-| Version       | 1.8                                                                                            |
-| Date          | 16 September 2026                                                                              |
+| Version       | 1.9                                                                                            |
+| Date          | 4 October 2026                                                                                 |
 | Authors       | Beat Zimmermann & Marco Ebneter                                                                |
 
 ---
@@ -150,7 +150,7 @@ Some values are maintained or calculated automatically by the application and ar
 
 Supported activity types include road bike, mountain bike, gravel and indoor cycling or trainer rides. Activities from other sports are not required. For imported Strava activities, locally maintained additional information may be edited. Deleted activities remain excluded from the active overview and must not reappear as active activities during a later synchronization.
 
-Multiple activities can be grouped into a merged activity. The original activities remain traceable.
+Multiple activities can be grouped into a merged activity. The original activities remain traceable. An activity belongs to at most one merge.
 
 ### 3.4 Strava synchronization
 
@@ -541,15 +541,18 @@ functional concept:
 |---|---|---|
 | 1 | Should body height be recorded once (for example as a profile setting) to derive values such as BMI? | Affects the level of detail on the Body-Stats page. |
 | 2 | Which Event types should be offered as a fixed set? | Affects Event selection and presentation. |
-| 3 | Should Events only be displayed on the Dashboard or also linked directly to individual activities? | Affects the domain relationship between Events and activities. |
-| 4 | Should the language already be switchable on the login page? | UX decision for the entry point. |
-| 5 | Which charts are mandatory for academic assessment? | Helps prioritize Dashboard functions. |
-| 6 | How should TSS be calculated or represented when power or heart-rate data is missing? | Affects activity validation, analytics and transparency. |
-| 7 | How is Indoor/Outdoor determined reliably for imported Strava activities? | Affects filters, activity type mapping and synchronization. |
-| 8 | Are tags free-form values or selected from a managed list? | Affects data modeling, input and filtering. |
-| 9 | May an activity participate in multiple merges, or is merge membership exclusive? | Affects the merge relationship and user expectations. |
-| 10 | Which authentication, persistence and deployment choices will replace the planned baseline as implementation begins? | Affects the API contract, security boundaries and operational architecture. |
+| 3 | Should the language already be switchable on the login page? | UX decision for the entry point. |
+| 4 | Which charts are mandatory for academic assessment? | Helps prioritize Dashboard functions. |
+| 5 | How should TSS be calculated or represented when power or heart-rate data is missing? | Affects activity validation, analytics and transparency. |
+| 6 | How is Indoor/Outdoor determined reliably for imported Strava activities? | Affects filters, activity type mapping and synchronization. |
+| 7 | Which authentication, persistence and deployment choices will replace the planned baseline as implementation begins? | Affects the API contract, security boundaries and operational architecture. |
+| 8 | Must deleting a bicycle imported from Strava prevent its re-import by a later synchronization? | Affects Garage deletion and synchronization rules. |
+
+Decided on 4 October 2026 (see [`data-model.md`](data-model.md)): tags are
+managed per user and shared by Activities, Garage and Events; an activity
+belongs to at most one merge; Events are not linked to individual activities
+and are related to them by date in the Dashboard timeline.
 
 ---
 
-*End of document – Functional software concept Athlify, version 1.8*
+*End of document – Functional software concept Athlify, version 1.9*

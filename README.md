@@ -92,7 +92,11 @@ npm run relay     # generates the git-ignored Relay artifacts
 Docker access, Aspire CLI). Open the repository in VS Code and choose
 **Reopen in Container**; dependencies are installed and the Relay artifacts
 generated automatically. The host's Docker daemon must be running, because
-Aspire starts PostgreSQL as a container.
+Aspire starts PostgreSQL as a container. In WebStorm (JetBrains Gateway) the
+container installs the Markdown, Mermaid, GraphQL (with Relay support via
+`graphql.config.yml`), Docker, `.env` and `.ignore` plugins, so Markdown
+previews render Mermaid diagrams such as the ERD in
+`docs/concept/data-model.md`.
 
 ### Run
 1. Start Docker

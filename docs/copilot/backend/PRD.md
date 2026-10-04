@@ -84,9 +84,10 @@ When requirements compete, first preserve data ownership and safe activity manag
 ## Open domain decisions
 
 - Which TSS values are permitted without power or heart-rate data?
-- Are tags entered freely or selected from a managed list?
 - How is Indoor/Outdoor determined unambiguously from Strava?
-- May an Activity belong to multiple merges?
+
+Tags (managed per user) and merge membership (exclusive) are decided; see
+[`data-model.md`](../../concept/data-model.md).
 
 ## Constraints
 

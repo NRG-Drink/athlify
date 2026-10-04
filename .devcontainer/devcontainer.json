@@ -13,6 +13,16 @@
   "runArgs": ["--network=host"],
   "postCreateCommand": "bash .devcontainer/post-create.sh",
   "customizations": {
+    "jetbrains": {
+      "plugins": [
+        "org.intellij.plugins.markdown",
+        "com.intellij.mermaid",
+        "com.intellij.lang.jsgraphql",
+        "Docker",
+        "ru.adelf.idea.dotenv",
+        "mobi.hsz.idea.gitignore"
+      ]
+    },
     "vscode": {
       "extensions": [
         "ms-dotnettools.csdevkit",

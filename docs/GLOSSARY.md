@@ -109,8 +109,13 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 
 ## M — R
 
-**Merge** — Grouping multiple activities into one shared representation without
-  removing the original activities. See [`activity-management.md`](concept/activity-management.md).
+**Maintenance cycle** — A maintenance schedule of exactly one bicycle or
+  gadget. Selecting it filters the Garage to the linked equipment. See
+  [`data-model.md`](concept/data-model.md).
+
+**Merge** — Grouping at least two activities into one shared representation
+  without removing the original activities. An activity belongs to at most one
+  merge. See [`activity-management.md`](concept/activity-management.md).
 
 **Note** — The one optional free-text field of a Body-Stats entry. The API stores
   it as a comment; the UI reads and writes the first one.
@@ -142,13 +147,17 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 **Source** — The origin of an activity, especially Strava or manual entry. See
   [`activity-management.md`](concept/activity-management.md).
 
+**Strava connection** — The link between a user's account and Strava,
+  including the connection's tokens and the last synchronization time, status
+  and error. A user has at most one. See [`data-model.md`](concept/data-model.md).
+
 **Strava synchronization** — Importing and updating a user's cycling data from
   Strava while preserving ownership, external identifiers and deletion rules.
   See [`activity-management.md`](concept/activity-management.md).
 
-**Tag** **(open)** — A freely or administratively assigned label for an
-  activity; the exact variant is still open. See
-  [`activity-management.md`](concept/activity-management.md).
+**Tag** — A label that a user defines once and can assign to activities,
+  bicycles, gadgets and Events. Tag names are unique per user. See
+  [`data-model.md`](concept/data-model.md).
 
 **Toast / feedback** — Short-lived visible information about an action's
   success or failure.

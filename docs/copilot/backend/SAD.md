@@ -138,7 +138,11 @@ Each area should separate domain logic, data access and presentation so that per
 - Calculated values such as average speed and TSS are not treated as freely editable inputs.
 - Deleted synchronized Activities must not be unexpectedly reactivated by a later sync.
 - Gadgets can be assigned to multiple Activities; a bicycle is optionally assigned to an Activity.
-- Merges retain the original Activities traceably.
+- Merges retain the original Activities traceably; an Activity belongs to at most one merge.
+- Tags are managed per user and shared by Activities, bicycles, gadgets and Events.
+- The target entities and relationships are defined in the ERD in
+  [`data-model.md`](../../concept/data-model.md#entity-relationship-diagram)
+  ([ADR-008](../adr/ADR-008-domain-data-model.md)).
 
 ## API contract
 

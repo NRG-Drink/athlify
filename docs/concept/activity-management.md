@@ -27,7 +27,8 @@ Non-editable fields:
 - `source`
 - `stravaActivityId`
 - `createdAt`
-- `updatedAt`
+- `modifiedAt`
+- `mergeId`
 - `deletedAt`
 
 ## Soft delete and Strava synchronization
@@ -60,13 +61,14 @@ stateDiagram-v2
 | `type` | enum or activity type | Yes |
 | `vehicleId` | optional bicycle | Yes |
 | `gadgetIds` | n:m to gadgets | Yes |
+| `mergeId`* | optional merge, set by merging | No |
 | `time` | duration | Yes |
 | `distance` | distance | Yes |
 | `averageSpeed`* | calculated value | No |
 | `elevationGain` | elevation gain | Yes/imported |
 | `tss`* | calculated Training Stress Score | No |
 | `description` | description | Yes |
-| `tags` | multiple tags | Yes |
+| `tags` | n:m to the user's tags | Yes |
 | `heartRateMin` | minimum heart rate | Yes/imported |
 | `heartRateMax` | maximum heart rate | Yes/imported |
 | `heartRateAverage` | average heart rate | Yes/imported |
@@ -76,15 +78,16 @@ stateDiagram-v2
 | `source`* | Strava or manual | No |
 | `stravaActivityId`* | external Strava reference | No |
 | `createdAt`* | creation timestamp | No |
-| `updatedAt`* | modification timestamp | No |
+| `modifiedAt`* | modification timestamp | No |
 | `deletedAt`* | soft-delete timestamp | No |
 
 ## Merging activities
 
-Activities can be merged through a separate relationship. A merge contains at
-least two activities. The original activities remain available and can still
-be displayed individually. The final merge cardinality remains an open
-product decision.
+Activities can be merged through a separate merge record. A merge contains at
+least two activities, and an activity belongs to at most one merge. The
+original activities remain available and can still be displayed individually.
+If fewer than two active activities remain, the merge is dissolved. See
+[`data-model.md`](data-model.md#activity-merges).
 
 At least the following values are aggregated for the merged representation:
 
@@ -93,9 +96,6 @@ At least the following values are aggregated for the merged representation:
 - Elevation gain
 - TSS
 
-Whether merge membership is exclusive or whether an activity may appear in
-multiple merges remains open.
-
 ## Calendar weekly summary
 
 The calendar view groups activities by calendar week. At minimum, distance, time, elevation gain and TSS are summarized per week. The values respect the same filters as the list and dashboard views.
@@ -103,6 +103,4 @@ The calendar view groups activities by calendar week. At minimum, distance, time
 ## Open technical learning points
 
 - Check how Indoor and Outdoor activities from Strava can be distinguished reliably.
-- Decide whether tags are stored as free values or as a managed selection.
 - Define how TSS is calculated when no power or heart-rate data is available.
-- Decide whether an activity may participate in multiple merges or whether a merge is exclusive.
