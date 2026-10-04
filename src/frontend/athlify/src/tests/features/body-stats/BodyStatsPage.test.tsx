@@ -466,8 +466,10 @@ describe('BodyStatsPage', () => {
     it('opens the editor by clicking a row', async () => {
       const { user } = page(() => okQuery())
       await screen.findByRole('table')
+      const dateTime = within(bodyRows()[0]).getByText(/2\. Okt\. 2026/)
 
-      await user.click(within(bodyRows()[0]).getByText('2. Okt. 2026'))
+      expect(dateTime).toHaveTextContent(/\d{2}:\d{2}/)
+      await user.click(dateTime)
 
       expect(await screen.findByRole('dialog', { name: 'Messung bearbeiten' })).toBeInTheDocument()
     })

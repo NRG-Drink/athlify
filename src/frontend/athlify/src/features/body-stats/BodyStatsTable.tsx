@@ -55,9 +55,9 @@ export function BodyStatsTable({ entries, onEdit, onDelete }: BodyStatsTableProp
         header: t('bodyStats.columns.date'),
         accessor: (row) => new Date(row.date).getTime(),
         cell: (row) => (
-          <time dateTime={row.date} title={format.dateTime(row.date)}>
-            {format.date(row.date)}
-          </time>
+            <time dateTime={row.date} title={format.dateTime(row.date)}>
+              {format.dateTime(row.date)}
+            </time>
         ),
         width: '8rem',
       },
