@@ -34,7 +34,7 @@ internal class Program
             var shouldOpenFrontendInBrowser = !args.Any(e => e.Contains("--disable-open-frontend", StringComparison.OrdinalIgnoreCase));
             var webfrontend = builder
                 .OpenInBrowserAfterCreated("react-frontend", shouldOpenFrontendInBrowser)
-                .AddViteApp("react-frontend", _frontendDir, runScriptName: "dev")
+                .AddViteApp("react-frontend", _frontendDir, runScriptName: "dev:relay")
                 .WithHttpEndpoint(5096)
                 .WithReference(api);
         }
