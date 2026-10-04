@@ -31,9 +31,14 @@ export function filterByPeriod(
   period: Period,
   now: Date,
 ): MetricPoint[] {
-  const sorted = sortByDate(points)
   const start = periodStart(period, now)
-  return start ? sorted.filter((point) => point.date >= start) : sorted
+  let dataPoints = points;
+  if (start) {
+    dataPoints = dataPoints.filter((point) => point.date >= start)
+  }
+
+  const sorted = sortByDate(dataPoints)
+  return sorted
 }
 
 /** The point with the newest date over all points. */
