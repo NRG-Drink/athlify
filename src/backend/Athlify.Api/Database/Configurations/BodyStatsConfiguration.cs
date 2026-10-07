@@ -12,18 +12,6 @@ public class BodyStatsConfiguration : IEntityTypeConfiguration<BodyStats>
         builder.HasOne<User>().WithMany().HasForeignKey(b => b.UserId).OnDelete(DeleteBehavior.Cascade);
         builder.HasIndex(b => new { b.UserId, b.Date });
 
-        builder.HasMany(b => b.Comments)
-            .WithOne()
-            .HasForeignKey("BodyStatsId")
-            .IsRequired()
-            .OnDelete(DeleteBehavior.Cascade);
-    }
-}
-
-public class CommentConfiguration : IEntityTypeConfiguration<Comment>
-{
-    public void Configure(EntityTypeBuilder<Comment> builder)
-    {
-        builder.Property(c => c.Content).HasMaxLength(BodyStatsValidation.MaxCommentLength);
+        builder.Property(b => b.Comment).HasMaxLength(BodyStatsValidation.MaxCommentLength);
     }
 }

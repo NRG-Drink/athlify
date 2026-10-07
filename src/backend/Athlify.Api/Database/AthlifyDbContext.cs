@@ -26,7 +26,6 @@ public class AthlifyDbContext(DbContextOptions<AthlifyDbContext> options, ICurre
 
     public DbSet<User> Users => Set<User>();
     public DbSet<BodyStats> BodyStats => Set<BodyStats>();
-    public DbSet<Comment> Comments => Set<Comment>();
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
     public DbSet<Gadget> Gadgets => Set<Gadget>();

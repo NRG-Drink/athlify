@@ -36,7 +36,7 @@ public class SchemaTests : WebApiTestBase
 
         foreach (var input in new[]
                  {
-                     "ActivityInput", "BodyStatsInput", "CommentInput", "EventInput", "GadgetInput",
+                     "ActivityInput", "BodyStatsInput", "EventInput", "GadgetInput",
                      "MaintenanceCycleInput", "TagInput", "VehicleInput",
                  })
         {

@@ -34,11 +34,11 @@ public class BodyStatsQueryTests : WebApiTestBase
     public async Task CommentsAreReturnedWithTheList()
     {
         var client = await CreateUserClientAsync();
-        await AddAsync(client, Input(comments: [NewComment("first")]));
+        await AddAsync(client, Input(comment: "first"));
 
         var listed = (await DataAsync(client, ListQuery)).GetProperty("bodyStats").GetProperty("nodes").EnumerateArray().Single();
 
-        await Assert.That(CommentContents(listed)).IsEquivalentTo(new[] { "first" });
+        await Assert.That(listed.GetProperty("comment").GetString()).IsEqualTo("first");
     }
 
     [Test]

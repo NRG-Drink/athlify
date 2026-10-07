@@ -6,7 +6,6 @@ namespace Athlify.Api.Domain.Body;
 public static class BodyStatsValidation
 {
     public const int MaxCommentLength = 2000;
-    public const int MaxComments = 1;
 
     public static void ThrowIfInvalid(BodyStatsInput input)
     {
@@ -16,20 +15,8 @@ public static class BodyStatsValidation
         errors.AddIf(!IsPercentage(input.BodyFatPercentage), "Body fat percentage must be between 0 and 100.");
         errors.AddIf(!IsPercentage(input.MusclePercentage), "Muscle percentage must be between 0 and 100.");
         errors.AddIf(!IsPercentage(input.WaterPercentage), "Water percentage must be between 0 and 100.");
-        errors.AddIf(input.Comments.Count > MaxComments, "A measurement can have at most one note.");
-
-        foreach (var comment in input.Comments)
-        {
-            if (string.IsNullOrWhiteSpace(comment.Content))
-            {
-                errors.Add("A note must not be empty.");
-            }
-            else
-            {
-                errors.AddIf(comment.Content.Length > MaxCommentLength,
-                    $"A note must not be longer than {MaxCommentLength} characters.");
-            }
-        }
+        errors.AddIf(input.Comment?.Length > MaxCommentLength,
+            $"A note must not be longer than {MaxCommentLength} characters.");
 
         errors.ThrowIfAny();
     }

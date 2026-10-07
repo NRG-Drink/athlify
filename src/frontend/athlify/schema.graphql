@@ -269,16 +269,13 @@ type ActivityMergeEdge {
 
 type BodyStats implements Node {
   id: ID!
-  comments(
-    where: CommentFilterInput @cost(weight: "10")
-    order: [CommentSortInput!] @cost(weight: "10")
-  ): [Comment!]!
   date: DateTime!
   weight: Float!
   bodyFatPercentage: Float!
   musclePercentage: Float!
   waterPercentage: Float!
   boneMass: Float!
+  comment: String
   uid: UUID!
   createdAt: DateTime!
   modifiedAt: DateTime!
@@ -301,14 +298,6 @@ type BodyStatsEdge {
   node: BodyStats!
   "A cursor for use in pagination."
   cursor: String!
-}
-
-type Comment {
-  content: String!
-  id: ID!
-  uid: UUID!
-  createdAt: DateTime!
-  modifiedAt: DateTime!
 }
 
 type Event implements Node {
@@ -615,7 +604,7 @@ input BodyStatsFilterInput {
   musclePercentage: FloatOperationFilterInput
   waterPercentage: FloatOperationFilterInput
   boneMass: FloatOperationFilterInput
-  comments: ListFilterInputTypeOfCommentFilterInput
+  comment: StringOperationFilterInput
   id: IdOperationFilterInput
   uid: UuidOperationFilterInput
   createdAt: DateTimeOperationFilterInput
@@ -629,7 +618,7 @@ input BodyStatsInput {
   musclePercentage: Float!
   waterPercentage: Float!
   boneMass: Float!
-  comments: [CommentInput!]!
+  comment: String
 }
 
 input BodyStatsSortInput {
@@ -639,29 +628,7 @@ input BodyStatsSortInput {
   musclePercentage: SortEnumType @cost(weight: "10")
   waterPercentage: SortEnumType @cost(weight: "10")
   boneMass: SortEnumType @cost(weight: "10")
-  id: SortEnumType @cost(weight: "10")
-  uid: SortEnumType @cost(weight: "10")
-  createdAt: SortEnumType @cost(weight: "10")
-  modifiedAt: SortEnumType @cost(weight: "10")
-}
-
-input CommentFilterInput {
-  and: [CommentFilterInput!]
-  or: [CommentFilterInput!]
-  content: StringOperationFilterInput
-  id: IdOperationFilterInput
-  uid: UuidOperationFilterInput
-  createdAt: DateTimeOperationFilterInput
-  modifiedAt: DateTimeOperationFilterInput
-}
-
-input CommentInput {
-  id: ID
-  content: String!
-}
-
-input CommentSortInput {
-  content: SortEnumType @cost(weight: "10")
+  comment: SortEnumType @cost(weight: "10")
   id: SortEnumType @cost(weight: "10")
   uid: SortEnumType @cost(weight: "10")
   createdAt: SortEnumType @cost(weight: "10")
@@ -829,13 +796,6 @@ input ListFilterInputTypeOfActivityFilterInput {
   all: ActivityFilterInput @cost(weight: "10")
   none: ActivityFilterInput @cost(weight: "10")
   some: ActivityFilterInput @cost(weight: "10")
-  any: Boolean @cost(weight: "10")
-}
-
-input ListFilterInputTypeOfCommentFilterInput {
-  all: CommentFilterInput @cost(weight: "10")
-  none: CommentFilterInput @cost(weight: "10")
-  some: CommentFilterInput @cost(weight: "10")
   any: Boolean @cost(weight: "10")
 }
 

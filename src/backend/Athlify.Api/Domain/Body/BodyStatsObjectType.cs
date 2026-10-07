@@ -12,6 +12,5 @@ public static partial class BodyStatsObjectType
             .IdField(x => x.Id)
             .ResolveNodeWith(typeof(BodyStatsNode).GetMethod(nameof(BodyStatsNode.GetAsync))!);
         descriptor.Ignore(x => x.UserId);
-        descriptor.Field(b => b.Comments).UseFiltering().UseSorting();
     }
 }

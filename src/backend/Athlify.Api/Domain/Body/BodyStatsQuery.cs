@@ -15,7 +15,6 @@ public static partial class BodyStatsQuery
         CancellationToken cancellationToken)
     {
         var result = await db.BodyStats
-            .Include(e => e.Comments)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
 
         return result;
@@ -38,7 +37,6 @@ public static partial class BodyStatsQuery
         CancellationToken cancellationToken)
     {
         var page = await db.BodyStats
-            .Include(b => b.Comments)
             .With(query.Include(e => e.Id), DefaultOrder)
             .ToPageAsync(pagingArgs, cancellationToken);
 

@@ -19,11 +19,7 @@ public class DbSeeder : IDbSeeder
                     MusclePercentage = 40.3,
                     WaterPercentage = 60.1,
                     BoneMass = 3.2,
-                    Comments =
-                    [
-                        new() { Content = "Feeling good today!" },
-                        new() { Content = "Had a great workout." }
-                    ]
+                    Comment = "Feeling good today!"
                 },
                 new() {
                     UserId = ownerId,
@@ -33,7 +29,7 @@ public class DbSeeder : IDbSeeder
                     MusclePercentage = 40.0,
                     WaterPercentage = 59.8,
                     BoneMass = 3.1,
-                    Comments = [new() { Content = "A bit tired today." }]
+                    Comment = "A bit tired today."
                 },
                 new()
                 {
@@ -44,11 +40,7 @@ public class DbSeeder : IDbSeeder
                     MusclePercentage = 40.2,
                     WaterPercentage = 60.0,
                     BoneMass = 3.3,
-                    Comments =
-                    [
-                        new() { Content = "Feeling strong!" },
-                        new() { Content = "Feeling fat :(" }
-                    ]
+                    Comment = "Feeling strong!"
                 }
             };
             context.BodyStats.AddRange(bodyStats);

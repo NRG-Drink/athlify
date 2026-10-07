@@ -17,7 +17,6 @@ public static partial class BodyStatsMutation
 
         var created = new BodyStats();
         ApplyFields(created, bodyStats);
-        created.Comments = bodyStats.Comments.Select(c => new Comment { Content = c.Content }).ToList();
         db.BodyStats.Add(created);
         await db.SaveChangesAsync(cancellationToken);
         return created;
@@ -32,7 +31,6 @@ public static partial class BodyStatsMutation
         BodyStatsValidation.ThrowIfInvalid(bodyStats);
 
         var existing = await db.BodyStats
-            .Include(b => b.Comments)
             .FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
         if (existing is null)
         {
@@ -40,7 +38,6 @@ public static partial class BodyStatsMutation
         }
 
         ApplyFields(existing, bodyStats);
-        SyncComments(existing, bodyStats.Comments, db);
         await db.SaveChangesAsync(cancellationToken);
         return existing;
     }
@@ -52,15 +49,12 @@ public static partial class BodyStatsMutation
         CancellationToken cancellationToken)
     {
         var existing = await db.BodyStats
-            .Include(b => b.Comments)
             .FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
         if (existing is null)
         {
             return null;
         }
 
-        // Remove the notes explicitly: the foreign key does not cascade in an existing database.
-        db.Comments.RemoveRange(existing.Comments);
         db.BodyStats.Remove(existing);
         await db.SaveChangesAsync(cancellationToken);
 
@@ -75,41 +69,6 @@ public static partial class BodyStatsMutation
         target.MusclePercentage = input.MusclePercentage;
         target.WaterPercentage = input.WaterPercentage;
         target.BoneMass = input.BoneMass;
-    }
-
-    private static void SyncComments(
-        BodyStats existing,
-        IReadOnlyList<CommentInput> incoming,
-        AthlifyDbContext db)
-    {
-        var incomingById = incoming
-            .Where(c => c.Id.HasValue)
-            .GroupBy(c => c.Id!.Value)
-            .ToDictionary(g => g.Key, g => g.Last());
-
-        var unknownIds = incomingById.Keys.Except(existing.Comments.Select(c => c.Id)).ToList();
-        if (unknownIds.Count > 0)
-        {
-            throw DomainErrors.Validation("A note does not belong to this entry.");
-        }
-
-        foreach (var comment in existing.Comments.ToList())
-        {
-            if (!incomingById.TryGetValue(comment.Id, out var edited))
-            {
-                existing.Comments.Remove(comment);
-                db.Comments.Remove(comment);
-            }
-            else
-            {
-                // AthlifyDbContext sets ModifiedAt when the content actually changed.
-                comment.Content = edited.Content;
-            }
-        }
-
-        foreach (var added in incoming.Where(c => c.Id is null))
-        {
-            existing.Comments.Add(new Comment { Content = added.Content });
-        }
+        target.Comment = string.IsNullOrWhiteSpace(input.Comment) ? null : input.Comment;
     }
 }

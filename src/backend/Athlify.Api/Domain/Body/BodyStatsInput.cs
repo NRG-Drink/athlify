@@ -10,9 +10,6 @@ public record BodyStatsInput
     public double WaterPercentage { get; set; }
     public double BoneMass { get; set; }
 
-    /// <summary>
-    /// The complete list of notes. On update, notes with an <see cref="CommentInput.Id"/> are edited,
-    /// notes without one are added and existing notes missing from the list are removed.
-    /// </summary>
-    public IReadOnlyList<CommentInput> Comments { get; set; } = [];
+    /// <summary>The optional note; null or blank removes it.</summary>
+    public string? Comment { get; set; }
 }

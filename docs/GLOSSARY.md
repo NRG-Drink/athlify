@@ -143,7 +143,7 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
   [ADR-010](copilot/adr/ADR-010-activity-and-event-value-domains.md).
 
 **Note** — The one optional free-text field of a Body-Stats entry. The API stores
-  it as a comment; the UI reads and writes the first one.
+  it as the plain string field `comment`; there is no separate table or list.
 
 **Owner / user context** — The user who owns a personal record and whose access
   must be checked. Another user's record behaves as if it did not exist. See

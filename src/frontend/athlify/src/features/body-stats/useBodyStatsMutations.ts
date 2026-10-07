@@ -17,10 +17,7 @@ export const bodyStatsRecordFragment = graphql`
     musclePercentage
     waterPercentage
     boneMass
-    comments {
-      id
-      content
-    }
+    comment
   }
 `
 

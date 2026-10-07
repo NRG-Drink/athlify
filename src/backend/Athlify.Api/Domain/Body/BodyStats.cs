@@ -13,5 +13,5 @@ public class BodyStats : Entity, IOwned
     public double WaterPercentage { get; set; }
     public double BoneMass { get; set; }
 
-    public ICollection<Comment> Comments { get; set; } = [];
+    public string? Comment { get; set; }
 }

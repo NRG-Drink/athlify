@@ -63,8 +63,7 @@ function rowToValues(row: BodyStatsRow): BodyStatsFormValues {
     musclePercentage: String(row.musclePercentage),
     waterPercentage: String(row.waterPercentage),
     boneMass: String(row.boneMass),
-    note: row.comments[0]?.content ?? '',
-    noteId: row.comments[0]?.id,
+    note: row.comment ?? '',
   }
 }
 
