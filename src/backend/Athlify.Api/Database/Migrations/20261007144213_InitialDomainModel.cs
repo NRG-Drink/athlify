@@ -89,6 +89,36 @@ namespace Athlify.Api.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Gadgets",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    Brand = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Model = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Nickname = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    PurchaseDate = table.Column<DateOnly>(type: "date", nullable: true),
+                    Description = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    DeactivationDate = table.Column<DateOnly>(type: "date", nullable: true),
+                    Price = table.Column<decimal>(type: "numeric(10,2)", precision: 10, scale: 2, nullable: true),
+                    Source = table.Column<string>(type: "text", nullable: false),
+                    Uid = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ModifiedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Gadgets", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Gadgets_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Tags",
                 columns: table => new
                 {
@@ -167,6 +197,30 @@ namespace Athlify.Api.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "GadgetTags",
+                columns: table => new
+                {
+                    GadgetsId = table.Column<int>(type: "integer", nullable: false),
+                    TagsId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GadgetTags", x => new { x.GadgetsId, x.TagsId });
+                    table.ForeignKey(
+                        name: "FK_GadgetTags_Gadgets_GadgetsId",
+                        column: x => x.GadgetsId,
+                        principalTable: "Gadgets",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_GadgetTags_Tags_TagsId",
+                        column: x => x.TagsId,
+                        principalTable: "Tags",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Activities",
                 columns: table => new
                 {
@@ -220,6 +274,72 @@ namespace Athlify.Api.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "MaintenanceCycles",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    VehicleId = table.Column<int>(type: "integer", nullable: true),
+                    GadgetId = table.Column<int>(type: "integer", nullable: true),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    IntervalDistance = table.Column<double>(type: "double precision", nullable: true),
+                    IntervalDays = table.Column<int>(type: "integer", nullable: true),
+                    LastServiceDate = table.Column<DateOnly>(type: "date", nullable: true),
+                    Description = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    Uid = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ModifiedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MaintenanceCycles", x => x.Id);
+                    table.CheckConstraint("CK_MaintenanceCycles_ExactlyOneParent", "(\"VehicleId\" IS NULL) <> (\"GadgetId\" IS NULL)");
+                    table.ForeignKey(
+                        name: "FK_MaintenanceCycles_Gadgets_GadgetId",
+                        column: x => x.GadgetId,
+                        principalTable: "Gadgets",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MaintenanceCycles_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MaintenanceCycles_Vehicles_VehicleId",
+                        column: x => x.VehicleId,
+                        principalTable: "Vehicles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "VehicleGadgets",
+                columns: table => new
+                {
+                    GadgetsId = table.Column<int>(type: "integer", nullable: false),
+                    VehiclesId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_VehicleGadgets", x => new { x.GadgetsId, x.VehiclesId });
+                    table.ForeignKey(
+                        name: "FK_VehicleGadgets_Gadgets_GadgetsId",
+                        column: x => x.GadgetsId,
+                        principalTable: "Gadgets",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_VehicleGadgets_Vehicles_VehiclesId",
+                        column: x => x.VehiclesId,
+                        principalTable: "Vehicles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "VehicleTags",
                 columns: table => new
                 {
@@ -239,6 +359,30 @@ namespace Athlify.Api.Database.Migrations
                         name: "FK_VehicleTags_Vehicles_VehiclesId",
                         column: x => x.VehiclesId,
                         principalTable: "Vehicles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ActivityGadgets",
+                columns: table => new
+                {
+                    ActivitiesId = table.Column<int>(type: "integer", nullable: false),
+                    GadgetsId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ActivityGadgets", x => new { x.ActivitiesId, x.GadgetsId });
+                    table.ForeignKey(
+                        name: "FK_ActivityGadgets_Activities_ActivitiesId",
+                        column: x => x.ActivitiesId,
+                        principalTable: "Activities",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ActivityGadgets_Gadgets_GadgetsId",
+                        column: x => x.GadgetsId,
+                        principalTable: "Gadgets",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -296,6 +440,11 @@ namespace Athlify.Api.Database.Migrations
                 column: "VehicleId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ActivityGadgets_GadgetsId",
+                table: "ActivityGadgets",
+                column: "GadgetsId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ActivityMerges_Uid",
                 table: "ActivityMerges",
                 column: "Uid",
@@ -334,6 +483,43 @@ namespace Athlify.Api.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Gadgets_Uid",
+                table: "Gadgets",
+                column: "Uid",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Gadgets_UserId",
+                table: "Gadgets",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GadgetTags_TagsId",
+                table: "GadgetTags",
+                column: "TagsId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MaintenanceCycles_GadgetId",
+                table: "MaintenanceCycles",
+                column: "GadgetId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MaintenanceCycles_Uid",
+                table: "MaintenanceCycles",
+                column: "Uid",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MaintenanceCycles_UserId",
+                table: "MaintenanceCycles",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MaintenanceCycles_VehicleId",
+                table: "MaintenanceCycles",
+                column: "VehicleId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Tags_Uid",
                 table: "Tags",
                 column: "Uid",
@@ -358,6 +544,11 @@ namespace Athlify.Api.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_VehicleGadgets_VehiclesId",
+                table: "VehicleGadgets",
+                column: "VehiclesId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Vehicles_Uid",
                 table: "Vehicles",
                 column: "Uid",
@@ -380,10 +571,22 @@ namespace Athlify.Api.Database.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "ActivityGadgets");
+
+            migrationBuilder.DropTable(
                 name: "ActivityTags");
 
             migrationBuilder.DropTable(
                 name: "Comments");
+
+            migrationBuilder.DropTable(
+                name: "GadgetTags");
+
+            migrationBuilder.DropTable(
+                name: "MaintenanceCycles");
+
+            migrationBuilder.DropTable(
+                name: "VehicleGadgets");
 
             migrationBuilder.DropTable(
                 name: "VehicleTags");
@@ -393,6 +596,9 @@ namespace Athlify.Api.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "BodyStats");
+
+            migrationBuilder.DropTable(
+                name: "Gadgets");
 
             migrationBuilder.DropTable(
                 name: "Tags");

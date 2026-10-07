@@ -1,5 +1,6 @@
 using Athlify.Api.Domain.Activities;
 using Athlify.Api.Domain.Common;
+using Athlify.Api.Domain.Gadgets;
 using Athlify.Api.Domain.Tags;
 using HotChocolate.Types.Relay;
 
@@ -25,6 +26,11 @@ public class Vehicle : Entity, IOwned
     public string? StravaGearId { get; set; }
 
     public ICollection<Tag> Tags { get; set; } = [];
+
+    /// <summary>Gadgets mounted on this bicycle; edited from the gadget.</summary>
+    public ICollection<Gadget> Gadgets { get; set; } = [];
+
+    public ICollection<MaintenanceCycle> MaintenanceCycles { get; set; } = [];
 
     // Only used to clear the bicycle on its activities when it is deleted.
     [GraphQLIgnore]

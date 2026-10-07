@@ -1,5 +1,6 @@
 using Athlify.Api.Domain.Activities;
 using Athlify.Api.Domain.Common;
+using Athlify.Api.Domain.Gadgets;
 using Athlify.Api.Domain.Vehicles;
 using HotChocolate.Types.Relay;
 
@@ -24,6 +25,9 @@ public class Tag : Entity, IOwned
 
     [GraphQLIgnore]
     public ICollection<Vehicle> Vehicles { get; set; } = [];
+
+    [GraphQLIgnore]
+    public ICollection<Gadget> Gadgets { get; set; } = [];
 
     public static string Normalize(string name) => name.Trim().ToUpperInvariant();
 }

@@ -78,6 +78,7 @@ public static partial class TagMutation
             .IgnoreQueryFilters([AthlifyDbContext.NotDeletedFilter])
             .Include(t => t.Activities)
             .Include(t => t.Vehicles)
+            .Include(t => t.Gadgets)
             .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
         if (existing is null)
         {
@@ -86,6 +87,7 @@ public static partial class TagMutation
 
         existing.Activities.Clear();
         existing.Vehicles.Clear();
+        existing.Gadgets.Clear();
         db.Tags.Remove(existing);
         await db.SaveChangesAsync(cancellationToken);
         return id;

@@ -1,4 +1,5 @@
 using Athlify.Api.Domain.Common;
+using Athlify.Api.Domain.Gadgets;
 using Athlify.Api.Domain.Tags;
 using Athlify.Api.Domain.Vehicles;
 using HotChocolate.Types.Relay;
@@ -92,6 +93,8 @@ public class Activity : Entity, IOwned
 
     public ICollection<Tag> Tags { get; set; } = [];
 
+    public ICollection<Gadget> Gadgets { get; set; } = [];
+
     public void Recalculate()
     {
         AverageSpeed = Time > 0 ? Distance / (Time / 3600.0) : null;
@@ -100,7 +103,7 @@ public class Activity : Entity, IOwned
 
 /// <summary>
 /// Client input for an <see cref="Activity"/>. Calculated and system fields are not part of it;
-/// <c>tagIds</c> is the complete set of tags.
+/// <c>gadgetIds</c> and <c>tagIds</c> are complete sets.
 /// </summary>
 public record ActivityDto
 {
@@ -119,6 +122,9 @@ public record ActivityDto
 
     [ID<Vehicle>]
     public int? VehicleId { get; set; }
+
+    [ID<Gadget>]
+    public IReadOnlyList<int> GadgetIds { get; set; } = [];
 
     [ID<Tag>]
     public IReadOnlyList<int> TagIds { get; set; } = [];

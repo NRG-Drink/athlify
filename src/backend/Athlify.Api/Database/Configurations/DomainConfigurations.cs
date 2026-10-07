@@ -1,4 +1,5 @@
 using Athlify.Api.Domain.Activities;
+using Athlify.Api.Domain.Gadgets;
 using Athlify.Api.Domain.Tags;
 using Athlify.Api.Domain.Users;
 using Athlify.Api.Domain.Vehicles;
@@ -50,6 +51,7 @@ public class ActivityConfiguration : IEntityTypeConfiguration<Activity>
             .HasForeignKey(a => a.VehicleId)
             .OnDelete(DeleteBehavior.SetNull);
         builder.HasMany(a => a.Tags).WithMany(t => t.Activities).UsingEntity("ActivityTags");
+        builder.HasMany(a => a.Gadgets).WithMany(g => g.Activities).UsingEntity("ActivityGadgets");
         builder.HasOne(a => a.Merge)
             .WithMany(m => m.Activities)
             .HasForeignKey(a => a.MergeId)
@@ -63,5 +65,41 @@ public class ActivityMergeConfiguration : IEntityTypeConfiguration<ActivityMerge
     {
         builder.HasOne<User>().WithMany().HasForeignKey(m => m.UserId).OnDelete(DeleteBehavior.Cascade);
         builder.Property(m => m.Name).HasMaxLength(MergeMembership.MaxNameLength);
+    }
+}
+
+public class GadgetConfiguration : IEntityTypeConfiguration<Gadget>
+{
+    public void Configure(EntityTypeBuilder<Gadget> builder)
+    {
+        builder.HasOne<User>().WithMany().HasForeignKey(g => g.UserId).OnDelete(DeleteBehavior.Cascade);
+        builder.Property(g => g.Brand).HasMaxLength(EquipmentValidation.MaxNameLength);
+        builder.Property(g => g.Model).HasMaxLength(EquipmentValidation.MaxNameLength);
+        builder.Property(g => g.Nickname).HasMaxLength(EquipmentValidation.MaxNameLength);
+        builder.Property(g => g.Description).HasMaxLength(EquipmentValidation.MaxDescriptionLength);
+        builder.Property(g => g.Price).HasPrecision(10, 2);
+        builder.HasMany(g => g.Tags).WithMany(t => t.Gadgets).UsingEntity("GadgetTags");
+        builder.HasMany(g => g.Vehicles).WithMany(v => v.Gadgets).UsingEntity("VehicleGadgets");
+    }
+}
+
+public class MaintenanceCycleConfiguration : IEntityTypeConfiguration<MaintenanceCycle>
+{
+    public void Configure(EntityTypeBuilder<MaintenanceCycle> builder)
+    {
+        builder.ToTable(t => t.HasCheckConstraint(
+            "CK_MaintenanceCycles_ExactlyOneParent",
+            "(\"VehicleId\" IS NULL) <> (\"GadgetId\" IS NULL)"));
+        builder.HasOne<User>().WithMany().HasForeignKey(m => m.UserId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(m => m.Vehicle)
+            .WithMany(v => v.MaintenanceCycles)
+            .HasForeignKey(m => m.VehicleId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(m => m.Gadget)
+            .WithMany(g => g.MaintenanceCycles)
+            .HasForeignKey(m => m.GadgetId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.Property(m => m.Name).HasMaxLength(MaintenanceCycleMutation.MaxNameLength);
+        builder.Property(m => m.Description).HasMaxLength(MaintenanceCycleMutation.MaxDescriptionLength);
     }
 }

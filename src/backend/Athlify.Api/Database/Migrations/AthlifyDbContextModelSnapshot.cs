@@ -22,6 +22,21 @@ namespace Athlify.Api.Database.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("ActivityGadgets", b =>
+                {
+                    b.Property<int>("ActivitiesId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("GadgetsId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ActivitiesId", "GadgetsId");
+
+                    b.HasIndex("GadgetsId");
+
+                    b.ToTable("ActivityGadgets");
+                });
+
             modelBuilder.Entity("ActivityTags", b =>
                 {
                     b.Property<int>("ActivitiesId")
@@ -264,6 +279,68 @@ namespace Athlify.Api.Database.Migrations
                     b.ToTable("Comments");
                 });
 
+            modelBuilder.Entity("Athlify.Api.Domain.Gadgets.Gadget", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Brand")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly?>("DeactivationDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("ModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Nickname")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal?>("Price")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<DateOnly?>("PurchaseDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("Uid")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Uid")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Gadgets");
+                });
+
             modelBuilder.Entity("Athlify.Api.Domain.Tags.Tag", b =>
                 {
                     b.Property<int>("Id")
@@ -359,6 +436,67 @@ namespace Athlify.Api.Database.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("Athlify.Api.Domain.Vehicles.MaintenanceCycle", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int?>("GadgetId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("IntervalDays")
+                        .HasColumnType("integer");
+
+                    b.Property<double?>("IntervalDistance")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateOnly?>("LastServiceDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("ModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("Uid")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("VehicleId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GadgetId");
+
+                    b.HasIndex("Uid")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("VehicleId");
+
+                    b.ToTable("MaintenanceCycles", t =>
+                        {
+                            t.HasCheckConstraint("CK_MaintenanceCycles_ExactlyOneParent", "(\"VehicleId\" IS NULL) <> (\"GadgetId\" IS NULL)");
+                        });
+                });
+
             modelBuilder.Entity("Athlify.Api.Domain.Vehicles.Vehicle", b =>
                 {
                     b.Property<int>("Id")
@@ -426,6 +564,36 @@ namespace Athlify.Api.Database.Migrations
                     b.ToTable("Vehicles");
                 });
 
+            modelBuilder.Entity("GadgetTags", b =>
+                {
+                    b.Property<int>("GadgetsId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TagsId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("GadgetsId", "TagsId");
+
+                    b.HasIndex("TagsId");
+
+                    b.ToTable("GadgetTags");
+                });
+
+            modelBuilder.Entity("VehicleGadgets", b =>
+                {
+                    b.Property<int>("GadgetsId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("VehiclesId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("GadgetsId", "VehiclesId");
+
+                    b.HasIndex("VehiclesId");
+
+                    b.ToTable("VehicleGadgets");
+                });
+
             modelBuilder.Entity("VehicleTags", b =>
                 {
                     b.Property<int>("TagsId")
@@ -439,6 +607,21 @@ namespace Athlify.Api.Database.Migrations
                     b.HasIndex("VehiclesId");
 
                     b.ToTable("VehicleTags");
+                });
+
+            modelBuilder.Entity("ActivityGadgets", b =>
+                {
+                    b.HasOne("Athlify.Api.Domain.Activities.Activity", null)
+                        .WithMany()
+                        .HasForeignKey("ActivitiesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Athlify.Api.Domain.Gadgets.Gadget", null)
+                        .WithMany()
+                        .HasForeignKey("GadgetsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("ActivityTags", b =>
@@ -506,6 +689,15 @@ namespace Athlify.Api.Database.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Athlify.Api.Domain.Gadgets.Gadget", b =>
+                {
+                    b.HasOne("Athlify.Api.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Athlify.Api.Domain.Tags.Tag", b =>
                 {
                     b.HasOne("Athlify.Api.Domain.Users.User", null)
@@ -515,11 +707,64 @@ namespace Athlify.Api.Database.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Athlify.Api.Domain.Vehicles.MaintenanceCycle", b =>
+                {
+                    b.HasOne("Athlify.Api.Domain.Gadgets.Gadget", "Gadget")
+                        .WithMany("MaintenanceCycles")
+                        .HasForeignKey("GadgetId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Athlify.Api.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Athlify.Api.Domain.Vehicles.Vehicle", "Vehicle")
+                        .WithMany("MaintenanceCycles")
+                        .HasForeignKey("VehicleId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Gadget");
+
+                    b.Navigation("Vehicle");
+                });
+
             modelBuilder.Entity("Athlify.Api.Domain.Vehicles.Vehicle", b =>
                 {
                     b.HasOne("Athlify.Api.Domain.Users.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GadgetTags", b =>
+                {
+                    b.HasOne("Athlify.Api.Domain.Gadgets.Gadget", null)
+                        .WithMany()
+                        .HasForeignKey("GadgetsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Athlify.Api.Domain.Tags.Tag", null)
+                        .WithMany()
+                        .HasForeignKey("TagsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("VehicleGadgets", b =>
+                {
+                    b.HasOne("Athlify.Api.Domain.Gadgets.Gadget", null)
+                        .WithMany()
+                        .HasForeignKey("GadgetsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Athlify.Api.Domain.Vehicles.Vehicle", null)
+                        .WithMany()
+                        .HasForeignKey("VehiclesId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -549,9 +794,16 @@ namespace Athlify.Api.Database.Migrations
                     b.Navigation("Comments");
                 });
 
+            modelBuilder.Entity("Athlify.Api.Domain.Gadgets.Gadget", b =>
+                {
+                    b.Navigation("MaintenanceCycles");
+                });
+
             modelBuilder.Entity("Athlify.Api.Domain.Vehicles.Vehicle", b =>
                 {
                     b.Navigation("Activities");
+
+                    b.Navigation("MaintenanceCycles");
                 });
 #pragma warning restore 612, 618
         }

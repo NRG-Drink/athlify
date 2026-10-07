@@ -66,8 +66,8 @@ public static partial class VehicleMutation
     }
 
     /// <summary>
-    /// Deletes the bicycle. Its activities remain without a bicycle, soft-deleted ones included, because they
-    /// still reference it; its tag links are removed.
+    /// Deletes the bicycle with its maintenance cycles. Its activities remain without a bicycle, soft-deleted
+    /// ones included, because they still reference it; its links to gadgets and tags are removed.
     /// </summary>
     [ID<Vehicle>]
     public static async Task<int?> DeleteVehicle(
@@ -78,7 +78,9 @@ public static partial class VehicleMutation
         var existing = await db.Vehicles
             .IgnoreQueryFilters([AthlifyDbContext.NotDeletedFilter])
             .Include(v => v.Tags)
+            .Include(v => v.Gadgets)
             .Include(v => v.Activities)
+            .Include(v => v.MaintenanceCycles)
             .FirstOrDefaultAsync(v => v.Id == id, cancellationToken);
         if (existing is null)
         {
@@ -91,6 +93,8 @@ public static partial class VehicleMutation
         }
 
         existing.Tags.Clear();
+        existing.Gadgets.Clear();
+        db.MaintenanceCycles.RemoveRange(existing.MaintenanceCycles);
         db.Vehicles.Remove(existing);
         await db.SaveChangesAsync(cancellationToken);
         return id;

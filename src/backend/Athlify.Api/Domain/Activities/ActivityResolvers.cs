@@ -97,12 +97,13 @@ public static partial class ActivityMutation
         return id;
     }
 
-    /// <summary>An active activity with its tags and, if merged, the merge with all its members.</summary>
+    /// <summary>An active activity with its links and, if merged, the merge with all its members.</summary>
     private static Task<Activity?> LoadWithMergeAsync(AthlifyDbContext db, int id, CancellationToken cancellationToken) =>
         db.Activities
             .IgnoreQueryFilters([AthlifyDbContext.NotDeletedFilter])
             .Where(a => a.DeletedAt == null)
             .Include(a => a.Tags)
+            .Include(a => a.Gadgets)
             .Include(a => a.Merge!)
             .ThenInclude(m => m.Activities)
             .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
@@ -110,6 +111,7 @@ public static partial class ActivityMutation
     private static async Task ApplyAsync(Activity target, ActivityDto dto, AthlifyDbContext db, CancellationToken cancellationToken)
     {
         var vehicle = await Links.LoadOptionalAsync(db.Vehicles, dto.VehicleId, "Bicycle", cancellationToken);
+        var gadgets = await Links.LoadAllAsync(db.Gadgets, dto.GadgetIds, "Gadget", cancellationToken);
         var tags = await Links.LoadAllAsync(db.Tags, dto.TagIds, "Tag", cancellationToken);
 
         target.Date = UtcDateTime.Normalize(dto.Date);
@@ -126,6 +128,7 @@ public static partial class ActivityMutation
         target.Wind = dto.Wind;
         target.Vehicle = vehicle;
         target.VehicleId = vehicle?.Id;
+        Links.ReplaceWith(target.Gadgets, gadgets);
         Links.ReplaceWith(target.Tags, tags);
         target.Recalculate();
     }
