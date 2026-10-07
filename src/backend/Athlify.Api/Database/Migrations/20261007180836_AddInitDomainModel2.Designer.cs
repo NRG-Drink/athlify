@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Athlify.Api.Database.Migrations
 {
     [DbContext(typeof(AthlifyDbContext))]
-    [Migration("20261007174518_AddInitDomainModel")]
-    partial class AddInitDomainModel
+    [Migration("20261007180836_AddInitDomainModel2")]
+    partial class AddInitDomainModel2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
