@@ -16,7 +16,6 @@
     "jetbrains": {
       "plugins": [
         "org.intellij.plugins.markdown",
-        "com.intellij.mermaid",
         "com.intellij.lang.jsgraphql",
         "Docker",
         "ru.adelf.idea.dotenv",
