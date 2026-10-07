@@ -8,7 +8,7 @@ public class BodyStats : Entity, IOwned
 {
     public BodyStats() { }
 
-    public BodyStats(BodyStatsDto dto)
+    public BodyStats(BodyStatsInput dto)
     {
         Date = UtcDateTime.Normalize(dto.Date);
         Weight = dto.Weight;

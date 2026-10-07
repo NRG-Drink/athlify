@@ -33,7 +33,7 @@ public static partial class VehicleQuery
 public static partial class VehicleMutation
 {
     public static async Task<Vehicle> CreateVehicle(
-        VehicleDto vehicle,
+        VehicleInput vehicle,
         QueryContext<Vehicle> query,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
@@ -48,7 +48,7 @@ public static partial class VehicleMutation
 
     public static async Task<Vehicle?> UpdateVehicle(
         [ID<Vehicle>] int id,
-        VehicleDto vehicle,
+        VehicleInput vehicle,
         QueryContext<Vehicle> query,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
@@ -100,7 +100,7 @@ public static partial class VehicleMutation
         return id;
     }
 
-    private static void ThrowIfInvalid(VehicleDto dto)
+    private static void ThrowIfInvalid(VehicleInput dto)
     {
         var errors = new ValidationErrors();
         EquipmentValidation.Validate(errors, dto.Brand, dto.Model, dto.Nickname, dto.Description,
@@ -108,7 +108,7 @@ public static partial class VehicleMutation
         errors.ThrowIfAny();
     }
 
-    private static async Task ApplyAsync(Vehicle target, VehicleDto dto, AthlifyDbContext db, CancellationToken cancellationToken)
+    private static async Task ApplyAsync(Vehicle target, VehicleInput dto, AthlifyDbContext db, CancellationToken cancellationToken)
     {
         var tags = await Links.LoadAllAsync(db.Tags, dto.TagIds, "Tag", cancellationToken);
 

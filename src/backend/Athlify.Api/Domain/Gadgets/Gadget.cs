@@ -37,7 +37,7 @@ public class Gadget : Entity, IOwned
 /// Client input for a <see cref="Gadget"/>. <c>tagIds</c> and <c>vehicleIds</c> are complete sets; the link
 /// between gadgets and bicycles is edited from the gadget.
 /// </summary>
-public record GadgetDto
+public record GadgetInput
 {
     public string Brand { get; set; } = string.Empty;
     public string Model { get; set; } = string.Empty;

@@ -42,7 +42,7 @@ Every domain area follows the Body-Stats pattern described below.
   page, default 100) with `where` filtering and `order` sorting. Filters on
   linked records take global IDs, for example
   `activities(where: { vehicle: { id: { eq: $bike } }, tags: { some: { id: { eq: $tag } } } })`.
-- **Inputs.** Create and update take an `…DtoInput`. Identity, owner,
+- **Inputs.** Create and update take an `…Input`. Identity, owner,
   timestamps, `source`, Strava IDs and calculated values are never input.
   Link lists such as `tagIds`, `gadgetIds` and `vehicleIds` are required and
   replace the complete set; send `[]` for none.
@@ -113,7 +113,7 @@ build it, and `node(id:)` resolves any entity that implements `Node`.
 | `updateBodyStats(id, bodyStats)` | Replaces the measurement values and synchronizes the notes; returns `null` if the measurement does not exist. |
 | `deleteBodyStats(id)` | Deletes the measurement and its notes; returns the deleted `id`, or `null` if it did not exist. |
 
-**Input.** `BodyStatsDtoInput` carries `date`, `weight`, `bodyFatPercentage`,
+**Input.** `BodyStatsInput` carries `date`, `weight`, `bodyFatPercentage`,
 `musclePercentage`, `waterPercentage`, `boneMass` and `comments`, a list of
 `{ id?, content }` with at most one entry (the note); more than one is
 rejected with `VALIDATION_ERROR`. The list shape is kept so several notes

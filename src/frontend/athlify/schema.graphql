@@ -162,30 +162,30 @@ type Mutation {
   removeActivityFromMerge(mergeId: ID!, activityId: ID!): ActivityMerge
     @cost(weight: "10")
   deleteActivityMerge(id: ID!): ID @cost(weight: "10")
-  createActivity(activity: ActivityDtoInput!): Activity! @cost(weight: "10")
-  updateActivity(id: ID!, activity: ActivityDtoInput!): Activity
+  createActivity(activity: ActivityInput!): Activity! @cost(weight: "10")
+  updateActivity(id: ID!, activity: ActivityInput!): Activity
     @cost(weight: "10")
   deleteActivity(id: ID!): ID @cost(weight: "10")
-  addBodyStats(bodyStats: BodyStatsDtoInput!): BodyStats! @cost(weight: "10")
-  updateBodyStats(id: ID!, bodyStats: BodyStatsDtoInput!): BodyStats
+  addBodyStats(bodyStats: BodyStatsInput!): BodyStats! @cost(weight: "10")
+  updateBodyStats(id: ID!, bodyStats: BodyStatsInput!): BodyStats
     @cost(weight: "10")
   deleteBodyStats(id: ID!): ID @cost(weight: "10")
-  createEvent(event: EventDtoInput!): Event! @cost(weight: "10")
-  updateEvent(id: ID!, event: EventDtoInput!): Event @cost(weight: "10")
+  createEvent(event: EventInput!): Event! @cost(weight: "10")
+  updateEvent(id: ID!, event: EventInput!): Event @cost(weight: "10")
   deleteEvent(id: ID!): ID @cost(weight: "10")
-  createGadget(gadget: GadgetDtoInput!): Gadget! @cost(weight: "10")
-  updateGadget(id: ID!, gadget: GadgetDtoInput!): Gadget @cost(weight: "10")
+  createGadget(gadget: GadgetInput!): Gadget! @cost(weight: "10")
+  updateGadget(id: ID!, gadget: GadgetInput!): Gadget @cost(weight: "10")
   deleteGadget(id: ID!): ID @cost(weight: "10")
-  createTag(tag: TagDtoInput!): Tag! @cost(weight: "10")
-  updateTag(id: ID!, tag: TagDtoInput!): Tag @cost(weight: "10")
+  createTag(tag: TagInput!): Tag! @cost(weight: "10")
+  updateTag(id: ID!, tag: TagInput!): Tag @cost(weight: "10")
   deleteTag(id: ID!): ID @cost(weight: "10")
-  createMaintenanceCycle(maintenanceCycle: MaintenanceCycleDtoInput!): MaintenanceCycle!
+  createMaintenanceCycle(maintenanceCycle: MaintenanceCycleInput!): MaintenanceCycle!
     @cost(weight: "10")
-  updateMaintenanceCycle(id: ID!, maintenanceCycle: MaintenanceCycleDtoInput!): MaintenanceCycle
+  updateMaintenanceCycle(id: ID!, maintenanceCycle: MaintenanceCycleInput!): MaintenanceCycle
     @cost(weight: "10")
   deleteMaintenanceCycle(id: ID!): ID @cost(weight: "10")
-  createVehicle(vehicle: VehicleDtoInput!): Vehicle! @cost(weight: "10")
-  updateVehicle(id: ID!, vehicle: VehicleDtoInput!): Vehicle @cost(weight: "10")
+  createVehicle(vehicle: VehicleInput!): Vehicle! @cost(weight: "10")
+  updateVehicle(id: ID!, vehicle: VehicleInput!): Vehicle @cost(weight: "10")
   deleteVehicle(id: ID!): ID @cost(weight: "10")
 }
 
@@ -500,24 +500,6 @@ interface Node {
   id: ID!
 }
 
-input ActivityDtoInput {
-  date: DateTime!
-  type: ActivityType!
-  time: Int!
-  distance: Float!
-  elevationGain: Float
-  description: String
-  heartRateMin: Int
-  heartRateMax: Int
-  heartRateAverage: Int
-  mood: Mood
-  effort: Int
-  wind: Wind
-  vehicleId: ID
-  gadgetIds: [ID!]!
-  tagIds: [ID!]!
-}
-
 input ActivityFilterInput {
   and: [ActivityFilterInput!]
   or: [ActivityFilterInput!]
@@ -545,6 +527,24 @@ input ActivityFilterInput {
   uid: UuidOperationFilterInput
   createdAt: DateTimeOperationFilterInput
   modifiedAt: DateTimeOperationFilterInput
+}
+
+input ActivityInput {
+  date: DateTime!
+  type: ActivityType!
+  time: Int!
+  distance: Float!
+  elevationGain: Float
+  description: String
+  heartRateMin: Int
+  heartRateMax: Int
+  heartRateAverage: Int
+  mood: Mood
+  effort: Int
+  wind: Wind
+  vehicleId: ID
+  gadgetIds: [ID!]!
+  tagIds: [ID!]!
 }
 
 input ActivityMergeFilterInput {
@@ -606,16 +606,6 @@ input ActivityTypeOperationFilterInput {
   nin: [ActivityType!] @cost(weight: "10")
 }
 
-input BodyStatsDtoInput {
-  date: DateTime!
-  weight: Float!
-  bodyFatPercentage: Float!
-  musclePercentage: Float!
-  waterPercentage: Float!
-  boneMass: Float!
-  comments: [CommentDtoInput!]!
-}
-
 input BodyStatsFilterInput {
   and: [BodyStatsFilterInput!]
   or: [BodyStatsFilterInput!]
@@ -632,6 +622,16 @@ input BodyStatsFilterInput {
   modifiedAt: DateTimeOperationFilterInput
 }
 
+input BodyStatsInput {
+  date: DateTime!
+  weight: Float!
+  bodyFatPercentage: Float!
+  musclePercentage: Float!
+  waterPercentage: Float!
+  boneMass: Float!
+  comments: [CommentInput!]!
+}
+
 input BodyStatsSortInput {
   date: SortEnumType @cost(weight: "10")
   weight: SortEnumType @cost(weight: "10")
@@ -645,11 +645,6 @@ input BodyStatsSortInput {
   modifiedAt: SortEnumType @cost(weight: "10")
 }
 
-input CommentDtoInput {
-  id: ID
-  content: String!
-}
-
 input CommentFilterInput {
   and: [CommentFilterInput!]
   or: [CommentFilterInput!]
@@ -658,6 +653,11 @@ input CommentFilterInput {
   uid: UuidOperationFilterInput
   createdAt: DateTimeOperationFilterInput
   modifiedAt: DateTimeOperationFilterInput
+}
+
+input CommentInput {
+  id: ID
+  content: String!
 }
 
 input CommentSortInput {
@@ -698,15 +698,6 @@ input DecimalOperationFilterInput {
   nlte: Decimal @cost(weight: "10")
 }
 
-input EventDtoInput {
-  name: String!
-  type: EventType!
-  description: String
-  startDate: LocalDate!
-  endDate: LocalDate
-  tagIds: [ID!]!
-}
-
 input EventFilterInput {
   and: [EventFilterInput!]
   or: [EventFilterInput!]
@@ -720,6 +711,15 @@ input EventFilterInput {
   uid: UuidOperationFilterInput
   createdAt: DateTimeOperationFilterInput
   modifiedAt: DateTimeOperationFilterInput
+}
+
+input EventInput {
+  name: String!
+  type: EventType!
+  description: String
+  startDate: LocalDate!
+  endDate: LocalDate
+  tagIds: [ID!]!
 }
 
 input EventSortInput {
@@ -756,18 +756,6 @@ input FloatOperationFilterInput {
   nlte: Float @cost(weight: "10")
 }
 
-input GadgetDtoInput {
-  brand: String!
-  model: String!
-  nickname: String
-  purchaseDate: LocalDate
-  description: String
-  deactivationDate: LocalDate
-  price: Decimal
-  tagIds: [ID!]!
-  vehicleIds: [ID!]!
-}
-
 input GadgetFilterInput {
   and: [GadgetFilterInput!]
   or: [GadgetFilterInput!]
@@ -786,6 +774,18 @@ input GadgetFilterInput {
   uid: UuidOperationFilterInput
   createdAt: DateTimeOperationFilterInput
   modifiedAt: DateTimeOperationFilterInput
+}
+
+input GadgetInput {
+  brand: String!
+  model: String!
+  nickname: String
+  purchaseDate: LocalDate
+  description: String
+  deactivationDate: LocalDate
+  price: Decimal
+  tagIds: [ID!]!
+  vehicleIds: [ID!]!
 }
 
 input GadgetSortInput {
@@ -897,16 +897,6 @@ input LongOperationFilterInput {
   nlte: Long @cost(weight: "10")
 }
 
-input MaintenanceCycleDtoInput {
-  vehicleId: ID
-  gadgetId: ID
-  name: String!
-  intervalDistance: Float
-  intervalDays: Int
-  lastServiceDate: LocalDate
-  description: String
-}
-
 input MaintenanceCycleFilterInput {
   and: [MaintenanceCycleFilterInput!]
   or: [MaintenanceCycleFilterInput!]
@@ -921,6 +911,16 @@ input MaintenanceCycleFilterInput {
   uid: UuidOperationFilterInput
   createdAt: DateTimeOperationFilterInput
   modifiedAt: DateTimeOperationFilterInput
+}
+
+input MaintenanceCycleInput {
+  vehicleId: ID
+  gadgetId: ID
+  name: String!
+  intervalDistance: Float
+  intervalDays: Int
+  lastServiceDate: LocalDate
+  description: String
 }
 
 input NullableOfMoodOperationFilterInput {
@@ -959,10 +959,6 @@ input StringOperationFilterInput {
   nendsWith: String @cost(weight: "20")
 }
 
-input TagDtoInput {
-  name: String!
-}
-
 input TagFilterInput {
   and: [TagFilterInput!]
   or: [TagFilterInput!]
@@ -971,6 +967,10 @@ input TagFilterInput {
   uid: UuidOperationFilterInput
   createdAt: DateTimeOperationFilterInput
   modifiedAt: DateTimeOperationFilterInput
+}
+
+input TagInput {
+  name: String!
 }
 
 input TagSortInput {
@@ -996,17 +996,6 @@ input UuidOperationFilterInput {
   nlte: UUID @cost(weight: "10")
 }
 
-input VehicleDtoInput {
-  brand: String!
-  model: String!
-  nickname: String
-  purchaseDate: LocalDate
-  description: String
-  deactivationDate: LocalDate
-  price: Decimal
-  tagIds: [ID!]!
-}
-
 input VehicleFilterInput {
   and: [VehicleFilterInput!]
   or: [VehicleFilterInput!]
@@ -1026,6 +1015,17 @@ input VehicleFilterInput {
   uid: UuidOperationFilterInput
   createdAt: DateTimeOperationFilterInput
   modifiedAt: DateTimeOperationFilterInput
+}
+
+input VehicleInput {
+  brand: String!
+  model: String!
+  nickname: String
+  purchaseDate: LocalDate
+  description: String
+  deactivationDate: LocalDate
+  price: Decimal
+  tagIds: [ID!]!
 }
 
 input VehicleSortInput {

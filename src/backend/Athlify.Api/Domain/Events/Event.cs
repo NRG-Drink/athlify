@@ -40,7 +40,7 @@ public class Event : Entity, IOwned
 }
 
 /// <summary>Client input for an <see cref="Event"/>; <c>tagIds</c> is the complete set of tags.</summary>
-public record EventDto
+public record EventInput
 {
     public string Name { get; set; } = string.Empty;
     public EventType Type { get; set; }
@@ -81,7 +81,7 @@ public static partial class EventMutation
     public const int MaxDescriptionLength = 2000;
 
     public static async Task<Event> CreateEvent(
-        EventDto @event,
+        EventInput @event,
         QueryContext<Event> query,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
@@ -96,7 +96,7 @@ public static partial class EventMutation
 
     public static async Task<Event?> UpdateEvent(
         [ID<Event>] int id,
-        EventDto @event,
+        EventInput @event,
         QueryContext<Event> query,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
@@ -132,7 +132,7 @@ public static partial class EventMutation
         return id;
     }
 
-    private static void ThrowIfInvalid(EventDto dto)
+    private static void ThrowIfInvalid(EventInput dto)
     {
         var errors = new ValidationErrors();
         errors.Text(dto.Name, "Name", MaxNameLength, required: true);
@@ -141,7 +141,7 @@ public static partial class EventMutation
         errors.ThrowIfAny();
     }
 
-    private static async Task ApplyAsync(Event target, EventDto dto, AthlifyDbContext db, CancellationToken cancellationToken)
+    private static async Task ApplyAsync(Event target, EventInput dto, AthlifyDbContext db, CancellationToken cancellationToken)
     {
         var tags = await Links.LoadAllAsync(db.Tags, dto.TagIds, "Tag", cancellationToken);
 

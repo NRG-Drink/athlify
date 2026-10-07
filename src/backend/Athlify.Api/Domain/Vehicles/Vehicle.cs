@@ -38,7 +38,7 @@ public class Vehicle : Entity, IOwned
 }
 
 /// <summary>Client input for a <see cref="Vehicle"/>; <c>tagIds</c> is the complete set of tags.</summary>
-public record VehicleDto
+public record VehicleInput
 {
     public string Brand { get; set; } = string.Empty;
     public string Model { get; set; } = string.Empty;

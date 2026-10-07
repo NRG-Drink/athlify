@@ -1,7 +1,7 @@
 namespace Athlify.Api.Domain.Body;
 
 /// <summary>Client input for creating or updating a <see cref="BodyStats"/> entry.</summary>
-public record BodyStatsDto
+public record BodyStatsInput
 {
     public DateTime Date { get; set; }
     public double Weight { get; set; }
@@ -11,8 +11,8 @@ public record BodyStatsDto
     public double BoneMass { get; set; }
 
     /// <summary>
-    /// The complete list of notes. On update, notes with an <see cref="CommentDto.Id"/> are edited,
+    /// The complete list of notes. On update, notes with an <see cref="CommentInput.Id"/> are edited,
     /// notes without one are added and existing notes missing from the list are removed.
     /// </summary>
-    public IReadOnlyList<CommentDto> Comments { get; set; } = [];
+    public IReadOnlyList<CommentInput> Comments { get; set; } = [];
 }

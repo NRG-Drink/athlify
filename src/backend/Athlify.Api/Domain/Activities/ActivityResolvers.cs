@@ -33,7 +33,7 @@ public static partial class ActivityQuery
 public static partial class ActivityMutation
 {
     public static async Task<Activity> CreateActivity(
-        ActivityDto activity,
+        ActivityInput activity,
         QueryContext<Activity> query,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
@@ -49,7 +49,7 @@ public static partial class ActivityMutation
     /// <summary>Updates the editable fields; source, Strava id and calculated values stay server-owned.</summary>
     public static async Task<Activity?> UpdateActivity(
         [ID<Activity>] int id,
-        ActivityDto activity,
+        ActivityInput activity,
         QueryContext<Activity> query,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
@@ -108,7 +108,7 @@ public static partial class ActivityMutation
             .ThenInclude(m => m.Activities)
             .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
 
-    private static async Task ApplyAsync(Activity target, ActivityDto dto, AthlifyDbContext db, CancellationToken cancellationToken)
+    private static async Task ApplyAsync(Activity target, ActivityInput dto, AthlifyDbContext db, CancellationToken cancellationToken)
     {
         var vehicle = await Links.LoadOptionalAsync(db.Vehicles, dto.VehicleId, "Bicycle", cancellationToken);
         var gadgets = await Links.LoadAllAsync(db.Gadgets, dto.GadgetIds, "Gadget", cancellationToken);

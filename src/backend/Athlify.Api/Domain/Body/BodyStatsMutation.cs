@@ -9,7 +9,7 @@ namespace Athlify.Api.Domain.Body;
 public static partial class BodyStatsMutation
 {
     public static async Task<BodyStats> AddBodyStats(
-        BodyStatsDto bodyStats,
+        BodyStatsInput bodyStats,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
@@ -23,7 +23,7 @@ public static partial class BodyStatsMutation
 
     public static async Task<BodyStats?> UpdateBodyStats(
         [ID<BodyStats>] int id,
-        BodyStatsDto bodyStats,
+        BodyStatsInput bodyStats,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
@@ -73,7 +73,7 @@ public static partial class BodyStatsMutation
 
     private static void SyncComments(
         BodyStats existing,
-        IReadOnlyList<CommentDto> incoming,
+        IReadOnlyList<CommentInput> incoming,
         AthlifyDbContext db)
     {
         var incomingById = incoming

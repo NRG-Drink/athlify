@@ -25,8 +25,26 @@ public class SchemaTests : WebApiTestBase
         }
 
         await Assert.That(sdl).DoesNotContain("StravaConnection");
-        await Assert.That(InputType(sdl, "ActivityDtoInput")).DoesNotContain("averageSpeed");
-        await Assert.That(InputType(sdl, "ActivityDtoInput")).DoesNotContain("source");
+        await Assert.That(InputType(sdl, "ActivityInput")).DoesNotContain("averageSpeed");
+        await Assert.That(InputType(sdl, "ActivityInput")).DoesNotContain("source");
+    }
+
+    [Test]
+    public async Task InputsAreNamedInputWithoutDtoOrDoubledSuffix()
+    {
+        var sdl = await Factory.CreateClient().GetStringAsync("/graphql?sdl");
+
+        foreach (var input in new[]
+                 {
+                     "ActivityInput", "BodyStatsInput", "CommentInput", "EventInput", "GadgetInput",
+                     "MaintenanceCycleInput", "TagInput", "VehicleInput",
+                 })
+        {
+            await Assert.That(sdl).Contains($"input {input} {{");
+        }
+
+        await Assert.That(sdl).DoesNotContain("Dto");
+        await Assert.That(sdl).DoesNotContain("InputInput");
     }
 
     private static string InputType(string sdl, string name)

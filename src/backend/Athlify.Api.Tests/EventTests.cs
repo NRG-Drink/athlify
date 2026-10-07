@@ -11,11 +11,11 @@ public class EventTests : WebApiTestBase
     private const string EventFields = "id name type description startDate endDate tags { id name }";
 
     private static readonly string Create = $$"""
-        mutation($input: EventDtoInput!) { createEvent(event: $input) { {{EventFields}} } }
+        mutation($input: EventInput!) { createEvent(event: $input) { {{EventFields}} } }
         """;
 
     private static readonly string Update = $$"""
-        mutation($id: ID!, $input: EventDtoInput!) { updateEvent(id: $id, event: $input) { {{EventFields}} } }
+        mutation($id: ID!, $input: EventInput!) { updateEvent(id: $id, event: $input) { {{EventFields}} } }
         """;
 
     private const string Delete = "mutation($id: ID!) { deleteEvent(id: $id) }";

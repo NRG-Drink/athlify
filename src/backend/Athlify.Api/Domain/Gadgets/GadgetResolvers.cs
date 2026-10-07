@@ -33,7 +33,7 @@ public static partial class GadgetQuery
 public static partial class GadgetMutation
 {
     public static async Task<Gadget> CreateGadget(
-        GadgetDto gadget,
+        GadgetInput gadget,
         QueryContext<Gadget> query,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
@@ -48,7 +48,7 @@ public static partial class GadgetMutation
 
     public static async Task<Gadget?> UpdateGadget(
         [ID<Gadget>] int id,
-        GadgetDto gadget,
+        GadgetInput gadget,
         QueryContext<Gadget> query,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
@@ -99,7 +99,7 @@ public static partial class GadgetMutation
         return id;
     }
 
-    private static void ThrowIfInvalid(GadgetDto dto)
+    private static void ThrowIfInvalid(GadgetInput dto)
     {
         var errors = new ValidationErrors();
         EquipmentValidation.Validate(errors, dto.Brand, dto.Model, dto.Nickname, dto.Description,
@@ -107,7 +107,7 @@ public static partial class GadgetMutation
         errors.ThrowIfAny();
     }
 
-    private static async Task ApplyAsync(Gadget target, GadgetDto dto, AthlifyDbContext db, CancellationToken cancellationToken)
+    private static async Task ApplyAsync(Gadget target, GadgetInput dto, AthlifyDbContext db, CancellationToken cancellationToken)
     {
         var tags = await Links.LoadAllAsync(db.Tags, dto.TagIds, "Tag", cancellationToken);
         var vehicles = await Links.LoadAllAsync(db.Vehicles, dto.VehicleIds, "Bicycle", cancellationToken);

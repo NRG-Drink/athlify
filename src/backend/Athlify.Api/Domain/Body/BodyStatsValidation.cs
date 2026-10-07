@@ -2,14 +2,14 @@ using Athlify.Api.Domain.Common;
 
 namespace Athlify.Api.Domain.Body;
 
-/// <summary>Server-side validation of <see cref="BodyStatsDto"/>; the frontend validation is only feedback.</summary>
+/// <summary>Server-side validation of <see cref="BodyStatsInput"/>; the frontend validation is only feedback.</summary>
 public static class BodyStatsValidation
 {
     public const int MaxCommentLength = 2000;
     public const int MaxComments = 1;
     public const string ErrorCode = DomainErrors.ValidationCode;
 
-    public static void ThrowIfInvalid(BodyStatsDto dto)
+    public static void ThrowIfInvalid(BodyStatsInput dto)
     {
         var errors = new List<IError>();
 

@@ -37,7 +37,7 @@ public class Tag : Entity, IOwned
 }
 
 /// <summary>Client input for a <see cref="Tag"/>.</summary>
-public record TagDto
+public record TagInput
 {
     public string Name { get; set; } = string.Empty;
 }

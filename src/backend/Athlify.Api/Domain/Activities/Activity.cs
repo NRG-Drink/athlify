@@ -105,7 +105,7 @@ public class Activity : Entity, IOwned
 /// Client input for an <see cref="Activity"/>. Calculated and system fields are not part of it;
 /// <c>gadgetIds</c> and <c>tagIds</c> are complete sets.
 /// </summary>
-public record ActivityDto
+public record ActivityInput
 {
     public DateTime Date { get; set; }
     public ActivityType Type { get; set; }
@@ -136,7 +136,7 @@ public static class ActivityValidation
     public const int MinHeartRate = 20;
     public const int MaxHeartRate = 250;
 
-    public static void ThrowIfInvalid(ActivityDto dto, DateTime now)
+    public static void ThrowIfInvalid(ActivityInput dto, DateTime now)
     {
         var errors = new ValidationErrors();
         errors.AddIf(dto.Time <= 0, "Time must be greater than 0.");

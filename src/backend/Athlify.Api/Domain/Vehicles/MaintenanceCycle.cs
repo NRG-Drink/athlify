@@ -38,7 +38,7 @@ public class MaintenanceCycle : Entity, IOwned
 }
 
 /// <summary>Client input for a <see cref="MaintenanceCycle"/>; exactly one of the two parents is set.</summary>
-public record MaintenanceCycleDto
+public record MaintenanceCycleInput
 {
     [ID<Vehicle>]
     public int? VehicleId { get; set; }
@@ -60,7 +60,7 @@ public static partial class MaintenanceCycleMutation
     public const int MaxDescriptionLength = 2000;
 
     public static async Task<MaintenanceCycle> CreateMaintenanceCycle(
-        MaintenanceCycleDto maintenanceCycle,
+        MaintenanceCycleInput maintenanceCycle,
         QueryContext<MaintenanceCycle> query,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
@@ -75,7 +75,7 @@ public static partial class MaintenanceCycleMutation
 
     public static async Task<MaintenanceCycle?> UpdateMaintenanceCycle(
         [ID<MaintenanceCycle>] int id,
-        MaintenanceCycleDto maintenanceCycle,
+        MaintenanceCycleInput maintenanceCycle,
         QueryContext<MaintenanceCycle> query,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
@@ -109,7 +109,7 @@ public static partial class MaintenanceCycleMutation
         return id;
     }
 
-    private static void ThrowIfInvalid(MaintenanceCycleDto dto)
+    private static void ThrowIfInvalid(MaintenanceCycleInput dto)
     {
         var errors = new ValidationErrors();
         errors.AddIf((dto.VehicleId is null) == (dto.GadgetId is null),
@@ -125,7 +125,7 @@ public static partial class MaintenanceCycleMutation
 
     private static async Task ApplyAsync(
         MaintenanceCycle target,
-        MaintenanceCycleDto dto,
+        MaintenanceCycleInput dto,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
     {

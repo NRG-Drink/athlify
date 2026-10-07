@@ -28,11 +28,11 @@ public static class BodyStatsGraphQl
         """;
 
     public static readonly string AddMutation = $$"""
-        mutation($input: BodyStatsDtoInput!) { addBodyStats(bodyStats: $input) { {{Fields}} } }
+        mutation($input: BodyStatsInput!) { addBodyStats(bodyStats: $input) { {{Fields}} } }
         """;
 
     public static readonly string UpdateMutation = $$"""
-        mutation($id: ID!, $input: BodyStatsDtoInput!) { updateBodyStats(id: $id, bodyStats: $input) { {{Fields}} } }
+        mutation($id: ID!, $input: BodyStatsInput!) { updateBodyStats(id: $id, bodyStats: $input) { {{Fields}} } }
         """;
 
     public const string DeleteMutation = """
