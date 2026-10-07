@@ -86,13 +86,17 @@ When requirements compete, first preserve data ownership and safe activity manag
 - Which TSS values are permitted without power or heart-rate data?
 - How is Indoor/Outdoor determined unambiguously from Strava?
 
-Tags (managed per user) and merge membership (exclusive) are decided; see
-[`data-model.md`](../../concept/data-model.md).
+Tags (managed per user), merge membership (exclusive) and the value domains of
+mood, effort, wind and Event type are decided; see
+[`data-model.md`](../../concept/data-model.md) and
+[ADR-010](../adr/ADR-010-activity-and-event-value-domains.md).
 
 ## Constraints
 
-- The current implementation is a small GraphQL/Hot Chocolate prototype, not
-  the complete Athlify product.
+- The backend implements the domain model with owner-scoped GraphQL CRUD for
+  Activities, merges, bicycles, gadgets, maintenance cycles, tags, Body-Stats
+  and Events. Authentication, Strava synchronization and the Dashboard
+  analyses are not implemented; every request acts as a development user.
 - The project remains limited to a realistic scope for a two-person student
   project.
 - Personal data must remain isolated to the logged-in user.

@@ -7,8 +7,8 @@
 | Project       | Athlify                                                                                        |
 | Context       | CAS Frontend Engineering, OST – Eastern Switzerland University of Applied Sciences, Rapperswil |
 | Document type | Functional software concept / big picture                                                      |
-| Version       | 1.9                                                                                            |
-| Date          | 4 October 2026                                                                                 |
+| Version       | 1.10                                                                                           |
+| Date          | 7 October 2026                                                                                 |
 | Authors       | Beat Zimmermann & Marco Ebneter                                                                |
 
 ---
@@ -142,9 +142,9 @@ An activity contains, from a domain perspective:
 - description;
 - tag;
 - minimum, maximum and average heart rate;
-- mood, describing how the user felt;
-- effort; and
-- wind conditions.
+- mood, describing how the user felt, from very bad to very good;
+- effort, from 1 to 10; and
+- wind conditions, from calm to stormy.
 
 Some values are maintained or calculated automatically by the application and are marked with `*` in the edit form. These values cannot be edited directly.
 
@@ -260,10 +260,11 @@ goals or other relevant events.
 Each Event contains:
 
 - name;
+- type: crash, injury, illness, repair, break, goal or other;
 - description;
 - tag;
 - start date; and
-- end date.
+- an optional end date.
 
 Events can be created, viewed, updated and deleted by their owner. They remain
 associated with the owning user's personal context and are shown in
@@ -540,19 +541,26 @@ functional concept:
 | # | Question | Significance |
 |---|---|---|
 | 1 | Should body height be recorded once (for example as a profile setting) to derive values such as BMI? | Affects the level of detail on the Body-Stats page. |
-| 2 | Which Event types should be offered as a fixed set? | Affects Event selection and presentation. |
-| 3 | Should the language already be switchable on the login page? | UX decision for the entry point. |
-| 4 | Which charts are mandatory for academic assessment? | Helps prioritize Dashboard functions. |
-| 5 | How should TSS be calculated or represented when power or heart-rate data is missing? | Affects activity validation, analytics and transparency. |
-| 6 | How is Indoor/Outdoor determined reliably for imported Strava activities? | Affects filters, activity type mapping and synchronization. |
-| 7 | Which authentication, persistence and deployment choices will replace the planned baseline as implementation begins? | Affects the API contract, security boundaries and operational architecture. |
-| 8 | Must deleting a bicycle imported from Strava prevent its re-import by a later synchronization? | Affects Garage deletion and synchronization rules. |
+| 2 | Should the language already be switchable on the login page? | UX decision for the entry point. |
+| 3 | Which charts are mandatory for academic assessment? | Helps prioritize Dashboard functions. |
+| 4 | How should TSS be calculated or represented when power or heart-rate data is missing? | Affects activity validation, analytics and transparency. |
+| 5 | How is Indoor/Outdoor determined reliably for imported Strava activities? | Affects filters, activity type mapping and synchronization. |
+| 6 | Which authentication and deployment choices will replace the planned baseline as implementation begins? | Affects the API contract, security boundaries and operational architecture. |
+| 7 | Must deleting a bicycle imported from Strava prevent its re-import by a later synchronization? | Affects Garage deletion and synchronization rules. |
 
 Decided on 4 October 2026 (see [`data-model.md`](data-model.md)): tags are
 managed per user and shared by Activities, Garage and Events; an activity
 belongs to at most one merge; Events are not linked to individual activities
 and are related to them by date in the Dashboard timeline.
 
+Decided on 7 October 2026 (see
+[ADR-010](../copilot/adr/ADR-010-activity-and-event-value-domains.md)): Event
+types are the fixed set crash, injury, illness, repair, break, goal and other;
+mood has five levels from very bad to very good, effort ranges from 1 to 10
+and wind from calm to stormy. Personal data is stored in PostgreSQL with
+versioned schema migrations
+([ADR-011](../copilot/backend/adr/ADR-011-ef-core-migrations.md)).
+
 ---
 
-*End of document – Functional software concept Athlify, version 1.9*
+*End of document – Functional software concept Athlify, version 1.10*

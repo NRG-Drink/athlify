@@ -70,8 +70,9 @@ Priorities (Must/Should/Could Have) are in the
 
 ## Constraints
 
-- The repository currently contains a Body-Stats GraphQL backend prototype
-  under `src/backend/`, not the complete product.
+- The backend under `src/backend/` implements the domain model and its
+  GraphQL API without authentication, Strava synchronization or Dashboard
+  analyses; it is not the complete product.
 - The frontend app shell exists under `src/frontend/athlify/`. Only the
   Body-Stats page is implemented and talks to the backend; the other areas are
   placeholders.

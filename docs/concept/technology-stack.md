@@ -11,16 +11,17 @@ The application provides a German and English user interface. Project documentat
 | Frontend | React, TypeScript, Vite | Prototype app shell | Component-based UI, static typing and fast development |
 | UI components | Chakra UI v3 | Proposed | Accessible components, theming and light/dark mode ([ADR-002](../copilot/frontend/adr/ADR-002-chakra-ui-component-system.md)) |
 | Localization | i18next / react-i18next | Proposed | German and English UI from translation resources ([ADR-003](../copilot/frontend/adr/ADR-003-i18next-localization.md)) |
-| Backend | ASP.NET Core with C# (.NET 10) | Prototype | Strongly typed web API and support for authentication and background tasks |
-| API | GraphQL with Hot Chocolate | Proposed; prototype | One typed schema for all domain modules ([ADR-001](../copilot/adr/ADR-001-graphql-api-contract.md)) |
-| Database | PostgreSQL | Used by the prototype | Relational data model and suitable time-series aggregations; the prototype runs on it through Aspire, the endpoint tests use EF Core InMemory |
+| Backend | ASP.NET Core with C# (.NET 10) | Domain model implemented | Strongly typed web API and support for authentication and background tasks |
+| API | GraphQL with Hot Chocolate | Proposed; implemented for the domain areas | One typed schema for all domain modules ([ADR-001](../copilot/adr/ADR-001-graphql-api-contract.md)) |
+| Database | PostgreSQL | In use | Relational data model and suitable time-series aggregations; runs through Aspire with EF Core migrations ([ADR-011](../copilot/backend/adr/ADR-011-ef-core-migrations.md)), the endpoint tests use EF Core InMemory |
 | External API | Strava API | Planned integration | Source for activities and bicycles/Gear |
 | Authentication | JWT and OAuth 2.0 | Planned approach | User login and Strava connection |
 
 The repository contains a React/TypeScript frontend app shell under
-`src/frontend/athlify/` and an ASP.NET Core GraphQL backend prototype under
-`src/backend/`. Neither implements the product domain yet, and the frontend
-does not call the backend.
+`src/frontend/athlify/` and an ASP.NET Core GraphQL backend under
+`src/backend/`. The backend implements the domain model without
+authentication, Strava synchronization or Dashboard analyses; the frontend
+calls it from the Body-Stats page.
 
 ## Rationale
 

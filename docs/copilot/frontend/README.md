@@ -60,7 +60,7 @@ and placeholder pages, the "Night Ride" theme in `src/theme/`
 ([ADR-007](adr/ADR-007-domain-page-pattern.md)): summary tiles, a chart of the
 selected measurement over a selectable period, and a history table with add,
 edit and delete against the backend API. New entries are prefilled from the
-entry with the newest date. The other areas are placeholders. The backend prototype is under `../../../src/backend/`. See
+entry with the newest date. The other areas are placeholders, although their backend API exists. The backend is under `../../../src/backend/`. See
 [`SAD.md`](SAD.md) for the folder layout and open decisions. Do not present
 the exploration UI as completed product functionality.
 

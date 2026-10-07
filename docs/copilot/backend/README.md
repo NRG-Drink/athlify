@@ -52,11 +52,12 @@ If a requirement is not supported by these sources, do not invent a function. Do
 
 The backend is under `../../../src/backend/`. The solution
 `Athlify.slnx` contains `Athlify.Api` (ASP.NET Core, Hot Chocolate GraphQL,
-EF Core, PostgreSQL) and `Athlify.Api.Tests` (TUnit). It exposes a Body-Stats
-GraphQL prototype without authentication or ownership. It is a technical
-prototype, not the complete Athlify functionality from the concept. Copilot
-must not present the prototype as an implemented product function. See
-[`SAD.md`](SAD.md) for the layout and known gaps compared with the concept.
+EF Core, PostgreSQL) and `Athlify.Api.Tests` (TUnit). It exposes the domain
+model (Activities with merges, Garage, tags, Body-Stats, Events) as an
+owner-scoped GraphQL API. Authentication, Strava synchronization and the
+Dashboard analyses do not exist yet: every request acts as a provisioned
+development user. Copilot must not present these missing parts as implemented.
+See [`SAD.md`](SAD.md) for the layout and known gaps compared with the concept.
 
 Run the API with `dotnet run --project src/backend/Athlify.Api`. Run the
 tests with `dotnet run --project src/backend/Athlify.Api.Tests` (TUnit test

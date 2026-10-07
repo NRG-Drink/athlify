@@ -2,12 +2,17 @@
 
 Technical detail documentation for the functional concept in [`CONCEPT.md`](CONCEPT.md).
 
-This is the planned domain model. The backend prototype implements only
-Body-Stats with their note, without an owner. See the
-[backend SAD](../copilot/backend/SAD.md) for how it differs from this model.
-The frontend does not store domain data. The modelling decisions on tags,
-merges and equipment are recorded in
-[ADR-008](../copilot/adr/ADR-008-domain-data-model.md).
+The backend implements this model in PostgreSQL with EF Core migrations and
+exposes it through the GraphQL API. Authentication and Strava synchronization
+are not implemented yet: every request acts as a provisioned development
+user, and the Strava fields are only filled by the future synchronization.
+See the [backend SAD](../copilot/backend/SAD.md) for the current state. The
+frontend does not store domain data. The modelling decisions are recorded in
+[ADR-008](../copilot/adr/ADR-008-domain-data-model.md) (tags, merges,
+equipment), [ADR-009](../copilot/adr/ADR-009-ownership-query-filters.md)
+(ownership) and
+[ADR-010](../copilot/adr/ADR-010-activity-and-event-value-domains.md) (value
+domains).
 
 ## Conventions
 
@@ -16,8 +21,10 @@ merges and equipment are recorded in
   the system timestamps `createdAt` and `modifiedAt`. Join tables have only a
   composite key.
 - Every personal record belongs to exactly one user (`userId`), directly or
-  through its parent record.
+  through its parent record. A record of another user behaves like a record
+  that does not exist.
 - External Strava IDs are stored separately from internal IDs.
+- Enum values are stored as strings.
 
 ## Entities
 
@@ -35,16 +42,19 @@ merges and equipment are recorded in
 - **Gadget**: brand, model, nickname, purchase date, tags, description,
   deactivation date, price and source.
 - **MaintenanceCycle**: a maintenance schedule of exactly one vehicle or
-  gadget. The fields `name`, `intervalDistance`, `intervalDays` and
-  `lastServiceDate` are a proposal that still needs product confirmation.
+  gadget with `name`, `intervalDistance` (km), `intervalDays`,
+  `lastServiceDate` and `description`. At least one interval is set.
 - **BodyStats**: measurement date, weight, body-fat percentage, muscle
   percentage, water percentage and bone mass.
 - **Note**: free text with creation and modification timestamps, attached to
   one Body-Stats entry and stored as `Comment`. The product has one note per
   Body-Stats entry; the API keeps a list and validates at most one.
-- **Event**: name, description, tags, start date and optional end date.
+- **Event**: name, type, description, tags, start date and optional end
+  date. The type is one of `Crash`, `Injury`, `Illness`, `Repair`, `Break`,
+  `Goal` and `Other`.
 - **Tag**: a label defined per user. One tag can be assigned to activities,
   vehicles, gadgets and Events, so the Dashboard tag filter works across them.
+  Names are unique per user, ignoring case and surrounding spaces.
 
 ## Relationships
 
@@ -88,9 +98,9 @@ merges and equipment are recorded in
 | `heartRateMin`     | Yes/imported | Minimum heart rate                                   |
 | `heartRateMax`     | Yes/imported | Maximum heart rate                                   |
 | `heartRateAverage` | Yes/imported | Average heart rate                                   |
-| `mood`             |     Yes      | Personal mood                                        |
-| `effort`           |     Yes      | Subjective effort                                    |
-| `wind`             | Yes/imported | Wind conditions                                      |
+| `mood`             |     Yes      | `VeryBad`, `Bad`, `Neutral`, `Good` or `VeryGood`    |
+| `effort`           |     Yes      | Subjective effort from 1 to 10                       |
+| `wind`             | Yes/imported | `Calm`, `Light`, `Moderate`, `Strong` or `Stormy`    |
 | `source`           |      No      | Activity source: Strava or manual                    |
 | `stravaActivityId` |      No      | External reference for Strava activities             |
 | `createdAt`*       |      No      | Creation timestamp                                   |
@@ -98,9 +108,9 @@ merges and equipment are recorded in
 | `deletedAt`*       |      No      | Soft-delete timestamp; empty for active activities   |
 
 An asterisk marks system or calculated data. These fields are displayed but
-cannot be edited directly through the form. The exact calculation and
-validation rules for TSS and other derived values remain open, as do the
-value domains of `mood`, `effort` and `wind`.
+cannot be edited directly through the form. `averageSpeed` is distance
+divided by time in km/h. The calculation of TSS remains open; until it is
+decided, `tss` stays empty.
 
 ## Activity merges
 
@@ -110,7 +120,9 @@ Membership is exclusive: an activity belongs to at most one merge, and adding
 an activity that is already merged to another merge is rejected. If fewer than
 two active activities remain in a merge, for example after a soft delete, the
 merge is dissolved. The merged representation displays calculated totals for
-time, distance, elevation gain and TSS of its active activities.
+time, distance, elevation gain and TSS of its active activities. The totals
+are stored on the merge and recalculated whenever a member is added, removed,
+changed or soft-deleted; a total of values that are all missing stays empty.
 
 ## Entity relationship diagram
 
@@ -128,6 +140,7 @@ erDiagram
     USER ||--o{ EVENT : records
     USER ||--o{ TAG : defines
     USER ||--o| STRAVA_CONNECTION : connects
+    USER ||--o{ MAINTENANCE_CYCLE : owns
 
     VEHICLE |o--o{ ACTIVITY : "used for"
     ACTIVITY_MERGE |o--|{ ACTIVITY : groups
@@ -191,9 +204,9 @@ erDiagram
         int heartRateMin "nullable"
         int heartRateMax "nullable"
         int heartRateAverage "nullable"
-        string mood "nullable"
-        int effort "nullable"
-        string wind "nullable"
+        enum mood "VeryBad | Bad | Neutral | Good | VeryGood, nullable"
+        int effort "1-10, nullable"
+        enum wind "Calm | Light | Moderate | Strong | Stormy, nullable"
         enum source "Manual | Strava"
         bigint stravaActivityId "nullable, unique per user"
         datetime createdAt
@@ -205,6 +218,10 @@ erDiagram
         uuid uid UK
         int userId FK
         string name "nullable"
+        int totalTime "s, calculated"
+        double totalDistance "km, calculated"
+        double totalElevationGain "m, calculated, nullable"
+        double totalTss "calculated, nullable"
         datetime createdAt
         datetime modifiedAt
     }
@@ -250,6 +267,7 @@ erDiagram
     MAINTENANCE_CYCLE {
         int id PK
         uuid uid UK
+        int userId FK "owner of the vehicle or gadget"
         int vehicleId FK "nullable, exactly one of vehicleId or gadgetId"
         int gadgetId FK "nullable"
         string name
@@ -263,7 +281,7 @@ erDiagram
     BODY_STATS {
         int id PK
         uuid uid UK
-        int userId FK "planned, missing in prototype"
+        int userId FK
         datetime date
         double weight "kg"
         double bodyFatPercentage
@@ -286,6 +304,7 @@ erDiagram
         uuid uid UK
         int userId FK
         string name
+        enum type "Crash | Injury | Illness | Repair | Break | Goal | Other"
         string description "nullable"
         date startDate
         date endDate "nullable"
@@ -295,8 +314,9 @@ erDiagram
     TAG {
         int id PK
         uuid uid UK
-        int userId FK "unique with name"
+        int userId FK "unique with normalizedName"
         string name
+        string normalizedName "upper case, trimmed"
         datetime createdAt
         datetime modifiedAt
     }
@@ -330,18 +350,23 @@ Rules that the diagram cannot express:
    client input.
 6. `(userId, stravaActivityId)` and `(userId, stravaGearId)` are unique, which
    keeps Strava synchronization idempotent.
-7. `(userId, name)` is unique for tags.
+7. `(userId, normalizedName)` is unique for tags, so names are unique per
+   user ignoring case.
 8. Soft-deleted activities keep their links but are excluded from normal views,
    aggregates and merge totals.
+9. A maintenance cycle has the same owner as its vehicle or gadget.
+10. An Event's end date is not before its start date; a maintenance cycle has
+    at least one interval.
 
 ## Delete behavior
 
 | Deleted record | Effect |
 |---|---|
-| Vehicle | `vehicleId` of its activities is cleared; links to gadgets and tags and its maintenance cycles are deleted |
-| Gadget | Links to activities, vehicles and tags and its maintenance cycles are deleted |
+| Vehicle | `vehicleId` of its activities (soft-deleted ones included) is cleared; links to gadgets and tags and its maintenance cycles are deleted |
+| Gadget | Links to activities (soft-deleted ones included), vehicles and tags and its maintenance cycles are deleted |
 | Tag | Its links are deleted; tagged records remain |
 | Activity | Soft delete only (`deletedAt`); a merge left with fewer than two active activities is dissolved |
+| Activity merge | The merge is dissolved; its activities remain and leave it |
 | Body-Stats entry | Its note is deleted |
 | Event | Its tag links are deleted |
 | Strava connection | Imported activities and vehicles remain with source `Strava` |
@@ -349,8 +374,6 @@ Rules that the diagram cannot express:
 
 ## Open points
 
-- Fields of the maintenance cycle (proposal above).
-- Value domains of `mood`, `effort` and `wind`.
-- Event types (see [open questions](CONCEPT.md#12-open-questions)).
+- How TSS is calculated (see [open questions](CONCEPT.md#12-open-questions)).
 - Whether deleting a vehicle imported from Strava must prevent its re-import
   (see [open questions](CONCEPT.md#12-open-questions)).

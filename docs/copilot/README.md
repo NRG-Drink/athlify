@@ -24,8 +24,9 @@ When statements conflict, use this order:
    operational knowledge.
 
 The concept describes the intended product. Source code describes the current
-implementation. The current repository contains a Body-Stats GraphQL backend
-prototype under `src/backend/` and a React/TypeScript exploration app shell
+implementation. The current repository contains a GraphQL backend with the
+owner-scoped domain model under `src/backend/` (no authentication, Strava
+synchronization or Dashboard analyses yet) and a React/TypeScript app shell
 under `src/frontend/athlify/`. Do not present either one as completed product
 functionality.
 
@@ -100,8 +101,10 @@ src/
 └── frontend/athlify/   # React 19 + TypeScript + Vite (standalone npm package)
 ```
 
-- **Backend**: Body-Stats queries and mutations at `/graphql`, with seeded
-  sample data and no authentication or ownership. See
+- **Backend**: owner-scoped queries and mutations at `/graphql` for
+  Activities with merges, bicycles, gadgets, maintenance cycles, tags,
+  Body-Stats and Events, on PostgreSQL with EF Core migrations. There is no
+  authentication yet; every request acts as a development user. See
   [`backend/SAD.md`](backend/SAD.md).
 - **Frontend**: Chakra UI, Tailwind CSS, react-router-dom and i18next app
   shell with the App Layout, placeholder pages and the Body-Stats domain

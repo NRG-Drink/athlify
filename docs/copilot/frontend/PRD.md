@@ -87,13 +87,16 @@ When requirements compete, first preserve data ownership and safe activity manag
 - Which TSS values are permitted without power or heart-rate data?
 - How is Indoor/Outdoor determined unambiguously from Strava?
 
-Tags (managed per user) and merge membership (exclusive) are decided; see
-[`data-model.md`](../../concept/data-model.md).
+Tags (managed per user), merge membership (exclusive) and the value domains of
+mood, effort, wind and Event type are decided; see
+[`data-model.md`](../../concept/data-model.md) and
+[ADR-010](../adr/ADR-010-activity-and-event-value-domains.md).
 
 ## Constraints
 
-- The frontend is an exploration app shell under `src/frontend/athlify/`
-  and is not yet integrated with the backend prototype.
+- The frontend is an exploration app shell under `src/frontend/athlify/`.
+  Only the Body-Stats page uses the backend; the API for Activities, Garage,
+  tags and Events exists but has no pages yet.
 - The project remains limited to a realistic scope for a two-person student
   project.
 - Personal data must remain isolated to the logged-in user.

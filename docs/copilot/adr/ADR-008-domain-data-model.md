@@ -90,7 +90,8 @@ needs.
 
 ## Implementation Notes
 
-- `Tag` has a unique `(userId, name)`; join tables only link records of the
+- `Tag` names are unique per user ignoring case (unique
+  `(userId, normalizedName)`); join tables only link records of the
   same owner.
 - `Activity.mergeId` is nullable; a merge needs at least two activities and is
   dissolved when fewer than two active activities remain.
