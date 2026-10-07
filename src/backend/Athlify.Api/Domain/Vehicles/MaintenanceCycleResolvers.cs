@@ -62,22 +62,22 @@ public static partial class MaintenanceCycleMutation
 
     private static async Task ApplyAsync(
         MaintenanceCycle target,
-        MaintenanceCycleInput dto,
+        MaintenanceCycleInput input,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
-        var vehicle = await Links.LoadOptionalAsync(db.Vehicles, dto.VehicleId, "Bicycle", cancellationToken);
-        var gadget = await Links.LoadOptionalAsync(db.Gadgets, dto.GadgetId, "Gadget", cancellationToken);
+        var vehicle = await Links.LoadOptionalAsync(db.Vehicles, input.VehicleId, "Bicycle", cancellationToken);
+        var gadget = await Links.LoadOptionalAsync(db.Gadgets, input.GadgetId, "Gadget", cancellationToken);
 
         target.Vehicle = vehicle;
         target.VehicleId = vehicle?.Id;
         target.Gadget = gadget;
         target.GadgetId = gadget?.Id;
-        target.Name = dto.Name.Trim();
-        target.IntervalDistance = dto.IntervalDistance;
-        target.IntervalDays = dto.IntervalDays;
-        target.LastServiceDate = dto.LastServiceDate;
-        target.Description = Text.OrNull(dto.Description);
+        target.Name = input.Name.Trim();
+        target.IntervalDistance = input.IntervalDistance;
+        target.IntervalDays = input.IntervalDays;
+        target.LastServiceDate = input.LastServiceDate;
+        target.Description = Text.OrNull(input.Description);
     }
 }
 

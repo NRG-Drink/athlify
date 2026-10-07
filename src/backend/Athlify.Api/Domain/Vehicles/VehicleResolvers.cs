@@ -100,11 +100,11 @@ public static partial class VehicleMutation
         return id;
     }
 
-    private static async Task ApplyAsync(Vehicle target, VehicleInput dto, AthlifyDbContext db, CancellationToken cancellationToken)
+    private static async Task ApplyAsync(Vehicle target, VehicleInput input, AthlifyDbContext db, CancellationToken cancellationToken)
     {
-        var tags = await Links.LoadAllAsync(db.Tags, dto.TagIds, "Tag", cancellationToken);
+        var tags = await Links.LoadAllAsync(db.Tags, input.TagIds, "Tag", cancellationToken);
 
-        EquipmentValidation.Apply(target, dto);
+        EquipmentValidation.Apply(target, input);
         Links.ReplaceWith(target.Tags, tags);
     }
 }

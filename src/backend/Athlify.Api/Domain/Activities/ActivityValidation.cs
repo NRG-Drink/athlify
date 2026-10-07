@@ -8,30 +8,30 @@ public static class ActivityValidation
     public const int MinHeartRate = 20;
     public const int MaxHeartRate = 250;
 
-    public static void ThrowIfInvalid(ActivityInput dto, DateTime now)
+    public static void ThrowIfInvalid(ActivityInput input, DateTime now)
     {
         var errors = new ValidationErrors();
-        errors.AddIf(dto.Time <= 0, "Time must be greater than 0.");
-        errors.AddIf(!(dto.Distance >= 0), "Distance must not be negative.");
-        errors.AddIf(dto.ElevationGain < 0, "Elevation gain must not be negative.");
-        errors.AddIf(UtcDateTime.Normalize(dto.Date) > now.AddDays(1), "The date must not be in the future.");
-        errors.AddIf(dto.Effort is < 1 or > 10, "Effort must be between 1 and 10.");
-        errors.Text(dto.Description, "Description", MaxDescriptionLength, required: false);
+        errors.AddIf(input.Time <= 0, "Time must be greater than 0.");
+        errors.AddIf(!(input.Distance >= 0), "Distance must not be negative.");
+        errors.AddIf(input.ElevationGain < 0, "Elevation gain must not be negative.");
+        errors.AddIf(UtcDateTime.Normalize(input.Date) > now.AddDays(1), "The date must not be in the future.");
+        errors.AddIf(input.Effort is < 1 or > 10, "Effort must be between 1 and 10.");
+        errors.Text(input.Description, "Description", MaxDescriptionLength, required: false);
 
         foreach (var (value, name) in new[]
                  {
-                     (dto.HeartRateMin, "Minimum heart rate"),
-                     (dto.HeartRateMax, "Maximum heart rate"),
-                     (dto.HeartRateAverage, "Average heart rate"),
+                     (input.HeartRateMin, "Minimum heart rate"),
+                     (input.HeartRateMax, "Maximum heart rate"),
+                     (input.HeartRateAverage, "Average heart rate"),
                  })
         {
             errors.AddIf(value is < MinHeartRate or > MaxHeartRate,
                 $"{name} must be between {MinHeartRate} and {MaxHeartRate}.");
         }
 
-        errors.AddIf(dto.HeartRateMin > dto.HeartRateMax, "Minimum heart rate must not be above the maximum.");
-        errors.AddIf(dto.HeartRateAverage < dto.HeartRateMin, "Average heart rate must not be below the minimum.");
-        errors.AddIf(dto.HeartRateAverage > dto.HeartRateMax, "Average heart rate must not be above the maximum.");
+        errors.AddIf(input.HeartRateMin > input.HeartRateMax, "Minimum heart rate must not be above the maximum.");
+        errors.AddIf(input.HeartRateAverage < input.HeartRateMin, "Average heart rate must not be below the minimum.");
+        errors.AddIf(input.HeartRateAverage > input.HeartRateMax, "Average heart rate must not be above the maximum.");
         errors.ThrowIfAny();
     }
 }

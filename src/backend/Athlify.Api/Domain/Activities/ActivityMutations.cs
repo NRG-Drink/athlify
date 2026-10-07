@@ -85,24 +85,24 @@ public static partial class ActivityMutation
             .ThenInclude(m => m.Activities)
             .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
 
-    private static async Task ApplyAsync(Activity target, ActivityInput dto, AthlifyDbContext db, CancellationToken cancellationToken)
+    private static async Task ApplyAsync(Activity target, ActivityInput input, AthlifyDbContext db, CancellationToken cancellationToken)
     {
-        var vehicle = await Links.LoadOptionalAsync(db.Vehicles, dto.VehicleId, "Bicycle", cancellationToken);
-        var gadgets = await Links.LoadAllAsync(db.Gadgets, dto.GadgetIds, "Gadget", cancellationToken);
-        var tags = await Links.LoadAllAsync(db.Tags, dto.TagIds, "Tag", cancellationToken);
+        var vehicle = await Links.LoadOptionalAsync(db.Vehicles, input.VehicleId, "Bicycle", cancellationToken);
+        var gadgets = await Links.LoadAllAsync(db.Gadgets, input.GadgetIds, "Gadget", cancellationToken);
+        var tags = await Links.LoadAllAsync(db.Tags, input.TagIds, "Tag", cancellationToken);
 
-        target.Date = UtcDateTime.Normalize(dto.Date);
-        target.Type = dto.Type;
-        target.Time = dto.Time;
-        target.Distance = dto.Distance;
-        target.ElevationGain = dto.ElevationGain;
-        target.Description = Text.OrNull(dto.Description);
-        target.HeartRateMin = dto.HeartRateMin;
-        target.HeartRateMax = dto.HeartRateMax;
-        target.HeartRateAverage = dto.HeartRateAverage;
-        target.Mood = dto.Mood;
-        target.Effort = dto.Effort;
-        target.Wind = dto.Wind;
+        target.Date = UtcDateTime.Normalize(input.Date);
+        target.Type = input.Type;
+        target.Time = input.Time;
+        target.Distance = input.Distance;
+        target.ElevationGain = input.ElevationGain;
+        target.Description = Text.OrNull(input.Description);
+        target.HeartRateMin = input.HeartRateMin;
+        target.HeartRateMax = input.HeartRateMax;
+        target.HeartRateAverage = input.HeartRateAverage;
+        target.Mood = input.Mood;
+        target.Effort = input.Effort;
+        target.Wind = input.Wind;
         target.Vehicle = vehicle;
         target.VehicleId = vehicle?.Id;
         Links.ReplaceWith(target.Gadgets, gadgets);

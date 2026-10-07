@@ -84,15 +84,15 @@ public static partial class EventMutation
         return id;
     }
 
-    private static async Task ApplyAsync(Event target, EventInput dto, AthlifyDbContext db, CancellationToken cancellationToken)
+    private static async Task ApplyAsync(Event target, EventInput input, AthlifyDbContext db, CancellationToken cancellationToken)
     {
-        var tags = await Links.LoadAllAsync(db.Tags, dto.TagIds, "Tag", cancellationToken);
+        var tags = await Links.LoadAllAsync(db.Tags, input.TagIds, "Tag", cancellationToken);
 
-        target.Name = dto.Name.Trim();
-        target.Type = dto.Type;
-        target.Description = Text.OrNull(dto.Description);
-        target.StartDate = dto.StartDate;
-        target.EndDate = dto.EndDate;
+        target.Name = input.Name.Trim();
+        target.Type = input.Type;
+        target.Description = Text.OrNull(input.Description);
+        target.StartDate = input.StartDate;
+        target.EndDate = input.EndDate;
         Links.ReplaceWith(target.Tags, tags);
     }
 }

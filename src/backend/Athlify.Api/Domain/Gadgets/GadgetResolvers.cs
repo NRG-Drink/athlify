@@ -98,12 +98,12 @@ public static partial class GadgetMutation
         return id;
     }
 
-    private static async Task ApplyAsync(Gadget target, GadgetInput dto, AthlifyDbContext db, CancellationToken cancellationToken)
+    private static async Task ApplyAsync(Gadget target, GadgetInput input, AthlifyDbContext db, CancellationToken cancellationToken)
     {
-        var tags = await Links.LoadAllAsync(db.Tags, dto.TagIds, "Tag", cancellationToken);
-        var vehicles = await Links.LoadAllAsync(db.Vehicles, dto.VehicleIds, "Bicycle", cancellationToken);
+        var tags = await Links.LoadAllAsync(db.Tags, input.TagIds, "Tag", cancellationToken);
+        var vehicles = await Links.LoadAllAsync(db.Vehicles, input.VehicleIds, "Bicycle", cancellationToken);
 
-        EquipmentValidation.Apply(target, dto);
+        EquipmentValidation.Apply(target, input);
         Links.ReplaceWith(target.Tags, tags);
         Links.ReplaceWith(target.Vehicles, vehicles);
     }
