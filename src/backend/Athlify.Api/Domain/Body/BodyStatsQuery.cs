@@ -1,18 +1,17 @@
 using Athlify.Api.Database;
-using Athlify.Api.Models;
 using GreenDonut.Data;
 using HotChocolate.Types.Pagination;
 using HotChocolate.Types.Relay;
 using Microsoft.EntityFrameworkCore;
 
-namespace Athlify.Api.Queries;
+namespace Athlify.Api.Domain.Body;
 
 [QueryType]
 public static partial class BodyStatsQuery
 {
     public static async Task<BodyStats?> GetBodyStatsById(
         [ID<BodyStats>] int id,
-        InMemoryDb db,
+        AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
         var result = await db.BodyStats
@@ -35,7 +34,7 @@ public static partial class BodyStatsQuery
     public static async Task<PageConnection<BodyStats>> GetBodyStats(
         PagingArguments pagingArgs,
         QueryContext<BodyStats> query,
-        InMemoryDb db,
+        AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
         var page = await db.BodyStats

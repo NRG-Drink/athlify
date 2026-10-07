@@ -1,4 +1,4 @@
-namespace Athlify.Api.Models;
+namespace Athlify.Api.Domain.Body;
 
 /// <summary>Client input for creating or updating a <see cref="BodyStats"/> entry.</summary>
 public record BodyStatsDto

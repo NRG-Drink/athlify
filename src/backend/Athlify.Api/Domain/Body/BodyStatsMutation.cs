@@ -1,16 +1,16 @@
 using Athlify.Api.Database;
-using Athlify.Api.Models;
+using Athlify.Api.Domain.Common;
 using HotChocolate.Types.Relay;
 using Microsoft.EntityFrameworkCore;
 
-namespace Athlify.Api.Queries;
+namespace Athlify.Api.Domain.Body;
 
 [MutationType]
 public static partial class BodyStatsMutation
 {
     public static async Task<BodyStats> AddBodyStats(
         BodyStatsDto bodyStats,
-        InMemoryDb db,
+        AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
         BodyStatsValidation.ThrowIfInvalid(bodyStats);
@@ -24,7 +24,7 @@ public static partial class BodyStatsMutation
     public static async Task<BodyStats?> UpdateBodyStats(
         [ID<BodyStats>] int id,
         BodyStatsDto bodyStats,
-        InMemoryDb db,
+        AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
         BodyStatsValidation.ThrowIfInvalid(bodyStats);
@@ -37,15 +37,13 @@ public static partial class BodyStatsMutation
             return null;
         }
 
-        var now = DateTime.UtcNow;
-        existing.Date = bodyStats.Date;
+        existing.Date = UtcDateTime.Normalize(bodyStats.Date);
         existing.Weight = bodyStats.Weight;
         existing.BodyFatPercentage = bodyStats.BodyFatPercentage;
         existing.MusclePercentage = bodyStats.MusclePercentage;
         existing.WaterPercentage = bodyStats.WaterPercentage;
         existing.BoneMass = bodyStats.BoneMass;
-        existing.ModifiedAt = now;
-        SyncComments(existing, bodyStats.Comments, db, now);
+        SyncComments(existing, bodyStats.Comments, db);
 
         await db.SaveChangesAsync(cancellationToken);
         return existing;
@@ -54,7 +52,7 @@ public static partial class BodyStatsMutation
     [ID<BodyStats>]
     public static async Task<int?> DeleteBodyStats(
         [ID<BodyStats>] int id,
-        InMemoryDb db,
+        AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
         var existing = await db.BodyStats
@@ -76,8 +74,7 @@ public static partial class BodyStatsMutation
     private static void SyncComments(
         BodyStats existing,
         IReadOnlyList<CommentDto> incoming,
-        InMemoryDb db,
-        DateTime now)
+        AthlifyDbContext db)
     {
         var incomingById = incoming
             .Where(c => c.Id.HasValue)
@@ -100,10 +97,10 @@ public static partial class BodyStatsMutation
                 existing.Comments.Remove(comment);
                 db.Comments.Remove(comment);
             }
-            else if (comment.Content != edited.Content)
+            else
             {
+                // AthlifyDbContext sets ModifiedAt when the content actually changed.
                 comment.Content = edited.Content;
-                comment.ModifiedAt = now;
             }
         }
 

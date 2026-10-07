@@ -1,5 +1,6 @@
 using System.Text.Json;
 using static Athlify.Api.Tests.BodyStatsGraphQl;
+using static Athlify.Api.Tests.GraphQl;
 
 namespace Athlify.Api.Tests;
 
@@ -8,7 +9,7 @@ public class BodyStatsMutationTests : WebApiTestBase
     [Test]
     public async Task AddPersistsMeasurementsAndNotes()
     {
-        var client = Factory.CreateClient();
+        var client = await CreateUserClientAsync();
 
         var added = await AddAsync(client, Input(
             weight: 70.5, bodyFat: 15.2, muscle: 40.3, water: 60.1, boneMass: 3.2,
@@ -25,7 +26,7 @@ public class BodyStatsMutationTests : WebApiTestBase
     [Test]
     public async Task UpdateEditsTheNoteAndSetsModifiedAt()
     {
-        var client = Factory.CreateClient();
+        var client = await CreateUserClientAsync();
         var added = await AddAsync(client, Input(comments: [NewComment("first")]));
         var id = added.GetProperty("id").GetString()!;
         var noteId = added.GetProperty("comments").EnumerateArray().Single().GetProperty("id").GetString()!;
@@ -47,7 +48,7 @@ public class BodyStatsMutationTests : WebApiTestBase
     [Test]
     public async Task UpdateAddsAndRemovesTheNote()
     {
-        var client = Factory.CreateClient();
+        var client = await CreateUserClientAsync();
         var added = await AddAsync(client, Input());
         var id = added.GetProperty("id").GetString()!;
 
@@ -69,7 +70,7 @@ public class BodyStatsMutationTests : WebApiTestBase
     [Test]
     public async Task UpdateOfAnUnknownEntryReturnsNull()
     {
-        var client = Factory.CreateClient();
+        var client = await CreateUserClientAsync();
         var added = await AddAsync(client, Input());
         var id = added.GetProperty("id").GetString()!;
         await DataAsync(client, DeleteMutation, new { id });
@@ -82,7 +83,7 @@ public class BodyStatsMutationTests : WebApiTestBase
     [Test]
     public async Task DeleteReturnsTheIdAndIsIdempotent()
     {
-        var client = Factory.CreateClient();
+        var client = await CreateUserClientAsync();
         var added = await AddAsync(client, Input(comments: [NewComment("goes with it")]));
         var id = added.GetProperty("id").GetString()!;
 
@@ -105,7 +106,7 @@ public class BodyStatsMutationTests : WebApiTestBase
     public async Task InvalidInputIsRejectedAndNothingIsPersisted(
         double weight, double bodyFat, double muscle, double water, double boneMass, string note)
     {
-        var client = Factory.CreateClient();
+        var client = await CreateUserClientAsync();
         object[] comments = note == "" ? [] : [NewComment(note)];
 
         var root = await PostAsync(client, AddMutation, new
@@ -121,7 +122,7 @@ public class BodyStatsMutationTests : WebApiTestBase
     [Test]
     public async Task OverlongNoteIsRejected()
     {
-        var client = Factory.CreateClient();
+        var client = await CreateUserClientAsync();
 
         var root = await PostAsync(client, AddMutation, new
         {
@@ -134,7 +135,7 @@ public class BodyStatsMutationTests : WebApiTestBase
     [Test]
     public async Task MoreThanOneNoteIsRejected()
     {
-        var client = Factory.CreateClient();
+        var client = await CreateUserClientAsync();
 
         var root = await PostAsync(client, AddMutation, new
         {
@@ -149,7 +150,7 @@ public class BodyStatsMutationTests : WebApiTestBase
     [Test]
     public async Task UpdateWithANoteOfAnotherEntryIsRejected()
     {
-        var client = Factory.CreateClient();
+        var client = await CreateUserClientAsync();
         var first = await AddAsync(client, Input());
         var second = await AddAsync(client, Input(comments: [NewComment("foreign")]));
         var foreignNoteId = second.GetProperty("comments").EnumerateArray().Single().GetProperty("id").GetString()!;

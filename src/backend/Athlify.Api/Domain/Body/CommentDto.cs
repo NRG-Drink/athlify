@@ -1,6 +1,6 @@
 using HotChocolate.Types.Relay;
 
-namespace Athlify.Api.Models;
+namespace Athlify.Api.Domain.Body;
 
 /// <summary>Client input for a note; identity, timestamps and ownership are set by the server.</summary>
 public record CommentDto
