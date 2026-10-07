@@ -146,6 +146,36 @@ namespace Athlify.Api.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "StravaConnections",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    StravaAthleteId = table.Column<long>(type: "bigint", nullable: false),
+                    AccessToken = table.Column<string>(type: "text", nullable: false),
+                    RefreshToken = table.Column<string>(type: "text", nullable: false),
+                    TokenExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Scope = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    LastSyncAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    LastSyncStatus = table.Column<string>(type: "text", nullable: false),
+                    LastSyncError = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    Uid = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ModifiedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_StravaConnections", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_StravaConnections_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Tags",
                 columns: table => new
                 {
@@ -587,6 +617,24 @@ namespace Athlify.Api.Database.Migrations
                 column: "VehicleId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_StravaConnections_StravaAthleteId",
+                table: "StravaConnections",
+                column: "StravaAthleteId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StravaConnections_Uid",
+                table: "StravaConnections",
+                column: "Uid",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StravaConnections_UserId",
+                table: "StravaConnections",
+                column: "UserId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Tags_Uid",
                 table: "Tags",
                 column: "Uid",
@@ -654,6 +702,9 @@ namespace Athlify.Api.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "MaintenanceCycles");
+
+            migrationBuilder.DropTable(
+                name: "StravaConnections");
 
             migrationBuilder.DropTable(
                 name: "VehicleGadgets");

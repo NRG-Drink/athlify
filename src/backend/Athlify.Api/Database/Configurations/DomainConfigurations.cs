@@ -1,6 +1,7 @@
 using Athlify.Api.Domain.Activities;
 using Athlify.Api.Domain.Events;
 using Athlify.Api.Domain.Gadgets;
+using Athlify.Api.Domain.Strava;
 using Athlify.Api.Domain.Tags;
 using Athlify.Api.Domain.Users;
 using Athlify.Api.Domain.Vehicles;
@@ -114,5 +115,16 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
         builder.Property(e => e.Description).HasMaxLength(EventMutation.MaxDescriptionLength);
         builder.HasIndex(e => new { e.UserId, e.StartDate });
         builder.HasMany(e => e.Tags).WithMany(t => t.Events).UsingEntity("EventTags");
+    }
+}
+
+public class StravaConnectionConfiguration : IEntityTypeConfiguration<StravaConnection>
+{
+    public void Configure(EntityTypeBuilder<StravaConnection> builder)
+    {
+        builder.HasOne<User>().WithOne().HasForeignKey<StravaConnection>(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasIndex(s => s.StravaAthleteId).IsUnique();
+        builder.Property(s => s.Scope).HasMaxLength(200);
+        builder.Property(s => s.LastSyncError).HasMaxLength(2000);
     }
 }

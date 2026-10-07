@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Athlify.Api.Database.Migrations
 {
     [DbContext(typeof(AthlifyDbContext))]
-    [Migration("20261007144320_InitialDomainModel")]
+    [Migration("20261007144513_InitialDomainModel")]
     partial class InitialDomainModel
     {
         /// <inheritdoc />
@@ -393,6 +393,70 @@ namespace Athlify.Api.Database.Migrations
                     b.ToTable("Gadgets");
                 });
 
+            modelBuilder.Entity("Athlify.Api.Domain.Strava.StravaConnection", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccessToken")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LastSyncAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastSyncError")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("LastSyncStatus")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("ModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RefreshToken")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<long>("StravaAthleteId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("TokenExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("Uid")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StravaAthleteId")
+                        .IsUnique();
+
+                    b.HasIndex("Uid")
+                        .IsUnique();
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("StravaConnections");
+                });
+
             modelBuilder.Entity("Athlify.Api.Domain.Tags.Tag", b =>
                 {
                     b.Property<int>("Id")
@@ -770,6 +834,15 @@ namespace Athlify.Api.Database.Migrations
                     b.HasOne("Athlify.Api.Domain.Users.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Athlify.Api.Domain.Strava.StravaConnection", b =>
+                {
+                    b.HasOne("Athlify.Api.Domain.Users.User", null)
+                        .WithOne()
+                        .HasForeignKey("Athlify.Api.Domain.Strava.StravaConnection", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

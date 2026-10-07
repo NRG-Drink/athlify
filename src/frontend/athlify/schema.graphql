@@ -8,6 +8,46 @@ type Query {
   node("ID of the object." id: ID!): Node @cost(weight: "10")
   "Lookup nodes by a list of IDs."
   nodes("The list of node IDs." ids: [ID!]!): [Node]! @cost(weight: "10")
+  activityMerges(
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+    where: ActivityMergeFilterInput @cost(weight: "10")
+    order: [ActivityMergeSortInput!] @cost(weight: "10")
+  ): ActivityMergeConnection!
+    @listSize(
+      assumedSize: 200
+      slicingArguments: ["first", "last"]
+      slicingArgumentDefaultValue: 100
+      sizedFields: ["edges", "nodes"]
+      requireOneSlicingArgument: false
+    )
+    @cost(weight: "10")
+  activities(
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+    where: ActivityFilterInput @cost(weight: "10")
+    order: [ActivitySortInput!] @cost(weight: "10")
+  ): ActivityConnection!
+    @listSize(
+      assumedSize: 200
+      slicingArguments: ["first", "last"]
+      slicingArgumentDefaultValue: 100
+      sizedFields: ["edges", "nodes"]
+      requireOneSlicingArgument: false
+    )
+    @cost(weight: "10")
   bodyStatsById(id: ID!): BodyStats @cost(weight: "10")
   bodyStats(
     "Returns the first _n_ elements from the list."
@@ -29,20 +69,205 @@ type Query {
       requireOneSlicingArgument: false
     )
     @cost(weight: "10")
+  events(
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+    where: EventFilterInput @cost(weight: "10")
+    order: [EventSortInput!] @cost(weight: "10")
+  ): EventConnection!
+    @listSize(
+      assumedSize: 200
+      slicingArguments: ["first", "last"]
+      slicingArgumentDefaultValue: 100
+      sizedFields: ["edges", "nodes"]
+      requireOneSlicingArgument: false
+    )
+    @cost(weight: "10")
+  gadgets(
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+    where: GadgetFilterInput @cost(weight: "10")
+    order: [GadgetSortInput!] @cost(weight: "10")
+  ): GadgetConnection!
+    @listSize(
+      assumedSize: 200
+      slicingArguments: ["first", "last"]
+      slicingArgumentDefaultValue: 100
+      sizedFields: ["edges", "nodes"]
+      requireOneSlicingArgument: false
+    )
+    @cost(weight: "10")
+  tags(
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+    where: TagFilterInput @cost(weight: "10")
+    order: [TagSortInput!] @cost(weight: "10")
+  ): TagConnection!
+    @listSize(
+      assumedSize: 200
+      slicingArguments: ["first", "last"]
+      slicingArgumentDefaultValue: 100
+      sizedFields: ["edges", "nodes"]
+      requireOneSlicingArgument: false
+    )
+    @cost(weight: "10")
+  me: User! @cost(weight: "10")
+  vehicles(
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+    where: VehicleFilterInput @cost(weight: "10")
+    order: [VehicleSortInput!] @cost(weight: "10")
+  ): VehicleConnection!
+    @listSize(
+      assumedSize: 200
+      slicingArguments: ["first", "last"]
+      slicingArgumentDefaultValue: 100
+      sizedFields: ["edges", "nodes"]
+      requireOneSlicingArgument: false
+    )
+    @cost(weight: "10")
   helloPerson(name: String! = "World"): String!
 }
 
 type Mutation {
+  createActivityMerge(name: String, activityIds: [ID!]!): ActivityMerge!
+    @cost(weight: "10")
+  renameActivityMerge(id: ID!, name: String): ActivityMerge @cost(weight: "10")
+  addActivityToMerge(mergeId: ID!, activityId: ID!): ActivityMerge
+    @cost(weight: "10")
+  removeActivityFromMerge(mergeId: ID!, activityId: ID!): ActivityMerge
+    @cost(weight: "10")
+  deleteActivityMerge(id: ID!): ID @cost(weight: "10")
+  createActivity(activity: ActivityDtoInput!): Activity! @cost(weight: "10")
+  updateActivity(id: ID!, activity: ActivityDtoInput!): Activity
+    @cost(weight: "10")
+  deleteActivity(id: ID!): ID @cost(weight: "10")
   addBodyStats(bodyStats: BodyStatsDtoInput!): BodyStats! @cost(weight: "10")
-  updateBodyStats(id: ID!, bodyStats: BodyStatsDtoInput!): BodyStats @cost(weight: "10")
+  updateBodyStats(id: ID!, bodyStats: BodyStatsDtoInput!): BodyStats
+    @cost(weight: "10")
   deleteBodyStats(id: ID!): ID @cost(weight: "10")
+  createEvent(event: EventDtoInput!): Event! @cost(weight: "10")
+  updateEvent(id: ID!, event: EventDtoInput!): Event @cost(weight: "10")
+  deleteEvent(id: ID!): ID @cost(weight: "10")
+  createGadget(gadget: GadgetDtoInput!): Gadget! @cost(weight: "10")
+  updateGadget(id: ID!, gadget: GadgetDtoInput!): Gadget @cost(weight: "10")
+  deleteGadget(id: ID!): ID @cost(weight: "10")
+  createTag(tag: TagDtoInput!): Tag! @cost(weight: "10")
+  updateTag(id: ID!, tag: TagDtoInput!): Tag @cost(weight: "10")
+  deleteTag(id: ID!): ID @cost(weight: "10")
+  createMaintenanceCycle(maintenanceCycle: MaintenanceCycleDtoInput!): MaintenanceCycle!
+    @cost(weight: "10")
+  updateMaintenanceCycle(id: ID!, maintenanceCycle: MaintenanceCycleDtoInput!): MaintenanceCycle
+    @cost(weight: "10")
+  deleteMaintenanceCycle(id: ID!): ID @cost(weight: "10")
+  createVehicle(vehicle: VehicleDtoInput!): Vehicle! @cost(weight: "10")
+  updateVehicle(id: ID!, vehicle: VehicleDtoInput!): Vehicle @cost(weight: "10")
+  deleteVehicle(id: ID!): ID @cost(weight: "10")
 }
 
-type BodyStats implements Node {
+type Activity implements Node {
+  date: DateTime!
+  type: ActivityType!
+  time: Int!
+  distance: Float!
+  averageSpeed: Float
+  elevationGain: Float
+  tss: Float
+  description: String
+  heartRateMin: Int
+  heartRateMax: Int
+  heartRateAverage: Int
+  mood: Mood
+  effort: Int
+  wind: Wind
+  source: Source!
+  stravaActivityId: Long
+  vehicle: Vehicle
+  merge: ActivityMerge
+  tags: [Tag!]!
+  gadgets: [Gadget!]!
   id: ID!
   uid: UUID!
   createdAt: DateTime!
   modifiedAt: DateTime!
+}
+
+"A connection to a list of items."
+type ActivityConnection {
+  "A list of edges."
+  edges: [ActivityEdge!]
+  "A flattened list of the nodes"
+  nodes: [Activity!]
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+type ActivityEdge {
+  "The item at the end of the edge."
+  node: Activity!
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+type ActivityMerge implements Node {
+  name: String
+  activities: [Activity!]!
+  totalTime: Int!
+  totalDistance: Float!
+  totalElevationGain: Float
+  totalTss: Float
+  id: ID!
+  uid: UUID!
+  createdAt: DateTime!
+  modifiedAt: DateTime!
+}
+
+"A connection to a list of items."
+type ActivityMergeConnection {
+  "A list of edges."
+  edges: [ActivityMergeEdge!]
+  "A flattened list of the nodes"
+  nodes: [ActivityMerge!]
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+type ActivityMergeEdge {
+  "The item at the end of the edge."
+  node: ActivityMerge!
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+type BodyStats implements Node {
   date: DateTime!
   weight: Float!
   bodyFatPercentage: Float!
@@ -53,6 +278,10 @@ type BodyStats implements Node {
     order: [CommentSortInput!] @cost(weight: "10")
     where: CommentFilterInput @cost(weight: "10")
   ): [Comment!]!
+  id: ID!
+  uid: UUID!
+  createdAt: DateTime!
+  modifiedAt: DateTime!
 }
 
 "A connection to a list of items."
@@ -75,11 +304,94 @@ type BodyStatsEdge {
 }
 
 type Comment {
+  content: String!
   id: ID!
   uid: UUID!
   createdAt: DateTime!
   modifiedAt: DateTime!
-  content: String!
+}
+
+type Event implements Node {
+  name: String!
+  type: EventType!
+  description: String
+  startDate: LocalDate!
+  endDate: LocalDate
+  tags: [Tag!]!
+  id: ID!
+  uid: UUID!
+  createdAt: DateTime!
+  modifiedAt: DateTime!
+}
+
+"A connection to a list of items."
+type EventConnection {
+  "A list of edges."
+  edges: [EventEdge!]
+  "A flattened list of the nodes"
+  nodes: [Event!]
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+type EventEdge {
+  "The item at the end of the edge."
+  node: Event!
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+type Gadget implements Node {
+  brand: String!
+  model: String!
+  nickname: String
+  purchaseDate: LocalDate
+  description: String
+  deactivationDate: LocalDate
+  price: Decimal
+  source: Source!
+  tags: [Tag!]!
+  vehicles: [Vehicle!]!
+  maintenanceCycles: [MaintenanceCycle!]!
+  id: ID!
+  uid: UUID!
+  createdAt: DateTime!
+  modifiedAt: DateTime!
+}
+
+"A connection to a list of items."
+type GadgetConnection {
+  "A list of edges."
+  edges: [GadgetEdge!]
+  "A flattened list of the nodes"
+  nodes: [Gadget!]
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+type GadgetEdge {
+  "The item at the end of the edge."
+  node: Gadget!
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+type MaintenanceCycle implements Node {
+  vehicle: Vehicle
+  gadget: Gadget
+  name: String!
+  intervalDistance: Float
+  intervalDays: Int
+  lastServiceDate: LocalDate
+  description: String
+  id: ID!
+  uid: UUID!
+  createdAt: DateTime!
+  modifiedAt: DateTime!
 }
 
 "A cursor that points to a specific page."
@@ -106,9 +418,192 @@ type PageInfo {
   backwardCursors: [PageCursor!]!
 }
 
+type Tag implements Node {
+  name: String!
+  id: ID!
+  uid: UUID!
+  createdAt: DateTime!
+  modifiedAt: DateTime!
+}
+
+"A connection to a list of items."
+type TagConnection {
+  "A list of edges."
+  edges: [TagEdge!]
+  "A flattened list of the nodes"
+  nodes: [Tag!]
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+type TagEdge {
+  "The item at the end of the edge."
+  node: Tag!
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+type User implements Node {
+  email: String!
+  firstName: String!
+  lastName: String!
+  language: Language!
+  role: Role!
+  id: ID!
+  uid: UUID!
+  createdAt: DateTime!
+  modifiedAt: DateTime!
+}
+
+type Vehicle implements Node {
+  brand: String!
+  model: String!
+  nickname: String
+  purchaseDate: LocalDate
+  description: String
+  deactivationDate: LocalDate
+  price: Decimal
+  source: Source!
+  stravaGearId: String
+  tags: [Tag!]!
+  gadgets: [Gadget!]!
+  maintenanceCycles: [MaintenanceCycle!]!
+  id: ID!
+  uid: UUID!
+  createdAt: DateTime!
+  modifiedAt: DateTime!
+}
+
+"A connection to a list of items."
+type VehicleConnection {
+  "A list of edges."
+  edges: [VehicleEdge!]
+  "A flattened list of the nodes"
+  nodes: [Vehicle!]
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+type VehicleEdge {
+  "The item at the end of the edge."
+  node: Vehicle!
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
 "The node interface is implemented by entities that have a global unique identifier."
 interface Node {
   id: ID!
+}
+
+input ActivityDtoInput {
+  date: DateTime!
+  type: ActivityType!
+  time: Int!
+  distance: Float!
+  elevationGain: Float
+  description: String
+  heartRateMin: Int
+  heartRateMax: Int
+  heartRateAverage: Int
+  mood: Mood
+  effort: Int
+  wind: Wind
+  vehicleId: ID
+  gadgetIds: [ID!]!
+  tagIds: [ID!]!
+}
+
+input ActivityFilterInput {
+  and: [ActivityFilterInput!]
+  or: [ActivityFilterInput!]
+  date: DateTimeOperationFilterInput
+  type: ActivityTypeOperationFilterInput
+  time: IntOperationFilterInput
+  distance: FloatOperationFilterInput
+  averageSpeed: FloatOperationFilterInput
+  elevationGain: FloatOperationFilterInput
+  tss: FloatOperationFilterInput
+  description: StringOperationFilterInput
+  heartRateMin: IntOperationFilterInput
+  heartRateMax: IntOperationFilterInput
+  heartRateAverage: IntOperationFilterInput
+  mood: NullableOfMoodOperationFilterInput
+  effort: IntOperationFilterInput
+  wind: NullableOfWindOperationFilterInput
+  source: SourceOperationFilterInput
+  stravaActivityId: LongOperationFilterInput
+  vehicle: VehicleFilterInput
+  merge: ActivityMergeFilterInput
+  tags: ListFilterInputTypeOfTagFilterInput
+  gadgets: ListFilterInputTypeOfGadgetFilterInput
+  id: IdOperationFilterInput
+  uid: UuidOperationFilterInput
+  createdAt: DateTimeOperationFilterInput
+  modifiedAt: DateTimeOperationFilterInput
+}
+
+input ActivityMergeFilterInput {
+  and: [ActivityMergeFilterInput!]
+  or: [ActivityMergeFilterInput!]
+  name: StringOperationFilterInput
+  activities: ListFilterInputTypeOfActivityFilterInput
+  totalTime: IntOperationFilterInput
+  totalDistance: FloatOperationFilterInput
+  totalElevationGain: FloatOperationFilterInput
+  totalTss: FloatOperationFilterInput
+  id: IdOperationFilterInput
+  uid: UuidOperationFilterInput
+  createdAt: DateTimeOperationFilterInput
+  modifiedAt: DateTimeOperationFilterInput
+}
+
+input ActivityMergeSortInput {
+  name: SortEnumType @cost(weight: "10")
+  totalTime: SortEnumType @cost(weight: "10")
+  totalDistance: SortEnumType @cost(weight: "10")
+  totalElevationGain: SortEnumType @cost(weight: "10")
+  totalTss: SortEnumType @cost(weight: "10")
+  id: SortEnumType @cost(weight: "10")
+  uid: SortEnumType @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
+  modifiedAt: SortEnumType @cost(weight: "10")
+}
+
+input ActivitySortInput {
+  date: SortEnumType @cost(weight: "10")
+  type: SortEnumType @cost(weight: "10")
+  time: SortEnumType @cost(weight: "10")
+  distance: SortEnumType @cost(weight: "10")
+  averageSpeed: SortEnumType @cost(weight: "10")
+  elevationGain: SortEnumType @cost(weight: "10")
+  tss: SortEnumType @cost(weight: "10")
+  description: SortEnumType @cost(weight: "10")
+  heartRateMin: SortEnumType @cost(weight: "10")
+  heartRateMax: SortEnumType @cost(weight: "10")
+  heartRateAverage: SortEnumType @cost(weight: "10")
+  mood: SortEnumType @cost(weight: "10")
+  effort: SortEnumType @cost(weight: "10")
+  wind: SortEnumType @cost(weight: "10")
+  source: SortEnumType @cost(weight: "10")
+  stravaActivityId: SortEnumType @cost(weight: "10")
+  vehicle: VehicleSortInput @cost(weight: "10")
+  merge: ActivityMergeSortInput @cost(weight: "10")
+  id: SortEnumType @cost(weight: "10")
+  uid: SortEnumType @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
+  modifiedAt: SortEnumType @cost(weight: "10")
+}
+
+input ActivityTypeOperationFilterInput {
+  eq: ActivityType @cost(weight: "10")
+  neq: ActivityType @cost(weight: "10")
+  in: [ActivityType!] @cost(weight: "10")
+  nin: [ActivityType!] @cost(weight: "10")
 }
 
 input BodyStatsDtoInput {
@@ -124,10 +619,6 @@ input BodyStatsDtoInput {
 input BodyStatsFilterInput {
   and: [BodyStatsFilterInput!]
   or: [BodyStatsFilterInput!]
-  id: IdOperationFilterInput
-  uid: UuidOperationFilterInput
-  createdAt: DateTimeOperationFilterInput
-  modifiedAt: DateTimeOperationFilterInput
   date: DateTimeOperationFilterInput
   weight: FloatOperationFilterInput
   bodyFatPercentage: FloatOperationFilterInput
@@ -135,19 +626,23 @@ input BodyStatsFilterInput {
   waterPercentage: FloatOperationFilterInput
   boneMass: FloatOperationFilterInput
   comments: ListFilterInputTypeOfCommentFilterInput
+  id: IdOperationFilterInput
+  uid: UuidOperationFilterInput
+  createdAt: DateTimeOperationFilterInput
+  modifiedAt: DateTimeOperationFilterInput
 }
 
 input BodyStatsSortInput {
-  id: SortEnumType @cost(weight: "10")
-  uid: SortEnumType @cost(weight: "10")
-  createdAt: SortEnumType @cost(weight: "10")
-  modifiedAt: SortEnumType @cost(weight: "10")
   date: SortEnumType @cost(weight: "10")
   weight: SortEnumType @cost(weight: "10")
   bodyFatPercentage: SortEnumType @cost(weight: "10")
   musclePercentage: SortEnumType @cost(weight: "10")
   waterPercentage: SortEnumType @cost(weight: "10")
   boneMass: SortEnumType @cost(weight: "10")
+  id: SortEnumType @cost(weight: "10")
+  uid: SortEnumType @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
+  modifiedAt: SortEnumType @cost(weight: "10")
 }
 
 input CommentDtoInput {
@@ -158,19 +653,19 @@ input CommentDtoInput {
 input CommentFilterInput {
   and: [CommentFilterInput!]
   or: [CommentFilterInput!]
+  content: StringOperationFilterInput
   id: IdOperationFilterInput
   uid: UuidOperationFilterInput
   createdAt: DateTimeOperationFilterInput
   modifiedAt: DateTimeOperationFilterInput
-  content: StringOperationFilterInput
 }
 
 input CommentSortInput {
+  content: SortEnumType @cost(weight: "10")
   id: SortEnumType @cost(weight: "10")
   uid: SortEnumType @cost(weight: "10")
   createdAt: SortEnumType @cost(weight: "10")
   modifiedAt: SortEnumType @cost(weight: "10")
-  content: SortEnumType @cost(weight: "10")
 }
 
 input DateTimeOperationFilterInput {
@@ -188,6 +683,64 @@ input DateTimeOperationFilterInput {
   nlte: DateTime @cost(weight: "10")
 }
 
+input DecimalOperationFilterInput {
+  eq: Decimal @cost(weight: "10")
+  neq: Decimal @cost(weight: "10")
+  in: [Decimal] @cost(weight: "10")
+  nin: [Decimal] @cost(weight: "10")
+  gt: Decimal @cost(weight: "10")
+  ngt: Decimal @cost(weight: "10")
+  gte: Decimal @cost(weight: "10")
+  ngte: Decimal @cost(weight: "10")
+  lt: Decimal @cost(weight: "10")
+  nlt: Decimal @cost(weight: "10")
+  lte: Decimal @cost(weight: "10")
+  nlte: Decimal @cost(weight: "10")
+}
+
+input EventDtoInput {
+  name: String!
+  type: EventType!
+  description: String
+  startDate: LocalDate!
+  endDate: LocalDate
+  tagIds: [ID!]!
+}
+
+input EventFilterInput {
+  and: [EventFilterInput!]
+  or: [EventFilterInput!]
+  name: StringOperationFilterInput
+  type: EventTypeOperationFilterInput
+  description: StringOperationFilterInput
+  startDate: LocalDateOperationFilterInput
+  endDate: LocalDateOperationFilterInput
+  tags: ListFilterInputTypeOfTagFilterInput
+  id: IdOperationFilterInput
+  uid: UuidOperationFilterInput
+  createdAt: DateTimeOperationFilterInput
+  modifiedAt: DateTimeOperationFilterInput
+}
+
+input EventSortInput {
+  name: SortEnumType @cost(weight: "10")
+  type: SortEnumType @cost(weight: "10")
+  description: SortEnumType @cost(weight: "10")
+  startDate: SortEnumType @cost(weight: "10")
+  endDate: SortEnumType @cost(weight: "10")
+  id: SortEnumType @cost(weight: "10")
+  uid: SortEnumType @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
+  modifiedAt: SortEnumType @cost(weight: "10")
+}
+
+input EventTypeOperationFilterInput {
+  eq: EventType @cost(weight: "10")
+  neq: EventType @cost(weight: "10")
+  in: [EventType!] @cost(weight: "10")
+  nin: [EventType!] @cost(weight: "10")
+}
+
 input FloatOperationFilterInput {
   eq: Float @cost(weight: "10")
   neq: Float @cost(weight: "10")
@@ -203,6 +756,53 @@ input FloatOperationFilterInput {
   nlte: Float @cost(weight: "10")
 }
 
+input GadgetDtoInput {
+  brand: String!
+  model: String!
+  nickname: String
+  purchaseDate: LocalDate
+  description: String
+  deactivationDate: LocalDate
+  price: Decimal
+  tagIds: [ID!]!
+  vehicleIds: [ID!]!
+}
+
+input GadgetFilterInput {
+  and: [GadgetFilterInput!]
+  or: [GadgetFilterInput!]
+  brand: StringOperationFilterInput
+  model: StringOperationFilterInput
+  nickname: StringOperationFilterInput
+  purchaseDate: LocalDateOperationFilterInput
+  description: StringOperationFilterInput
+  deactivationDate: LocalDateOperationFilterInput
+  price: DecimalOperationFilterInput
+  source: SourceOperationFilterInput
+  tags: ListFilterInputTypeOfTagFilterInput
+  vehicles: ListFilterInputTypeOfVehicleFilterInput
+  maintenanceCycles: ListFilterInputTypeOfMaintenanceCycleFilterInput
+  id: IdOperationFilterInput
+  uid: UuidOperationFilterInput
+  createdAt: DateTimeOperationFilterInput
+  modifiedAt: DateTimeOperationFilterInput
+}
+
+input GadgetSortInput {
+  brand: SortEnumType @cost(weight: "10")
+  model: SortEnumType @cost(weight: "10")
+  nickname: SortEnumType @cost(weight: "10")
+  purchaseDate: SortEnumType @cost(weight: "10")
+  description: SortEnumType @cost(weight: "10")
+  deactivationDate: SortEnumType @cost(weight: "10")
+  price: SortEnumType @cost(weight: "10")
+  source: SortEnumType @cost(weight: "10")
+  id: SortEnumType @cost(weight: "10")
+  uid: SortEnumType @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
+  modifiedAt: SortEnumType @cost(weight: "10")
+}
+
 input IdOperationFilterInput {
   eq: ID @cost(weight: "10")
   neq: ID @cost(weight: "10")
@@ -210,11 +810,138 @@ input IdOperationFilterInput {
   nin: [ID] @cost(weight: "10")
 }
 
+input IntOperationFilterInput {
+  eq: Int @cost(weight: "10")
+  neq: Int @cost(weight: "10")
+  in: [Int] @cost(weight: "10")
+  nin: [Int] @cost(weight: "10")
+  gt: Int @cost(weight: "10")
+  ngt: Int @cost(weight: "10")
+  gte: Int @cost(weight: "10")
+  ngte: Int @cost(weight: "10")
+  lt: Int @cost(weight: "10")
+  nlt: Int @cost(weight: "10")
+  lte: Int @cost(weight: "10")
+  nlte: Int @cost(weight: "10")
+}
+
+input ListFilterInputTypeOfActivityFilterInput {
+  all: ActivityFilterInput @cost(weight: "10")
+  none: ActivityFilterInput @cost(weight: "10")
+  some: ActivityFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
 input ListFilterInputTypeOfCommentFilterInput {
   all: CommentFilterInput @cost(weight: "10")
   none: CommentFilterInput @cost(weight: "10")
   some: CommentFilterInput @cost(weight: "10")
   any: Boolean @cost(weight: "10")
+}
+
+input ListFilterInputTypeOfGadgetFilterInput {
+  all: GadgetFilterInput @cost(weight: "10")
+  none: GadgetFilterInput @cost(weight: "10")
+  some: GadgetFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input ListFilterInputTypeOfMaintenanceCycleFilterInput {
+  all: MaintenanceCycleFilterInput @cost(weight: "10")
+  none: MaintenanceCycleFilterInput @cost(weight: "10")
+  some: MaintenanceCycleFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input ListFilterInputTypeOfTagFilterInput {
+  all: TagFilterInput @cost(weight: "10")
+  none: TagFilterInput @cost(weight: "10")
+  some: TagFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input ListFilterInputTypeOfVehicleFilterInput {
+  all: VehicleFilterInput @cost(weight: "10")
+  none: VehicleFilterInput @cost(weight: "10")
+  some: VehicleFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input LocalDateOperationFilterInput {
+  eq: LocalDate @cost(weight: "10")
+  neq: LocalDate @cost(weight: "10")
+  in: [LocalDate] @cost(weight: "10")
+  nin: [LocalDate] @cost(weight: "10")
+  gt: LocalDate @cost(weight: "10")
+  ngt: LocalDate @cost(weight: "10")
+  gte: LocalDate @cost(weight: "10")
+  ngte: LocalDate @cost(weight: "10")
+  lt: LocalDate @cost(weight: "10")
+  nlt: LocalDate @cost(weight: "10")
+  lte: LocalDate @cost(weight: "10")
+  nlte: LocalDate @cost(weight: "10")
+}
+
+input LongOperationFilterInput {
+  eq: Long @cost(weight: "10")
+  neq: Long @cost(weight: "10")
+  in: [Long] @cost(weight: "10")
+  nin: [Long] @cost(weight: "10")
+  gt: Long @cost(weight: "10")
+  ngt: Long @cost(weight: "10")
+  gte: Long @cost(weight: "10")
+  ngte: Long @cost(weight: "10")
+  lt: Long @cost(weight: "10")
+  nlt: Long @cost(weight: "10")
+  lte: Long @cost(weight: "10")
+  nlte: Long @cost(weight: "10")
+}
+
+input MaintenanceCycleDtoInput {
+  vehicleId: ID
+  gadgetId: ID
+  name: String!
+  intervalDistance: Float
+  intervalDays: Int
+  lastServiceDate: LocalDate
+  description: String
+}
+
+input MaintenanceCycleFilterInput {
+  and: [MaintenanceCycleFilterInput!]
+  or: [MaintenanceCycleFilterInput!]
+  vehicle: VehicleFilterInput
+  gadget: GadgetFilterInput
+  name: StringOperationFilterInput
+  intervalDistance: FloatOperationFilterInput
+  intervalDays: IntOperationFilterInput
+  lastServiceDate: LocalDateOperationFilterInput
+  description: StringOperationFilterInput
+  id: IdOperationFilterInput
+  uid: UuidOperationFilterInput
+  createdAt: DateTimeOperationFilterInput
+  modifiedAt: DateTimeOperationFilterInput
+}
+
+input NullableOfMoodOperationFilterInput {
+  eq: Mood @cost(weight: "10")
+  neq: Mood @cost(weight: "10")
+  in: [Mood] @cost(weight: "10")
+  nin: [Mood] @cost(weight: "10")
+}
+
+input NullableOfWindOperationFilterInput {
+  eq: Wind @cost(weight: "10")
+  neq: Wind @cost(weight: "10")
+  in: [Wind] @cost(weight: "10")
+  nin: [Wind] @cost(weight: "10")
+}
+
+input SourceOperationFilterInput {
+  eq: Source @cost(weight: "10")
+  neq: Source @cost(weight: "10")
+  in: [Source!] @cost(weight: "10")
+  nin: [Source!] @cost(weight: "10")
 }
 
 input StringOperationFilterInput {
@@ -232,6 +959,28 @@ input StringOperationFilterInput {
   nendsWith: String @cost(weight: "20")
 }
 
+input TagDtoInput {
+  name: String!
+}
+
+input TagFilterInput {
+  and: [TagFilterInput!]
+  or: [TagFilterInput!]
+  name: StringOperationFilterInput
+  id: IdOperationFilterInput
+  uid: UuidOperationFilterInput
+  createdAt: DateTimeOperationFilterInput
+  modifiedAt: DateTimeOperationFilterInput
+}
+
+input TagSortInput {
+  name: SortEnumType @cost(weight: "10")
+  id: SortEnumType @cost(weight: "10")
+  uid: SortEnumType @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
+  modifiedAt: SortEnumType @cost(weight: "10")
+}
+
 input UuidOperationFilterInput {
   eq: UUID @cost(weight: "10")
   neq: UUID @cost(weight: "10")
@@ -247,22 +996,138 @@ input UuidOperationFilterInput {
   nlte: UUID @cost(weight: "10")
 }
 
+input VehicleDtoInput {
+  brand: String!
+  model: String!
+  nickname: String
+  purchaseDate: LocalDate
+  description: String
+  deactivationDate: LocalDate
+  price: Decimal
+  tagIds: [ID!]!
+}
+
+input VehicleFilterInput {
+  and: [VehicleFilterInput!]
+  or: [VehicleFilterInput!]
+  brand: StringOperationFilterInput
+  model: StringOperationFilterInput
+  nickname: StringOperationFilterInput
+  purchaseDate: LocalDateOperationFilterInput
+  description: StringOperationFilterInput
+  deactivationDate: LocalDateOperationFilterInput
+  price: DecimalOperationFilterInput
+  source: SourceOperationFilterInput
+  stravaGearId: StringOperationFilterInput
+  tags: ListFilterInputTypeOfTagFilterInput
+  gadgets: ListFilterInputTypeOfGadgetFilterInput
+  maintenanceCycles: ListFilterInputTypeOfMaintenanceCycleFilterInput
+  id: IdOperationFilterInput
+  uid: UuidOperationFilterInput
+  createdAt: DateTimeOperationFilterInput
+  modifiedAt: DateTimeOperationFilterInput
+}
+
+input VehicleSortInput {
+  brand: SortEnumType @cost(weight: "10")
+  model: SortEnumType @cost(weight: "10")
+  nickname: SortEnumType @cost(weight: "10")
+  purchaseDate: SortEnumType @cost(weight: "10")
+  description: SortEnumType @cost(weight: "10")
+  deactivationDate: SortEnumType @cost(weight: "10")
+  price: SortEnumType @cost(weight: "10")
+  source: SortEnumType @cost(weight: "10")
+  stravaGearId: SortEnumType @cost(weight: "10")
+  id: SortEnumType @cost(weight: "10")
+  uid: SortEnumType @cost(weight: "10")
+  createdAt: SortEnumType @cost(weight: "10")
+  modifiedAt: SortEnumType @cost(weight: "10")
+}
+
+enum ActivityType {
+  ROAD
+  MOUNTAIN
+  GRAVEL
+  INDOOR
+}
+
+enum EventType {
+  CRASH
+  INJURY
+  ILLNESS
+  REPAIR
+  BREAK
+  GOAL
+  OTHER
+}
+
+enum Language {
+  DE
+  EN
+}
+
+enum Mood {
+  VERY_BAD
+  BAD
+  NEUTRAL
+  GOOD
+  VERY_GOOD
+}
+
+enum Role {
+  USER
+  ADMINISTRATOR
+}
+
 enum SortEnumType {
   ASC
   DESC
 }
 
+enum Source {
+  MANUAL
+  STRAVA
+}
+
+enum Wind {
+  CALM
+  LIGHT
+  MODERATE
+  STRONG
+  STORMY
+}
+
 "The `DateTime` scalar type represents a date and time with time zone offset information."
-scalar DateTime @specifiedBy(url: "https://scalars.graphql.org/chillicream/date-time.html")
+scalar DateTime
+  @specifiedBy(url: "https://scalars.graphql.org/chillicream/date-time.html")
+
+"The `Decimal` scalar type represents a decimal floating-point number with high precision."
+scalar Decimal
+  @specifiedBy(url: "https://scalars.graphql.org/chillicream/decimal.html")
+
+"The `LocalDate` scalar type represents a date without time or time zone information."
+scalar LocalDate
+  @specifiedBy(url: "https://scalars.graphql.org/chillicream/local-date.html")
+
+"The `Long` scalar type represents a signed 64-bit integer."
+scalar Long
+  @specifiedBy(url: "https://scalars.graphql.org/chillicream/long.html")
 
 "The `UUID` scalar type represents a Universally Unique Identifier (UUID) as defined by RFC 9562."
-scalar UUID @specifiedBy(url: "https://scalars.graphql.org/chillicream/uuid.html")
+scalar UUID
+  @specifiedBy(url: "https://scalars.graphql.org/chillicream/uuid.html")
 
 "The purpose of the `cost` directive is to define a `weight` for GraphQL types, fields, and arguments. Static analysis can use these weights when calculating the overall cost of a query or response."
 directive @cost(
   "The `weight` argument defines what value to add to the overall cost for every appearance, or possible appearance, of a type, field, argument, etc."
   weight: String!
-) on SCALAR | OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM | INPUT_FIELD_DEFINITION
+) on
+  | SCALAR
+  | OBJECT
+  | FIELD_DEFINITION
+  | ARGUMENT_DEFINITION
+  | ENUM
+  | INPUT_FIELD_DEFINITION
 
 "The purpose of the `@listSize` directive is to either inform the static analysis about the size of returned lists (if that information is statically available), or to point the analysis to where to find that information."
 directive @listSize(
