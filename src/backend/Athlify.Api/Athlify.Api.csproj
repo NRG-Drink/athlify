@@ -9,6 +9,8 @@
 
   <ItemGroup Condition="'$(ImplicitUsings)' == 'enable'">
     <Using Include="Athlify.Api" />
+    <!-- HotChocolate.Types (a global using of Hot Chocolate) also has a Tag type. -->
+    <Using Include="Athlify.Api.Domain.Tags.Tag" Alias="Tag" />
   </ItemGroup>
 
   <ItemGroup>

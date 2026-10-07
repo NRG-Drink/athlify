@@ -48,6 +48,13 @@ public partial class Program
             {
                 options.DefaultPageSize = 100;
                 options.MaxPageSize = 200;
+            })
+            // The defaults (1000) target public APIs: a filtered page of 200 activities passed as a variable,
+            // as Relay does, already costs about 6600. Pages are capped at 200 and every request is a user's own.
+            .ModifyCostOptions(options =>
+            {
+                options.MaxFieldCost = 10_000;
+                options.MaxTypeCost = 10_000;
             });
 
         var app = builder.Build();

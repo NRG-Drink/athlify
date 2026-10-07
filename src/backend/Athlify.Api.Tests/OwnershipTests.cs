@@ -51,3 +51,75 @@ public class OwnershipTests : WebApiTestBase
         await Assert.That(ErrorCodes(add)).Contains(DomainErrors.NotAuthenticatedCode);
     }
 }
+
+/// <summary>The same isolation rules for tags, bicycles and activities.</summary>
+public class DomainOwnershipTests : WebApiTestBase
+{
+    [Test]
+    public async Task ListsShowOnlyOwnRecords()
+    {
+        var luca = await CreateUserClientAsync("luca@example.com");
+        var mia = await CreateUserClientAsync("mia@example.com");
+        var tag = DomainGraphQl.Id(await DomainGraphQl.CreateTagAsync(luca, "race"));
+        var vehicle = DomainGraphQl.Id(await DomainGraphQl.CreateVehicleAsync(luca));
+        await DomainGraphQl.CreateActivityAsync(luca, DomainGraphQl.ActivityInput(vehicleId: vehicle, tagIds: [tag]));
+
+        var data = await DataAsync(mia, "query { tags { nodes { id } } vehicles { nodes { id } } activities { nodes { id } } }");
+
+        foreach (var field in new[] { "tags", "vehicles", "activities" })
+        {
+            await Assert.That(Nodes(data, field).Count).IsEqualTo(0);
+        }
+    }
+
+    [Test]
+    public async Task ForeignRecordsBehaveAsMissing()
+    {
+        var luca = await CreateUserClientAsync("luca@example.com");
+        var mia = await CreateUserClientAsync("mia@example.com");
+        var tag = DomainGraphQl.Id(await DomainGraphQl.CreateTagAsync(luca, "race"));
+        var vehicle = DomainGraphQl.Id(await DomainGraphQl.CreateVehicleAsync(luca));
+        var activity = DomainGraphQl.Id(await DomainGraphQl.CreateActivityAsync(luca));
+
+        var data = await DataAsync(mia, """
+            mutation($tag: ID!, $vehicle: ID!, $activity: ID!) {
+              updateTag(id: $tag, tag: { name: "mine" }) { id }
+              deleteTag(id: $tag)
+              deleteVehicle(id: $vehicle)
+              deleteActivity(id: $activity)
+            }
+            """, new { tag, vehicle, activity });
+        const string nodes = "query($ids: [ID!]!) { nodes(ids: $ids) { id } }";
+        var stillThere = (await DataAsync(luca, nodes, new { ids = new[] { tag, vehicle, activity } })).GetProperty("nodes");
+
+        foreach (var field in new[] { "updateTag", "deleteTag", "deleteVehicle", "deleteActivity" })
+        {
+            await Assert.That(IsNull(data.GetProperty(field))).IsTrue();
+        }
+
+        await Assert.That(stillThere.EnumerateArray().Count(n => !IsNull(n))).IsEqualTo(3);
+    }
+
+    [Test]
+    public async Task LinkingAForeignTagOrBicycleIsRejected()
+    {
+        var luca = await CreateUserClientAsync("luca@example.com");
+        var mia = await CreateUserClientAsync("mia@example.com");
+        var lucasTag = DomainGraphQl.Id(await DomainGraphQl.CreateTagAsync(luca, "race"));
+        var lucasBike = DomainGraphQl.Id(await DomainGraphQl.CreateVehicleAsync(luca));
+
+        var withTag = await PostAsync(mia, DomainGraphQl.CreateActivityMutation,
+            new { input = DomainGraphQl.ActivityInput(tagIds: [lucasTag]) });
+        var withBike = await PostAsync(mia, DomainGraphQl.CreateActivityMutation,
+            new { input = DomainGraphQl.ActivityInput(vehicleId: lucasBike) });
+        var bikeWithTag = await PostAsync(mia, DomainGraphQl.CreateVehicleMutation,
+            new { input = DomainGraphQl.VehicleInput(tagIds: [lucasTag]) });
+
+        await Assert.That(ErrorCodes(withTag)).Contains(DomainErrors.ValidationCode);
+        await Assert.That(ErrorCodes(withBike)).Contains(DomainErrors.ValidationCode);
+        await Assert.That(ErrorCodes(bikeWithTag)).Contains(DomainErrors.ValidationCode);
+        var miasData = await DataAsync(mia, "query { vehicles { nodes { id } } activities { nodes { id } } }");
+        await Assert.That(Nodes(miasData, "activities").Count).IsEqualTo(0);
+        await Assert.That(Nodes(miasData, "vehicles").Count).IsEqualTo(0);
+    }
+}

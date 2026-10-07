@@ -1,6 +1,9 @@
+using Athlify.Api.Domain.Activities;
 using Athlify.Api.Domain.Body;
 using Athlify.Api.Domain.Common;
+using Athlify.Api.Domain.Tags;
 using Athlify.Api.Domain.Users;
+using Athlify.Api.Domain.Vehicles;
 using Microsoft.EntityFrameworkCore;
 
 namespace Athlify.Api.Database;
@@ -15,9 +18,15 @@ public class AthlifyDbContext(DbContextOptions<AthlifyDbContext> options, ICurre
 {
     public const string OwnerFilter = "Owner";
 
+    /// <summary>Hides soft-deleted activities; Strava synchronization and deletes that must see them ignore it.</summary>
+    public const string NotDeletedFilter = "NotDeleted";
+
     public DbSet<User> Users => Set<User>();
     public DbSet<BodyStats> BodyStats => Set<BodyStats>();
     public DbSet<Comment> Comments => Set<Comment>();
+    public DbSet<Tag> Tags => Set<Tag>();
+    public DbSet<Vehicle> Vehicles => Set<Vehicle>();
+    public DbSet<Activity> Activities => Set<Activity>();
 
     /// <summary>
     /// Read by the query filters each time a query runs (EF Core parameterizes context members), so one
@@ -43,6 +52,10 @@ public class AthlifyDbContext(DbContextOptions<AthlifyDbContext> options, ICurre
 
         modelBuilder.Entity<User>().HasQueryFilter(OwnerFilter, u => u.Id == CurrentUserId);
         modelBuilder.Entity<BodyStats>().HasQueryFilter(OwnerFilter, b => b.UserId == CurrentUserId);
+        modelBuilder.Entity<Tag>().HasQueryFilter(OwnerFilter, t => t.UserId == CurrentUserId);
+        modelBuilder.Entity<Vehicle>().HasQueryFilter(OwnerFilter, v => v.UserId == CurrentUserId);
+        modelBuilder.Entity<Activity>().HasQueryFilter(OwnerFilter, a => a.UserId == CurrentUserId);
+        modelBuilder.Entity<Activity>().HasQueryFilter(NotDeletedFilter, a => a.DeletedAt == null);
     }
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
