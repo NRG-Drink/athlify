@@ -66,8 +66,8 @@ as enums in upper snake case (for example `VERY_GOOD`).
 ## Implementation Notes
 
 - The enums are `Mood`, `Wind` and `ActivityType` in
-  `src/backend/Athlify.Api/Domain/Activities/Activity.cs`, and `EventType` in
-  `Domain/Events/Event.cs`.
+  `src/backend/Athlify.Api/Domain/Activities/ActivityEnums.cs`, and `EventType`
+  in `Domain/Events/Event.cs`.
 - `AthlifyDbContext.ConfigureConventions` stores every enum as a string.
 - UI labels belong in the i18next locale files; the API values are never
   shown directly.

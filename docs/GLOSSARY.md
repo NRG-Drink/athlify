@@ -110,6 +110,12 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
   session took place indoors or outdoors; the authoritative determination rule
   is still open. See [`activity-management.md`](concept/activity-management.md).
 
+**Input** — The record a client sends to create or update one entity, named
+  `<Entity>Input` in the GraphQL schema (for example `ActivityInput`). It holds
+  only the fields a client may set: identity, owner, timestamps and calculated
+  or Strava-owned values are never part of it. Link lists such as `tagIds` are
+  complete sets. See [`api-design.md`](concept/api-design.md).
+
 **KPI tile** — A large, self-explaining value on a page: label, latest value
   with unit, change within the selected Period and the comparison period. A
   missing value is shown as a dash, never as zero. On Body-Stats a tile also
