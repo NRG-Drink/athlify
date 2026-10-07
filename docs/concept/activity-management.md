@@ -3,8 +3,10 @@
 Technical detail documentation for the functional concept in
 [`CONCEPT.md`](CONCEPT.md).
 
-These rules describe planned behavior. Activity management and Strava
-synchronization are not implemented in the current repository.
+The backend implements activity management (create, edit, soft delete,
+filters and merges) through the GraphQL API; see
+[`api-design.md`](api-design.md#activities-and-merges). The Activities page,
+the calendar view and Strava synchronization are not implemented yet.
 
 ## Views and functions
 
@@ -27,7 +29,8 @@ Non-editable fields:
 - `source`
 - `stravaActivityId`
 - `createdAt`
-- `updatedAt`
+- `modifiedAt`
+- `mergeId`
 - `deletedAt`
 
 ## Soft delete and Strava synchronization
@@ -60,31 +63,33 @@ stateDiagram-v2
 | `type` | enum or activity type | Yes |
 | `vehicleId` | optional bicycle | Yes |
 | `gadgetIds` | n:m to gadgets | Yes |
+| `mergeId`* | optional merge, set by merging | No |
 | `time` | duration | Yes |
 | `distance` | distance | Yes |
 | `averageSpeed`* | calculated value | No |
 | `elevationGain` | elevation gain | Yes/imported |
 | `tss`* | calculated Training Stress Score | No |
 | `description` | description | Yes |
-| `tags` | multiple tags | Yes |
+| `tags` | n:m to the user's tags | Yes |
 | `heartRateMin` | minimum heart rate | Yes/imported |
 | `heartRateMax` | maximum heart rate | Yes/imported |
 | `heartRateAverage` | average heart rate | Yes/imported |
-| `mood` | personal mood | Yes |
-| `effort` | subjective effort | Yes |
-| `wind` | wind conditions | Yes/imported |
+| `mood` | `VeryBad`, `Bad`, `Neutral`, `Good` or `VeryGood` | Yes |
+| `effort` | subjective effort from 1 to 10 | Yes |
+| `wind` | `Calm`, `Light`, `Moderate`, `Strong` or `Stormy` | Yes/imported |
 | `source`* | Strava or manual | No |
 | `stravaActivityId`* | external Strava reference | No |
 | `createdAt`* | creation timestamp | No |
-| `updatedAt`* | modification timestamp | No |
+| `modifiedAt`* | modification timestamp | No |
 | `deletedAt`* | soft-delete timestamp | No |
 
 ## Merging activities
 
-Activities can be merged through a separate relationship. A merge contains at
-least two activities. The original activities remain available and can still
-be displayed individually. The final merge cardinality remains an open
-product decision.
+Activities can be merged through a separate merge record. A merge contains at
+least two activities, and an activity belongs to at most one merge. The
+original activities remain available and can still be displayed individually.
+If fewer than two active activities remain, the merge is dissolved. See
+[`data-model.md`](data-model.md#activity-merges).
 
 At least the following values are aggregated for the merged representation:
 
@@ -93,8 +98,10 @@ At least the following values are aggregated for the merged representation:
 - Elevation gain
 - TSS
 
-Whether merge membership is exclusive or whether an activity may appear in
-multiple merges remains open.
+The totals cover the active activities only. They are stored on the merge and
+recalculated whenever a member is added, removed, edited or soft-deleted. The
+future Strava synchronization must recalculate them too when it updates a
+merged activity.
 
 ## Calendar weekly summary
 
@@ -103,6 +110,4 @@ The calendar view groups activities by calendar week. At minimum, distance, time
 ## Open technical learning points
 
 - Check how Indoor and Outdoor activities from Strava can be distinguished reliably.
-- Decide whether tags are stored as free values or as a managed selection.
 - Define how TSS is calculated when no power or heart-rate data is available.
-- Decide whether an activity may participate in multiple merges or whether a merge is exclusive.

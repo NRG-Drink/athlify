@@ -50,6 +50,10 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
   connections; a page holds at most 200 entries. See
   [`ADR-007`](copilot/frontend/adr/ADR-007-domain-page-pattern.md).
 
+**Development user** — The Administrator account that the backend creates at
+  startup. Until authentication exists, every request acts as this user. See
+  [ADR-009](copilot/adr/ADR-009-ownership-query-filters.md).
+
 **Dialog** — A modal window layered over a page that collects input or asks for
   confirmation without leaving the page, for example the Body-Stats form
   dialog.
@@ -60,13 +64,21 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
   store after changes instead of refetching. See
   [`ADR-007`](copilot/frontend/adr/ADR-007-domain-page-pattern.md).
 
+**Effort** — How hard an activity felt to the user, from 1 to 10. See
+  [ADR-010](copilot/adr/ADR-010-activity-and-event-value-domains.md).
+
 **Entry** — A single Body-Stats record (one measurement on one date), called
   "measurement" in the UI. Users create and edit entries through a Dialog and
   delete them with the trash button at the end of a row, after confirming. See
   [`CONCEPT.md`](concept/CONCEPT.md).
 
 **Event** — A personal time-based record such as an accident, repair, injury,
-  break or goal. See [`CONCEPT.md`](concept/CONCEPT.md).
+  break or goal, with an Event type, a start date and an optional end date.
+  See [`CONCEPT.md`](concept/CONCEPT.md).
+
+**Event type** — The kind of an Event: crash, injury, illness, repair, break,
+  goal or other. See
+  [ADR-010](copilot/adr/ADR-010-activity-and-event-value-domains.md).
 
 **Filter** — A selection that determines which data is displayed in a view.
 
@@ -98,6 +110,12 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
   session took place indoors or outdoors; the authoritative determination rule
   is still open. See [`activity-management.md`](concept/activity-management.md).
 
+**Input** — The record a client sends to create or update one entity, named
+  `<Entity>Input` in the GraphQL schema (for example `ActivityInput`). It holds
+  only the fields a client may set: identity, owner, timestamps and calculated
+  or Strava-owned values are never part of it. Link lists such as `tagIds` are
+  complete sets. See [`api-design.md`](concept/api-design.md).
+
 **KPI tile** — A large, self-explaining value on a page: label, latest value
   with unit, change within the selected Period and the comparison period. A
   missing value is shown as a dash, never as zero. On Body-Stats a tile also
@@ -109,14 +127,28 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 
 ## M — R
 
-**Merge** — Grouping multiple activities into one shared representation without
-  removing the original activities. See [`activity-management.md`](concept/activity-management.md).
+**Maintenance cycle** — A maintenance schedule of exactly one bicycle or
+  gadget, with an interval in kilometers, in days or both. Selecting it
+  filters the Garage to the linked equipment. See
+  [`data-model.md`](concept/data-model.md).
+
+**Merge** — Grouping at least two activities into one shared representation
+  without removing the original activities. An activity belongs to at most one
+  merge. Its totals (time, distance, elevation gain, TSS) cover the active
+  activities only, and it is dissolved when fewer than two remain. See
+  [`activity-management.md`](concept/activity-management.md).
+
+**Mood** — How the user felt during an activity: very bad, bad, neutral, good
+  or very good. See
+  [ADR-010](copilot/adr/ADR-010-activity-and-event-value-domains.md).
 
 **Note** — The one optional free-text field of a Body-Stats entry. The API stores
-  it as a comment; the UI reads and writes the first one.
+  it as the plain string field `comment`; there is no separate table or list.
 
 **Owner / user context** — The user who owns a personal record and whose access
-  must be checked. See [`security.md`](concept/security.md).
+  must be checked. Another user's record behaves as if it did not exist. See
+  [`security.md`](concept/security.md) and
+  [ADR-009](copilot/adr/ADR-009-ownership-query-filters.md).
 
 **Page** — The frame each view renders inside the App Layout: title, optional
   description and actions, and exactly one UI state body (loading, empty,
@@ -142,13 +174,17 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 **Source** — The origin of an activity, especially Strava or manual entry. See
   [`activity-management.md`](concept/activity-management.md).
 
+**Strava connection** — The link between a user's account and Strava,
+  including the connection's tokens and the last synchronization time, status
+  and error. A user has at most one. See [`data-model.md`](concept/data-model.md).
+
 **Strava synchronization** — Importing and updating a user's cycling data from
   Strava while preserving ownership, external identifiers and deletion rules.
   See [`activity-management.md`](concept/activity-management.md).
 
-**Tag** **(open)** — A freely or administratively assigned label for an
-  activity; the exact variant is still open. See
-  [`activity-management.md`](concept/activity-management.md).
+**Tag** — A label that a user defines once and can assign to activities,
+  bicycles, gadgets and Events. Tag names are unique per user. See
+  [`data-model.md`](concept/data-model.md).
 
 **Toast / feedback** — Short-lived visible information about an action's
   success or failure.
@@ -170,3 +206,7 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 **User Menu** — The header menu for Settings, the language switcher and the
   color mode. It will hold logout once authentication exists. See
   [`SAD.md`](copilot/frontend/SAD.md#app-layout-and-routes).
+
+**Wind** — The wind conditions of an activity: calm, light, moderate, strong
+  or stormy. See
+  [ADR-010](copilot/adr/ADR-010-activity-and-event-value-domains.md).

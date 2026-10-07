@@ -33,8 +33,11 @@ functional scope is defined in the [software concept](docs/concept/CONCEPT.md).
 
 The product is not implemented yet. The repository currently contains:
 
-- **Backend prototype**: a GraphQL API with Body-Stats queries and mutations
-  on an in-memory database with seeded sample data, plus endpoint tests.
+- **Backend**: a GraphQL API with the domain model — Activities with merges,
+  bicycles, gadgets, maintenance cycles, tags, Body-Stats and Events — on
+  PostgreSQL with EF Core migrations, plus endpoint tests. Every record
+  belongs to a user; until login exists, every request acts as a development
+  user. Strava synchronization and Dashboard analyses are not implemented.
 - **Frontend app shell**: a React app with light/dark color mode, a
   German/English language switcher, routing and a Body-Stats page (summary
   tiles, chart, history table, add/edit/delete) that uses the backend API.
@@ -92,16 +95,27 @@ npm run relay     # generates the git-ignored Relay artifacts
 Docker access, Aspire CLI). Open the repository in VS Code and choose
 **Reopen in Container**; dependencies are installed and the Relay artifacts
 generated automatically. The host's Docker daemon must be running, because
-Aspire starts PostgreSQL as a container.
+Aspire starts PostgreSQL as a container. In WebStorm (JetBrains Gateway) the
+container installs the Markdown, Mermaid, GraphQL (with Relay support via
+`graphql.config.yml`), Docker, `.env` and `.ignore` plugins. Mermaid diagrams (for
+example the ERD in `docs/concept/data-model.md`) do not render in the
+Markdown preview of a dev container session; open the repository folder in a
+local WebStorm or view the file on GitHub instead.
 
 ### Run
 1. Start Docker
 2. `aspire run` or `dotnet run --project ./src/backend/Athlify.AppHost/Athlify.AppHost.csproj`
 
+If the API fails at startup with "relation already exists", your database
+volume was created before the migrations existed; remove it once with
+`docker volume rm athlify-postgres-data` (see
+[Configuration](docs/CONFIGURATION.md#database-migrations)).
+
 ## Usage
 
 - Open `http://localhost:5095/graphql` to explore the schema in the
-  Hot Chocolate GraphQL IDE (for example, `bodyStats`, `addBodyStats`).
+  Hot Chocolate GraphQL IDE (for example, `me`, `activities`,
+  `createActivity`, `vehicles`, `events`, `bodyStats`).
 - Open the frontend and go to **Body-Stats** to see the measurements, add,
   edit or delete one, and switch the chart between measurements and periods.
   Use the user menu in the header to switch the color mode and the language.

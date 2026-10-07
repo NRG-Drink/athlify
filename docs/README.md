@@ -31,7 +31,7 @@ maintaining project context.
 
 ## Implementation context
 
-The repository contains a Body-Stats GraphQL backend prototype
+The repository contains a GraphQL backend with the owner-scoped domain model
 (`src/backend/`) and a React/TypeScript frontend app shell
 (`src/frontend/athlify/`). The AI documentation explains how to work safely
 with that current state:

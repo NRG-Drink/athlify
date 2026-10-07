@@ -2,8 +2,11 @@
 
 Technical detail documentation for the functional concept in [`CONCEPT.md`](CONCEPT.md).
 
-These are target security requirements. They are not implemented in the
-current repository, which contains no authentication or API source.
+These are target security requirements. The backend enforces ownership for
+every personal record
+([ADR-009](../copilot/adr/ADR-009-ownership-query-filters.md)), but
+authentication does not exist yet: every request acts as a provisioned
+development user, so the API must not be exposed beyond a local machine.
 
 ## Authentication and authorization
 

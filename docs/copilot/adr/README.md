@@ -11,6 +11,9 @@ the relevant [`frontend ADRs`](../frontend/adr/README.md) or
 |---|---|---|
 | [ADR-001](ADR-001-graphql-api-contract.md) | GraphQL as the frontend/backend API contract | Proposed |
 | [ADR-006](ADR-006-relay-global-ids.md) | Relay global IDs for all API entities | Proposed |
+| [ADR-008](ADR-008-domain-data-model.md) | Domain data model: per-user tags, exclusive merges, separate equipment tables | Proposed |
+| [ADR-009](ADR-009-ownership-query-filters.md) | Ownership enforced by EF Core query filters behind an `ICurrentUser` seam | Proposed |
+| [ADR-010](ADR-010-activity-and-event-value-domains.md) | Fixed value domains for mood, effort, wind and Event type | Proposed |
 
 ## When to create an ADR
 

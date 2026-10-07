@@ -14,13 +14,15 @@ considered before creating a backend-specific ADR.
 
 | ADR | Title | Status |
 |---|---|---|
-| — | No backend-specific ADRs recorded yet | — |
+| [ADR-011](ADR-011-ef-core-migrations.md) | EF Core migrations for the schema; endpoint tests on EF Core InMemory | Proposed |
 
 The API style is a shared decision; see
-[shared ADR-001](../../adr/ADR-001-graphql-api-contract.md). The backend
-prototype is under `src/backend/Athlify.Api/`. An implementation detail there
-(for example EF Core InMemory) is not an accepted architectural decision until
-it is recorded here.
+[shared ADR-001](../../adr/ADR-001-graphql-api-contract.md). Ownership
+enforcement and the value domains are shared decisions too
+([ADR-009](../../adr/ADR-009-ownership-query-filters.md),
+[ADR-010](../../adr/ADR-010-activity-and-event-value-domains.md)). The backend
+is under `src/backend/Athlify.Api/`. An implementation detail there is not an
+accepted architectural decision until it is recorded here.
 
 ## When to write an ADR
 

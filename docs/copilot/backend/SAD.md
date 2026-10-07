@@ -1,30 +1,32 @@
 # Athlify Backend – Software Architecture Document
 
 **Project**: Athlify
-**Last Updated**: 2026-10-03
+**Last Updated**: 2026-10-07
 **Version**: 1.0
 
 ## Overview
 
 Athlify's backend is the authoritative service for personal cycling data,
 domain calculations, synchronization and the frontend API contract. The
-repository currently contains only a small GraphQL prototype.
+repository contains the domain model with its GraphQL API; authentication,
+Strava synchronization and the Dashboard analyses are not implemented yet.
 
 ## Architecture Style
 
-The target architecture is a modular backend with separated domain areas,
-data-access boundaries and an API layer. The current implementation is a
-technical prototype and does not yet realize the complete target architecture.
+The backend is a modular monolith with one folder per domain area under
+`Domain/`, a shared EF Core DbContext as the data-access boundary and Hot
+Chocolate resolvers as the API layer. Authentication, synchronization and
+analytics will be added as further modules.
 
 ## Technology Stack
 
 | Layer | Technology | Rationale |
 | --- | --- | --- |
 | Frontend | React, TypeScript, Vite and Relay | The Body-Stats page calls this API |
-| Backend | ASP.NET Core (.NET 10) with Hot Chocolate GraphQL 16.6 | Current API prototype; API style proposed in [shared ADR-001](../adr/ADR-001-graphql-api-contract.md) |
-| Database | PostgreSQL through EF Core 10 and Npgsql (Aspire); EF Core InMemory in tests | Real database in the prototype, fast isolated endpoint tests; schema via `EnsureCreated`, migrations are still open |
+| Backend | ASP.NET Core (.NET 10) with Hot Chocolate GraphQL 16.6 | API style proposed in [shared ADR-001](../adr/ADR-001-graphql-api-contract.md) |
+| Database | PostgreSQL through EF Core 10 and Npgsql (Aspire); EF Core InMemory in tests | Schema through EF Core migrations, applied at startup ([ADR-011](adr/ADR-011-ef-core-migrations.md)) |
 | Tests | TUnit 1.x with `TUnit.AspNetCore` | Endpoint tests against `/graphql` |
-| Auth | Backend-owned authentication and authorization (planned) | Personal data ownership must be enforced server-side |
+| Auth | Backend-owned authentication and authorization (planned); ownership through EF Core query filters ([ADR-009](../adr/ADR-009-ownership-query-filters.md)) | Every request acts as a provisioned development user until authentication exists |
 | Hosting | Open | Deployment architecture is not yet decided |
 
 ## System Components
@@ -42,18 +44,25 @@ This document describes the technical context for changes to the repository. The
 
 ## Current repository state
 
-The current source code is a small .NET web prototype:
-
 ```text
 src/backend/
 ├── Athlify.slnx                    # solution (API + tests)
+├── dotnet-tools.json               # pinned dotnet-ef tool
 ├── Athlify.Api/
-│   ├── Program.cs                  # DI, Npgsql DbContext, GraphQL, seeding, MapGraphQL
-│   ├── Database/                   # InMemoryDb (DbContext), IDbSeeder, DbSeeder
-│   ├── Models/                     # BodyStats, BodyStatsDto, Comment, CommentDto, AppSettings
-│   ├── Queries/                    # BodyStatsQuery, BodyStatsMutation, BodyStatsNode, BodyStatsValidation, HelloWorldQuery
+│   ├── Program.cs                  # DI, DbContext (not pooled), GraphQL, cost limits, migrate/provision/seed
+│   ├── Database/
+│   │   ├── AthlifyDbContext.cs     # DbSets, Owner and NotDeleted query filters, owner and timestamp stamping
+│   │   ├── Configurations/         # keys, indexes, foreign keys and the check constraint per entity
+│   │   ├── Migrations/             # EF Core migrations (InitialDomainModel)
+│   │   └── DbSeeder.cs, DesignTimeDbContextFactory.cs
+│   ├── Domain/
+│   │   ├── Common/                 # Entity, Equipment, IOwned, Source, DomainErrors, ValidationErrors, Links, Projection
+│   │   ├── Users/                  # User, ICurrentUser, DevelopmentCurrentUser, provisioner, `me`
+│   │   ├── Body/                   # Body-Stats and their note
+│   │   ├── Tags/  Vehicles/  Gadgets/  Activities/  Events/
+│   │   └── Strava/                 # StravaConnection (stored, not exposed)
 │   └── Properties/                 # launchSettings.json (http://localhost:5095), ModuleInfo.cs
-└── Athlify.Api.Tests/              # TUnit endpoint tests (BodyStatsQueryTests, BodyStatsMutationTests)
+└── Athlify.Api.Tests/              # TUnit endpoint tests, one InMemory database per test
 ```
 
 - Target framework: `net10.0`, with nullable reference types and implicit
@@ -61,32 +70,38 @@ src/backend/
 - Hot Chocolate source generation: `[QueryType]` / `[MutationType]` static
   partial classes are registered through `AddTypes()`, which is generated
   from `[assembly: Module("Types")]`.
-- Projections, filtering and sorting are registered. `bodyStats` supports
-  filtering and sorting, and so do the nested `comments`.
-- Body-Stats support create, read, update and delete through
-  `addBodyStats`, `bodyStats`, `bodyStatsById`, `updateBodyStats` and
-  `deleteBodyStats`. Ids are Relay global IDs
-  ([ADR-006](../adr/ADR-006-relay-global-ids.md)), `node(id:)` resolves a
-  Body-Stats entry. `bodyStats` is a Relay connection with keyset cursors
-  (`ToPageAsync`, returned as `PageConnection<T>`), ordered by date and id,
-  newest first, at most 200 entries per page.
-- Input is separated from the entity (`BodyStatsDto`, `CommentDto`): the
-  client cannot set identity or timestamps. `updateBodyStats` synchronizes the
-  notes (edit, add, remove) and sets `ModifiedAt`; `deleteBodyStats` removes
-  the notes explicitly and returns the deleted id. The frontend uses one note
-  per entry; the API still accepts a list. `BodyStatsValidation`
-  rejects invalid values with the code `VALIDATION_ERROR`.
-- `Program.cs` always seeds sample Body-Stats at startup through `IDbSeeder`.
-  `AppSettings.ShouldSeedDb` exists but is not read yet.
-- There is no authentication, user ownership, PostgreSQL persistence or
-  Strava integration yet.
-
-The prototype Body-Stats model matches the
-[functional concept](../../concept/CONCEPT.md#36-body-stats) (body height is
-deliberately not recorded; notes are stored as `Comment` records) except for
-ownership: it has no owner yet, so every request sees every entry.
-
-The product modules from the PRD are not yet fully present in the current code. No change may present a prototype state as a completed product architecture.
+- Each domain area has an entity, an `…Input` record, validation, a
+  keyset-paged list query, create/update/delete mutations and a `node(id:)`
+  resolver. Lists, mutation results and `node(id:)` are shaped by the
+  GraphQL selection through `QueryContext<T>`, so nested selections such as
+  an activity's bicycle with its tags are always loaded. The operations are
+  listed in [`api-design.md`](../../concept/api-design.md).
+- Models and inputs are separate. The **entity** is the stored model and also
+  the GraphQL output type, so filtering, sorting, paging and `QueryContext`
+  projection run on the EF query; it carries no API attributes except `[ID]`
+  on `Entity.Id`. The **input** (`XInput`) is the only write model. How the API
+  shows an entity (Relay node, hidden fields, filters) is configured in its
+  `XObjectType` class. Output DTOs are only added where the data is not an
+  entity, such as the future Dashboard results. One file per task:
+  `X.cs` (entity), `XInput.cs`, `XValidation.cs`, `XObjectType.cs`, and the
+  resolvers (`XQueries.cs`, `XMutations.cs`, `XNode.cs`, or one `XResolvers.cs`
+  while it stays short). Bicycles and gadgets share the unmapped `Equipment`
+  base.
+- Ownership: `AthlifyDbContext` hides other users' records with the named
+  query filter `Owner` and assigns new records to the signed-in user. The user
+  comes only from `ICurrentUser`; `DevelopmentCurrentUser` returns the
+  development Administrator that `DevelopmentUserProvisioner` creates at
+  startup ([ADR-009](../adr/ADR-009-ownership-query-filters.md)).
+- Activities are soft deleted (`NotDeleted` filter). `averageSpeed` and the
+  merge totals are calculated by the domain code and stored.
+- Validation rejects invalid input with `VALIDATION_ERROR`; a missing user
+  gives `NOT_AUTHENTICATED`. Every rule is checked in application code; the
+  database constraints are a backstop that the InMemory tests do not cover.
+- At startup the API applies pending migrations, provisions the development
+  user and seeds sample Body-Stats for it. `AppSettings.ShouldSeedDb` exists
+  but is not read yet.
+- There is no authentication, Strava synchronization or Dashboard analysis
+  yet. The Strava connection is stored but not exposed.
 
 ## Backend responsibility
 
@@ -119,15 +134,15 @@ Each area should separate domain logic, data access and presentation so that per
 
 - **Responsibility**: Enforce ownership, calculations, synchronization and
   domain invariants for Activities, Dashboard, Garage, Body-Stats and Events.
-- **Interfaces**: Explicit application services or resolvers as the contract
-  becomes concrete.
+- **Interfaces**: Resolvers per area plus small domain modules where rules
+  span records (for example `MergeMembership`, `Links`).
 - **Data ownership**: Personal domain records belong to one user context.
 
 ### Persistence
 
 - **Responsibility**: Store domain records and synchronization state.
-- **Interfaces**: Repository or ORM boundary selected with the final
-  persistence decision.
+- **Interfaces**: `AthlifyDbContext` (EF Core 10, PostgreSQL); no repository
+  layer on top.
 - **Data ownership**: Durable personal records and external identifiers.
 
 ## Data rules
@@ -138,11 +153,15 @@ Each area should separate domain logic, data access and presentation so that per
 - Calculated values such as average speed and TSS are not treated as freely editable inputs.
 - Deleted synchronized Activities must not be unexpectedly reactivated by a later sync.
 - Gadgets can be assigned to multiple Activities; a bicycle is optionally assigned to an Activity.
-- Merges retain the original Activities traceably.
+- Merges retain the original Activities traceably; an Activity belongs to at most one merge.
+- Tags are managed per user and shared by Activities, bicycles, gadgets and Events.
+- The target entities and relationships are defined in the ERD in
+  [`data-model.md`](../../concept/data-model.md#entity-relationship-diagram)
+  ([ADR-008](../adr/ADR-008-domain-data-model.md)).
 
 ## API contract
 
-The contract must define clear queries/mutations, input validation, return data and error cases for Activities, Dashboard, Garage, Body-Stats and Events. Schema or DTO changes are reconciled with the frontend Copilot context and the technical documents under `../../concept/`.
+The contract must define clear queries/mutations, input validation, return data and error cases for Activities, Dashboard, Garage, Body-Stats and Events. Schema or input changes are reconciled with the frontend Copilot context and the technical documents under `../../concept/`.
 
 ## Integration boundaries
 
@@ -172,10 +191,12 @@ operations.
 
 ## Scalability
 
-- Current capacity: Small in-memory prototype with seeded Body-Stats sample data.
-- Scaling strategy: Select persistence and deployment scaling after the open
-  architecture decisions are resolved.
-- Known bottlenecks: In-memory persistence and prototype-only domain coverage.
+- Current capacity: One PostgreSQL instance; lists are paged with at most 200
+  records per page.
+- Scaling strategy: Select deployment scaling once the deployment
+  architecture is decided.
+- Known bottlenecks: Nested lists are loaded through projections without
+  DataLoaders; the query cost limits are raised to 10,000 for filtered pages.
 
 ## Development guardrails
 

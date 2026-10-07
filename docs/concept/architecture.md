@@ -7,10 +7,11 @@ Technical detail documentation for the functional concept in [`CONCEPT.md`](CONC
 Athlify consists of a frontend, a web API and a database. The frontend communicates with the backend. The backend processes domain rules, stores personal data and integrates with Strava.
 
 This is the planned architecture. The current repository contains a
-React/TypeScript frontend app shell and a GraphQL backend prototype with
-Body-Stats operations. There is no authentication or Strava integration yet.
-The Body-Stats page of the frontend calls the backend; the other areas are
-placeholders.
+React/TypeScript frontend app shell and a GraphQL backend with the
+owner-scoped domain model (Activities, merges, Garage, tags, Body-Stats and
+Events). There is no authentication, Strava integration or Dashboard analysis
+yet. The Body-Stats page of the frontend calls the backend; the other areas
+are placeholders.
 
 ```mermaid
 flowchart LR

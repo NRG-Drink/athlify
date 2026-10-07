@@ -2,5 +2,6 @@
 
 public interface IDbSeeder
 {
-    abstract void Seed(InMemoryDb context);
+    /// <summary>Adds sample data owned by <paramref name="ownerId"/>.</summary>
+    void Seed(AthlifyDbContext context, int ownerId);
 }
