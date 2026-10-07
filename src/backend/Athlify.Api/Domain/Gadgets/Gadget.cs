@@ -7,20 +7,8 @@ namespace Athlify.Api.Domain.Gadgets;
 
 /// <summary>Additional equipment such as a bike computer or a heart-rate monitor.</summary>
 [Node(NodeResolverType = typeof(GadgetNode), NodeResolver = nameof(GadgetNode.GetAsync))]
-public class Gadget : Entity, IOwned
+public class Gadget : Equipment
 {
-    [GraphQLIgnore]
-    public int UserId { get; set; }
-
-    public string Brand { get; set; } = string.Empty;
-    public string Model { get; set; } = string.Empty;
-    public string? Nickname { get; set; }
-    public DateOnly? PurchaseDate { get; set; }
-    public string? Description { get; set; }
-    public DateOnly? DeactivationDate { get; set; }
-    public decimal? Price { get; set; }
-    public Source Source { get; set; } = Source.Manual;
-
     public ICollection<Tag> Tags { get; set; } = [];
 
     /// <summary>The bicycles this gadget is mounted on.</summary>
@@ -37,19 +25,8 @@ public class Gadget : Entity, IOwned
 /// Client input for a <see cref="Gadget"/>. <c>tagIds</c> and <c>vehicleIds</c> are complete sets; the link
 /// between gadgets and bicycles is edited from the gadget.
 /// </summary>
-public record GadgetInput
+public record GadgetInput : EquipmentInput
 {
-    public string Brand { get; set; } = string.Empty;
-    public string Model { get; set; } = string.Empty;
-    public string? Nickname { get; set; }
-    public DateOnly? PurchaseDate { get; set; }
-    public string? Description { get; set; }
-    public DateOnly? DeactivationDate { get; set; }
-    public decimal? Price { get; set; }
-
-    [ID<Tag>]
-    public IReadOnlyList<int> TagIds { get; set; } = [];
-
     [ID<Vehicle>]
     public IReadOnlyList<int> VehicleIds { get; set; } = [];
 }

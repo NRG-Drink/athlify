@@ -38,7 +38,7 @@ public static partial class VehicleMutation
         AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
-        ThrowIfInvalid(vehicle);
+        EquipmentValidation.ThrowIfInvalid(vehicle);
         var created = new Vehicle();
         await ApplyAsync(created, vehicle, db, cancellationToken);
         db.Vehicles.Add(created);
@@ -53,7 +53,7 @@ public static partial class VehicleMutation
         AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
-        ThrowIfInvalid(vehicle);
+        EquipmentValidation.ThrowIfInvalid(vehicle);
         var existing = await db.Vehicles.Include(v => v.Tags).FirstOrDefaultAsync(v => v.Id == id, cancellationToken);
         if (existing is null)
         {
@@ -100,25 +100,11 @@ public static partial class VehicleMutation
         return id;
     }
 
-    private static void ThrowIfInvalid(VehicleInput dto)
-    {
-        var errors = new ValidationErrors();
-        EquipmentValidation.Validate(errors, dto.Brand, dto.Model, dto.Nickname, dto.Description,
-            dto.PurchaseDate, dto.DeactivationDate, dto.Price);
-        errors.ThrowIfAny();
-    }
-
     private static async Task ApplyAsync(Vehicle target, VehicleInput dto, AthlifyDbContext db, CancellationToken cancellationToken)
     {
         var tags = await Links.LoadAllAsync(db.Tags, dto.TagIds, "Tag", cancellationToken);
 
-        target.Brand = dto.Brand.Trim();
-        target.Model = dto.Model.Trim();
-        target.Nickname = Text.OrNull(dto.Nickname);
-        target.PurchaseDate = dto.PurchaseDate;
-        target.Description = Text.OrNull(dto.Description);
-        target.DeactivationDate = dto.DeactivationDate;
-        target.Price = dto.Price;
+        EquipmentValidation.Apply(target, dto);
         Links.ReplaceWith(target.Tags, tags);
     }
 }

@@ -1,4 +1,5 @@
 using Athlify.Api.Domain.Activities;
+using Athlify.Api.Domain.Common;
 using Athlify.Api.Domain.Events;
 using Athlify.Api.Domain.Gadgets;
 using Athlify.Api.Domain.Strava;
