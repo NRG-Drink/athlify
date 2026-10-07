@@ -15,8 +15,8 @@ public class TagConfiguration : IEntityTypeConfiguration<Tag>
     public void Configure(EntityTypeBuilder<Tag> builder)
     {
         builder.HasOne<User>().WithMany().HasForeignKey(t => t.UserId).OnDelete(DeleteBehavior.Cascade);
-        builder.Property(t => t.Name).HasMaxLength(TagMutation.MaxNameLength);
-        builder.Property(t => t.NormalizedName).HasMaxLength(TagMutation.MaxNameLength);
+        builder.Property(t => t.Name).HasMaxLength(TagValidation.MaxNameLength);
+        builder.Property(t => t.NormalizedName).HasMaxLength(TagValidation.MaxNameLength);
         builder.HasIndex(t => new { t.UserId, t.NormalizedName }).IsUnique();
     }
 }
@@ -101,8 +101,8 @@ public class MaintenanceCycleConfiguration : IEntityTypeConfiguration<Maintenanc
             .WithMany(g => g.MaintenanceCycles)
             .HasForeignKey(m => m.GadgetId)
             .OnDelete(DeleteBehavior.Cascade);
-        builder.Property(m => m.Name).HasMaxLength(MaintenanceCycleMutation.MaxNameLength);
-        builder.Property(m => m.Description).HasMaxLength(MaintenanceCycleMutation.MaxDescriptionLength);
+        builder.Property(m => m.Name).HasMaxLength(MaintenanceCycleValidation.MaxNameLength);
+        builder.Property(m => m.Description).HasMaxLength(MaintenanceCycleValidation.MaxDescriptionLength);
     }
 }
 
@@ -111,8 +111,8 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
     public void Configure(EntityTypeBuilder<Event> builder)
     {
         builder.HasOne<User>().WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
-        builder.Property(e => e.Name).HasMaxLength(EventMutation.MaxNameLength);
-        builder.Property(e => e.Description).HasMaxLength(EventMutation.MaxDescriptionLength);
+        builder.Property(e => e.Name).HasMaxLength(EventValidation.MaxNameLength);
+        builder.Property(e => e.Description).HasMaxLength(EventValidation.MaxDescriptionLength);
         builder.HasIndex(e => new { e.UserId, e.StartDate });
         builder.HasMany(e => e.Tags).WithMany(t => t.Events).UsingEntity("EventTags");
     }

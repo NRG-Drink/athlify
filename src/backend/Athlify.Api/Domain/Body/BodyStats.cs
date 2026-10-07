@@ -6,19 +6,6 @@ namespace Athlify.Api.Domain.Body;
 [Node(NodeResolverType = typeof(BodyStatsNode), NodeResolver = nameof(BodyStatsNode.GetAsync))]
 public class BodyStats : Entity, IOwned
 {
-    public BodyStats() { }
-
-    public BodyStats(BodyStatsInput dto)
-    {
-        Date = UtcDateTime.Normalize(dto.Date);
-        Weight = dto.Weight;
-        BodyFatPercentage = dto.BodyFatPercentage;
-        MusclePercentage = dto.MusclePercentage;
-        WaterPercentage = dto.WaterPercentage;
-        BoneMass = dto.BoneMass;
-        Comments = dto.Comments.Select(c => new Comment { Content = c.Content }).ToList();
-    }
-
     [GraphQLIgnore]
     public int UserId { get; set; }
 

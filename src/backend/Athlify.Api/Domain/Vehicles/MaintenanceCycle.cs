@@ -56,16 +56,13 @@ public record MaintenanceCycleInput
 [MutationType]
 public static partial class MaintenanceCycleMutation
 {
-    public const int MaxNameLength = 100;
-    public const int MaxDescriptionLength = 2000;
-
     public static async Task<MaintenanceCycle> CreateMaintenanceCycle(
         MaintenanceCycleInput maintenanceCycle,
         QueryContext<MaintenanceCycle> query,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
-        ThrowIfInvalid(maintenanceCycle);
+        MaintenanceCycleValidation.ThrowIfInvalid(maintenanceCycle);
         var created = new MaintenanceCycle();
         await ApplyAsync(created, maintenanceCycle, db, cancellationToken);
         db.MaintenanceCycles.Add(created);
@@ -80,7 +77,7 @@ public static partial class MaintenanceCycleMutation
         AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
-        ThrowIfInvalid(maintenanceCycle);
+        MaintenanceCycleValidation.ThrowIfInvalid(maintenanceCycle);
         var existing = await db.MaintenanceCycles.FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
         if (existing is null)
         {
@@ -107,20 +104,6 @@ public static partial class MaintenanceCycleMutation
         db.MaintenanceCycles.Remove(existing);
         await db.SaveChangesAsync(cancellationToken);
         return id;
-    }
-
-    private static void ThrowIfInvalid(MaintenanceCycleInput dto)
-    {
-        var errors = new ValidationErrors();
-        errors.AddIf((dto.VehicleId is null) == (dto.GadgetId is null),
-            "A maintenance cycle belongs to exactly one bicycle or one gadget.");
-        errors.Text(dto.Name, "Name", MaxNameLength, required: true);
-        errors.Text(dto.Description, "Description", MaxDescriptionLength, required: false);
-        errors.AddIf(dto.IntervalDistance is null && dto.IntervalDays is null,
-            "Set an interval in kilometers or in days.");
-        errors.AddIf(dto.IntervalDistance <= 0, "The distance interval must be greater than 0.");
-        errors.AddIf(dto.IntervalDays <= 0, "The day interval must be greater than 0.");
-        errors.ThrowIfAny();
     }
 
     private static async Task ApplyAsync(

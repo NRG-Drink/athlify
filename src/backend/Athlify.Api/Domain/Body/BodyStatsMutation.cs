@@ -15,10 +15,12 @@ public static partial class BodyStatsMutation
     {
         BodyStatsValidation.ThrowIfInvalid(bodyStats);
 
-        var bodyStatsObj = new BodyStats(bodyStats);
-        var res = await db.BodyStats.AddAsync(bodyStatsObj, cancellationToken);
+        var created = new BodyStats();
+        ApplyFields(created, bodyStats);
+        created.Comments = bodyStats.Comments.Select(c => new Comment { Content = c.Content }).ToList();
+        db.BodyStats.Add(created);
         await db.SaveChangesAsync(cancellationToken);
-        return res.Entity;
+        return created;
     }
 
     public static async Task<BodyStats?> UpdateBodyStats(
@@ -37,14 +39,8 @@ public static partial class BodyStatsMutation
             return null;
         }
 
-        existing.Date = UtcDateTime.Normalize(bodyStats.Date);
-        existing.Weight = bodyStats.Weight;
-        existing.BodyFatPercentage = bodyStats.BodyFatPercentage;
-        existing.MusclePercentage = bodyStats.MusclePercentage;
-        existing.WaterPercentage = bodyStats.WaterPercentage;
-        existing.BoneMass = bodyStats.BoneMass;
+        ApplyFields(existing, bodyStats);
         SyncComments(existing, bodyStats.Comments, db);
-
         await db.SaveChangesAsync(cancellationToken);
         return existing;
     }
@@ -71,6 +67,16 @@ public static partial class BodyStatsMutation
         return id;
     }
 
+    private static void ApplyFields(BodyStats target, BodyStatsInput input)
+    {
+        target.Date = UtcDateTime.Normalize(input.Date);
+        target.Weight = input.Weight;
+        target.BodyFatPercentage = input.BodyFatPercentage;
+        target.MusclePercentage = input.MusclePercentage;
+        target.WaterPercentage = input.WaterPercentage;
+        target.BoneMass = input.BoneMass;
+    }
+
     private static void SyncComments(
         BodyStats existing,
         IReadOnlyList<CommentInput> incoming,
@@ -84,10 +90,7 @@ public static partial class BodyStatsMutation
         var unknownIds = incomingById.Keys.Except(existing.Comments.Select(c => c.Id)).ToList();
         if (unknownIds.Count > 0)
         {
-            throw new GraphQLException(ErrorBuilder.New()
-                .SetMessage("A note does not belong to this entry.")
-                .SetCode(BodyStatsValidation.ErrorCode)
-                .Build());
+            throw DomainErrors.Validation("A note does not belong to this entry.");
         }
 
         foreach (var comment in existing.Comments.ToList())

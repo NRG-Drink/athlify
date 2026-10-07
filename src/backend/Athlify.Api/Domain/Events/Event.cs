@@ -77,16 +77,13 @@ public static partial class EventQuery
 [MutationType]
 public static partial class EventMutation
 {
-    public const int MaxNameLength = 100;
-    public const int MaxDescriptionLength = 2000;
-
     public static async Task<Event> CreateEvent(
         EventInput @event,
         QueryContext<Event> query,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
-        ThrowIfInvalid(@event);
+        EventValidation.ThrowIfInvalid(@event);
         var created = new Event();
         await ApplyAsync(created, @event, db, cancellationToken);
         db.Events.Add(created);
@@ -101,7 +98,7 @@ public static partial class EventMutation
         AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
-        ThrowIfInvalid(@event);
+        EventValidation.ThrowIfInvalid(@event);
         var existing = await db.Events.Include(e => e.Tags).FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
         if (existing is null)
         {
@@ -130,15 +127,6 @@ public static partial class EventMutation
         db.Events.Remove(existing);
         await db.SaveChangesAsync(cancellationToken);
         return id;
-    }
-
-    private static void ThrowIfInvalid(EventInput dto)
-    {
-        var errors = new ValidationErrors();
-        errors.Text(dto.Name, "Name", MaxNameLength, required: true);
-        errors.Text(dto.Description, "Description", MaxDescriptionLength, required: false);
-        errors.AddIf(dto.EndDate < dto.StartDate, "The end date must not be before the start date.");
-        errors.ThrowIfAny();
     }
 
     private static async Task ApplyAsync(Event target, EventInput dto, AthlifyDbContext db, CancellationToken cancellationToken)
