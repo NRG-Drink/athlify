@@ -6,8 +6,6 @@ export type BodyStatsFormValues = Record<BodyStatsMetricKey, string> & {
   date: string
   /** The one optional note (free text). */
   note: string
-  /** Global ID of the saved note, so an update edits it instead of adding another. */
-  noteId?: string
 }
 
 export type BodyStatsFormErrors = Partial<Record<BodyStatsMetricKey | 'date', string>>
@@ -59,7 +57,7 @@ export function validate(values: BodyStatsFormValues, t: TFunction): BodyStatsFo
   return errors
 }
 
-/** Mutation input; an empty note is dropped. Call only with values that passed `validate`. */
+/** Mutation input; an empty note becomes null. Call only with values that passed `validate`. */
 export function toInput(values: BodyStatsFormValues) {
   return {
     date: new Date(values.date).toISOString(),
@@ -68,8 +66,6 @@ export function toInput(values: BodyStatsFormValues) {
     musclePercentage: parseDecimal(values.musclePercentage),
     waterPercentage: parseDecimal(values.waterPercentage),
     boneMass: parseDecimal(values.boneMass),
-    comments: values.note.trim()
-      ? [{ ...(values.noteId ? { id: values.noteId } : {}), content: values.note.trim() }]
-      : [],
+    comment: values.note.trim() || null,
   }
 }

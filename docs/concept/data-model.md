@@ -46,9 +46,9 @@ domains).
   `lastServiceDate` and `description`. At least one interval is set.
 - **BodyStats**: measurement date, weight, body-fat percentage, muscle
   percentage, water percentage and bone mass.
-- **Note**: free text with creation and modification timestamps, attached to
-  one Body-Stats entry and stored as `Comment`. The product has one note per
-  Body-Stats entry; the API keeps a list and validates at most one.
+- **Note**: optional free text (at most 2000 characters), stored as the plain
+  string column `comment` of the Body-Stats entry. There is no separate table,
+  link or list; a model that gets a note later gets the same column.
 - **Event**: name, type, description, tags, start date and optional end
   date. The type is one of `Crash`, `Injury`, `Illness`, `Repair`, `Break`,
   `Goal` and `Other`.
@@ -73,7 +73,7 @@ domains).
 - Activities, vehicles, gadgets and Events can carry any number of tags.
 - Events are not linked to activities; the Dashboard timeline relates them by
   date.
-- A Body-Stats entry has at most one note; deleting the entry deletes its note.
+- A Body-Stats entry has at most one note; the note lives in the entry itself.
 - A soft-deleted activity remains with its deletion timestamp and is hidden from
   normal views and synchronization. A later Strava synchronization must not
   reactivate it.
@@ -150,7 +150,6 @@ erDiagram
     GADGET ||--o{ VEHICLE_GADGET : "mounted on"
     VEHICLE |o--o{ MAINTENANCE_CYCLE : "maintained by"
     GADGET |o--o{ MAINTENANCE_CYCLE : "maintained by"
-    BODY_STATS ||--o{ COMMENT : "has note"
 
     TAG ||--o{ ACTIVITY_TAG : labels
     ACTIVITY ||--o{ ACTIVITY_TAG : tagged
@@ -288,14 +287,7 @@ erDiagram
         double musclePercentage
         double waterPercentage
         double boneMass "kg"
-        datetime createdAt
-        datetime modifiedAt
-    }
-    COMMENT {
-        int id PK
-        uuid uid UK
-        int bodyStatsId FK
-        string content "note, max 2000 chars"
+        string comment "note, max 2000 chars, optional"
         datetime createdAt
         datetime modifiedAt
     }
@@ -345,7 +337,7 @@ Rules that the diagram cannot express:
 1. A merge has at least two activities.
 2. A maintenance cycle has exactly one of `vehicleId` and `gadgetId`.
 3. Join tables and `mergeId` only connect records of the same owner.
-4. A Body-Stats entry holds at most one note (validated by the API).
+4. A Body-Stats entry holds at most one note, the `comment` string (max 2000 characters, validated by the API).
 5. `averageSpeed` and `tss` are calculated by the backend and are never
    client input.
 6. `(userId, stravaActivityId)` and `(userId, stravaGearId)` are unique, which

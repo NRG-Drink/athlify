@@ -13,7 +13,6 @@ public static class BodyStatsNode
         CancellationToken cancellationToken)
     {
         return await db.BodyStats
-            .Include(b => b.Comments)
             .FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
     }
 }

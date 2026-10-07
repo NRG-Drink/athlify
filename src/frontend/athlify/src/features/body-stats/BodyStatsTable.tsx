@@ -20,10 +20,7 @@ const tableFragment = graphql`
     musclePercentage
     waterPercentage
     boneMass
-    comments {
-      id
-      content
-    }
+    comment
   }
 `
 

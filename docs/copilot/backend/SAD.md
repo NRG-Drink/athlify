@@ -56,7 +56,7 @@ src/backend/
 │   │   ├── Migrations/             # EF Core migrations (InitialDomainModel)
 │   │   └── DbSeeder.cs, DesignTimeDbContextFactory.cs
 │   ├── Domain/
-│   │   ├── Common/                 # Entity, IOwned, DomainErrors, ValidationErrors, Links, Projection
+│   │   ├── Common/                 # Entity, Equipment, IOwned, Source, DomainErrors, ValidationErrors, Links, Projection
 │   │   ├── Users/                  # User, ICurrentUser, DevelopmentCurrentUser, provisioner, `me`
 │   │   ├── Body/                   # Body-Stats and their note
 │   │   ├── Tags/  Vehicles/  Gadgets/  Activities/  Events/
@@ -70,12 +70,23 @@ src/backend/
 - Hot Chocolate source generation: `[QueryType]` / `[MutationType]` static
   partial classes are registered through `AddTypes()`, which is generated
   from `[assembly: Module("Types")]`.
-- Each domain area has an entity, a `…Dto` input record, validation, a
+- Each domain area has an entity, an `…Input` record, validation, a
   keyset-paged list query, create/update/delete mutations and a `node(id:)`
   resolver. Lists, mutation results and `node(id:)` are shaped by the
   GraphQL selection through `QueryContext<T>`, so nested selections such as
   an activity's bicycle with its tags are always loaded. The operations are
   listed in [`api-design.md`](../../concept/api-design.md).
+- Models and inputs are separate. The **entity** is the stored model and also
+  the GraphQL output type, so filtering, sorting, paging and `QueryContext`
+  projection run on the EF query; it carries no API attributes except `[ID]`
+  on `Entity.Id`. The **input** (`XInput`) is the only write model. How the API
+  shows an entity (Relay node, hidden fields, filters) is configured in its
+  `XObjectType` class. Output DTOs are only added where the data is not an
+  entity, such as the future Dashboard results. One file per task:
+  `X.cs` (entity), `XInput.cs`, `XValidation.cs`, `XObjectType.cs`, and the
+  resolvers (`XQueries.cs`, `XMutations.cs`, `XNode.cs`, or one `XResolvers.cs`
+  while it stays short). Bicycles and gadgets share the unmapped `Equipment`
+  base.
 - Ownership: `AthlifyDbContext` hides other users' records with the named
   query filter `Owner` and assigns new records to the signed-in user. The user
   comes only from `ICurrentUser`; `DevelopmentCurrentUser` returns the
@@ -150,7 +161,7 @@ Each area should separate domain logic, data access and presentation so that per
 
 ## API contract
 
-The contract must define clear queries/mutations, input validation, return data and error cases for Activities, Dashboard, Garage, Body-Stats and Events. Schema or DTO changes are reconciled with the frontend Copilot context and the technical documents under `../../concept/`.
+The contract must define clear queries/mutations, input validation, return data and error cases for Activities, Dashboard, Garage, Body-Stats and Events. Schema or input changes are reconciled with the frontend Copilot context and the technical documents under `../../concept/`.
 
 ## Integration boundaries
 

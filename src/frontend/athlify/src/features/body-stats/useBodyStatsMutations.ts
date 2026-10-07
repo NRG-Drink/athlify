@@ -17,15 +17,12 @@ export const bodyStatsRecordFragment = graphql`
     musclePercentage
     waterPercentage
     boneMass
-    comments {
-      id
-      content
-    }
+    comment
   }
 `
 
 const addMutation = graphql`
-  mutation useBodyStatsMutationsAddMutation($input: BodyStatsDtoInput!, $connections: [ID!]!) {
+  mutation useBodyStatsMutationsAddMutation($input: BodyStatsInput!, $connections: [ID!]!) {
     addBodyStats(bodyStats: $input)
       @prependNode(connections: $connections, edgeTypeName: "BodyStatsEdge") {
       ...useBodyStatsMutations_entry
@@ -34,7 +31,7 @@ const addMutation = graphql`
 `
 
 const updateMutation = graphql`
-  mutation useBodyStatsMutationsUpdateMutation($id: ID!, $input: BodyStatsDtoInput!) {
+  mutation useBodyStatsMutationsUpdateMutation($id: ID!, $input: BodyStatsInput!) {
     updateBodyStats(id: $id, bodyStats: $input) {
       ...useBodyStatsMutations_entry
     }

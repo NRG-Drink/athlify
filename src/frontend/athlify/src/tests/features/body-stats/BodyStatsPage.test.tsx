@@ -18,14 +18,14 @@ interface Entry {
   musclePercentage: number
   waterPercentage: number
   boneMass: number
-  comments: { id: string; content: string }[]
+  comment: string | null
 }
 
 const entry = (
   id: string,
   date: string,
   weight: number,
-  comments: Entry['comments'] = [],
+  comment: Entry['comment'] = null,
 ): Entry => ({
   id,
   date,
@@ -34,10 +34,10 @@ const entry = (
   musclePercentage: 40.3,
   waterPercentage: 60.1,
   boneMass: 3.2,
-  comments,
+  comment,
 })
 
-const newest = entry('bs-a', '2026-10-02T08:00:00Z', 70.5, [{ id: 'c-1', content: 'Locker' }])
+const newest = entry('bs-a', '2026-10-02T08:00:00Z', 70.5, 'Locker')
 const middle = entry('bs-b', '2026-10-01T08:00:00Z', 71)
 const oldest = entry('bs-c', '2026-09-30T08:00:00Z', 71.2)
 const longAgo = entry('bs-d', '2026-03-01T08:00:00Z', 74)
@@ -374,7 +374,7 @@ describe('BodyStatsPage', () => {
             musclePercentage: 40.3,
             waterPercentage: 60.1,
             boneMass: 3.2,
-            comments: [{ content: 'neu' }],
+            comment: 'neu',
           },
           connections: [expect.stringContaining('BodyStatsPage_bodyStats')],
         },
@@ -438,7 +438,7 @@ describe('BodyStatsPage', () => {
                 updateBodyStats: {
                   ...newest,
                   weight: 69,
-                  comments: [{ id: 'c-1', content: 'Locker' }],
+                  comment: 'Locker',
                 },
               },
             }
@@ -457,7 +457,7 @@ describe('BodyStatsPage', () => {
       expect(calls(UPDATE)).toHaveLength(1)
       expect(calls(UPDATE)[0]).toMatchObject({
         id: 'bs-a',
-        input: { weight: 69, comments: [{ id: 'c-1', content: 'Locker' }] },
+        input: { weight: 69, comment: 'Locker' },
       })
       expect(await within(table()).findByText('69.0')).toBeInTheDocument()
       expect(calls(QUERY)).toHaveLength(1)
@@ -486,7 +486,7 @@ describe('BodyStatsPage', () => {
       await waitFor(() => expect(rowCount()).toBe(3))
     })
 
-    it('sends the edited note with its id, and a cleared note as no note', async () => {
+    it('sends the edited note, and a cleared note as no note', async () => {
       const { user, calls } = page((operation) =>
         operation === UPDATE ? { data: { updateBodyStats: newest } } : okQuery(),
       )
@@ -498,7 +498,7 @@ describe('BodyStatsPage', () => {
       await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
       await waitFor(() => expect(calls(UPDATE)).toHaveLength(1))
       expect(calls(UPDATE)[0]).toMatchObject({
-        input: { comments: [{ id: 'c-1', content: 'Müde' }] },
+        input: { comment: 'Müde' },
       })
 
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
@@ -506,7 +506,7 @@ describe('BodyStatsPage', () => {
       await user.clear(within(dialog).getByRole('textbox', { name: 'Notiz' }))
       await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
       await waitFor(() => expect(calls(UPDATE)).toHaveLength(2))
-      expect(calls(UPDATE)[1]).toMatchObject({ input: { comments: [] } })
+      expect(calls(UPDATE)[1]).toMatchObject({ input: { comment: null } })
     })
 
     it('has no notes column and shows the add button beside the table heading', async () => {

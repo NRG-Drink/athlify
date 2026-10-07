@@ -1,39 +1,16 @@
 using Athlify.Api.Database;
 using Athlify.Api.Domain.Common;
 using GreenDonut.Data;
-using HotChocolate.Types.Pagination;
 using HotChocolate.Types.Relay;
 using Microsoft.EntityFrameworkCore;
 
 namespace Athlify.Api.Domain.Activities;
 
-[QueryType]
-public static partial class ActivityQuery
-{
-    private static readonly Func<SortDefinition<Activity>, SortDefinition<Activity>> DefaultOrder =
-        sort => sort.AddDescending(a => a.Date).AddDescending(a => a.Id);
-
-    /// <summary>Active activities, newest first; soft-deleted ones are never returned.</summary>
-    [UseFiltering]
-    [UseSorting]
-    public static async Task<PageConnection<Activity>> GetActivities(
-        PagingArguments pagingArgs,
-        QueryContext<Activity> query,
-        AthlifyDbContext db,
-        CancellationToken cancellationToken)
-    {
-        var page = await db.Activities
-            .With(query.Include(a => a.Id), DefaultOrder)
-            .ToPageAsync(pagingArgs, cancellationToken);
-        return new PageConnection<Activity>(page);
-    }
-}
-
 [MutationType]
 public static partial class ActivityMutation
 {
     public static async Task<Activity> CreateActivity(
-        ActivityDto activity,
+        ActivityInput activity,
         QueryContext<Activity> query,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
@@ -49,7 +26,7 @@ public static partial class ActivityMutation
     /// <summary>Updates the editable fields; source, Strava id and calculated values stay server-owned.</summary>
     public static async Task<Activity?> UpdateActivity(
         [ID<Activity>] int id,
-        ActivityDto activity,
+        ActivityInput activity,
         QueryContext<Activity> query,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
@@ -108,38 +85,28 @@ public static partial class ActivityMutation
             .ThenInclude(m => m.Activities)
             .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
 
-    private static async Task ApplyAsync(Activity target, ActivityDto dto, AthlifyDbContext db, CancellationToken cancellationToken)
+    private static async Task ApplyAsync(Activity target, ActivityInput input, AthlifyDbContext db, CancellationToken cancellationToken)
     {
-        var vehicle = await Links.LoadOptionalAsync(db.Vehicles, dto.VehicleId, "Bicycle", cancellationToken);
-        var gadgets = await Links.LoadAllAsync(db.Gadgets, dto.GadgetIds, "Gadget", cancellationToken);
-        var tags = await Links.LoadAllAsync(db.Tags, dto.TagIds, "Tag", cancellationToken);
+        var vehicle = await Links.LoadOptionalAsync(db.Vehicles, input.VehicleId, "Bicycle", cancellationToken);
+        var gadgets = await Links.LoadAllAsync(db.Gadgets, input.GadgetIds, "Gadget", cancellationToken);
+        var tags = await Links.LoadAllAsync(db.Tags, input.TagIds, "Tag", cancellationToken);
 
-        target.Date = UtcDateTime.Normalize(dto.Date);
-        target.Type = dto.Type;
-        target.Time = dto.Time;
-        target.Distance = dto.Distance;
-        target.ElevationGain = dto.ElevationGain;
-        target.Description = Text.OrNull(dto.Description);
-        target.HeartRateMin = dto.HeartRateMin;
-        target.HeartRateMax = dto.HeartRateMax;
-        target.HeartRateAverage = dto.HeartRateAverage;
-        target.Mood = dto.Mood;
-        target.Effort = dto.Effort;
-        target.Wind = dto.Wind;
+        target.Date = UtcDateTime.Normalize(input.Date);
+        target.Type = input.Type;
+        target.Time = input.Time;
+        target.Distance = input.Distance;
+        target.ElevationGain = input.ElevationGain;
+        target.Description = Text.OrNull(input.Description);
+        target.HeartRateMin = input.HeartRateMin;
+        target.HeartRateMax = input.HeartRateMax;
+        target.HeartRateAverage = input.HeartRateAverage;
+        target.Mood = input.Mood;
+        target.Effort = input.Effort;
+        target.Wind = input.Wind;
         target.Vehicle = vehicle;
         target.VehicleId = vehicle?.Id;
         Links.ReplaceWith(target.Gadgets, gadgets);
         Links.ReplaceWith(target.Tags, tags);
         target.Recalculate();
     }
-}
-
-public static class ActivityNode
-{
-    public static Task<Activity?> GetAsync(
-        [ID<Activity>] int id,
-        QueryContext<Activity> query,
-        AthlifyDbContext db,
-        CancellationToken cancellationToken) =>
-        Projection.FirstOrDefaultAsync(db.Activities, id, query, cancellationToken);
 }

@@ -1,6 +1,5 @@
 using Athlify.Api.Database;
 using Athlify.Api.Domain.Common;
-using Athlify.Api.Domain.Vehicles;
 using GreenDonut.Data;
 using HotChocolate.Types.Pagination;
 using HotChocolate.Types.Relay;
@@ -33,12 +32,12 @@ public static partial class GadgetQuery
 public static partial class GadgetMutation
 {
     public static async Task<Gadget> CreateGadget(
-        GadgetDto gadget,
+        GadgetInput gadget,
         QueryContext<Gadget> query,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
-        ThrowIfInvalid(gadget);
+        EquipmentValidation.ThrowIfInvalid(gadget);
         var created = new Gadget();
         await ApplyAsync(created, gadget, db, cancellationToken);
         db.Gadgets.Add(created);
@@ -48,12 +47,12 @@ public static partial class GadgetMutation
 
     public static async Task<Gadget?> UpdateGadget(
         [ID<Gadget>] int id,
-        GadgetDto gadget,
+        GadgetInput gadget,
         QueryContext<Gadget> query,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
-        ThrowIfInvalid(gadget);
+        EquipmentValidation.ThrowIfInvalid(gadget);
         var existing = await db.Gadgets
             .Include(g => g.Tags)
             .Include(g => g.Vehicles)
@@ -99,26 +98,12 @@ public static partial class GadgetMutation
         return id;
     }
 
-    private static void ThrowIfInvalid(GadgetDto dto)
+    private static async Task ApplyAsync(Gadget target, GadgetInput input, AthlifyDbContext db, CancellationToken cancellationToken)
     {
-        var errors = new ValidationErrors();
-        EquipmentValidation.Validate(errors, dto.Brand, dto.Model, dto.Nickname, dto.Description,
-            dto.PurchaseDate, dto.DeactivationDate, dto.Price);
-        errors.ThrowIfAny();
-    }
+        var tags = await Links.LoadAllAsync(db.Tags, input.TagIds, "Tag", cancellationToken);
+        var vehicles = await Links.LoadAllAsync(db.Vehicles, input.VehicleIds, "Bicycle", cancellationToken);
 
-    private static async Task ApplyAsync(Gadget target, GadgetDto dto, AthlifyDbContext db, CancellationToken cancellationToken)
-    {
-        var tags = await Links.LoadAllAsync(db.Tags, dto.TagIds, "Tag", cancellationToken);
-        var vehicles = await Links.LoadAllAsync(db.Vehicles, dto.VehicleIds, "Bicycle", cancellationToken);
-
-        target.Brand = dto.Brand.Trim();
-        target.Model = dto.Model.Trim();
-        target.Nickname = Text.OrNull(dto.Nickname);
-        target.PurchaseDate = dto.PurchaseDate;
-        target.Description = Text.OrNull(dto.Description);
-        target.DeactivationDate = dto.DeactivationDate;
-        target.Price = dto.Price;
+        EquipmentValidation.Apply(target, input);
         Links.ReplaceWith(target.Tags, tags);
         Links.ReplaceWith(target.Vehicles, vehicles);
     }

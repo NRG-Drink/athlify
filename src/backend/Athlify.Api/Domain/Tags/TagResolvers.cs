@@ -32,10 +32,8 @@ public static partial class TagQuery
 [MutationType]
 public static partial class TagMutation
 {
-    public const int MaxNameLength = 50;
-
     public static async Task<Tag> CreateTag(
-        TagDto tag,
+        TagInput tag,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
@@ -49,7 +47,7 @@ public static partial class TagMutation
 
     public static async Task<Tag?> UpdateTag(
         [ID<Tag>] int id,
-        TagDto tag,
+        TagInput tag,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
@@ -95,11 +93,9 @@ public static partial class TagMutation
         return id;
     }
 
-    private static async Task ThrowIfInvalidAsync(TagDto tag, int? id, AthlifyDbContext db, CancellationToken cancellationToken)
+    private static async Task ThrowIfInvalidAsync(TagInput tag, int? id, AthlifyDbContext db, CancellationToken cancellationToken)
     {
-        var errors = new ValidationErrors();
-        errors.Text(tag.Name, "Name", MaxNameLength, required: true);
-        errors.ThrowIfAny();
+        TagValidation.ThrowIfInvalid(tag);
 
         var normalized = Tag.Normalize(tag.Name);
         if (await db.Tags.AnyAsync(t => t.NormalizedName == normalized && t.Id != id, cancellationToken))

@@ -42,7 +42,7 @@ Every domain area follows the Body-Stats pattern described below.
   page, default 100) with `where` filtering and `order` sorting. Filters on
   linked records take global IDs, for example
   `activities(where: { vehicle: { id: { eq: $bike } }, tags: { some: { id: { eq: $tag } } } })`.
-- **Inputs.** Create and update take an `…DtoInput`. Identity, owner,
+- **Inputs.** Create and update take an `…Input`. Identity, owner,
   timestamps, `source`, Strava IDs and calculated values are never input.
   Link lists such as `tagIds`, `gadgetIds` and `vehicleIds` are required and
   replace the complete set; send `[]` for none.
@@ -107,25 +107,19 @@ build it, and `node(id:)` resolves any entity that implements `Node`.
 
 | Operation | Behavior |
 |---|---|
-| `bodyStats(first, after)` | Relay connection of measurements, newest first (ties by `id`); cursor paging with at most 200 per page (default 100); supports filtering and sorting. Includes their notes. |
+| `bodyStats(first, after)` | Relay connection of measurements, newest first (ties by `id`); cursor paging with at most 200 per page (default 100); supports filtering and sorting. |
 | `bodyStatsById(id)` | One measurement, or `null`. |
-| `addBodyStats(bodyStats)` | Creates a measurement with its notes and returns it. |
-| `updateBodyStats(id, bodyStats)` | Replaces the measurement values and synchronizes the notes; returns `null` if the measurement does not exist. |
-| `deleteBodyStats(id)` | Deletes the measurement and its notes; returns the deleted `id`, or `null` if it did not exist. |
+| `addBodyStats(bodyStats)` | Creates a measurement and returns it. |
+| `updateBodyStats(id, bodyStats)` | Replaces the measurement values, including the note; returns `null` if the measurement does not exist. |
+| `deleteBodyStats(id)` | Deletes the measurement; returns the deleted `id`, or `null` if it did not exist. |
 
-**Input.** `BodyStatsDtoInput` carries `date`, `weight`, `bodyFatPercentage`,
-`musclePercentage`, `waterPercentage`, `boneMass` and `comments`, a list of
-`{ id?, content }` with at most one entry (the note); more than one is
-rejected with `VALIDATION_ERROR`. The list shape is kept so several notes
-can be allowed later without changing the schema. Identity and timestamps of notes are
-set by the server.
-On update the list is the complete set of notes: a note with an `id` is
-edited, a note without one is added and an existing note that is missing from
-the list is removed. A note `id` that belongs to another measurement is
-rejected.
+**Input.** `BodyStatsInput` carries `date`, `weight`, `bodyFatPercentage`,
+`musclePercentage`, `waterPercentage`, `boneMass` and the optional string
+`comment` (the note, at most 2000 characters; longer is rejected with
+`VALIDATION_ERROR`). A null or blank `comment` removes the note.
 
 **Validation.** The server rejects weight and bone mass of 0 or less, any
-percentage outside 0–100, and notes that are empty or longer than 2000
+percentage outside 0–100, and a note longer than 2000
 characters. Rejections are returned in the `errors` array with the code
 `VALIDATION_ERROR`; nothing is stored. The client validates the same rules
 only to give early feedback.

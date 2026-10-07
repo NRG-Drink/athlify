@@ -70,7 +70,7 @@ replaces one adapter without touching resolvers.
 
 - Every addressable entity implements `IOwned` and has the `Owner` filter,
   including `MaintenanceCycle`, which stores its owner although it also has a
-  parent. Notes (`Comment`) and join tables are reached only through their
+  parent. Join tables are reached only through their
   owned parent.
 - `ICurrentUser.UserId` throws `NOT_AUTHENTICATED` when nobody is signed in;
   the filter reads it each time a query runs.

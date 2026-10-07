@@ -24,7 +24,7 @@ public static class DomainGraphQl
 
     public static async Task<JsonElement> CreateTagAsync(HttpClient client, string name) =>
         (await DataAsync(client, $$"""
-            mutation($input: TagDtoInput!) { createTag(tag: $input) { {{TagFields}} } }
+            mutation($input: TagInput!) { createTag(tag: $input) { {{TagFields}} } }
             """, new { input = new { name } })).GetProperty("createTag");
 
     public static object VehicleInput(
@@ -46,11 +46,11 @@ public static class DomainGraphQl
         };
 
     public static readonly string CreateVehicleMutation = $$"""
-        mutation($input: VehicleDtoInput!) { createVehicle(vehicle: $input) { {{VehicleFields}} } }
+        mutation($input: VehicleInput!) { createVehicle(vehicle: $input) { {{VehicleFields}} } }
         """;
 
     public static readonly string UpdateVehicleMutation = $$"""
-        mutation($id: ID!, $input: VehicleDtoInput!) { updateVehicle(id: $id, vehicle: $input) { {{VehicleFields}} } }
+        mutation($id: ID!, $input: VehicleInput!) { updateVehicle(id: $id, vehicle: $input) { {{VehicleFields}} } }
         """;
 
     public const string DeleteVehicleMutation = "mutation($id: ID!) { deleteVehicle(id: $id) }";
@@ -92,11 +92,11 @@ public static class DomainGraphQl
         };
 
     public static readonly string CreateActivityMutation = $$"""
-        mutation($input: ActivityDtoInput!) { createActivity(activity: $input) { {{ActivityFields}} } }
+        mutation($input: ActivityInput!) { createActivity(activity: $input) { {{ActivityFields}} } }
         """;
 
     public static readonly string UpdateActivityMutation = $$"""
-        mutation($id: ID!, $input: ActivityDtoInput!) { updateActivity(id: $id, activity: $input) { {{ActivityFields}} } }
+        mutation($id: ID!, $input: ActivityInput!) { updateActivity(id: $id, activity: $input) { {{ActivityFields}} } }
         """;
 
     public const string DeleteActivityMutation = "mutation($id: ID!) { deleteActivity(id: $id) }";
@@ -136,11 +136,11 @@ public static class DomainGraphQl
         };
 
     public static readonly string CreateGadgetMutation = $$"""
-        mutation($input: GadgetDtoInput!) { createGadget(gadget: $input) { {{GadgetFields}} } }
+        mutation($input: GadgetInput!) { createGadget(gadget: $input) { {{GadgetFields}} } }
         """;
 
     public static readonly string UpdateGadgetMutation = $$"""
-        mutation($id: ID!, $input: GadgetDtoInput!) { updateGadget(id: $id, gadget: $input) { {{GadgetFields}} } }
+        mutation($id: ID!, $input: GadgetInput!) { updateGadget(id: $id, gadget: $input) { {{GadgetFields}} } }
         """;
 
     public const string DeleteGadgetMutation = "mutation($id: ID!) { deleteGadget(id: $id) }";
@@ -167,11 +167,11 @@ public static class DomainGraphQl
         };
 
     public static readonly string CreateCycleMutation = $$"""
-        mutation($input: MaintenanceCycleDtoInput!) { createMaintenanceCycle(maintenanceCycle: $input) { {{CycleFields}} } }
+        mutation($input: MaintenanceCycleInput!) { createMaintenanceCycle(maintenanceCycle: $input) { {{CycleFields}} } }
         """;
 
     public static readonly string UpdateCycleMutation = $$"""
-        mutation($id: ID!, $input: MaintenanceCycleDtoInput!) { updateMaintenanceCycle(id: $id, maintenanceCycle: $input) { {{CycleFields}} } }
+        mutation($id: ID!, $input: MaintenanceCycleInput!) { updateMaintenanceCycle(id: $id, maintenanceCycle: $input) { {{CycleFields}} } }
         """;
 
     public static readonly string CycleNodeQuery = $$"""
