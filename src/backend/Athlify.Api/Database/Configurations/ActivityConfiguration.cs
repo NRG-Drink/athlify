@@ -50,5 +50,18 @@ public class ActivityConfiguration : IEntityTypeConfiguration<Activity>
             .HasForeignKey(a => a.VehicleId)
             .OnDelete(DeleteBehavior.SetNull);
         builder.HasMany(a => a.Tags).WithMany(t => t.Activities).UsingEntity("ActivityTags");
+        builder.HasOne(a => a.Merge)
+            .WithMany(m => m.Activities)
+            .HasForeignKey(a => a.MergeId)
+            .OnDelete(DeleteBehavior.SetNull);
+    }
+}
+
+public class ActivityMergeConfiguration : IEntityTypeConfiguration<ActivityMerge>
+{
+    public void Configure(EntityTypeBuilder<ActivityMerge> builder)
+    {
+        builder.HasOne<User>().WithMany().HasForeignKey(m => m.UserId).OnDelete(DeleteBehavior.Cascade);
+        builder.Property(m => m.Name).HasMaxLength(MergeMembership.MaxNameLength);
     }
 }

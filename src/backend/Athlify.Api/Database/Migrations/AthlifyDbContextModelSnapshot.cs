@@ -79,6 +79,9 @@ namespace Athlify.Api.Database.Migrations
                     b.Property<int?>("HeartRateMin")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("MergeId")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("ModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -116,6 +119,8 @@ namespace Athlify.Api.Database.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("MergeId");
+
                     b.HasIndex("Uid")
                         .IsUnique();
 
@@ -128,6 +133,52 @@ namespace Athlify.Api.Database.Migrations
                         .HasFilter("\"StravaActivityId\" IS NOT NULL");
 
                     b.ToTable("Activities");
+                });
+
+            modelBuilder.Entity("Athlify.Api.Domain.Activities.ActivityMerge", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<double>("TotalDistance")
+                        .HasColumnType("double precision");
+
+                    b.Property<double?>("TotalElevationGain")
+                        .HasColumnType("double precision");
+
+                    b.Property<int>("TotalTime")
+                        .HasColumnType("integer");
+
+                    b.Property<double?>("TotalTss")
+                        .HasColumnType("double precision");
+
+                    b.Property<Guid>("Uid")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Uid")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ActivityMerges");
                 });
 
             modelBuilder.Entity("Athlify.Api.Domain.Body.BodyStats", b =>
@@ -407,6 +458,11 @@ namespace Athlify.Api.Database.Migrations
 
             modelBuilder.Entity("Athlify.Api.Domain.Activities.Activity", b =>
                 {
+                    b.HasOne("Athlify.Api.Domain.Activities.ActivityMerge", "Merge")
+                        .WithMany("Activities")
+                        .HasForeignKey("MergeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Athlify.Api.Domain.Users.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -418,7 +474,18 @@ namespace Athlify.Api.Database.Migrations
                         .HasForeignKey("VehicleId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.Navigation("Merge");
+
                     b.Navigation("Vehicle");
+                });
+
+            modelBuilder.Entity("Athlify.Api.Domain.Activities.ActivityMerge", b =>
+                {
+                    b.HasOne("Athlify.Api.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Athlify.Api.Domain.Body.BodyStats", b =>
@@ -470,6 +537,11 @@ namespace Athlify.Api.Database.Migrations
                         .HasForeignKey("VehiclesId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Athlify.Api.Domain.Activities.ActivityMerge", b =>
+                {
+                    b.Navigation("Activities");
                 });
 
             modelBuilder.Entity("Athlify.Api.Domain.Body.BodyStats", b =>

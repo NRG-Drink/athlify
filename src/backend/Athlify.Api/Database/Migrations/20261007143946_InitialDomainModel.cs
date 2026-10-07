@@ -34,6 +34,33 @@ namespace Athlify.Api.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ActivityMerges",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    TotalTime = table.Column<int>(type: "integer", nullable: false),
+                    TotalDistance = table.Column<double>(type: "double precision", nullable: false),
+                    TotalElevationGain = table.Column<double>(type: "double precision", nullable: true),
+                    TotalTss = table.Column<double>(type: "double precision", nullable: true),
+                    Uid = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ModifiedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ActivityMerges", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ActivityMerges_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "BodyStats",
                 columns: table => new
                 {
@@ -164,6 +191,7 @@ namespace Athlify.Api.Database.Migrations
                     StravaActivityId = table.Column<long>(type: "bigint", nullable: true),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     VehicleId = table.Column<int>(type: "integer", nullable: true),
+                    MergeId = table.Column<int>(type: "integer", nullable: true),
                     Uid = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     ModifiedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
@@ -171,6 +199,12 @@ namespace Athlify.Api.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Activities", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Activities_ActivityMerges_MergeId",
+                        column: x => x.MergeId,
+                        principalTable: "ActivityMerges",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_Activities_Users_UserId",
                         column: x => x.UserId,
@@ -234,6 +268,11 @@ namespace Athlify.Api.Database.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Activities_MergeId",
+                table: "Activities",
+                column: "MergeId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Activities_Uid",
                 table: "Activities",
                 column: "Uid",
@@ -255,6 +294,17 @@ namespace Athlify.Api.Database.Migrations
                 name: "IX_Activities_VehicleId",
                 table: "Activities",
                 column: "VehicleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityMerges_Uid",
+                table: "ActivityMerges",
+                column: "Uid",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityMerges_UserId",
+                table: "ActivityMerges",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ActivityTags_TagsId",
@@ -346,6 +396,9 @@ namespace Athlify.Api.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "Tags");
+
+            migrationBuilder.DropTable(
+                name: "ActivityMerges");
 
             migrationBuilder.DropTable(
                 name: "Vehicles");

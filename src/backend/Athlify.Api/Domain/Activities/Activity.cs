@@ -84,6 +84,12 @@ public class Activity : Entity, IOwned
 
     public Vehicle? Vehicle { get; set; }
 
+    [GraphQLIgnore]
+    public int? MergeId { get; set; }
+
+    /// <summary>The merge this activity belongs to; changed only through the merge mutations.</summary>
+    public ActivityMerge? Merge { get; set; }
+
     public ICollection<Tag> Tags { get; set; } = [];
 
     public void Recalculate()

@@ -27,6 +27,7 @@ public class AthlifyDbContext(DbContextOptions<AthlifyDbContext> options, ICurre
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
     public DbSet<Activity> Activities => Set<Activity>();
+    public DbSet<ActivityMerge> ActivityMerges => Set<ActivityMerge>();
 
     /// <summary>
     /// Read by the query filters each time a query runs (EF Core parameterizes context members), so one
@@ -56,6 +57,7 @@ public class AthlifyDbContext(DbContextOptions<AthlifyDbContext> options, ICurre
         modelBuilder.Entity<Vehicle>().HasQueryFilter(OwnerFilter, v => v.UserId == CurrentUserId);
         modelBuilder.Entity<Activity>().HasQueryFilter(OwnerFilter, a => a.UserId == CurrentUserId);
         modelBuilder.Entity<Activity>().HasQueryFilter(NotDeletedFilter, a => a.DeletedAt == null);
+        modelBuilder.Entity<ActivityMerge>().HasQueryFilter(OwnerFilter, m => m.UserId == CurrentUserId);
     }
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
