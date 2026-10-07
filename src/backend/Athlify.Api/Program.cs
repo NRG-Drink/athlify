@@ -61,14 +61,17 @@ public partial class Program
         {
             await using var scope = app.Services.CreateAsyncScope();
             var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
-            if (db.Database.IsRelational())
-            {
-                await db.Database.MigrateAsync();
-            }
-            else
-            {
-                await db.Database.EnsureCreatedAsync();
-            }
+            await db.Database.EnsureCreatedAsync();
+            var migrations = await db.Database.GetPendingMigrationsAsync();
+            var hasChanges = db.Database.HasPendingModelChanges();
+            //if (db.Database.IsRelational())
+            //{
+            //    await db.Database.MigrateAsync();
+            //}
+            //else
+            //{
+            //    await db.Database.EnsureCreatedAsync();
+            //}
 
             var developmentUserId = await DevelopmentUserProvisioner.EnsureAsync(db, developmentUserOptions);
             app.Services.GetRequiredService<DevelopmentCurrentUser>().UserId = developmentUserId;

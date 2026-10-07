@@ -98,7 +98,6 @@ public class BodyStatsMutationTests : WebApiTestBase
     [Arguments(70.0, -1.0, 40.0, 60.0, 3.2)]
     [Arguments(70.0, 15.0, 101.0, 60.0, 3.2)]
     [Arguments(70.0, 15.0, 40.0, 100.5, 3.2)]
-    [Arguments(70.0, 15.0, 40.0, 60.0, 3.2)]
     public async Task InvalidInputIsRejectedAndNothingIsPersisted(
         double weight, double bodyFat, double muscle, double water, double boneMass)
     {

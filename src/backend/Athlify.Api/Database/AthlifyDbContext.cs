@@ -11,6 +11,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Athlify.Api.Database;
 
+
+// cd .\Athlify.Api\
+// dotnet ef migrations add Init --output-dir Database\Migrations
+// dotnet ef database update --connection "Data Source=C:\path\to\Athlify.db"
+
 /// <summary>
 /// The single place that enforces ownership: every owned entity has the named query filter
 /// <see cref="OwnerFilter"/>, and <see cref="SaveChangesAsync(CancellationToken)"/> assigns new records to the

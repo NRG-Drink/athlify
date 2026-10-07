@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Athlify.Api.Database.Migrations
 {
     [DbContext(typeof(AthlifyDbContext))]
-    [Migration("20261007144513_InitialDomainModel")]
-    partial class InitialDomainModel
+    [Migration("20261007174518_AddInitDomainModel")]
+    partial class AddInitDomainModel
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -213,6 +213,10 @@ namespace Athlify.Api.Database.Migrations
                     b.Property<double>("BoneMass")
                         .HasColumnType("double precision");
 
+                    b.Property<string>("Comment")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -245,41 +249,6 @@ namespace Athlify.Api.Database.Migrations
                     b.HasIndex("UserId", "Date");
 
                     b.ToTable("BodyStats");
-                });
-
-            modelBuilder.Entity("Athlify.Api.Domain.Body.Comment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("BodyStatsId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("ModifiedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("Uid")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BodyStatsId");
-
-                    b.HasIndex("Uid")
-                        .IsUnique();
-
-                    b.ToTable("Comments");
                 });
 
             modelBuilder.Entity("Athlify.Api.Domain.Events.Event", b =>
@@ -811,15 +780,6 @@ namespace Athlify.Api.Database.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Athlify.Api.Domain.Body.Comment", b =>
-                {
-                    b.HasOne("Athlify.Api.Domain.Body.BodyStats", null)
-                        .WithMany("Comments")
-                        .HasForeignKey("BodyStatsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Athlify.Api.Domain.Events.Event", b =>
                 {
                     b.HasOne("Athlify.Api.Domain.Users.User", null)
@@ -951,11 +911,6 @@ namespace Athlify.Api.Database.Migrations
             modelBuilder.Entity("Athlify.Api.Domain.Activities.ActivityMerge", b =>
                 {
                     b.Navigation("Activities");
-                });
-
-            modelBuilder.Entity("Athlify.Api.Domain.Body.BodyStats", b =>
-                {
-                    b.Navigation("Comments");
                 });
 
             modelBuilder.Entity("Athlify.Api.Domain.Gadgets.Gadget", b =>
