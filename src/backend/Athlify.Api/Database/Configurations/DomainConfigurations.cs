@@ -1,4 +1,5 @@
 using Athlify.Api.Domain.Activities;
+using Athlify.Api.Domain.Events;
 using Athlify.Api.Domain.Gadgets;
 using Athlify.Api.Domain.Tags;
 using Athlify.Api.Domain.Users;
@@ -101,5 +102,17 @@ public class MaintenanceCycleConfiguration : IEntityTypeConfiguration<Maintenanc
             .OnDelete(DeleteBehavior.Cascade);
         builder.Property(m => m.Name).HasMaxLength(MaintenanceCycleMutation.MaxNameLength);
         builder.Property(m => m.Description).HasMaxLength(MaintenanceCycleMutation.MaxDescriptionLength);
+    }
+}
+
+public class EventConfiguration : IEntityTypeConfiguration<Event>
+{
+    public void Configure(EntityTypeBuilder<Event> builder)
+    {
+        builder.HasOne<User>().WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
+        builder.Property(e => e.Name).HasMaxLength(EventMutation.MaxNameLength);
+        builder.Property(e => e.Description).HasMaxLength(EventMutation.MaxDescriptionLength);
+        builder.HasIndex(e => new { e.UserId, e.StartDate });
+        builder.HasMany(e => e.Tags).WithMany(t => t.Events).UsingEntity("EventTags");
     }
 }

@@ -89,6 +89,33 @@ namespace Athlify.Api.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Events",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Type = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    StartDate = table.Column<DateOnly>(type: "date", nullable: false),
+                    EndDate = table.Column<DateOnly>(type: "date", nullable: true),
+                    Uid = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ModifiedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Events", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Events_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Gadgets",
                 columns: table => new
                 {
@@ -192,6 +219,30 @@ namespace Athlify.Api.Database.Migrations
                         name: "FK_Comments_BodyStats_BodyStatsId",
                         column: x => x.BodyStatsId,
                         principalTable: "BodyStats",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "EventTags",
+                columns: table => new
+                {
+                    EventsId = table.Column<int>(type: "integer", nullable: false),
+                    TagsId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EventTags", x => new { x.EventsId, x.TagsId });
+                    table.ForeignKey(
+                        name: "FK_EventTags_Events_EventsId",
+                        column: x => x.EventsId,
+                        principalTable: "Events",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_EventTags_Tags_TagsId",
+                        column: x => x.TagsId,
+                        principalTable: "Tags",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -483,6 +534,22 @@ namespace Athlify.Api.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Events_Uid",
+                table: "Events",
+                column: "Uid",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Events_UserId_StartDate",
+                table: "Events",
+                columns: new[] { "UserId", "StartDate" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EventTags_TagsId",
+                table: "EventTags",
+                column: "TagsId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Gadgets_Uid",
                 table: "Gadgets",
                 column: "Uid",
@@ -580,6 +647,9 @@ namespace Athlify.Api.Database.Migrations
                 name: "Comments");
 
             migrationBuilder.DropTable(
+                name: "EventTags");
+
+            migrationBuilder.DropTable(
                 name: "GadgetTags");
 
             migrationBuilder.DropTable(
@@ -596,6 +666,9 @@ namespace Athlify.Api.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "BodyStats");
+
+            migrationBuilder.DropTable(
+                name: "Events");
 
             migrationBuilder.DropTable(
                 name: "Gadgets");

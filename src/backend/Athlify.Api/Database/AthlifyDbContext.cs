@@ -1,6 +1,7 @@
 using Athlify.Api.Domain.Activities;
 using Athlify.Api.Domain.Body;
 using Athlify.Api.Domain.Common;
+using Athlify.Api.Domain.Events;
 using Athlify.Api.Domain.Gadgets;
 using Athlify.Api.Domain.Tags;
 using Athlify.Api.Domain.Users;
@@ -31,6 +32,7 @@ public class AthlifyDbContext(DbContextOptions<AthlifyDbContext> options, ICurre
     public DbSet<MaintenanceCycle> MaintenanceCycles => Set<MaintenanceCycle>();
     public DbSet<Activity> Activities => Set<Activity>();
     public DbSet<ActivityMerge> ActivityMerges => Set<ActivityMerge>();
+    public DbSet<Event> Events => Set<Event>();
 
     /// <summary>
     /// Read by the query filters each time a query runs (EF Core parameterizes context members), so one
@@ -63,6 +65,7 @@ public class AthlifyDbContext(DbContextOptions<AthlifyDbContext> options, ICurre
         modelBuilder.Entity<Activity>().HasQueryFilter(OwnerFilter, a => a.UserId == CurrentUserId);
         modelBuilder.Entity<Activity>().HasQueryFilter(NotDeletedFilter, a => a.DeletedAt == null);
         modelBuilder.Entity<ActivityMerge>().HasQueryFilter(OwnerFilter, m => m.UserId == CurrentUserId);
+        modelBuilder.Entity<Event>().HasQueryFilter(OwnerFilter, e => e.UserId == CurrentUserId);
     }
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)

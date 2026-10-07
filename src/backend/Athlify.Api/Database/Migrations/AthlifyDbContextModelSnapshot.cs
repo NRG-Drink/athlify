@@ -279,6 +279,55 @@ namespace Athlify.Api.Database.Migrations
                     b.ToTable("Comments");
                 });
 
+            modelBuilder.Entity("Athlify.Api.Domain.Events.Event", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("ModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("Uid")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Uid")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "StartDate");
+
+                    b.ToTable("Events");
+                });
+
             modelBuilder.Entity("Athlify.Api.Domain.Gadgets.Gadget", b =>
                 {
                     b.Property<int>("Id")
@@ -564,6 +613,21 @@ namespace Athlify.Api.Database.Migrations
                     b.ToTable("Vehicles");
                 });
 
+            modelBuilder.Entity("EventTags", b =>
+                {
+                    b.Property<int>("EventsId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TagsId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("EventsId", "TagsId");
+
+                    b.HasIndex("TagsId");
+
+                    b.ToTable("EventTags");
+                });
+
             modelBuilder.Entity("GadgetTags", b =>
                 {
                     b.Property<int>("GadgetsId")
@@ -689,6 +753,15 @@ namespace Athlify.Api.Database.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Athlify.Api.Domain.Events.Event", b =>
+                {
+                    b.HasOne("Athlify.Api.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Athlify.Api.Domain.Gadgets.Gadget", b =>
                 {
                     b.HasOne("Athlify.Api.Domain.Users.User", null)
@@ -735,6 +808,21 @@ namespace Athlify.Api.Database.Migrations
                     b.HasOne("Athlify.Api.Domain.Users.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("EventTags", b =>
+                {
+                    b.HasOne("Athlify.Api.Domain.Events.Event", null)
+                        .WithMany()
+                        .HasForeignKey("EventsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Athlify.Api.Domain.Tags.Tag", null)
+                        .WithMany()
+                        .HasForeignKey("TagsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
