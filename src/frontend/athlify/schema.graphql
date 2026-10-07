@@ -190,6 +190,7 @@ type Mutation {
 }
 
 type Activity implements Node {
+  id: ID!
   date: DateTime!
   type: ActivityType!
   time: Int!
@@ -210,7 +211,6 @@ type Activity implements Node {
   merge: ActivityMerge
   tags: [Tag!]!
   gadgets: [Gadget!]!
-  id: ID!
   uid: UUID!
   createdAt: DateTime!
   modifiedAt: DateTime!
@@ -236,13 +236,13 @@ type ActivityEdge {
 }
 
 type ActivityMerge implements Node {
+  id: ID!
   name: String
   activities: [Activity!]!
   totalTime: Int!
   totalDistance: Float!
   totalElevationGain: Float
   totalTss: Float
-  id: ID!
   uid: UUID!
   createdAt: DateTime!
   modifiedAt: DateTime!
@@ -268,17 +268,17 @@ type ActivityMergeEdge {
 }
 
 type BodyStats implements Node {
+  id: ID!
+  comments(
+    where: CommentFilterInput @cost(weight: "10")
+    order: [CommentSortInput!] @cost(weight: "10")
+  ): [Comment!]!
   date: DateTime!
   weight: Float!
   bodyFatPercentage: Float!
   musclePercentage: Float!
   waterPercentage: Float!
   boneMass: Float!
-  comments(
-    order: [CommentSortInput!] @cost(weight: "10")
-    where: CommentFilterInput @cost(weight: "10")
-  ): [Comment!]!
-  id: ID!
   uid: UUID!
   createdAt: DateTime!
   modifiedAt: DateTime!
@@ -312,13 +312,13 @@ type Comment {
 }
 
 type Event implements Node {
+  id: ID!
   name: String!
   type: EventType!
   description: String
   startDate: LocalDate!
   endDate: LocalDate
   tags: [Tag!]!
-  id: ID!
   uid: UUID!
   createdAt: DateTime!
   modifiedAt: DateTime!
@@ -344,6 +344,10 @@ type EventEdge {
 }
 
 type Gadget implements Node {
+  id: ID!
+  tags: [Tag!]!
+  vehicles: [Vehicle!]!
+  maintenanceCycles: [MaintenanceCycle!]!
   brand: String!
   model: String!
   nickname: String
@@ -352,10 +356,6 @@ type Gadget implements Node {
   deactivationDate: LocalDate
   price: Decimal
   source: Source!
-  tags: [Tag!]!
-  vehicles: [Vehicle!]!
-  maintenanceCycles: [MaintenanceCycle!]!
-  id: ID!
   uid: UUID!
   createdAt: DateTime!
   modifiedAt: DateTime!
@@ -381,6 +381,7 @@ type GadgetEdge {
 }
 
 type MaintenanceCycle implements Node {
+  id: ID!
   vehicle: Vehicle
   gadget: Gadget
   name: String!
@@ -388,7 +389,6 @@ type MaintenanceCycle implements Node {
   intervalDays: Int
   lastServiceDate: LocalDate
   description: String
-  id: ID!
   uid: UUID!
   createdAt: DateTime!
   modifiedAt: DateTime!
@@ -419,8 +419,8 @@ type PageInfo {
 }
 
 type Tag implements Node {
-  name: String!
   id: ID!
+  name: String!
   uid: UUID!
   createdAt: DateTime!
   modifiedAt: DateTime!
@@ -446,18 +446,23 @@ type TagEdge {
 }
 
 type User implements Node {
+  id: ID!
   email: String!
   firstName: String!
   lastName: String!
   language: Language!
   role: Role!
-  id: ID!
   uid: UUID!
   createdAt: DateTime!
   modifiedAt: DateTime!
 }
 
 type Vehicle implements Node {
+  id: ID!
+  stravaGearId: String
+  tags: [Tag!]!
+  gadgets: [Gadget!]!
+  maintenanceCycles: [MaintenanceCycle!]!
   brand: String!
   model: String!
   nickname: String
@@ -466,11 +471,6 @@ type Vehicle implements Node {
   deactivationDate: LocalDate
   price: Decimal
   source: Source!
-  stravaGearId: String
-  tags: [Tag!]!
-  gadgets: [Gadget!]!
-  maintenanceCycles: [MaintenanceCycle!]!
-  id: ID!
   uid: UUID!
   createdAt: DateTime!
   modifiedAt: DateTime!
@@ -759,6 +759,9 @@ input FloatOperationFilterInput {
 input GadgetFilterInput {
   and: [GadgetFilterInput!]
   or: [GadgetFilterInput!]
+  tags: ListFilterInputTypeOfTagFilterInput
+  vehicles: ListFilterInputTypeOfVehicleFilterInput
+  maintenanceCycles: ListFilterInputTypeOfMaintenanceCycleFilterInput
   brand: StringOperationFilterInput
   model: StringOperationFilterInput
   nickname: StringOperationFilterInput
@@ -767,9 +770,6 @@ input GadgetFilterInput {
   deactivationDate: LocalDateOperationFilterInput
   price: DecimalOperationFilterInput
   source: SourceOperationFilterInput
-  tags: ListFilterInputTypeOfTagFilterInput
-  vehicles: ListFilterInputTypeOfVehicleFilterInput
-  maintenanceCycles: ListFilterInputTypeOfMaintenanceCycleFilterInput
   id: IdOperationFilterInput
   uid: UuidOperationFilterInput
   createdAt: DateTimeOperationFilterInput
@@ -777,6 +777,7 @@ input GadgetFilterInput {
 }
 
 input GadgetInput {
+  vehicleIds: [ID!]!
   brand: String!
   model: String!
   nickname: String
@@ -785,7 +786,6 @@ input GadgetInput {
   deactivationDate: LocalDate
   price: Decimal
   tagIds: [ID!]!
-  vehicleIds: [ID!]!
 }
 
 input GadgetSortInput {
@@ -836,6 +836,13 @@ input ListFilterInputTypeOfCommentFilterInput {
   all: CommentFilterInput @cost(weight: "10")
   none: CommentFilterInput @cost(weight: "10")
   some: CommentFilterInput @cost(weight: "10")
+  any: Boolean @cost(weight: "10")
+}
+
+input ListFilterInputTypeOfEventFilterInput {
+  all: EventFilterInput @cost(weight: "10")
+  none: EventFilterInput @cost(weight: "10")
+  some: EventFilterInput @cost(weight: "10")
   any: Boolean @cost(weight: "10")
 }
 
@@ -999,6 +1006,10 @@ input UuidOperationFilterInput {
 input VehicleFilterInput {
   and: [VehicleFilterInput!]
   or: [VehicleFilterInput!]
+  stravaGearId: StringOperationFilterInput
+  tags: ListFilterInputTypeOfTagFilterInput
+  gadgets: ListFilterInputTypeOfGadgetFilterInput
+  maintenanceCycles: ListFilterInputTypeOfMaintenanceCycleFilterInput
   brand: StringOperationFilterInput
   model: StringOperationFilterInput
   nickname: StringOperationFilterInput
@@ -1007,10 +1018,6 @@ input VehicleFilterInput {
   deactivationDate: LocalDateOperationFilterInput
   price: DecimalOperationFilterInput
   source: SourceOperationFilterInput
-  stravaGearId: StringOperationFilterInput
-  tags: ListFilterInputTypeOfTagFilterInput
-  gadgets: ListFilterInputTypeOfGadgetFilterInput
-  maintenanceCycles: ListFilterInputTypeOfMaintenanceCycleFilterInput
   id: IdOperationFilterInput
   uid: UuidOperationFilterInput
   createdAt: DateTimeOperationFilterInput
@@ -1029,6 +1036,7 @@ input VehicleInput {
 }
 
 input VehicleSortInput {
+  stravaGearId: SortEnumType @cost(weight: "10")
   brand: SortEnumType @cost(weight: "10")
   model: SortEnumType @cost(weight: "10")
   nickname: SortEnumType @cost(weight: "10")
@@ -1037,7 +1045,6 @@ input VehicleSortInput {
   deactivationDate: SortEnumType @cost(weight: "10")
   price: SortEnumType @cost(weight: "10")
   source: SortEnumType @cost(weight: "10")
-  stravaGearId: SortEnumType @cost(weight: "10")
   id: SortEnumType @cost(weight: "10")
   uid: SortEnumType @cost(weight: "10")
   createdAt: SortEnumType @cost(weight: "10")

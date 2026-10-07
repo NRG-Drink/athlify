@@ -2,12 +2,10 @@ using Athlify.Api.Domain.Activities;
 using Athlify.Api.Domain.Common;
 using Athlify.Api.Domain.Gadgets;
 using Athlify.Api.Domain.Tags;
-using HotChocolate.Types.Relay;
 
 namespace Athlify.Api.Domain.Vehicles;
 
 /// <summary>A bicycle in the Garage.</summary>
-[Node(NodeResolverType = typeof(VehicleNode), NodeResolver = nameof(VehicleNode.GetAsync))]
 public class Vehicle : Equipment
 {
     /// <summary>External Strava gear id; set only by the Strava synchronization.</summary>
@@ -21,7 +19,6 @@ public class Vehicle : Equipment
     public ICollection<MaintenanceCycle> MaintenanceCycles { get; set; } = [];
 
     // Only used to clear the bicycle on its activities when it is deleted.
-    [GraphQLIgnore]
     public ICollection<Activity> Activities { get; set; } = [];
 }
 

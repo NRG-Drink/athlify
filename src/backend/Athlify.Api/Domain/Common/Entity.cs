@@ -8,6 +8,8 @@ namespace Athlify.Api.Domain.Common;
 /// </summary>
 public abstract class Entity
 {
+    // The only API attribute on an entity: it marks every id as a Relay global ID, in the output type and in
+    // the generated filter and sort inputs, which are inferred from this property and not from the type extensions.
     [ID]
     public int Id { get; set; }
     public Guid Uid { get; set; } = Guid.NewGuid();

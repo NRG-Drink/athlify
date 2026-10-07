@@ -1,6 +1,5 @@
 using Athlify.Api.Database;
 using Athlify.Api.Domain.Common;
-using Athlify.Api.Domain.Vehicles;
 using GreenDonut.Data;
 using HotChocolate.Types.Pagination;
 using HotChocolate.Types.Relay;

@@ -1,5 +1,4 @@
 using Athlify.Api.Domain.Common;
-using HotChocolate.Types.Relay;
 
 namespace Athlify.Api.Domain.Users;
 
@@ -16,13 +15,11 @@ public enum Language
 }
 
 /// <summary>An account. An Administrator keeps every regular-user permission and can also manage users.</summary>
-[Node(NodeResolverType = typeof(UserNode), NodeResolver = nameof(UserNode.GetAsync))]
 public class User : Entity
 {
     public string Email { get; set; } = string.Empty;
 
     /// <summary>Set by the authentication feature; never exposed through the API.</summary>
-    [GraphQLIgnore]
     public string? PasswordHash { get; set; }
 
     public string FirstName { get; set; } = string.Empty;

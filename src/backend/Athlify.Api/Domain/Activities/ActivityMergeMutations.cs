@@ -1,32 +1,10 @@
 using Athlify.Api.Database;
 using Athlify.Api.Domain.Common;
 using GreenDonut.Data;
-using HotChocolate.Types.Pagination;
 using HotChocolate.Types.Relay;
 using Microsoft.EntityFrameworkCore;
 
 namespace Athlify.Api.Domain.Activities;
-
-[QueryType]
-public static partial class ActivityMergeQuery
-{
-    private static readonly Func<SortDefinition<ActivityMerge>, SortDefinition<ActivityMerge>> DefaultOrder =
-        sort => sort.AddDescending(m => m.CreatedAt).AddDescending(m => m.Id);
-
-    [UseFiltering]
-    [UseSorting]
-    public static async Task<PageConnection<ActivityMerge>> GetActivityMerges(
-        PagingArguments pagingArgs,
-        QueryContext<ActivityMerge> query,
-        AthlifyDbContext db,
-        CancellationToken cancellationToken)
-    {
-        var page = await db.ActivityMerges
-            .With(query.Include(m => m.Id), DefaultOrder)
-            .ToPageAsync(pagingArgs, cancellationToken);
-        return new PageConnection<ActivityMerge>(page);
-    }
-}
 
 [MutationType]
 public static partial class ActivityMergeMutation
@@ -146,14 +124,4 @@ public static partial class ActivityMergeMutation
         await db.SaveChangesAsync(cancellationToken);
         return id;
     }
-}
-
-public static class ActivityMergeNode
-{
-    public static Task<ActivityMerge?> GetAsync(
-        [ID<ActivityMerge>] int id,
-        QueryContext<ActivityMerge> query,
-        AthlifyDbContext db,
-        CancellationToken cancellationToken) =>
-        Projection.FirstOrDefaultAsync(db.ActivityMerges, id, query, cancellationToken);
 }

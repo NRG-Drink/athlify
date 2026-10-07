@@ -6,7 +6,6 @@ namespace Athlify.Api.Domain.Common;
 /// </summary>
 public abstract class Equipment : Entity, IOwned
 {
-    [GraphQLIgnore]
     public int UserId { get; set; }
 
     public string Brand { get; set; } = string.Empty;
