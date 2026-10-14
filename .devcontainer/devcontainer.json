@@ -2,15 +2,32 @@
   "name": "Athlify",
   "image": "mcr.microsoft.com/devcontainers/dotnet:dev-10.0",
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker": {},
-    "ghcr.io/dotnet/aspire-devcontainer-feature/dotnetaspire:1": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:4": {},
+    "ghcr.io/microsoft/aspire-devcontainer-feature/aspire:3": {},
     "ghcr.io/devcontainers/features/node:2.1.0": {},
-    "ghcr.io/devcontainers/features/dotnet:2": {
-      "version": "10.0",
-      "aspNetCoreRuntimeVersions": "10.0"
-    }
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1": {},
+    "ghcr.io/devcontainers/features/copilot-cli:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
   },
-  "runArgs": ["--network=host"],
+  "mounts": [
+    "source=claude-config-${devcontainerId},target=/home/vscode/.claude,type=volume",
+    "source=copilot-config-${devcontainerId},target=/home/vscode/.copilot,type=volume",
+    "source=gh-config-${devcontainerId},target=/home/vscode/.config/gh,type=volume",
+    "source=nuget-cache-${devcontainerId},target=/home/vscode/.nuget/packages,type=volume",
+    "source=npm-cache-${devcontainerId},target=/home/vscode/.npm,type=volume",
+    "source=node-modules-${devcontainerId},target=${containerWorkspaceFolder}/src/frontend/athlify/node_modules,type=volume"
+  ],
+  "containerEnv": {
+    "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
+  },
+  "forwardPorts": [5095, 5096, 15163, 17244, 5050],
+  "portsAttributes": {
+    "5095": { "label": "API (GraphQL)" },
+    "5096": { "label": "Frontend (Vite)" },
+    "15163": { "label": "Aspire dashboard (http)" },
+    "17244": { "label": "Aspire dashboard (https)" },
+    "5050": { "label": "pgweb (PostgreSQL UI)" }
+  },
   "postCreateCommand": "bash .devcontainer/post-create.sh",
   "customizations": {
     "jetbrains": {
@@ -19,7 +36,10 @@
         "com.intellij.lang.jsgraphql",
         "Docker",
         "ru.adelf.idea.dotenv",
-        "mobi.hsz.idea.gitignore"
+        "mobi.hsz.idea.gitignore",
+        "com.github.copilot",
+        "com.anthropic.code.plugin",
+        "de.marhali.easyi18n"
       ]
     },
     "vscode": {
@@ -30,14 +50,15 @@
         "esbenp.prettier-vscode",
         "bradlc.vscode-tailwindcss",
         "GraphQL.vscode-graphql",
-        "meta.relay"
+        "meta.relay",
+        "lokalise.i18n-ally",
+        "vitest.explorer",
+        "ms-azuretools.vscode-containers",
+        "bierner.markdown-mermaid",
+        "EditorConfig.EditorConfig",
+        "anthropic.claude-code"
       ],
       "settings": {
-        "remote.autoForwardPorts": true,
-        "remote.autoForwardPortsSource": "hybrid",
-        "remote.otherPortsAttributes": {
-          "onAutoForward": "ignore"
-        },
         "dotnet.defaultSolution": "disable"
       }
     }

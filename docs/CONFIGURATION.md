@@ -61,7 +61,9 @@ The frontend has no backend URL or environment variables yet.
 | Setting | Location | Purpose |
 | --- | --- | --- |
 | npm package | `src/frontend/athlify/package.json` | Frontend dependencies, scripts and Node.js 20 or later (no root `package.json`) |
-| .NET tools | `src/backend/dotnet-tools.json` | Pins `dotnet-ef` for creating migrations |
+| .NET tools | `src/backend/dotnet-tools.json` | Pins `dotnet-ef` for creating migrations; restored automatically in the dev container |
+| Dev container | `.devcontainer/devcontainer.json`, `post-create.sh` | Tools, editor plugins, forwarded ports and persistent volumes for CLI logins, package caches and the frontend's `node_modules` |
+| Database UI | `src/backend/Athlify.AppHost/AppHost.cs` | Aspire starts pgweb next to PostgreSQL on `http://localhost:5050` |
 | Documentation root | `.agents/docs-root` | Points AI documentation skills to `docs/copilot` |
 
 The documentation root is resolved in this order, with the last one that is
