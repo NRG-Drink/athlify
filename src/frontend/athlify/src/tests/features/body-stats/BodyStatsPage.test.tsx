@@ -304,7 +304,7 @@ describe('BodyStatsPage', () => {
   })
 
   describe('adding', () => {
-    const added = entry('bs-new', '2026-10-03T10:00:00Z', 72.5, [{ id: 'c-new', content: 'neu' }])
+    const added = entry('bs-new', '2026-10-03T10:00:00Z', 72.5, 'neu')
 
     it('prefills from the newest measurement, not from the first one delivered', async () => {
       const { user } = page(() => okQuery())
