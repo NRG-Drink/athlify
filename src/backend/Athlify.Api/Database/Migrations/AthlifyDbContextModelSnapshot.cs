@@ -52,6 +52,30 @@ namespace Athlify.Api.Database.Migrations
                     b.ToTable("ActivityTags");
                 });
 
+            modelBuilder.Entity("Athlify.Api.Database.SeedMarker", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "Key")
+                        .IsUnique();
+
+                    b.ToTable("SeedMarkers");
+                });
+
             modelBuilder.Entity("Athlify.Api.Domain.Activities.Activity", b =>
                 {
                     b.Property<int>("Id")
@@ -732,6 +756,15 @@ namespace Athlify.Api.Database.Migrations
                     b.HasOne("Athlify.Api.Domain.Tags.Tag", null)
                         .WithMany()
                         .HasForeignKey("TagsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Athlify.Api.Database.SeedMarker", b =>
+                {
+                    b.HasOne("Athlify.Api.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
