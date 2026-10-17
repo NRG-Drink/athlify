@@ -37,7 +37,9 @@ WORKDIR /app
 COPY --from=build /app/publish .
 COPY --from=frontend-build /frontend/dist ./wwwroot
 
-ENV ASPNETCORE_HTTP_PORTS=8080
+ENV ASPNETCORE_HTTP_PORTS=8080 \
+    DOTNET_GENERATE_ASPNET_CERTIFICATE=false \
+    DOTNET_NOLOGO=true
 EXPOSE 8080
 
 USER $APP_UID
