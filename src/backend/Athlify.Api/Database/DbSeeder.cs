@@ -5,46 +5,46 @@ namespace Athlify.Api.Database;
 
 public class DbSeeder : IDbSeeder
 {
+    private const int SampleDays = 365;
+
     public void Seed(AthlifyDbContext context, int ownerId)
     {
-        if (!context.BodyStats.IgnoreQueryFilters([AthlifyDbContext.OwnerFilter]).Any(b => b.UserId == ownerId))
+        var existingDates = context.BodyStats
+            .IgnoreQueryFilters([AthlifyDbContext.OwnerFilter])
+            .Where(b => b.UserId == ownerId)
+            .Select(b => b.Date.Date)
+            .ToHashSet();
+
+        var today = DateTime.UtcNow.Date;
+        var bodyStats = Enumerable.Range(1, SampleDays)
+            .Select(daysAgo => today.AddDays(-daysAgo))
+            .Where(date => !existingDates.Contains(date))
+            .Select(CreateSample)
+            .ToList();
+
+        if (bodyStats.Count > 0)
         {
-            var bodyStats = new List<BodyStats>
-            {
-                new() {
-                    UserId = ownerId,
-                    Date = DateTime.UtcNow.AddDays(-1),
-                    Weight = 70.5,
-                    BodyFatPercentage = 15.2,
-                    MusclePercentage = 40.3,
-                    WaterPercentage = 60.1,
-                    BoneMass = 3.2,
-                    Comment = "Feeling good today!"
-                },
-                new() {
-                    UserId = ownerId,
-                    Date = DateTime.UtcNow.AddDays(-2),
-                    Weight = 71.0,
-                    BodyFatPercentage = 15.5,
-                    MusclePercentage = 40.0,
-                    WaterPercentage = 59.8,
-                    BoneMass = 3.1,
-                    Comment = "A bit tired today."
-                },
-                new()
-                {
-                    UserId = ownerId,
-                    Date = DateTime.UtcNow.AddDays(-3),
-                    Weight = 71.2,
-                    BodyFatPercentage = 15.3,
-                    MusclePercentage = 40.2,
-                    WaterPercentage = 60.0,
-                    BoneMass = 3.3,
-                    Comment = "Feeling strong!"
-                }
-            };
+            foreach (var sample in bodyStats)
+                sample.UserId = ownerId;
+
             context.BodyStats.AddRange(bodyStats);
             context.SaveChanges();
         }
+    }
+
+    private static BodyStats CreateSample(DateTime date)
+    {
+        var daysAgo = (DateTime.UtcNow.Date - date).Days;
+        var trend = daysAgo / 365d;
+
+        return new BodyStats
+        {
+            Date = date,
+            Weight = Math.Round(70.5 + trend * 2.5 + Math.Sin(daysAgo / 8d) * 0.35, 1),
+            BodyFatPercentage = Math.Round(15.2 + trend * 1.1 + Math.Sin(daysAgo / 11d) * 0.25, 1),
+            MusclePercentage = Math.Round(40.3 - trend * 0.8 + Math.Cos(daysAgo / 13d) * 0.2, 1),
+            WaterPercentage = Math.Round(60.1 - trend * 0.6 + Math.Sin(daysAgo / 10d) * 0.3, 1),
+            BoneMass = Math.Round(3.2 + Math.Cos(daysAgo / 17d) * 0.1, 1)
+        };
     }
 }
