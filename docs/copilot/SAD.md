@@ -43,7 +43,7 @@ flowchart LR
 | Localization | i18next ([ADR-003](frontend/adr/ADR-003-i18next-localization.md)) | Proposed |
 | API contract | GraphQL via Hot Chocolate ([ADR-001](adr/ADR-001-graphql-api-contract.md)) | Proposed; implemented for the domain areas |
 | Backend | ASP.NET Core (.NET 10) | Domain model implemented |
-| Database | PostgreSQL through Aspire, EF Core migrations ([ADR-011](backend/adr/ADR-011-ef-core-migrations.md)) | In use |
+| Database | PostgreSQL through Docker Compose in production and Aspire in development, EF Core migrations ([ADR-011](backend/adr/ADR-011-ef-core-migrations.md)) | In use |
 | Ownership | EF Core query filters behind `ICurrentUser` ([ADR-009](adr/ADR-009-ownership-query-filters.md)) | Proposed; implemented with a development user |
 | Test persistence | EF Core InMemory | Endpoint tests only |
 | Tests | TUnit (backend); Vitest and React Testing Library (frontend) | In use |
@@ -109,9 +109,9 @@ See the [security concept](../concept/security.md) and
 
 - Current capacity: backend on a single PostgreSQL instance with seeded
   sample data; the Body-Stats page calls it.
-- Scaling strategy: self-hosted for individual users. Persistence and
-  deployment scaling are decided together with the planned PostgreSQL and
-  Docker Compose setup ([testing and deployment](../concept/testing-deployment.md)).
+- Scaling strategy: self-hosted for individual users. The initial deployment
+  uses one PostgreSQL instance and one Docker Compose project
+  ([testing and deployment](../concept/testing-deployment.md)).
 - Known bottlenecks: Strava API rate limits; nested lists are loaded without
   DataLoaders.
 

@@ -2,11 +2,12 @@
 
 Technical detail documentation for the functional concept in [`CONCEPT.md`](CONCEPT.md).
 
-The following strategy describes the target product. Currently the backend
+The following strategy describes the target product. The backend
 has TUnit endpoint tests (`src/backend/Athlify.Api.Tests/`) against the
 GraphQL endpoint. The frontend has Vitest + React Testing Library component
 and routing tests (`npm test`), plus type checking and linting. There
-are no git hooks. There is no deployment configuration.
+are no git hooks. The repository includes a Docker Compose deployment
+configuration for self-hosting.
 
 ## Testing strategy
 
@@ -25,4 +26,12 @@ explicit loading/empty/error states and bilingual central interfaces.
 
 ## Deployment
 
-Athlify is self-hosted. Frontend, backend and database run as separate containers through Docker Compose. A reverse proxy provides external access and TLS termination. Regular backups and a documented recovery process are required.
+Athlify is self-hosted. The frontend and backend run together in one
+application container through Docker Compose, while PostgreSQL runs in a
+separate internal container. The frontend is served as a static Vite build and
+uses same-origin GraphQL requests through the application service. PostgreSQL
+is persisted in a named volume and remains internal to the Compose network. A
+reverse proxy provides external access and TLS termination. Regular backups
+and a documented recovery process are required; the minimum supported
+procedure is manual `pg_dump` and restore as described in
+[`../CONFIGURATION.md`](../CONFIGURATION.md#docker-compose-deployment).

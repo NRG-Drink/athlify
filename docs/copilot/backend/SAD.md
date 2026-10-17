@@ -27,7 +27,7 @@ analytics will be added as further modules.
 | Database | PostgreSQL through EF Core 10 and Npgsql (Aspire); EF Core InMemory in tests | Schema through EF Core migrations, applied at startup ([ADR-011](adr/ADR-011-ef-core-migrations.md)) |
 | Tests | TUnit 1.x with `TUnit.AspNetCore` | Endpoint tests against `/graphql` |
 | Auth | Backend-owned authentication and authorization (planned); ownership through EF Core query filters ([ADR-009](../adr/ADR-009-ownership-query-filters.md)) | Every request acts as a provisioned development user until authentication exists |
-| Hosting | Open | Deployment architecture is not yet decided |
+| Hosting | Docker Compose | Production uses `db` and combined `app` services; the app serves GraphQL and static frontend assets, while Aspire remains the development host |
 
 ## System Components
 
@@ -193,8 +193,9 @@ operations.
 
 - Current capacity: One PostgreSQL instance; lists are paged with at most 200
   records per page.
-- Scaling strategy: Select deployment scaling once the deployment
-  architecture is decided.
+- Scaling strategy: Use one PostgreSQL instance and one Docker Compose
+  project for the initial self-hosted deployment; revisit scaling only when
+  the product requires it.
 - Known bottlenecks: Nested lists are loaded through projections without
   DataLoaders; the query cost limits are raised to 10,000 for filtered pages.
 

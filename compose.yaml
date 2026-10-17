@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-athlify}
+      POSTGRES_USER: ${POSTGRES_USER:-athlify}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: src/backend/Athlify.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: 8080
+      ConnectionStrings__postgres-db: Host=db;Port=5432;Database=${POSTGRES_DB:-athlify};Username=${POSTGRES_USER:-athlify}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      Athlify__DevelopmentUser__Email: ${ATHLIFY_DEVELOPMENT_USER_EMAIL:-admin@athlify.local}
+      Athlify__DevelopmentUser__FirstName: ${ATHLIFY_DEVELOPMENT_USER_FIRST_NAME:-Athlify}
+      Athlify__DevelopmentUser__LastName: ${ATHLIFY_DEVELOPMENT_USER_LAST_NAME:-Admin}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/health/ready"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
