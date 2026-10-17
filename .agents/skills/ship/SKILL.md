@@ -94,8 +94,9 @@ fi
 
 Never force-push to the base branch, never skip hooks, never amend pushed
 commits. Never commit secrets. Stage by name (`git add path`, not `-A`).
-Commit messages: imperative mood, no Conventional Commits prefix, subject
-50–72 characters, body explains why.
+Commit messages use a short Conventional Commits prefix (`feat:`, `fix:`,
+`docs:`, `test:`, `chore:`, or `deps:`) followed by an imperative subject.
+Keep the subject 50–72 characters when practical; use the body to explain why.
 
 No AI attribution: never add `Co-Authored-By` trailers for AI tools
 (Claude, GitHub Copilot or any other assistant) to commits, and never add
