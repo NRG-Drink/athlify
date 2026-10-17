@@ -88,7 +88,8 @@ Context loaded (DOCS: ../product-docs):
    that space.
 4. **Superseding requires a new ADR** — do not silently override a prior ADR.
 5. **An external doc root is a separate repo** — write the file, then tell
-   the user to commit it there. Never commit or push on their behalf.
+   the user to commit it there with a short Conventional Commit message such
+   as `docs: update architecture guide`. Never commit or push on their behalf.
 
 ## Document purposes
 

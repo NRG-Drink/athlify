@@ -78,10 +78,11 @@ repo is not cloned — say so and stop, do not `mkdir` a decoy. It must live at 
 project's doc root — that is the path `plan-design-review` reads. Show the
 composed file and confirm before writing.
 
-After writing, tell the user to commit it. When `DOCS_EXTERNAL=yes` the
+After writing, tell the user to commit it with a short Conventional Commit
+message such as `docs: add product personas`. When `DOCS_EXTERNAL=yes` the
 file landed in a **different git repo** that `ship` never sees: print the
-absolute path and say it must be committed there. Do not `git add`,
-commit, or push in that repo.
+absolute path and say it must be committed there. Do not `git add`, commit, or
+push in that repo.
 
 ```markdown
 # Personas

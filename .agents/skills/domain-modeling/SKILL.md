@@ -45,7 +45,8 @@ Create files lazily. If no `$DOCS/glossary.md` exists, create it from
 If no `$DOCS/adr/` exists, create it when the first ADR is needed.
 
 If the doc root is a separate repo, update _those_ files instead of
-inventing a second glossary — and leave committing them to the user.
+inventing a second glossary — and leave committing them to the user. Recommend
+a short Conventional Commit message such as `docs: update glossary`.
 
 ## During the session
 
