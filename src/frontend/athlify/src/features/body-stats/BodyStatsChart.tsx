@@ -1,4 +1,13 @@
-import { Button, Flex, Heading, Stack, Text } from '@chakra-ui/react'
+import {
+  Box,
+  Button,
+  Flex,
+  Heading,
+  Spinner,
+  Stack,
+  Text,
+  VisuallyHidden,
+} from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { MetricChart } from '../../components/MetricChart'
 import { PeriodPicker } from '../../components/PeriodPicker'
@@ -13,6 +22,7 @@ export interface BodyStatsChartProps {
   metric: BodyStatsMetricKey
   period: Period
   now: Date
+  isPending?: boolean
   onPeriodChange: (period: Period) => void
 }
 
@@ -24,6 +34,7 @@ export function BodyStatsChart({
   metric,
   period,
   now,
+  isPending = false,
   onPeriodChange,
 }: BodyStatsChartProps) {
   const { t } = useTranslation()
@@ -54,7 +65,14 @@ export function BodyStatsChart({
         })
 
   return (
-    <Stack gap="4" bg="bg.panel" borderWidth="1px" borderRadius="l3" p={{ base: '4', md: '6' }}>
+    <Stack
+      position="relative"
+      gap="4"
+      bg="bg.panel"
+      borderWidth="1px"
+      borderRadius="l3"
+      p={{ base: '4', md: '6' }}
+    >
       <Flex justify="space-between" align="center" gap="3" wrap="wrap">
         <Flex align="baseline" gap="2">
           <Heading as="h2" size="lg">
@@ -79,6 +97,22 @@ export function BodyStatsChart({
           )
         }
       />
+      {isPending && (
+        <Box
+          position="absolute"
+          inset="0"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          bg="bg.panel/80"
+          borderRadius="inherit"
+          role="status"
+          aria-live="polite"
+        >
+          <Spinner size="lg" color="colorPalette.solid" />
+          <VisuallyHidden>{t('page.loading')}</VisuallyHidden>
+        </Box>
+      )}
     </Stack>
   )
 }

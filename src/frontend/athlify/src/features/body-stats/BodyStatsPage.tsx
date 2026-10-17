@@ -1,5 +1,5 @@
 import { Button, Flex, Heading, Stack } from '@chakra-ui/react'
-import { startTransition, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import { graphql, useLazyLoadQuery, usePaginationFragment } from 'react-relay'
 import { useTranslation } from 'react-i18next'
 import { LuActivity, LuPlus } from 'react-icons/lu'
@@ -78,6 +78,7 @@ function BodyStatsContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
   const format = useFormat()
   const [searchParams, setSearchParams] = useSearchParams()
   const [deleting, setDeleting] = useState<BodyStatsRow | null>(null)
+  const [isChartPending, startChartTransition] = useTransition()
 
   const queryData = useLazyLoadQuery<BodyStatsPageQuery>(
     pageQuery,
@@ -98,7 +99,7 @@ function BodyStatsContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
   useEffect(() => {
     if (!hasNext || isLoadingNext || pagingFailed) return
     // In a transition, so a suspending page keeps the loaded content instead of showing the skeleton.
-    startTransition(() => {
+    startChartTransition(() => {
       loadNext(PAGE_SIZE, {
         onComplete: (error) => {
           if (!error) return
@@ -107,7 +108,7 @@ function BodyStatsContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
         },
       })
     })
-  }, [hasNext, isLoadingNext, pagingFailed, loadNext, t])
+  }, [hasNext, isLoadingNext, pagingFailed, loadNext, startChartTransition, t])
   const series = useBodyStatsSeries(bodyStats)
   // Periods count back from the moment the data was last loaded or changed.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -118,14 +119,16 @@ function BodyStatsContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
   const period = parsePeriod(searchParams.get('period'), DEFAULT_PERIOD)
 
   const setView = (next: { metric?: BodyStatsMetricKey; period?: Period }) =>
-    setSearchParams(
-      (current) => {
-        const params = new URLSearchParams(current)
-        if (next.metric) params.set('metric', next.metric)
-        if (next.period) params.set('period', next.period)
-        return params
-      },
-      { replace: true },
+    startChartTransition(() =>
+      setSearchParams(
+        (current) => {
+          const params = new URLSearchParams(current)
+          if (next.metric) params.set('metric', next.metric)
+          if (next.period) params.set('period', next.period)
+          return params
+        },
+        { replace: true },
+      ),
     )
 
   // New entries start from the newest measurement, because values change only slightly.
@@ -177,6 +180,7 @@ function BodyStatsContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
         metric={metric}
         period={period}
         now={now}
+        isPending={isChartPending}
         onPeriodChange={(next) => setView({ period: next })}
       />
       <Stack gap="4">
