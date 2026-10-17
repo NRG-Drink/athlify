@@ -71,6 +71,53 @@
       "events": "Soon you will document crashes, repairs, breaks and other events here.",
       "settings": "Soon you will manage your account and the Strava connection here."
     },
+    "activities": {
+      "description": "See your rides here, imported from Strava or entered manually.",
+      "filters": {
+        "period": "Period",
+        "type": "Activity type",
+        "vehicle": "Bicycle",
+        "tag": "Tag",
+        "allTypes": "All types",
+        "allVehicles": "All bicycles",
+        "allTags": "All tags",
+        "moreOptions": "Only the first options are shown.",
+        "reset": "Reset filters"
+      },
+      "types": {
+        "ROAD": "Road",
+        "MOUNTAIN": "Mountain",
+        "GRAVEL": "Gravel",
+        "INDOOR": "Indoor"
+      },
+      "sources": {
+        "MANUAL": "Manual",
+        "STRAVA": "Strava"
+      },
+      "columns": {
+        "date": "Date",
+        "type": "Type",
+        "duration": "Duration",
+        "distance": "Distance",
+        "vehicle": "Bicycle",
+        "source": "Source",
+        "elevation": "Elevation",
+        "speed": "Speed",
+        "tss": "TSS"
+      },
+      "table": {
+        "caption": "Activities"
+      },
+      "loadMore": "Load more activities",
+      "loadMoreFailed": "More activities could not be loaded.",
+      "loadFailed": "Activities could not be loaded.",
+      "empty": {
+        "title": "No activities yet",
+        "message": "Activities you enter or import will appear here.",
+        "filteredTitle": "No matching activities",
+        "filteredMessage": "Adjust or reset the filters."
+      }
+    },
     "bodyStats": {
       "metrics": {
         "weight": "Weight",

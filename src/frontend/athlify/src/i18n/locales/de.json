@@ -71,6 +71,53 @@
       "events": "Hier dokumentierst du bald Stürze, Reparaturen, Pausen und andere Ereignisse.",
       "settings": "Hier verwaltest du bald dein Konto und die Verbindung zu Strava."
     },
+    "activities": {
+      "description": "Hier siehst du deine Radfahrten, aus Strava importiert oder manuell erfasst.",
+      "filters": {
+        "period": "Zeitraum",
+        "type": "Aktivitätstyp",
+        "vehicle": "Velo",
+        "tag": "Tag",
+        "allTypes": "Alle Typen",
+        "allVehicles": "Alle Velos",
+        "allTags": "Alle Tags",
+        "moreOptions": "Es werden nur die ersten Optionen angezeigt.",
+        "reset": "Filter zurücksetzen"
+      },
+      "types": {
+        "ROAD": "Strasse",
+        "MOUNTAIN": "Mountainbike",
+        "GRAVEL": "Gravel",
+        "INDOOR": "Indoor"
+      },
+      "sources": {
+        "MANUAL": "Manuell",
+        "STRAVA": "Strava"
+      },
+      "columns": {
+        "date": "Datum",
+        "type": "Typ",
+        "duration": "Dauer",
+        "distance": "Distanz",
+        "vehicle": "Velo",
+        "source": "Quelle",
+        "elevation": "Höhenmeter",
+        "speed": "Geschwindigkeit",
+        "tss": "TSS"
+      },
+      "table": {
+        "caption": "Aktivitäten"
+      },
+      "loadMore": "Weitere Aktivitäten laden",
+      "loadMoreFailed": "Weitere Aktivitäten konnten nicht geladen werden.",
+      "loadFailed": "Aktivitäten konnten nicht geladen werden.",
+      "empty": {
+        "title": "Noch keine Aktivitäten",
+        "message": "Sobald du eine Aktivität erfasst oder importierst, erscheint sie hier.",
+        "filteredTitle": "Keine passenden Aktivitäten",
+        "filteredMessage": "Passe die Filter an oder setze sie zurück."
+      }
+    },
     "bodyStats": {
       "metrics": {
         "weight": "Gewicht",

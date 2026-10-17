@@ -41,6 +41,7 @@ functionality.
 | Shared technical context | [`../concept/`](../concept/CONCEPT.md) | Architecture, data model, API, security and deployment details |
 | Shared terminology | [`../GLOSSARY.md`](../GLOSSARY.md) | Binding domain, user-facing and technical terms |
 | Shared decisions | [`adr/README.md`](adr/README.md) | Cross-cutting architectural decisions |
+| Shared learnings | [`LEARNINGS.md`](LEARNINGS.md) | Durable cross-cutting implementation decisions |
 | Frontend | [`frontend/README.md`](frontend/README.md) | UI responsibility, interaction and frontend context |
 | Backend | [`backend/README.md`](backend/README.md) | API, persistence, ownership and backend context |
 

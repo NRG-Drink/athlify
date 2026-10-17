@@ -18,7 +18,6 @@ describe('routes', () => {
 
   test.each([
     [paths.dashboard, 'Dashboard', /Distanz, Zeit, Höhenmeter/],
-    [paths.activities, 'Aktivitäten', /alle Aktivitäten/],
     [paths.garage, 'Garage', /deine Velos und Gadgets/],
     [paths.events, 'Events', /Stürze, Reparaturen/],
     [paths.settings, 'Einstellungen', /dein Konto/],
