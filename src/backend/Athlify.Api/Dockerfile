@@ -1,26 +1,33 @@
+# =========================== Stage 1: Build the Frontend ===========================
 FROM node:22-alpine AS frontend-build
 WORKDIR /frontend
 
+# Check changes on dependencies first
 COPY src/frontend/athlify/package.json src/frontend/athlify/package-lock.json ./
 RUN npm ci
 
 COPY src/frontend/athlify/ .
 RUN npm run relay && npm run build
 
+
+# =========================== Stage 2: Build the Backend ===========================
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-WORKDIR /src
+WORKDIR /backend
 
-COPY ["src/backend/Athlify.Api/Athlify.Api.csproj", "src/backend/Athlify.Api/"]
-RUN dotnet restore "src/backend/Athlify.Api/Athlify.Api.csproj"
+# Check changes on dependencies first
+COPY ["src/backend/Athlify.Api/Athlify.Api.csproj", "Athlify.Api/"]
+RUN dotnet restore "Athlify.Api/Athlify.Api.csproj"
 
-COPY src/backend/ src/backend/
-WORKDIR "/src/src/backend/Athlify.Api"
+COPY src/backend/ ./
+WORKDIR "/backend/Athlify.Api"
 RUN dotnet publish "Athlify.Api.csproj" \
     --configuration Release \
     --output /app/publish \
     --no-restore \
     /p:UseAppHost=false
 
+
+# =========================== Stage 3: Runtime ======================================
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 RUN apt-get update \
     && apt-get install --no-install-recommends --yes curl \
