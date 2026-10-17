@@ -1,5 +1,5 @@
 import { Button, Flex, Heading, Stack } from '@chakra-ui/react'
-import { useEffect, useMemo, useState } from 'react'
+import { startTransition, useEffect, useMemo, useState } from 'react'
 import { graphql, useLazyLoadQuery, usePaginationFragment } from 'react-relay'
 import { useTranslation } from 'react-i18next'
 import { LuActivity, LuPlus } from 'react-icons/lu'
@@ -97,12 +97,15 @@ function BodyStatsContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
   const [pagingFailed, setPagingFailed] = useState(false)
   useEffect(() => {
     if (!hasNext || isLoadingNext || pagingFailed) return
-    loadNext(PAGE_SIZE, {
-      onComplete: (error) => {
-        if (!error) return
-        setPagingFailed(true)
-        toaster.create({ type: 'error', title: t('bodyStats.loadFailed') })
-      },
+    // In a transition, so a suspending page keeps the loaded content instead of showing the skeleton.
+    startTransition(() => {
+      loadNext(PAGE_SIZE, {
+        onComplete: (error) => {
+          if (!error) return
+          setPagingFailed(true)
+          toaster.create({ type: 'error', title: t('bodyStats.loadFailed') })
+        },
+      })
     })
   }, [hasNext, isLoadingNext, pagingFailed, loadNext, t])
   const series = useBodyStatsSeries(bodyStats)

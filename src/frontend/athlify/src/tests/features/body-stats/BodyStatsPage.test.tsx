@@ -114,6 +114,25 @@ describe('BodyStatsPage', () => {
       expect(calls(QUERY)).toHaveLength(1)
     })
 
+    it('keeps the content on screen while further pages load', async () => {
+      page((operation) =>
+        operation === MORE
+          ? { data: { bodyStats: connection([oldest, longAgo]) } }
+          : { data: { bodyStats: connection([newest, middle], true) } },
+      )
+      await tiles().findByRole('button', { name: /Gewicht/ })
+
+      let skeletonShown = false
+      const observer = new MutationObserver(() => {
+        if (document.querySelector('[aria-busy="true"]')) skeletonShown = true
+      })
+      observer.observe(document.body, { childList: true, subtree: true, attributes: true })
+      await waitFor(() => expect(rowCount()).toBe(4))
+      observer.disconnect()
+
+      expect(skeletonShown).toBe(false)
+    })
+
     it('stops loading and tells the user when a further page fails', async () => {
       const { calls } = page((operation) =>
         operation === MORE
