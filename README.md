@@ -92,11 +92,18 @@ npm run relay     # generates the git-ignored Relay artifacts
 ### Dev Container
 
 `.devcontainer/` provides a ready-to-use environment (.NET 10 SDK, Node.js 22,
-Docker access, Aspire CLI). Open the repository in VS Code and choose
+Docker-in-Docker, Aspire CLI, `dotnet-ef`, and the `gh`, `claude` and
+`copilot` CLIs). Open the repository in VS Code and choose
 **Reopen in Container**; dependencies are installed and the Relay artifacts
-generated automatically. The host's Docker daemon must be running, because
-Aspire starts PostgreSQL as a container. In WebStorm (JetBrains Gateway) the
-container installs the Markdown, Mermaid, GraphQL (with Relay support via
+generated automatically. Aspire starts PostgreSQL inside the container; the
+host only needs Docker to run the dev container itself. Ports 5095 (API),
+5096 (frontend), 15163/17244 (Aspire dashboard) and 5050 (pgweb database UI)
+are forwarded to the host. CLI logins (`gh`, `claude`, `copilot`) and the
+NuGet/npm caches and the frontend's `node_modules` live in Docker volumes, so
+they survive rebuilds and never mix with a `node_modules` on the host
+(`docker volume ls`, then `docker volume rm …` to reset). Both editors get the
+Copilot, Claude Code and i18n plugins. In WebStorm (JetBrains Gateway) the
+container also installs the Markdown, Mermaid, GraphQL (with Relay support via
 `graphql.config.yml`), Docker, `.env` and `.ignore` plugins. Mermaid diagrams (for
 example the ERD in `docs/concept/data-model.md`) do not render in the
 Markdown preview of a dev container session; open the repository folder in a

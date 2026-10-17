@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Aspire CLI (used by `aspire run`)
-dotnet tool install --global Aspire.Cli || echo "Aspire CLI install failed; use 'dotnet run --project src/backend/Athlify.AppHost' instead."
+# Named volumes (and missing parent dirs) are created root-owned on first use
+sudo chown -R "$(id -u):$(id -g)" "$HOME/.claude" "$HOME/.copilot" "$HOME/.config/gh"
+sudo chown "$(id -u):$(id -g)" "$HOME/.config" "$HOME/.nuget" "$HOME/.nuget/packages" "$HOME/.npm" \
+  src/frontend/athlify/node_modules
 
+# Aspire CLI comes from the devcontainer feature
 aspire certs trust --non-interactive
 
-# Make sure vite is not installed on a windows machine!
+# Pinned local tools (dotnet-ef for migrations)
+dotnet tool restore --tool-manifest src/backend/dotnet-tools.json
+
+# node_modules is a container volume, so native Linux binaries never mix with the host's
 cd src/frontend/athlify
-npm install
+npm ci
 npm run relay
