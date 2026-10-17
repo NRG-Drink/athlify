@@ -57,7 +57,8 @@ within a small SPA.
 ### Negative / Trade-offs
 
 - Production hosting needs an SPA fallback (serve `index.html` for unknown
-  paths). Hosting is still undecided.
+  paths). The combined Docker Compose `app` service provides this fallback
+  through ASP.NET Core static-file hosting.
 - Providers that need router hooks must render inside the route tree.
 
 ## Implementation Notes

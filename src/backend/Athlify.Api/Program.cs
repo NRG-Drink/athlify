@@ -1,6 +1,7 @@
 using Athlify.Api.Database;
 using Athlify.Api.Domain.Users;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 /* Created using the following sources
  * YouTube: https://www.youtube.com/watch?v=YL07NyBXC7M
@@ -23,8 +24,20 @@ public partial class Program
         // Not pooled: the context takes the scoped ICurrentUser for its owner query filter, and a pooled
         // context would keep the user of an earlier request. EnrichNpgsqlDbContext keeps Aspire's retries,
         // health check and telemetry that AddNpgsqlDbContext would add.
+        var postgresConnectionString = builder.Configuration.GetConnectionString("postgres-db")
+            ?? throw new InvalidOperationException("ConnectionStrings:postgres-db is required.");
+        var postgresPassword = builder.Configuration["POSTGRES_PASSWORD"];
+        if (!string.IsNullOrEmpty(postgresPassword))
+        {
+            var connectionBuilder = new NpgsqlConnectionStringBuilder(postgresConnectionString)
+            {
+                Password = postgresPassword,
+            };
+            postgresConnectionString = connectionBuilder.ConnectionString;
+        }
+
         builder.Services.AddDbContext<AthlifyDbContext>(options =>
-            options.UseNpgsql(builder.Configuration.GetConnectionString("postgres-db")));
+            options.UseNpgsql(postgresConnectionString));
         builder.EnrichNpgsqlDbContext<AthlifyDbContext>();
 
         // Allows the local Vite dev server to call the GraphQL endpoint during development.
@@ -78,8 +91,30 @@ public partial class Program
         }
 
         app.UseCors("FrontendDev");
+        app.UseDefaultFiles();
+        app.UseStaticFiles();
+
+        app.MapGet("/health/live", () => Results.Ok(new { status = "healthy" }));
+        app.MapGet("/health/ready", async (
+            AthlifyDbContext db,
+            ILogger<Program> logger,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                return await db.Database.CanConnectAsync(cancellationToken)
+                    ? Results.Ok(new { status = "ready" })
+                    : Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+            }
+            catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
+            {
+                logger.LogWarning(exception, "Readiness check could not connect to the database.");
+                return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+            }
+        });
 
         app.MapGraphQL();
+        app.MapFallbackToFile("index.html");
 
         app.RunWithGraphQLCommands(args);
     }
