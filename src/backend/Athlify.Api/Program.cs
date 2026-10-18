@@ -114,7 +114,7 @@ public partial class Program
         });
 
         app.MapGraphQL();
-        app.MapFallbackToFile("index.html");
+        app.MapFallbackToFile("app/index.html");
 
         app.RunWithGraphQLCommands(args);
     }

@@ -17,4 +17,14 @@ export default defineConfig({
       },
     },
   },
+  test: {
+    globals: true,
+    coverage: {
+      // all: true,
+      provider: 'v8', // Use 'v8' for built-in coverage
+      reporter: ['text', 'json', 'html'], // Formats for the coverage report
+      include: ['src/**/*'], // Include files for coverage
+      exclude: ['node_modules'], // Exclude specific files
+    },
+  },
 })
