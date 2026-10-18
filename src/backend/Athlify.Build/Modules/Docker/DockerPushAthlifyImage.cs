@@ -6,6 +6,7 @@ using ModularPipelines.Attributes;
 using ModularPipelines.Context;
 using ModularPipelines.Docker.Extensions;
 using ModularPipelines.Docker.Options;
+using ModularPipelines.Git.Extensions;
 using ModularPipelines.Models;
 using ModularPipelines.Modules;
 using ModularPipelines.Options;
@@ -30,6 +31,12 @@ public class DockerPushAthlifyImage(IOptions<DockerPushAthlifyImageSettings> opt
         _context = context;
         _cancellationToken = cancellationToken;
 
+        var versionInfo = await context.Git().Versioning.GetGitVersioningInformation();
+        var isMainBranch = "main" == versionInfo.BranchName;
+        var dynamicVerstion = isMainBranch
+            ? "latest"
+            : "nightly";
+
         var gitVersion = await context.GetModule<GitVersion>();
         var version = gitVersion.ValueOrDefault!;
         var containerImageName = options.Value.ContainerImageName;
@@ -38,7 +45,7 @@ public class DockerPushAthlifyImage(IOptions<DockerPushAthlifyImageSettings> opt
         var registry = "ghcr.io/nrg-drink";
         var tag = $"{containerImageName}:{version}";
         var gitHubTagVersion = $"{registry}/{containerImageName}:{version}";
-        var gitHubTagLatest = $"{registry}/{containerImageName}:latest";
+        var gitHubTagLatest = $"{registry}/{containerImageName}:{dynamicVerstion}";
 
         var versionTagResult = await TagImage(tag, gitHubTagVersion);
         var latestTagResult = await TagImage(tag, gitHubTagLatest);
