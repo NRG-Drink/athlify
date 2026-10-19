@@ -15,7 +15,7 @@
     "format": "prettier --write .",
     "typecheck": "tsc -b --noEmit",
     "test": "vitest run",
-    "test:coverage": "vitest --coverage",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "preview": "vite preview",
     "relay": "relay-compiler",
