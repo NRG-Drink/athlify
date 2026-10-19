@@ -29,7 +29,7 @@ internal class Program
                 s.ManipulateAfterCreation = repo =>
                 {
                     repo.BackendRoot = new(Path.Combine(repo.Repo.Path, "src", "backend"));
-                    repo.BackendWwwRootAppRelative = Path.Combine("wwwroot", "app");
+                    repo.BackendWwwRootAppRelative = Path.Combine("wwwroot");
                     repo.FrontendRoot = new(Path.Combine(repo.Repo.Path, "src", "frontend", "athlify"));
                     return repo;
                 };

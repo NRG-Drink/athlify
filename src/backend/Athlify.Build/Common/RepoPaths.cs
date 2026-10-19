@@ -18,7 +18,7 @@ public record RepoPaths
 
     // Backend
     public Folder BackendRoot { get; set; } = new("./src/backend");
-    public string BackendWwwRootAppRelative { get; set; } = Path.Combine("wwwroot", "app");
+    public string BackendWwwRootAppRelative { get; set; } = Path.Combine("wwwroot");
     public MPFile Solution { get; init; } = new(".");
 
     public List<MPFile> ExeProjects { get; init; } = [];
