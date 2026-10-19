@@ -18,6 +18,7 @@ namespace Athlify.Build.Modules.Dotnet;
 [DependsOn<DotnetBuildSolution>(Optional = true)]
 [DependsOn<DotnetTestRun>(Optional = true)]
 [DependsOn<NodeTest>(Optional = true)]
+[DependsOn<NodeTestWithCoverage>(Optional = true)]
 [DependsOn<NodeBuildCopyAthlifyDistToApi>(Optional = true)]
 [NotInParallel(NotInParallelKey.BuildExecute, NotInParallelKey.PublishExecute)]
 public class DotnetPublish(IOptions<PublishSettings> publishOptions) : Module<PathCommandResult<PublishProject>[]>

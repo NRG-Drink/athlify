@@ -8,7 +8,8 @@ namespace Athlify.Build.Modules.Node;
 
 [ModuleCategory(ModuleCategoryKey.Node)]
 [DependsOn<FindRepoPaths>()]
-[DependsOn<NodeCleanInstall>()]
+[DependsOn<NodeCleanInstall>(Optional = true)]
+[DependsOn<NodeInstall>(Optional = true)]
 [DependsOn<NodeBuild>(Optional = true)]
 [NotInParallel(NotInParallelKey.Node)]
 public class NodeBuildCopyAthlifyDistToApi: Module<Folder>

@@ -408,7 +408,7 @@ FodyWeavers.xsd
 *.sln.iml
 
 # Custom
-**/wwwroot/app/**
+**/wwwroot/**
 .artifacts/
 .release-attachments/
 .test-results/

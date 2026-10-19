@@ -12,6 +12,7 @@ namespace Athlify.Build.Modules.Node;
 [DependsOn<FindRepoPaths>()]
 [DependsOn<NodeInstall>(Optional = true)]
 [DependsOn<NodeCleanInstall>(Optional = true)]
+[DependsOn<NodeRelay>(Optional = true)]
 [NotInParallel(NotInParallelKey.Node)]
 public class NodeBuild : Module<CommandResult>
 {

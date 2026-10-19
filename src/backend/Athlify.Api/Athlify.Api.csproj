@@ -5,7 +5,7 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<LangVersion>preview</LangVersion>
-		<ContainerRepository>nrg-drink/athlify</ContainerRepository>
+		<ContainerRepository>athlify</ContainerRepository>
 	</PropertyGroup>
 
 	<ItemGroup Condition="'$(ImplicitUsings)' == 'enable'">
