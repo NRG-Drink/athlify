@@ -48,7 +48,8 @@ internal class Program
                     e => e.NameWithoutExtension.Equals("Athlify.Api", StringComparison.OrdinalIgnoreCase),
                     options => (DotNetPublishOptions)options.WithArguments(
                         "/t:PublishContainer",
-                        $"-p:ContainerImageName={athlifyContainerImageName}") with
+                        $"-p:ContainerImageName={athlifyContainerImageName}",
+                        $"-p:ContainerLabel=org.opencontainers.image.source=https://github.com/nrg-drink/athlify") with
                     {
                         Runtime = DotNetRidCatalog.Linux.LinuxX64,
                         Configuration = "Release",
