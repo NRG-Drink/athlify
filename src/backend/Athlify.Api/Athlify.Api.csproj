@@ -14,20 +14,20 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.6.0" />
-    <PackageReference Include="GreenDonut.Data.EntityFramework" Version="16.6.4" />
-    <PackageReference Include="HotChocolate.AspNetCore" Version="16.6.4" />
-    <PackageReference Include="HotChocolate.AspNetCore.CommandLine" Version="16.6.4" />
-    <PackageReference Include="HotChocolate.Data" Version="16.6.4" />
-    <PackageReference Include="HotChocolate.Types.Analyzers" Version="16.6.4">
+    <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.6.2" />
+    <PackageReference Include="GreenDonut.Data.EntityFramework" Version="16.6.9" />
+    <PackageReference Include="HotChocolate.AspNetCore" Version="16.6.9" />
+    <PackageReference Include="HotChocolate.AspNetCore.CommandLine" Version="16.6.9" />
+    <PackageReference Include="HotChocolate.Data" Version="16.6.9" />
+    <PackageReference Include="HotChocolate.Types.Analyzers" Version="16.6.9">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.12" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.13" />
   </ItemGroup>
 
   <ItemGroup>
