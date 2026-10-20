@@ -408,11 +408,13 @@ FodyWeavers.xsd
 *.sln.iml
 
 # Custom
+**/wwwroot/**
 .artifacts/
 .release-attachments/
 .test-results/
 *.csproj.lscache
 .obsidian
+src/frontend/athlify/coverage/**
 
 # AI stuff
 .agents/planning
