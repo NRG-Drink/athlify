@@ -85,11 +85,17 @@
         "type": "Aktivitätstyp",
         "vehicle": "Velo",
         "tag": "Tag",
+        "wind": "Wind",
         "allTypes": "Alle Typen",
         "allVehicles": "Alle Velos",
         "allTags": "Alle Tags",
+        "allWinds": "Beliebiger Wind",
         "moreOptions": "Es werden nur die ersten Optionen angezeigt.",
-        "reset": "Filter zurücksetzen"
+        "reset": "Filter zurücksetzen",
+        "filterBy": "Nach {{column}} filtern",
+        "filterByActive": "Nach {{column}} filtern, aktiv: {{value}}",
+        "active": "Aktive Filter",
+        "remove": "Filter {{filter}} entfernen"
       },
       "types": {
         "ROAD": "Strasse",

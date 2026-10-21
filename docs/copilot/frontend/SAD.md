@@ -81,7 +81,7 @@ src/frontend/athlify/src/
 The App Layout and routing are implemented. Dashboard, Garage, Events and
 Settings render placeholder pages. The `/activities` view is a read-only
 domain page backed by the GraphQL API; its period, type, bicycle and tag
-filters live in the URL and its list uses Relay cursor pagination. The
+filters live in the URL, are operated from the column headers and its list uses Relay cursor pagination. The
 `/body-stats` view is a domain page backed by the GraphQL API. State management
 beyond the Relay store
 and the Tailwind/Chakra boundary are still open decisions. Record them as ADRs
@@ -187,7 +187,12 @@ reference is `src/features/body-stats/`.
 - **Table:** `DataTable` sorts with the keyboard through header buttons. Row
   actions (edit, delete) are always visible; clicking a row also opens the
   editor. Columns drop out below `sm`, `md` and `lg` so that a phone shows date,
-  weight and the actions.
+  weight and the actions. A column may declare a `filter`: `DataTable` then
+  renders a funnel button beside the sort button that opens a popover (portal)
+  with the filter control; the table stays domain-free. `emptyMessage` keeps
+  the header when no row matches, and `busy` dims the rows and sets `aria-busy`
+  while data refreshes. On Activities, filters of columns hidden at the current
+  breakpoint and the chips of active filters are shown above the table.
 - **Dialogs:** `FormDialog` (a bottom sheet on phones) and `ConfirmDialog`
   (`alertdialog`, Cancel focused). Neither can be dismissed while a request is
   in flight.

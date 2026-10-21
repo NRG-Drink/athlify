@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { ActivitiesPage } from '../../../features/activities/ActivitiesPage'
 import { renderWithRelay } from '../../utils/relay'
@@ -81,7 +81,11 @@ describe('ActivitiesPage', () => {
     })
 
     expect(await screen.findByText('Keine passenden Aktivitäten')).toBeInTheDocument()
-    await user.click(screen.getAllByRole('button', { name: 'Filter zurücksetzen' })[1])
+    const table = screen.getByRole('table')
+    expect(
+      within(table).getByRole('button', { name: /Nach Aktivitätstyp filtern/ }),
+    ).toBeInTheDocument()
+    await user.click(within(table).getByRole('button', { name: 'Filter zurücksetzen' }))
     expect(router.state.location.search).toBe('')
   })
 
@@ -157,5 +161,221 @@ describe('ActivitiesPage', () => {
     const rows = within(table).getAllByRole('row', { hidden: true }).slice(1)
     expect(within(rows[0]).getByText('7')).toBeInTheDocument()
     expect(within(rows[1]).queryByText('7')).not.toBeInTheDocument()
+  })
+
+  describe('column filters', () => {
+    const headerOf = (label: string) =>
+      within(screen.getByRole('table')).getByText(label).closest('th') as HTMLElement
+
+    it('offers a filter trigger next to the sort button of the filterable columns only', async () => {
+      renderWithRelay(<ActivitiesPage />, () => response(), {
+        path: '/activities',
+        routePath: '/activities',
+      })
+
+      await screen.findByRole('table')
+      for (const label of ['Datum', 'Typ', 'Velo', 'Tags']) {
+        expect(
+          within(headerOf(label)).getByRole('button', { name: /^Nach .* filtern/, hidden: true }),
+        ).toBeInTheDocument()
+      }
+      expect(
+        within(headerOf('Distanz')).queryByRole('button', { name: /filtern/, hidden: true }),
+      ).not.toBeInTheDocument()
+    })
+
+    it('keeps sorting and filtering on separate buttons', async () => {
+      const { user, router } = renderWithRelay(<ActivitiesPage />, () => response(), {
+        path: '/activities',
+        routePath: '/activities',
+      })
+
+      await screen.findByRole('table')
+      const header = headerOf('Typ')
+      await user.click(within(header).getByRole('button', { name: 'Typ' }))
+      expect(header).toHaveAttribute('aria-sort', 'ascending')
+      expect(router.state.location.search).toBe('')
+      await user.click(within(header).getByRole('button', { name: 'Nach Aktivitätstyp filtern' }))
+      expect(await screen.findByRole('combobox', { name: 'Aktivitätstyp' })).toBeInTheDocument()
+      expect(header).toHaveAttribute('aria-sort', 'ascending')
+    })
+
+    it('filters by type from the header, closes the popover and returns the focus', async () => {
+      const { user, router, calls } = renderWithRelay(<ActivitiesPage />, () => response(), {
+        path: '/activities',
+        routePath: '/activities',
+      })
+
+      await screen.findByRole('table')
+      const trigger = within(headerOf('Typ')).getByRole('button', {
+        name: 'Nach Aktivitätstyp filtern',
+      })
+      await user.click(trigger)
+      await user.selectOptions(
+        await screen.findByRole('combobox', { name: 'Aktivitätstyp' }),
+        'INDOOR',
+      )
+
+      expect(router.state.location.search).toBe('?type=INDOOR')
+      await waitFor(() =>
+        expect(calls('ActivitiesPageQuery').at(-1)).toMatchObject({
+          where: { type: { eq: 'INDOOR' } },
+        }),
+      )
+      await waitFor(() =>
+        expect(screen.queryByRole('combobox', { name: 'Aktivitätstyp' })).not.toBeInTheDocument(),
+      )
+      expect(
+        await within(headerOf('Typ')).findByRole('button', {
+          name: 'Nach Aktivitätstyp filtern, aktiv: Indoor',
+        }),
+      ).toBeInTheDocument()
+    })
+
+    it('filters by period from the date header', async () => {
+      const { user, router } = renderWithRelay(<ActivitiesPage />, () => response(), {
+        path: '/activities',
+        routePath: '/activities',
+      })
+
+      await screen.findByRole('table')
+      await user.click(
+        within(headerOf('Datum')).getByRole('button', { name: 'Nach Zeitraum filtern' }),
+      )
+      await user.selectOptions(await screen.findByRole('combobox', { name: 'Zeitraum' }), '30d')
+
+      expect(router.state.location.search).toBe('?period=30d')
+    })
+
+    it('closes the popover with Escape', async () => {
+      const { user } = renderWithRelay(<ActivitiesPage />, () => response(), {
+        path: '/activities',
+        routePath: '/activities',
+      })
+
+      await screen.findByRole('table')
+      await user.click(
+        within(headerOf('Typ')).getByRole('button', { name: 'Nach Aktivitätstyp filtern' }),
+      )
+      await screen.findByRole('combobox', { name: 'Aktivitätstyp' })
+      await user.keyboard('{Escape}')
+      await waitFor(() =>
+        expect(screen.queryByRole('combobox', { name: 'Aktivitätstyp' })).not.toBeInTheDocument(),
+      )
+    })
+
+    it('lists every active filter as a chip that can be removed, and resets all', async () => {
+      const { user, router } = renderWithRelay(<ActivitiesPage />, () => response(), {
+        path: '/activities?type=INDOOR&period=1y',
+        routePath: '/activities',
+      })
+
+      const chips = await screen.findByRole('group', { name: 'Aktive Filter' })
+      expect(within(chips).getByText('Zeitraum: Letztes Jahr')).toBeInTheDocument()
+      expect(within(chips).getByText('Aktivitätstyp: Indoor')).toBeInTheDocument()
+
+      await user.click(
+        within(chips).getByRole('button', { name: 'Filter Aktivitätstyp entfernen' }),
+      )
+      expect(router.state.location.search).toBe('?period=1y')
+
+      await user.click(
+        within(await screen.findByRole('group', { name: 'Aktive Filter' })).getByRole('button', {
+          name: 'Filter zurücksetzen',
+        }),
+      )
+      expect(router.state.location.search).toBe('')
+    })
+
+    it('keeps the table, dimmed and busy, while a filter change is loading', async () => {
+      let release: (value: unknown) => void = () => {}
+      const { user } = renderWithRelay(
+        <ActivitiesPage />,
+        (_operation, variables) =>
+          variables.where && 'type' in (variables.where as object)
+            ? new Promise((resolve) => (release = resolve))
+            : response(),
+        { path: '/activities', routePath: '/activities' },
+      )
+
+      const table = await screen.findByRole('table')
+      await user.click(
+        within(headerOf('Typ')).getByRole('button', { name: 'Nach Aktivitätstyp filtern' }),
+      )
+      await user.selectOptions(
+        await screen.findByRole('combobox', { name: 'Aktivitätstyp' }),
+        'INDOOR',
+      )
+
+      await waitFor(() => expect(screen.getByRole('table')).toHaveAttribute('aria-busy', 'true'))
+      expect(screen.getByRole('table')).toBe(table)
+      release(response([richActivity]))
+      await waitFor(() => expect(screen.getByRole('table')).not.toHaveAttribute('aria-busy'))
+      expect(
+        within(screen.getByRole('table')).getByText('Feierabendrunde am See'),
+      ).toBeInTheDocument()
+    })
+
+    it('stops dimming the table when the URL moves on without the filter change', async () => {
+      const { user, router } = renderWithRelay(<ActivitiesPage />, () => response(), {
+        path: '/activities',
+        routePath: '/activities',
+      })
+
+      await screen.findByRole('table')
+      await user.click(
+        within(headerOf('Typ')).getByRole('button', { name: 'Nach Aktivitätstyp filtern' }),
+      )
+      await user.selectOptions(
+        await screen.findByRole('combobox', { name: 'Aktivitätstyp' }),
+        'INDOOR',
+      )
+      await waitFor(() => expect(router.state.location.search).toBe('?type=INDOOR'))
+      await waitFor(() => expect(screen.getByRole('table')).not.toHaveAttribute('aria-busy'))
+
+      await act(() => router.navigate('/activities'))
+
+      expect(router.state.location.search).toBe('')
+      expect(screen.getByRole('table')).not.toHaveAttribute('aria-busy')
+    })
+
+    it('keeps the filtered empty state inside the table so its filters stay reachable', async () => {
+      renderWithRelay(<ActivitiesPage />, () => response([]), {
+        path: '/activities?tag=tag-1',
+        routePath: '/activities',
+      })
+
+      const table = await screen.findByRole('table')
+      expect(within(table).getByText('Keine passenden Aktivitäten')).toBeInTheDocument()
+      expect(
+        within(table).getByRole('button', { name: /Nach Aktivitätstyp filtern/ }),
+      ).toBeInTheDocument()
+    })
+
+    it('sends the wind filter from the URL as a where clause', async () => {
+      const { calls } = renderWithRelay(<ActivitiesPage />, () => response([]), {
+        path: '/activities?wind=STRONG',
+        routePath: '/activities',
+      })
+
+      await screen.findByRole('table')
+      expect(calls('ActivitiesPageQuery')[0]).toMatchObject({
+        where: { wind: { eq: 'STRONG' } },
+      })
+    })
+
+    it('tabs from the sort button to the filter button', async () => {
+      const { user } = renderWithRelay(<ActivitiesPage />, () => response(), {
+        path: '/activities',
+        routePath: '/activities',
+      })
+
+      await screen.findByRole('table')
+      await user.click(within(headerOf('Typ')).getByRole('button', { name: 'Typ' }))
+      await user.tab()
+      expect(
+        within(headerOf('Typ')).getByRole('button', { name: 'Nach Aktivitätstyp filtern' }),
+      ).toHaveFocus()
+    })
   })
 })

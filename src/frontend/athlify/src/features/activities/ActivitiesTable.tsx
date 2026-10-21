@@ -1,15 +1,25 @@
-import { Button, Flex, Text } from '@chakra-ui/react'
-import { useMemo } from 'react'
+import { Button, Flex, Tag, Text } from '@chakra-ui/react'
+import { useMemo, type ReactNode } from 'react'
 import { graphql, useFragment } from 'react-relay'
 import { useTranslation } from 'react-i18next'
 import { DataTable, type DataTableColumn } from '../../components/DataTable'
 import { useFormat } from '../../i18n/useFormat'
+import { ActivityFilterField } from './ActivityFilterField'
+import {
+  activeActivityFilterKeys,
+  activeFilterValueLabel,
+  filterColumnBreakpoint,
+  type ActivityFilterKey,
+  type ActivityFilters,
+  type FilterOption,
+} from './activityFilters'
 import {
   enumLabel,
   formatDuration,
   formatHeartRate,
   formatOptionalNumber,
   moodRank,
+  tagColorPalette,
   vehicleLabel,
   windRank,
 } from './activityFormatting'
@@ -59,6 +69,26 @@ export type ActivityRow = ActivitiesTable_entries$data[number]
 const gadgetNames = (row: ActivityRow) => row.gadgets.map(vehicleLabel).join(', ')
 const tagNames = (row: ActivityRow) => row.tags.map((tag) => tag.name).join(', ')
 
+const tagChips = (row: ActivityRow) =>
+  row.tags.length === 0 ? (
+    '—'
+  ) : (
+    // One line: the cell clips the chips that do not fit, and the title lists all of them.
+    <Flex gap="1" wrap="nowrap" overflow="hidden" title={tagNames(row)}>
+      {row.tags.map((tag) => (
+        <Tag.Root
+          key={tag.id}
+          size="sm"
+          variant="subtle"
+          flexShrink={0}
+          colorPalette={tagColorPalette(tag.id)}
+        >
+          <Tag.Label>{tag.name}</Tag.Label>
+        </Tag.Root>
+      ))}
+    </Flex>
+  )
+
 /** Shows the full text as a tooltip, because truncated cells hide the end. */
 const titled = (text: string) => (text ? <span title={text}>{text}</span> : '—')
 
@@ -72,6 +102,16 @@ interface ActivitiesTableProps {
   loadMoreError: boolean
   onLoadMore: () => void
   onRetryLoadMore: () => void
+  filters: ActivityFilters
+  vehicles: readonly FilterOption[]
+  tags: readonly FilterOption[]
+  hasMoreVehicles: boolean
+  hasMoreTags: boolean
+  onFiltersChange: (value: ActivityFilters) => void
+  /** The data is being refreshed after a filter change. */
+  busy: boolean
+  /** Shown in the table body when nothing matches; the header and its filters stay. */
+  emptyMessage?: ReactNode
 }
 
 export function ActivitiesTable({
@@ -81,152 +121,205 @@ export function ActivitiesTable({
   loadMoreError,
   onLoadMore,
   onRetryLoadMore,
+  filters,
+  vehicles,
+  tags,
+  hasMoreVehicles,
+  hasMoreTags,
+  onFiltersChange,
+  busy,
+  emptyMessage,
 }: ActivitiesTableProps) {
   const { t } = useTranslation()
   const format = useFormat()
   const rows = useFragment(tableFragment, entries)
 
-  const columns = useMemo<DataTableColumn<ActivityRow>[]>(() => [
-    {
-      id: 'date',
-      header: t('activities.columns.date'),
-      accessor: (row) => new Date(row.date).getTime(),
-      cell: (row) => <time dateTime={row.date}>{format.date(row.date)}</time>,
-      width: '8rem',
-    },
-    {
-      id: 'type',
-      header: t('activities.columns.type'),
-      accessor: (row) => row.type,
-      cell: (row) => t(`activities.types.${row.type}`),
-    },
-    {
-      id: 'description',
-      header: t('activities.columns.description'),
-      accessor: (row) => row.description ?? '',
-      cell: (row) => titled(row.description ?? ''),
-      hideBelow: 'md',
-      truncate: true,
-      minWidth: '12rem',
-      maxWidth: '24rem',
-    },
-    {
-      id: 'time',
-      header: t('activities.columns.duration'),
-      accessor: (row) => row.time,
-      cell: (row) => formatDuration(row.time),
-      align: 'end',
-      unit: t('activities.units.duration'),
-    },
-    {
-      id: 'distance',
-      header: t('activities.columns.distance'),
-      accessor: (row) => row.distance,
-      cell: (row) => formatOptionalNumber(format, row.distance, 1),
-      align: 'end',
-      unit: t('activities.units.distance'),
-    },
-    {
-      id: 'vehicle',
-      header: t('activities.columns.vehicle'),
-      accessor: (row) => (row.vehicle ? vehicleLabel(row.vehicle) : ''),
-      cell: (row) =>
-        row.vehicle ? (
-          <Text truncate maxW="12rem">
-            {vehicleLabel(row.vehicle)}
-          </Text>
-        ) : (
-          '—'
+  const columnFilters = useMemo(() => {
+    const active = activeActivityFilterKeys(filters)
+    const filterFor = (key: ActivityFilterKey) => {
+      const column = t(`activities.filters.${key}`)
+      return {
+        label: t('activities.filters.filterBy', { column }),
+        active: active.includes(key),
+        activeLabel: t('activities.filters.filterByActive', {
+          column,
+          value: activeFilterValueLabel(key, filters, vehicles, tags, t),
+        }),
+        content: (close: () => void) => (
+          <ActivityFilterField
+            field={key}
+            value={filters}
+            vehicles={vehicles}
+            tags={tags}
+            hasMoreVehicles={hasMoreVehicles}
+            hasMoreTags={hasMoreTags}
+            onChange={(next) => {
+              onFiltersChange(next)
+              close()
+            }}
+          />
         ),
-      hideBelow: 'md',
-      truncate: true,
-    },
-    {
-      id: 'elevationGain',
-      header: t('activities.columns.elevationGain'),
-      accessor: (row) => row.elevationGain ?? -1,
-      cell: (row) => formatOptionalNumber(format, row.elevationGain, 0),
-      align: 'end',
-      unit: t('activities.units.elevation'),
-      hideBelow: 'lg',
-    },
-    {
-      id: 'averageSpeed',
-      header: t('activities.columns.speed'),
-      accessor: (row) => row.averageSpeed ?? -1,
-      cell: (row) => formatOptionalNumber(format, row.averageSpeed, 1),
-      align: 'end',
-      unit: t('activities.units.speed'),
-      hideBelow: 'lg',
-    },
-    {
-      id: 'tss',
-      header: t('activities.columns.tss'),
-      accessor: (row) => row.tss ?? -1,
-      cell: (row) => (row.tss == null ? '—' : format.number(row.tss, 0)),
-      align: 'end',
-      hideBelow: 'lg',
-    },
-    {
-      id: 'heartRate',
-      header: t('activities.columns.heartRate'),
-      accessor: (row) => row.heartRateAverage ?? -1,
-      cell: (row) => {
-        const { text, title } = formatHeartRate(
-          row.heartRateAverage,
-          row.heartRateMin,
-          row.heartRateMax,
-        )
-        return title ? <span title={title}>{text}</span> : text
+      }
+    }
+    return {
+      date: filterFor('period'),
+      type: filterFor('type'),
+      vehicle: filterFor('vehicle'),
+      tags: filterFor('tag'),
+      wind: filterFor('wind'),
+    }
+  }, [t, filters, vehicles, tags, hasMoreVehicles, hasMoreTags, onFiltersChange])
+
+  const columns = useMemo<DataTableColumn<ActivityRow>[]>(
+    () => [
+      {
+        id: 'date',
+        header: t('activities.columns.date'),
+        accessor: (row) => new Date(row.date).getTime(),
+        cell: (row) => <time dateTime={row.date}>{format.date(row.date)}</time>,
+        width: '8rem',
+        filter: columnFilters.date,
       },
-      align: 'end',
-      unit: t('activities.units.heartRate'),
-      ...secondary,
-    },
-    {
-      id: 'effort',
-      header: t('activities.columns.effort'),
-      accessor: (row) => row.effort ?? -1,
-      cell: (row) => row.effort ?? '—',
-      align: 'end',
-      unit: t('activities.units.effort'),
-      ...secondary,
-    },
-    {
-      id: 'mood',
-      header: t('activities.columns.mood'),
-      accessor: (row) => moodRank(row.mood),
-      cell: (row) => enumLabel(t, 'moods', row.mood),
-      ...secondary,
-    },
-    {
-      id: 'wind',
-      header: t('activities.columns.wind'),
-      accessor: (row) => windRank(row.wind),
-      cell: (row) => enumLabel(t, 'winds', row.wind),
-      ...secondary,
-    },
-    {
-      id: 'gadgets',
-      header: t('activities.columns.gadgets'),
-      accessor: gadgetNames,
-      cell: (row) => titled(gadgetNames(row)),
-      ...secondary,
-      truncate: true,
-      minWidth: '8rem',
-      maxWidth: '14rem',
-    },
-    {
-      id: 'tags',
-      header: t('activities.columns.tags'),
-      accessor: tagNames,
-      cell: (row) => titled(tagNames(row)),
-      ...secondary,
-      truncate: true,
-      minWidth: '8rem',
-      maxWidth: '14rem',
-    },
-  ], [t, format])
+      {
+        id: 'type',
+        header: t('activities.columns.type'),
+        accessor: (row) => row.type,
+        cell: (row) => t(`activities.types.${row.type}`),
+        filter: columnFilters.type,
+      },
+      {
+        id: 'description',
+        header: t('activities.columns.description'),
+        accessor: (row) => row.description ?? '',
+        cell: (row) => titled(row.description ?? ''),
+        hideBelow: 'md',
+        truncate: true,
+        minWidth: '12rem',
+        maxWidth: '24rem',
+      },
+      {
+        id: 'time',
+        header: t('activities.columns.duration'),
+        accessor: (row) => row.time,
+        cell: (row) => formatDuration(row.time),
+        align: 'end',
+        unit: t('activities.units.duration'),
+      },
+      {
+        id: 'distance',
+        header: t('activities.columns.distance'),
+        accessor: (row) => row.distance,
+        cell: (row) => formatOptionalNumber(format, row.distance, 1),
+        align: 'end',
+        unit: t('activities.units.distance'),
+      },
+      {
+        id: 'vehicle',
+        header: t('activities.columns.vehicle'),
+        accessor: (row) => (row.vehicle ? vehicleLabel(row.vehicle) : ''),
+        cell: (row) =>
+          row.vehicle ? (
+            <Text truncate maxW="12rem">
+              {vehicleLabel(row.vehicle)}
+            </Text>
+          ) : (
+            '—'
+          ),
+        hideBelow: filterColumnBreakpoint.vehicle,
+        truncate: true,
+        filter: columnFilters.vehicle,
+      },
+      {
+        id: 'elevationGain',
+        header: t('activities.columns.elevationGain'),
+        accessor: (row) => row.elevationGain ?? -1,
+        cell: (row) => formatOptionalNumber(format, row.elevationGain, 0),
+        align: 'end',
+        unit: t('activities.units.elevation'),
+        hideBelow: 'lg',
+      },
+      {
+        id: 'averageSpeed',
+        header: t('activities.columns.speed'),
+        accessor: (row) => row.averageSpeed ?? -1,
+        cell: (row) => formatOptionalNumber(format, row.averageSpeed, 1),
+        align: 'end',
+        unit: t('activities.units.speed'),
+        hideBelow: 'lg',
+      },
+      {
+        id: 'tss',
+        header: t('activities.columns.tss'),
+        accessor: (row) => row.tss ?? -1,
+        cell: (row) => (row.tss == null ? '—' : format.number(row.tss, 0)),
+        align: 'end',
+        hideBelow: 'lg',
+      },
+      {
+        id: 'heartRate',
+        header: t('activities.columns.heartRate'),
+        accessor: (row) => row.heartRateAverage ?? -1,
+        cell: (row) => {
+          const { text, title } = formatHeartRate(
+            row.heartRateAverage,
+            row.heartRateMin,
+            row.heartRateMax,
+          )
+          return title ? <span title={title}>{text}</span> : text
+        },
+        align: 'end',
+        unit: t('activities.units.heartRate'),
+        ...secondary,
+      },
+      {
+        id: 'effort',
+        header: t('activities.columns.effort'),
+        accessor: (row) => row.effort ?? -1,
+        cell: (row) => row.effort ?? '—',
+        align: 'end',
+        unit: t('activities.units.effort'),
+        ...secondary,
+      },
+      {
+        id: 'mood',
+        header: t('activities.columns.mood'),
+        accessor: (row) => moodRank(row.mood),
+        cell: (row) => enumLabel(t, 'moods', row.mood),
+        ...secondary,
+      },
+      {
+        id: 'wind',
+        header: t('activities.columns.wind'),
+        accessor: (row) => windRank(row.wind),
+        cell: (row) => enumLabel(t, 'winds', row.wind),
+        ...secondary,
+        hideBelow: filterColumnBreakpoint.wind,
+        filter: columnFilters.wind,
+      },
+      {
+        id: 'gadgets',
+        header: t('activities.columns.gadgets'),
+        accessor: gadgetNames,
+        cell: (row) => titled(gadgetNames(row)),
+        ...secondary,
+        truncate: true,
+        minWidth: '8rem',
+        maxWidth: '14rem',
+      },
+      {
+        id: 'tags',
+        header: t('activities.columns.tags'),
+        accessor: tagNames,
+        cell: tagChips,
+        ...secondary,
+        hideBelow: filterColumnBreakpoint.tag,
+        filter: columnFilters.tags,
+        minWidth: '8rem',
+        maxWidth: '14rem',
+      },
+    ],
+    [t, format, columnFilters],
+  )
 
   return (
     <Flex direction="column" gap="3">
@@ -236,6 +329,8 @@ export function ActivitiesTable({
         getRowId={(row) => row.id}
         initialSort={{ id: 'date', desc: true }}
         caption={t('activities.table.caption')}
+        busy={busy}
+        emptyMessage={emptyMessage}
       />
       {loadMoreError && (
         <Flex align="center" justify="space-between" gap="3" wrap="wrap">

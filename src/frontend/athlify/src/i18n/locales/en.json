@@ -85,11 +85,17 @@
         "type": "Activity type",
         "vehicle": "Bicycle",
         "tag": "Tag",
+        "wind": "Wind",
         "allTypes": "All types",
         "allVehicles": "All bicycles",
         "allTags": "All tags",
+        "allWinds": "Any wind",
         "moreOptions": "Only the first options are shown.",
-        "reset": "Reset filters"
+        "reset": "Reset filters",
+        "filterBy": "Filter by {{column}}",
+        "filterByActive": "Filter by {{column}}, active: {{value}}",
+        "active": "Active filters",
+        "remove": "Remove {{filter}} filter"
       },
       "types": {
         "ROAD": "Road",

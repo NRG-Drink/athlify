@@ -1,4 +1,4 @@
-import { Table, Text, VisuallyHidden, chakra } from '@chakra-ui/react'
+import { Flex, Table, Text, VisuallyHidden, chakra } from '@chakra-ui/react'
 import {
   createColumnHelper,
   createSortedRowModel,
@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-table'
 import { useMemo, type KeyboardEvent, type ReactNode } from 'react'
 import { LuArrowDown, LuArrowUp, LuArrowUpDown } from 'react-icons/lu'
+import { ColumnFilter, type DataTableColumnFilter } from './ColumnFilter'
 
 export interface DataTableColumn<T extends object> {
   id: string
@@ -30,6 +31,8 @@ export interface DataTableColumn<T extends object> {
   /** Width bounds of a truncated column, for example `12rem`; without them it collapses to nothing. */
   minWidth?: string
   maxWidth?: string
+  /** Filter popover next to the sort button of the header. */
+  filter?: DataTableColumnFilter
 }
 
 type Breakpoint = 'sm' | 'md' | 'lg' | '2xl'
@@ -47,6 +50,10 @@ export interface DataTableProps<T extends object> {
   rowActions?: (row: T) => ReactNode
   /** Opens the row's default action (click, or Enter on the focused row). */
   onRowClick?: (row: T) => void
+  /** Shown in a full-width row instead of the body when `data` is empty; the header stays. */
+  emptyMessage?: ReactNode
+  /** The data is being refreshed: the rows stay, dimmed, and the table is marked busy. */
+  busy?: boolean
 }
 
 const features = tableFeatures({
@@ -66,6 +73,8 @@ export function DataTable<T extends object>({
   actionsLabel,
   rowActions,
   onRowClick,
+  emptyMessage,
+  busy,
 }: DataTableProps<T>) {
   const rows = useMemo(() => [...data], [data])
   const byId = useMemo(() => new Map(columns.map((column) => [column.id, column])), [columns])
@@ -93,8 +102,8 @@ export function DataTable<T extends object>({
   }
 
   return (
-    <Table.ScrollArea>
-      <Table.Root size="md" css={{ tableLayout: 'auto' }}>
+    <Table.ScrollArea opacity={busy ? 0.6 : undefined} transition="opacity 0.15s">
+      <Table.Root size="md" css={{ tableLayout: 'auto' }} aria-busy={busy || undefined}>
         <Table.Caption srOnly>{caption}</Table.Caption>
         <Table.Header>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -118,39 +127,54 @@ export function DataTable<T extends object>({
                     aria-sort={
                       sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : 'none'
                     }
+                    css={{
+                      '& [data-filter-idle]': { opacity: 0 },
+                      '&:hover [data-filter-idle], &:focus-within [data-filter-idle]': {
+                        opacity: 0.6,
+                      },
+                      '@media (hover: none)': { '& [data-filter-idle]': { opacity: 0.6 } },
+                    }}
                   >
-                    <chakra.button
-                      type="button"
-                      onClick={header.column.getToggleSortingHandler()}
+                    <Flex
                       display="inline-flex"
-                      alignItems="center"
+                      align="center"
                       gap="1"
                       flexDirection={end ? 'row-reverse' : 'row'}
-                      font="inherit"
-                      color="inherit"
-                      cursor="pointer"
-                      borderRadius="l1"
-                      focusVisibleRing="outside"
-                      css={{
-                        '& [data-sort-idle]': { opacity: 0 },
-                        '&:hover [data-sort-idle], &:focus-visible [data-sort-idle]': {
-                          opacity: 0.6,
-                        },
-                      }}
                     >
-                      <span>
-                        {column.header}
-                        {column.unit && (
-                          <Text as="span" fontWeight="normal" color="fg.muted">
-                            {' '}
-                            {column.unit}
-                          </Text>
-                        )}
-                      </span>
-                      {sorted === 'asc' && <LuArrowUp aria-hidden />}
-                      {sorted === 'desc' && <LuArrowDown aria-hidden />}
-                      {!sorted && <LuArrowUpDown aria-hidden data-sort-idle />}
-                    </chakra.button>
+                      <chakra.button
+                        type="button"
+                        onClick={header.column.getToggleSortingHandler()}
+                        display="inline-flex"
+                        alignItems="center"
+                        gap="1"
+                        flexDirection={end ? 'row-reverse' : 'row'}
+                        font="inherit"
+                        color="inherit"
+                        cursor="pointer"
+                        borderRadius="l1"
+                        focusVisibleRing="outside"
+                        css={{
+                          '& [data-sort-idle]': { opacity: 0 },
+                          '&:hover [data-sort-idle], &:focus-visible [data-sort-idle]': {
+                            opacity: 0.6,
+                          },
+                        }}
+                      >
+                        <span>
+                          {column.header}
+                          {column.unit && (
+                            <Text as="span" fontWeight="normal" color="fg.muted">
+                              {' '}
+                              {column.unit}
+                            </Text>
+                          )}
+                        </span>
+                        {sorted === 'asc' && <LuArrowUp aria-hidden />}
+                        {sorted === 'desc' && <LuArrowDown aria-hidden />}
+                        {!sorted && <LuArrowUpDown aria-hidden data-sort-idle />}
+                      </chakra.button>
+                      {column.filter && <ColumnFilter {...column.filter} />}
+                    </Flex>
                   </Table.ColumnHeader>
                 )
               })}
@@ -163,6 +187,13 @@ export function DataTable<T extends object>({
           ))}
         </Table.Header>
         <Table.Body>
+          {rows.length === 0 && emptyMessage && (
+            <Table.Row>
+              <Table.Cell colSpan={columns.length + (rowActions ? 1 : 0)}>
+                {emptyMessage}
+              </Table.Cell>
+            </Table.Row>
+          )}
           {table.getRowModel().rows.map((row) => (
             <Table.Row
               key={row.id}

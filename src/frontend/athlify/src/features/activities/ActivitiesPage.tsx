@@ -1,14 +1,20 @@
 import { Button, Stack } from '@chakra-ui/react'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { graphql, useLazyLoadQuery, usePaginationFragment } from 'react-relay'
 import { useTranslation } from 'react-i18next'
 import { LuBike, LuRotateCcw } from 'react-icons/lu'
-import { useSearchParams } from 'react-router-dom'
+import { useLocation, useSearchParams } from 'react-router-dom'
 import { Page, PageEmptyState } from '../../components/Page'
 import { QueryBoundary } from '../../components/QueryBoundary'
 import { useFetchKey } from '../../relay/useFetchKey'
-import { hasActiveActivityFilters, activityFiltersToWhere, applyActivityFilters, parseActivityFilters } from './activityFilters'
-import { ActivitiesFilters } from './ActivitiesFilters'
+import {
+  activeActivityFilterKeys,
+  activityFiltersToWhere,
+  applyActivityFilters,
+  defaultActivityPeriod,
+  parseActivityFilters,
+} from './activityFilters'
+import { ActivitiesFilterSummary } from './ActivitiesFilterSummary'
 import { ActivitiesSkeleton } from './ActivitiesSkeleton'
 import { ActivitiesTable } from './ActivitiesTable'
 import { vehicleLabel } from './activityFormatting'
@@ -90,21 +96,39 @@ function ActivitiesContent({ fetchKey }: ContentProps) {
     ActivitiesPage_list$key
   >(listFragment, queryData)
   const activities = data.activities?.edges?.map((edge) => edge.node) ?? []
-  const vehicles =
-    queryData.vehicles?.nodes?.map((vehicle) => ({
-      id: vehicle.id,
-      label: vehicleLabel(vehicle),
-    })) ?? []
-  const tags = queryData.tags?.nodes?.map((tag) => ({ id: tag.id, label: tag.name })) ?? []
+  const vehicles = useMemo(
+    () =>
+      queryData.vehicles?.nodes?.map((vehicle) => ({
+        id: vehicle.id,
+        label: vehicleLabel(vehicle),
+      })) ?? [],
+    [queryData.vehicles],
+  )
+  const tags = useMemo(
+    () => queryData.tags?.nodes?.map((tag) => ({ id: tag.id, label: tag.name })) ?? [],
+    [queryData.tags],
+  )
   const hasMoreVehicles = queryData.vehicles?.pageInfo.hasNextPage ?? false
   const hasMoreTags = queryData.tags?.pageInfo.hasNextPage ?? false
 
-  const changeFilters = (next: typeof filters) => {
-    setLoadMoreError(false)
-    setSearchParams(applyActivityFilters(searchParams, next), { replace: true })
-  }
+  // The router applies the change in a transition, so the old table stays until the new data is
+  // there. `pendingKey` is the location the change started from: any later navigation, including
+  // one that did not come from a filter change, gives a new location key and ends the gap.
+  const location = useLocation()
+  const [pendingKey, setPendingKey] = useState<string>()
+  const refreshing = pendingKey !== undefined && pendingKey === location.key
 
-  const resetFilters = () => changeFilters({ period: '90d' })
+  const changeFilters = useCallback(
+    (next: typeof filters) => {
+      const nextParams = applyActivityFilters(searchParams, next)
+      setLoadMoreError(false)
+      setPendingKey(location.key)
+      setSearchParams(nextParams, { replace: true })
+    },
+    [location.key, searchParams, setSearchParams],
+  )
+
+  const resetFilters = () => changeFilters({ period: defaultActivityPeriod })
 
   const loadMore = () => {
     if (isLoadingNext) return
@@ -116,54 +140,33 @@ function ActivitiesContent({ fetchKey }: ContentProps) {
     })
   }
 
-  if (activities.length === 0) {
+  const filtered = activeActivityFilterKeys(filters).length > 0
+  const summary = (
+    <ActivitiesFilterSummary
+      value={filters}
+      vehicles={vehicles}
+      tags={tags}
+      hasMoreVehicles={hasMoreVehicles}
+      hasMoreTags={hasMoreTags}
+      onChange={changeFilters}
+      onReset={resetFilters}
+    />
+  )
+
+  // Without filters an empty list is the first-use state: nothing to filter, so no table.
+  if (activities.length === 0 && !filtered) {
     return (
-      <Stack gap="6">
-        <ActivitiesFilters
-          value={filters}
-          vehicles={vehicles}
-          tags={tags}
-          hasMoreVehicles={hasMoreVehicles}
-          hasMoreTags={hasMoreTags}
-          onChange={changeFilters}
-          onReset={resetFilters}
-        />
-        <PageEmptyState
-          icon={LuBike}
-          title={
-            hasActiveActivityFilters(filters)
-              ? t('activities.empty.filteredTitle')
-              : t('activities.empty.title')
-          }
-          message={
-            hasActiveActivityFilters(filters)
-              ? t('activities.empty.filteredMessage')
-              : t('activities.empty.message')
-          }
-          action={
-            hasActiveActivityFilters(filters) ? (
-              <Button onClick={resetFilters}>
-                <LuRotateCcw aria-hidden />
-                {t('activities.filters.reset')}
-              </Button>
-            ) : undefined
-          }
-        />
-      </Stack>
+      <PageEmptyState
+        icon={LuBike}
+        title={t('activities.empty.title')}
+        message={t('activities.empty.message')}
+      />
     )
   }
 
   return (
     <Stack gap="6">
-      <ActivitiesFilters
-        value={filters}
-        vehicles={vehicles}
-        tags={tags}
-        hasMoreVehicles={hasMoreVehicles}
-        hasMoreTags={hasMoreTags}
-        onChange={changeFilters}
-        onReset={resetFilters}
-      />
+      {summary}
       <ActivitiesTable
         entries={activities}
         hasNextPage={hasNext}
@@ -171,6 +174,26 @@ function ActivitiesContent({ fetchKey }: ContentProps) {
         loadMoreError={loadMoreError}
         onLoadMore={loadMore}
         onRetryLoadMore={loadMore}
+        filters={filters}
+        vehicles={vehicles}
+        tags={tags}
+        hasMoreVehicles={hasMoreVehicles}
+        hasMoreTags={hasMoreTags}
+        onFiltersChange={changeFilters}
+        busy={refreshing}
+        emptyMessage={
+          <PageEmptyState
+            icon={LuBike}
+            title={t('activities.empty.filteredTitle')}
+            message={t('activities.empty.filteredMessage')}
+            action={
+              <Button onClick={resetFilters}>
+                <LuRotateCcw aria-hidden />
+                {t('activities.filters.reset')}
+              </Button>
+            }
+          />
+        }
       />
     </Stack>
   )

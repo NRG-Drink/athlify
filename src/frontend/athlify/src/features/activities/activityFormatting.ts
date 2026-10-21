@@ -1,5 +1,6 @@
 import type { TFunction } from 'i18next'
 import type { Formatter } from '../../i18n/useFormat'
+import { winds } from './activityFilters'
 
 export function formatDuration(seconds: number) {
   const totalMinutes = Math.floor(seconds / 60)
@@ -20,11 +21,7 @@ export function formatOptionalNumber(
   return value == null ? '—' : format.number(value, decimals)
 }
 
-export function vehicleLabel(item: {
-  brand: string
-  model: string
-  nickname?: string | null
-}) {
+export function vehicleLabel(item: { brand: string; model: string; nickname?: string | null }) {
   return item.nickname ?? `${item.brand} ${item.model}`
 }
 
@@ -39,13 +36,13 @@ export function formatHeartRate(
 }
 
 const MOODS = ['VERY_BAD', 'BAD', 'NEUTRAL', 'GOOD', 'VERY_GOOD']
-const WINDS = ['CALM', 'LIGHT', 'MODERATE', 'STRONG', 'STORMY']
 
 /** Rank in the natural order so that sorting by mood or wind is not alphabetical; -1 for null or unknown. */
-const rankIn = (order: string[]) => (value: string | null | undefined) => order.indexOf(value ?? '')
+const rankIn = (order: readonly string[]) => (value: string | null | undefined) =>
+  order.indexOf(value ?? '')
 
 export const moodRank = rankIn(MOODS)
-export const windRank = rankIn(WINDS)
+export const windRank = rankIn(winds)
 
 /** Translated label of an enum value; an unknown (newer) value is shown as it is. */
 export function enumLabel(
@@ -54,4 +51,13 @@ export function enumLabel(
   value: string | null | undefined,
 ) {
   return value == null ? '—' : t(`activities.${group}.${value}`, { defaultValue: value })
+}
+
+const TAG_PALETTES = ['blue', 'green', 'orange', 'purple', 'pink', 'teal', 'cyan', 'red', 'yellow']
+
+/** The same tag always gets the same colour: derived from its id, not from its position. */
+export function tagColorPalette(id: string) {
+  let hash = 0
+  for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) >>> 0
+  return TAG_PALETTES[hash % TAG_PALETTES.length]
 }
