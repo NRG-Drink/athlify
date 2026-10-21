@@ -73,8 +73,9 @@ export function MetricChart({
   }
 
   const values = data.map((entry) => entry.value)
-  const min = Math.min(...values)
-  const max = Math.max(...values)
+  // A reduce instead of Math.min(...values): spreading a long history can exceed the argument limit.
+  const min = values.reduce((low, value) => (value < low ? value : low))
+  const max = values.reduce((high, value) => (value > high ? value : high))
   const scale = niceScale(min, max, 4)
   const span = spanFor(domain)
 

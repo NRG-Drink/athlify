@@ -14,7 +14,7 @@ export function PlaceholderPage({ titleKey, messageKey, icon }: PlaceholderPageP
     <Page
       title={t(titleKey)}
       status="empty"
-      emptyMessage={`${t('page.comingSoon')} ${t(messageKey)}`}
+      emptyMessage={t('page.comingSoon', { message: t(messageKey) })}
       emptyIcon={icon}
     />
   )

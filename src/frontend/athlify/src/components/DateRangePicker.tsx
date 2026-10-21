@@ -81,11 +81,13 @@ export function DateRangePicker({ value, onChange, min, max }: DateRangePickerPr
           size="sm"
           justifyContent="flex-start"
           textAlign="start"
-          aria-label={`${t('bodyStats.range.change')}: ${t('bodyStats.range.summary', {
-            from: format.date(dateFromKey(value.range.from)),
-            to: format.date(dateFromKey(value.range.to)),
-            aggregation: t(`bodyStats.range.aggregations.${value.aggregation}`),
-          })}`}
+          aria-label={t('bodyStats.range.changeLabel', {
+            summary: t('bodyStats.range.summary', {
+              from: format.date(dateFromKey(value.range.from)),
+              to: format.date(dateFromKey(value.range.to)),
+              aggregation: t(`bodyStats.range.aggregations.${value.aggregation}`),
+            }),
+          })}
         >
           <LuCalendarDays aria-hidden />
           <Text as="span" color="fg.muted" fontWeight="normal">

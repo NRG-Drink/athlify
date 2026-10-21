@@ -51,7 +51,10 @@ export function BodyStatsChart({
 
   const summary =
     points.length === 0
-      ? `${label}: ${t('bodyStats.chart.empty.range')}`
+      ? t('bodyStats.chart.emptySummary', {
+          metric: label,
+          message: t('bodyStats.chart.empty.range'),
+        })
       : t('bodyStats.chart.summary', {
           metric: label,
           fromDate: format.date(dateFromKey(range.from)),

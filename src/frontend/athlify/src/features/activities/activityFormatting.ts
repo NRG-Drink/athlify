@@ -1,6 +1,7 @@
+import type { TFunction } from 'i18next'
 import type { Formatter } from '../../i18n/useFormat'
 
-export function formatDuration(seconds: number, language: string) {
+export function formatDuration(seconds: number, t: TFunction) {
   const totalMinutes = Math.floor(seconds / 60)
   const hours = Math.floor(totalMinutes / 60)
   const minutes = totalMinutes % 60
@@ -9,7 +10,7 @@ export function formatDuration(seconds: number, language: string) {
     hours > 0
       ? `${hours}:${String(minutes).padStart(2, '0')}`
       : `${minutes}:${String(remainingSeconds).padStart(2, '0')}`
-  return language.startsWith('de') ? `${value} Std.` : `${value} h`
+  return t('activities.duration', { value })
 }
 
 export function formatOptionalMeasure(

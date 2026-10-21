@@ -6,7 +6,6 @@ import {
   Heading,
   Spinner,
   Stack,
-  Text,
   VisuallyHidden,
 } from '@chakra-ui/react'
 import { useEffect, type ReactNode } from 'react'
@@ -18,7 +17,6 @@ export type PageStatus = 'ready' | 'loading' | 'empty' | 'error'
 
 export interface PageProps {
   title: string
-  description?: string
   actions?: ReactNode
   status?: PageStatus
   emptyMessage?: string
@@ -98,7 +96,6 @@ export function PageErrorState({ message, onRetry }: PageErrorStateProps) {
 
 export function Page({
   title,
-  description,
   actions,
   status = 'ready',
   emptyMessage,
@@ -123,11 +120,6 @@ export function Page({
           <Heading as="h1" fontSize={{ base: '2rem', md: '2.5rem' }} lineHeight="1.1">
             {title}
           </Heading>
-          {description && (
-            <Text color="fg.muted" maxW="65ch">
-              {description}
-            </Text>
-          )}
         </Stack>
         {actions && (
           <Flex gap="2" wrap="wrap">

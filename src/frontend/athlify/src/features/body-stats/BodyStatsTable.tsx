@@ -1,4 +1,4 @@
-import { Flex, IconButton } from '@chakra-ui/react'
+import { Button, Flex, IconButton, Text } from '@chakra-ui/react'
 import { useMemo } from 'react'
 import { graphql, useFragment } from 'react-relay'
 import { useTranslation } from 'react-i18next'
@@ -36,11 +36,25 @@ export type BodyStatsRow = BodyStatsTable_entries$data[number]
 
 export interface BodyStatsTableProps {
   entries: BodyStatsTable_entries$key
+  hasNextPage: boolean
+  isLoadingNext: boolean
+  loadMoreError: boolean
+  onLoadMore: () => void
+  onRetryLoadMore: () => void
   onEdit: (row: BodyStatsRow) => void
   onDelete: (row: BodyStatsRow) => void
 }
 
-export function BodyStatsTable({ entries, onEdit, onDelete }: BodyStatsTableProps) {
+export function BodyStatsTable({
+  entries,
+  hasNextPage,
+  isLoadingNext,
+  loadMoreError,
+  onLoadMore,
+  onRetryLoadMore,
+  onEdit,
+  onDelete,
+}: BodyStatsTableProps) {
   const { t } = useTranslation()
   const format = useFormat()
   const rows = useFragment(tableFragment, entries)
@@ -72,37 +86,59 @@ export function BodyStatsTable({ entries, onEdit, onDelete }: BodyStatsTableProp
   )
 
   return (
-    <DataTable
-      data={rows}
-      columns={columns}
-      getRowId={(row) => row.id}
-      initialSort={{ id: 'date', desc: true }}
-      caption={t('bodyStats.history')}
-      actionsLabel={t('bodyStats.row.actionsColumn')}
-      onRowClick={onEdit}
-      rowActions={(row) => (
-        <Flex gap="1" justify="flex-end">
-          <IconButton
-            variant="ghost"
-            size="sm"
-            color="fg.muted"
-            aria-label={t('bodyStats.row.edit', { date: format.date(row.date) })}
-            onClick={() => onEdit(row)}
-          >
-            <LuPencil />
-          </IconButton>
-          <IconButton
-            variant="ghost"
-            size="sm"
-            color="fg.muted"
-            _hover={{ color: 'fg.error', bg: 'bg.error' }}
-            aria-label={t('bodyStats.row.delete', { date: format.date(row.date) })}
-            onClick={() => onDelete(row)}
-          >
-            <LuTrash2 />
-          </IconButton>
+    <Flex direction="column" gap="3">
+      <DataTable
+        data={rows}
+        columns={columns}
+        getRowId={(row) => row.id}
+        initialSort={{ id: 'date', desc: true }}
+        caption={t('bodyStats.history')}
+        actionsLabel={t('bodyStats.row.actionsColumn')}
+        onRowClick={onEdit}
+        rowActions={(row) => (
+          <Flex gap="1" justify="flex-end">
+            <IconButton
+              variant="ghost"
+              size="sm"
+              color="fg.muted"
+              aria-label={t('bodyStats.row.edit', { date: format.date(row.date) })}
+              onClick={() => onEdit(row)}
+            >
+              <LuPencil />
+            </IconButton>
+            <IconButton
+              variant="ghost"
+              size="sm"
+              color="fg.muted"
+              _hover={{ color: 'fg.error', bg: 'bg.error' }}
+              aria-label={t('bodyStats.row.delete', { date: format.date(row.date) })}
+              onClick={() => onDelete(row)}
+            >
+              <LuTrash2 />
+            </IconButton>
+          </Flex>
+        )}
+      />
+      {loadMoreError && (
+        <Flex align="center" justify="space-between" gap="3" wrap="wrap">
+          <Text role="alert" color="fg.error">
+            {t('bodyStats.loadMoreFailed')}
+          </Text>
+          <Button size="sm" variant="outline" onClick={onRetryLoadMore}>
+            {t('page.retry')}
+          </Button>
         </Flex>
       )}
-    />
+      {hasNextPage && !loadMoreError && (
+        <Button
+          alignSelf="center"
+          variant="outline"
+          loading={isLoadingNext}
+          onClick={onLoadMore}
+        >
+          {t('bodyStats.loadMore')}
+        </Button>
+      )}
+    </Flex>
   )
 }

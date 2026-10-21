@@ -22,7 +22,7 @@
       "empty": "Noch keine Daten vorhanden.",
       "error": "Die Daten konnten nicht geladen werden.",
       "retry": "Erneut versuchen",
-      "comingSoon": "Demnächst verfügbar."
+      "comingSoon": "Demnächst verfügbar. {{message}}"
     },
     "form": {
       "cancel": "Abbrechen",
@@ -72,7 +72,7 @@
       "settings": "Hier verwaltest du bald dein Konto und die Verbindung zu Strava."
     },
     "activities": {
-      "description": "Hier siehst du deine Radfahrten, aus Strava importiert oder manuell erfasst.",
+      "duration": "{{value}} Std.",
       "filters": {
         "period": "Zeitraum",
         "type": "Aktivitätstyp",
@@ -146,12 +146,12 @@
         "empty": {
           "range": "Keine Messungen in diesem Zeitraum."
         },
-        "showAll": "Ganzen Zeitraum anzeigen"
+        "emptySummary": "{{metric}}: {{message}}"
       },
       "range": {
         "label": "Zeitraum",
         "summary": "Zeitraum: {{from}} – {{to}} · {{aggregation}}",
-        "change": "Zeitraum ändern",
+        "changeLabel": "Zeitraum ändern: {{summary}}",
         "from": "Von",
         "to": "Bis",
         "apply": "Anwenden",
@@ -205,7 +205,9 @@
         "message": "Erfasse deine erste Messung, um Gewicht und Körperwerte über die Zeit zu sehen.",
         "action": "Erste Messung erfassen"
       },
-      "loadFailed": "Body-Stats konnten nicht geladen werden."
+      "loadFailed": "Body-Stats konnten nicht geladen werden.",
+      "loadMore": "Weitere Messungen laden",
+      "loadMoreFailed": "Weitere Messungen konnten nicht geladen werden."
     }
   }
 }

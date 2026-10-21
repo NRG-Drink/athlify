@@ -102,21 +102,23 @@ describe('BodyStatsPage', () => {
       expect(calls(QUERY)).toHaveLength(1)
     })
 
-    it('keeps loading pages until the whole history is there', async () => {
+    it('keeps loading pages of the analytics history while the table shows its first page', async () => {
       const { calls } = page((operation) =>
         operation === MORE
           ? { data: { bodyStats: connection([oldest, longAgo]) } }
           : { data: { bodyStats: connection([newest, middle], true) } },
       )
 
-      await waitFor(() => expect(rowCount()).toBe(4))
+      await waitFor(() => expect(calls(MORE)).toHaveLength(1))
 
       expect(calls(MORE)).toEqual([{ first: 200, after: 'bs-b' }])
       expect(calls(QUERY)).toHaveLength(1)
+      expect(rowCount()).toBe(2)
+      expect(screen.getByRole('button', { name: 'Weitere Messungen laden' })).toBeInTheDocument()
     })
 
     it('keeps the content on screen while further pages load', async () => {
-      page((operation) =>
+      const { calls } = page((operation) =>
         operation === MORE
           ? { data: { bodyStats: connection([oldest, longAgo]) } }
           : { data: { bodyStats: connection([newest, middle], true) } },
@@ -128,7 +130,7 @@ describe('BodyStatsPage', () => {
         if (document.querySelector('[aria-busy="true"]')) skeletonShown = true
       })
       observer.observe(document.body, { childList: true, subtree: true, attributes: true })
-      await waitFor(() => expect(rowCount()).toBe(4))
+      await waitFor(() => expect(calls(MORE)).toHaveLength(1))
       observer.disconnect()
 
       expect(skeletonShown).toBe(false)
@@ -316,7 +318,8 @@ describe('BodyStatsPage', () => {
     it('shows a skeleton of the page while loading', async () => {
       page(() => new Promise(() => {}))
 
-      expect(await screen.findByRole('status')).toHaveAttribute('aria-busy', 'true')
+      const [skeleton] = await screen.findAllByRole('status')
+      expect(skeleton).toHaveAttribute('aria-busy', 'true')
       expect(screen.getByRole('heading', { level: 1, name: 'Body-Stats' })).toBeInTheDocument()
     })
 
@@ -375,6 +378,82 @@ describe('BodyStatsPage', () => {
       expect(await tiles().findByRole('button', { name: /Gewicht/ })).toBeInTheDocument()
       expect(screen.queryByRole('alert')).not.toBeInTheDocument()
       expect(calls(QUERY)).toHaveLength(2)
+    })
+  })
+
+  describe('history paging', () => {
+    const HISTORY = 'BodyStatsPageHistoryQuery'
+    const HISTORY_MORE = 'BodyStatsPageHistoryMoreQuery'
+    const LOAD_MORE = { name: 'Weitere Messungen laden' }
+
+    it('loads the next history page on request and appends it', async () => {
+      const { calls, user } = page((operation) => {
+        if (operation === HISTORY_MORE) return { data: { bodyStats: connection([longAgo]) } }
+        if (operation === HISTORY) return { data: { bodyStats: connection([newest, middle], true) } }
+        return okQuery()
+      })
+
+      await user.click(await screen.findByRole('button', LOAD_MORE))
+
+      await waitFor(() => expect(rowCount()).toBe(3))
+      expect(calls(HISTORY_MORE)).toEqual([{ first: 50, after: 'bs-b' }])
+      expect(screen.queryByRole('button', LOAD_MORE)).not.toBeInTheDocument()
+    })
+
+    it('keeps the rows, shows an alert and retries the same cursor', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+      let attempt = 0
+      const { calls, user } = page((operation) => {
+        if (operation === HISTORY_MORE) {
+          attempt += 1
+          return attempt === 1
+            ? { data: null, errors: [{ message: 'boom' }] }
+            : { data: { bodyStats: connection([longAgo]) } }
+        }
+        if (operation === HISTORY) return { data: { bodyStats: connection([newest, middle], true) } }
+        return okQuery()
+      })
+
+      await user.click(await screen.findByRole('button', LOAD_MORE))
+      const alert = await screen.findByRole('alert')
+
+      expect(alert).toHaveTextContent('Weitere Messungen konnten nicht geladen werden.')
+      expect(rowCount()).toBe(2)
+      await user.click(screen.getByRole('button', { name: 'Erneut versuchen' }))
+
+      await waitFor(() => expect(rowCount()).toBe(3))
+      expect(calls(HISTORY_MORE)).toEqual([
+        { first: 50, after: 'bs-b' },
+        { first: 50, after: 'bs-b' },
+      ])
+    })
+
+    it('offers no load-more action when the history is complete', async () => {
+      page(() => okQuery())
+
+      await tiles().findByRole('button', { name: /Gewicht/ })
+
+      expect(screen.queryByRole('button', LOAD_MORE)).not.toBeInTheDocument()
+    })
+
+    it('retries a failed history load with a new request', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+      let attempt = 0
+      const { calls, user } = page((operation) => {
+        if (operation === HISTORY) {
+          attempt += 1
+          return attempt === 1
+            ? Promise.reject(new Error('offline'))
+            : Promise.resolve({ data: { bodyStats: connection([newest, middle]) } })
+        }
+        return okQuery()
+      })
+
+      const alert = await screen.findByRole('alert')
+      await user.click(within(alert).getByRole('button', { name: 'Erneut versuchen' }))
+
+      await waitFor(() => expect(rowCount()).toBe(2))
+      expect(calls(HISTORY)).toHaveLength(2)
     })
   })
 
@@ -451,7 +530,10 @@ describe('BodyStatsPage', () => {
             boneMass: 3.2,
             comment: 'neu',
           },
-          connections: [expect.stringContaining('BodyStatsPage_bodyStats')],
+          connections: [
+            expect.stringContaining('BodyStatsPage_analytics__bodyStats'),
+            expect.stringContaining('BodyStatsPage_history__bodyStats'),
+          ],
         },
       ])
       expect(rowCount()).toBe(5)
@@ -629,7 +711,13 @@ describe('BodyStatsPage', () => {
 
       await waitFor(() => expect(rowCount()).toBe(3))
       expect(calls(DELETE)).toEqual([
-        { id: 'bs-a', connections: [expect.stringContaining('BodyStatsPage_bodyStats')] },
+        {
+          id: 'bs-a',
+          connections: [
+            expect.stringContaining('BodyStatsPage_analytics__bodyStats'),
+            expect.stringContaining('BodyStatsPage_history__bodyStats'),
+          ],
+        },
       ])
       expect(await screen.findByText('Messung gelöscht.')).toBeInTheDocument()
       expect(calls(QUERY)).toHaveLength(1)

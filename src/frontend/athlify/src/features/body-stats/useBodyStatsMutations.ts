@@ -46,10 +46,14 @@ const deleteMutation = graphql`
 
 export type BodyStatsInput = useBodyStatsMutationsAddMutation['variables']['input']
 
-/** Key of the `@connection` in `BodyStatsPage`; the mutations edit that list in the store. */
-export const BODY_STATS_CONNECTION_KEY = 'BodyStatsPage_bodyStats'
+/** Keys of the analytics and history connections edited by Body-Stats mutations. */
+export const BODY_STATS_ANALYTICS_CONNECTION_KEY = 'BodyStatsPage_analytics__bodyStats'
+export const BODY_STATS_HISTORY_CONNECTION_KEY = 'BodyStatsPage_history__bodyStats'
 
-const connectionIds = () => [ConnectionHandler.getConnectionID(ROOT_ID, BODY_STATS_CONNECTION_KEY)]
+const connectionIds = () => [
+  ConnectionHandler.getConnectionID(ROOT_ID, BODY_STATS_ANALYTICS_CONNECTION_KEY),
+  ConnectionHandler.getConnectionID(ROOT_ID, BODY_STATS_HISTORY_CONNECTION_KEY),
+]
 
 interface Callbacks {
   /** Called after the server confirmed the change, so the dialog can close. */
@@ -97,9 +101,10 @@ export function useBodyStatsMutations() {
       updater: (store, data) => {
         // The entry vanished on the server: drop it here as well.
         if (!data || data.updateBodyStats) return
-        const [connectionId] = connectionIds()
-        const connection = store.get(connectionId)
-        if (connection) ConnectionHandler.deleteNode(connection, id)
+        for (const connectionId of connectionIds()) {
+          const connection = store.get(connectionId)
+          if (connection) ConnectionHandler.deleteNode(connection, id)
+        }
         store.delete(id)
       },
       onCompleted: (response, errors) => {

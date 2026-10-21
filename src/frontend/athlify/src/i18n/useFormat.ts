@@ -26,11 +26,18 @@ export function createFormatter(language: string): Formatter {
   const locale = localeFor(language)
   const toDate = (value: Date | string) => (value instanceof Date ? value : new Date(value))
 
-  const numberFormat = (decimals: number) =>
-    new Intl.NumberFormat(locale, {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    })
+  const numberFormats = new Map<number, Intl.NumberFormat>()
+  const numberFormat = (decimals: number) => {
+    let format = numberFormats.get(decimals)
+    if (!format) {
+      format = new Intl.NumberFormat(locale, {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      })
+      numberFormats.set(decimals, format)
+    }
+    return format
+  }
   const dateFormat = new Intl.DateTimeFormat(locale, {
     day: 'numeric',
     month: 'short',

@@ -22,7 +22,7 @@
       "empty": "No data yet.",
       "error": "The data could not be loaded.",
       "retry": "Try again",
-      "comingSoon": "Coming soon."
+      "comingSoon": "Coming soon. {{message}}"
     },
     "form": {
       "cancel": "Cancel",
@@ -72,7 +72,7 @@
       "settings": "Soon you will manage your account and the Strava connection here."
     },
     "activities": {
-      "description": "See your rides here, imported from Strava or entered manually.",
+      "duration": "{{value}} h",
       "filters": {
         "period": "Period",
         "type": "Activity type",
@@ -146,12 +146,12 @@
         "empty": {
           "range": "No measurements in this date range."
         },
-        "showAll": "Show the whole period"
+        "emptySummary": "{{metric}}: {{message}}"
       },
       "range": {
         "label": "Date range",
         "summary": "Date range: {{from}} – {{to}} · {{aggregation}}",
-        "change": "Change date range",
+        "changeLabel": "Change date range: {{summary}}",
         "from": "From",
         "to": "To",
         "apply": "Apply",
@@ -205,7 +205,9 @@
         "message": "Add your first measurement to see weight and body values over time.",
         "action": "Add first measurement"
       },
-      "loadFailed": "Body stats could not be loaded."
+      "loadFailed": "Body stats could not be loaded.",
+      "loadMore": "Load more measurements",
+      "loadMoreFailed": "More measurements could not be loaded."
     }
   }
 }

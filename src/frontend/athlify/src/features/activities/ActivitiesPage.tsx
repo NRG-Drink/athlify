@@ -180,10 +180,7 @@ export function ActivitiesPage() {
   const [fetchKey, retry] = useFetchKey()
 
   return (
-    <Page
-      title={t('nav.activities')}
-      description={t('activities.description')}
-    >
+    <Page title={t('nav.activities')}>
       <QueryBoundary
         onRetry={retry}
         fallback={<ActivitiesSkeleton />}

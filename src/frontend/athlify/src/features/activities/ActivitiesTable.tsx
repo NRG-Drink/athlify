@@ -1,4 +1,5 @@
 import { Button, Flex, Text } from '@chakra-ui/react'
+import { useMemo } from 'react'
 import { graphql, useFragment } from 'react-relay'
 import { useTranslation } from 'react-i18next'
 import { DataTable, type DataTableColumn } from '../../components/DataTable'
@@ -52,11 +53,11 @@ export function ActivitiesTable({
   onLoadMore,
   onRetryLoadMore,
 }: ActivitiesTableProps) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const format = useFormat()
   const rows = useFragment(tableFragment, entries)
 
-  const columns: DataTableColumn<ActivityRow>[] = [
+  const columns = useMemo<DataTableColumn<ActivityRow>[]>(() => [
     {
       id: 'date',
       header: t('activities.columns.date'),
@@ -74,7 +75,7 @@ export function ActivitiesTable({
       id: 'time',
       header: t('activities.columns.duration'),
       accessor: (row) => row.time,
-      cell: (row) => formatDuration(row.time, i18n.language),
+      cell: (row) => formatDuration(row.time, t),
       align: 'end',
     },
     {
@@ -130,7 +131,7 @@ export function ActivitiesTable({
       align: 'end',
       hideBelow: 'lg',
     },
-  ]
+  ], [t, format])
 
   return (
     <Flex direction="column" gap="3">
