@@ -54,7 +54,7 @@ src/backend/
 │   │   ├── AthlifyDbContext.cs     # DbSets, Owner and NotDeleted query filters, owner and timestamp stamping
 │   │   ├── Configurations/         # keys, indexes, foreign keys and the check constraint per entity
 │   │   ├── Migrations/             # EF Core migrations (domain model and seed markers)
-│   │   └── DbSeeder.cs, DesignTimeDbContextFactory.cs
+│   │   └── DbSeeder.cs, DbSeeding.cs, SeedOptions.cs, DesignTimeDbContextFactory.cs
 │   ├── Domain/
 │   │   ├── Common/                 # Entity, Equipment, IOwned, Source, DomainErrors, ValidationErrors, Links, Projection
 │   │   ├── Users/                  # User, ICurrentUser, DevelopmentCurrentUser, provisioner, `me`
@@ -97,11 +97,13 @@ src/backend/
 - Validation rejects invalid input with `VALIDATION_ERROR`; a missing user
   gives `NOT_AUTHENTICATED`. Every rule is checked in application code; the
   database constraints are a backstop that the InMemory tests do not cover.
-- At startup the API applies pending migrations, provisions the development
-  user and seeds sample Body-Stats and 36 sample Activities, including tags
-  and one merge. Activity fixtures are guarded by an owner-scoped
-  `activities-v1` seed marker so later startups do not duplicate them.
-  `AppSettings.ShouldSeedDb` exists but is not read yet.
+- At startup the API applies pending migrations and provisions the
+  development user. Only when `Athlify:Seed:Enabled` is set (on in
+  `appsettings.Development.json`, off otherwise) does `DbSeeding` run the
+  seeder: 365 days of sample Body-Stats and 36 sample Activities, including
+  tags and one merge. Owner-scoped `body-stats-v1` and `activities-v1` seed
+  markers make each fixture run once, so later startups neither duplicate
+  them nor refill records the user deleted.
 - There is no authentication, Strava synchronization or Dashboard analysis
   yet. The Strava connection is stored but not exposed.
 

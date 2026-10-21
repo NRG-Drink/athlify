@@ -107,8 +107,8 @@ See the [security concept](../concept/security.md) and
 
 ## Scalability
 
-- Current capacity: backend on a single PostgreSQL instance with seeded
-  sample data; the Body-Stats page calls it.
+- Current capacity: backend on a single PostgreSQL instance, with sample
+  data only when seeding is enabled; the Body-Stats page calls it.
 - Scaling strategy: self-hosted for individual users. The initial deployment
   uses one PostgreSQL instance and one Docker Compose project
   ([testing and deployment](../concept/testing-deployment.md)).

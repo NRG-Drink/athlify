@@ -27,6 +27,7 @@ services:
       Athlify__DevelopmentUser__Email: ${ATHLIFY_DEVELOPMENT_USER_EMAIL:-admin@athlify.local}
       Athlify__DevelopmentUser__FirstName: ${ATHLIFY_DEVELOPMENT_USER_FIRST_NAME:-Athlify}
       Athlify__DevelopmentUser__LastName: ${ATHLIFY_DEVELOPMENT_USER_LAST_NAME:-Admin}
+      Athlify__Seed__Enabled: ${ATHLIFY_SEED_ENABLED:-false}
     depends_on:
       db:
         condition: service_healthy
