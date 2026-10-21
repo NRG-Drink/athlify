@@ -8,10 +8,26 @@ namespace Athlify.Api.Database;
 public class DbSeeder : IDbSeeder
 {
     private const int SampleDays = 365;
+    private const string BodyStatsSeedKey = "body-stats-v1";
     private const string ActivitySeedKey = "activities-v1";
 
     public void Seed(AthlifyDbContext context, int ownerId)
     {
+        SeedBodyStats(context, ownerId);
+        SeedActivities(context, ownerId);
+    }
+
+    private static void SeedBodyStats(AthlifyDbContext context, int ownerId)
+    {
+        // Without the marker, days the user deleted would be refilled on every start.
+        var alreadySeeded = context.SeedMarkers
+            .IgnoreQueryFilters()
+            .Any(s => s.UserId == ownerId && s.Key == BodyStatsSeedKey);
+        if (alreadySeeded)
+        {
+            return;
+        }
+
         var existingDates = context.BodyStats
             .IgnoreQueryFilters([AthlifyDbContext.OwnerFilter])
             .Where(b => b.UserId == ownerId)
@@ -25,16 +41,12 @@ public class DbSeeder : IDbSeeder
             .Select(CreateSample)
             .ToList();
 
-        if (bodyStats.Count > 0)
-        {
-            foreach (var sample in bodyStats)
-                sample.UserId = ownerId;
+        foreach (var sample in bodyStats)
+            sample.UserId = ownerId;
 
-            context.BodyStats.AddRange(bodyStats);
-            context.SaveChanges();
-        }
-
-        SeedActivities(context, ownerId);
+        context.BodyStats.AddRange(bodyStats);
+        context.SeedMarkers.Add(new SeedMarker { UserId = ownerId, Key = BodyStatsSeedKey });
+        context.SaveChanges();
     }
 
     private static BodyStats CreateSample(DateTime date)
