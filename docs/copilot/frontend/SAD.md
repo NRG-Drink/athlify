@@ -1,7 +1,7 @@
 # Athlify Frontend – Software Architecture Document
 
 **Project**: Athlify
-**Last Updated**: 2026-10-03
+**Last Updated**: 2026-10-21
 **Version**: 1.0
 
 ## Overview
@@ -51,9 +51,11 @@ This document describes the technical context for frontend changes. The function
 
 The frontend is under `../../../src/frontend/athlify/`. It is a standalone
 npm package with its own `package.json` and `package-lock.json`. It is an app
-shell with one finished domain page: Body-Stats, which is the reference for
-all further domain pages (see [Domain page pattern](#domain-page-pattern)).
-The other areas are placeholders.
+shell with two implemented domain slices: Body-Stats is the reference for
+domain pages (see [Domain page pattern](#domain-page-pattern)), and Activities
+is the first read-only list slice. The Activities page lists activities
+from the backend connection, applies URL-backed filters and loads additional
+pages on demand. Dashboard, Garage and Events remain placeholders.
 
 ```text
 src/frontend/athlify/src/
@@ -76,9 +78,12 @@ src/frontend/athlify/src/
 └── index.css         # Tailwind import only
 ```
 
-The App Layout and routing are implemented. Dashboard, Activities, Garage,
-Events and Settings render placeholder pages. The `/body-stats` view is a
-domain page backed by the GraphQL API. State management beyond the Relay store
+The App Layout and routing are implemented. Dashboard, Garage, Events and
+Settings render placeholder pages. The `/activities` view is a read-only
+domain page backed by the GraphQL API; its period, type, bicycle and tag
+filters live in the URL and its list uses Relay cursor pagination. The
+`/body-stats` view is a domain page backed by the GraphQL API. State management
+beyond the Relay store
 and the Tailwind/Chakra boundary are still open decisions. Record them as ADRs
 when they are made.
 
@@ -117,7 +122,7 @@ view are shown inside the layout through the route `errorElement`
 | --- | --- | --- |
 | `/` | redirects to `/dashboard` | – |
 | `/dashboard` | Dashboard (placeholder) | Primary Navigation |
-| `/activities` | Activities (placeholder) | Primary Navigation |
+| `/activities` | Activities (read-only list with URL filters and pagination) | Primary Navigation |
 | `/garage` | Garage (placeholder) | Primary Navigation |
 | `/body-stats` | Body-Stats (domain page; `?metric=` and `?period=` select the view) | Primary Navigation |
 | `/events` | Events (placeholder) | Primary Navigation |

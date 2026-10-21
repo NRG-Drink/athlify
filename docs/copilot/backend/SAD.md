@@ -1,7 +1,7 @@
 # Athlify Backend – Software Architecture Document
 
 **Project**: Athlify
-**Last Updated**: 2026-10-07
+**Last Updated**: 2026-10-21
 **Version**: 1.0
 
 ## Overview
@@ -53,7 +53,7 @@ src/backend/
 │   ├── Database/
 │   │   ├── AthlifyDbContext.cs     # DbSets, Owner and NotDeleted query filters, owner and timestamp stamping
 │   │   ├── Configurations/         # keys, indexes, foreign keys and the check constraint per entity
-│   │   ├── Migrations/             # EF Core migrations (InitialDomainModel)
+│   │   ├── Migrations/             # EF Core migrations (domain model and seed markers)
 │   │   └── DbSeeder.cs, DesignTimeDbContextFactory.cs
 │   ├── Domain/
 │   │   ├── Common/                 # Entity, Equipment, IOwned, Source, DomainErrors, ValidationErrors, Links, Projection
@@ -98,8 +98,10 @@ src/backend/
   gives `NOT_AUTHENTICATED`. Every rule is checked in application code; the
   database constraints are a backstop that the InMemory tests do not cover.
 - At startup the API applies pending migrations, provisions the development
-  user and seeds sample Body-Stats for it. `AppSettings.ShouldSeedDb` exists
-  but is not read yet.
+  user and seeds sample Body-Stats and 36 sample Activities, including tags
+  and one merge. Activity fixtures are guarded by an owner-scoped
+  `activities-v1` seed marker so later startups do not duplicate them.
+  `AppSettings.ShouldSeedDb` exists but is not read yet.
 - There is no authentication, Strava synchronization or Dashboard analysis
   yet. The Strava connection is stored but not exposed.
 

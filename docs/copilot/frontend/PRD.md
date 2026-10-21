@@ -1,7 +1,7 @@
 # Athlify Frontend – Product Requirements Document
 
 **Project**: Athlify
-**Last Updated**: 2026-09-16
+**Last Updated**: 2026-10-21
 **Status**: Active
 
 ## Purpose
@@ -95,8 +95,8 @@ mood, effort, wind and Event type are decided; see
 ## Constraints
 
 - The frontend is an exploration app shell under `src/frontend/athlify/`.
-  Only the Body-Stats page uses the backend; the API for Activities, Garage,
-  tags and Events exists but has no pages yet.
+  Body-Stats and the read-only Activities list use the backend; Dashboard,
+  Garage and Events have no completed pages yet.
 - The project remains limited to a realistic scope for a two-person student
   project.
 - Personal data must remain isolated to the logged-in user.

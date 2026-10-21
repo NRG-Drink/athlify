@@ -1,7 +1,7 @@
 # Athlify — Software Architecture Document
 
 **Project**: Athlify  
-**Last Updated**: 2026-09-23
+**Last Updated**: 2026-10-21
 **Version**: 1.0
 
 ## Overview
@@ -10,10 +10,10 @@ Athlify is planned as a web application with a bilingual frontend, a backend
 API, persistent personal data and a Strava integration. The current repository
 contains an ASP.NET Core, Hot Chocolate GraphQL and PostgreSQL (EF Core, Npgsql)
 backend (`src/backend/`) with the owner-scoped domain model, and a
-React/TypeScript frontend (`src/frontend/athlify/`); the Body-Stats page
-already calls the API. Authentication, Strava synchronization and the
-Dashboard analyses are planned. Planned architecture must not be presented as
-implemented behavior.
+React/TypeScript frontend (`src/frontend/athlify/`); the Body-Stats page and
+the first read-only Activities slice already call the API. Authentication,
+Strava synchronization and the Dashboard analyses are planned. Planned
+architecture must not be presented as implemented behavior.
 
 This document is the canonical architecture entry point for the configured
 documentation root.
