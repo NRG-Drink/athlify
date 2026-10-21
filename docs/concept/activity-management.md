@@ -15,7 +15,7 @@ the calendar view and Strava synchronization are not implemented yet.
   bicycle, elevation gain, average speed and TSS; on wide screens also
   average heart rate, effort, mood, wind, gadgets and tags (shown as tag chips). The source is
   not a column. Missing values are shown as "—", never as 0. The filters
-  (period, type, bicycle, wind, tag) sit in the headers of their columns next to
+  (type, bicycle, wind, tag) sit in the headers of their columns next to
   the sort button; an active filter is marked on its header and listed as a
   removable chip above the table. On small screens, where the bicycle,
   wind and tag columns are hidden, their filters appear above the table instead. A

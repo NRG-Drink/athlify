@@ -80,8 +80,8 @@ src/frontend/athlify/src/
 
 The App Layout and routing are implemented. Dashboard, Garage, Events and
 Settings render placeholder pages. The `/activities` view is a read-only
-domain page backed by the GraphQL API; its period, type, bicycle and tag
-filters live in the URL, are operated from the column headers and its list uses Relay cursor pagination. The
+domain page backed by the GraphQL API; its type, bicycle, wind and tag
+filters live in the URL, are operated from the column headers and its list uses Relay cursor pagination (50 per page, "load more"). The
 `/body-stats` view is a domain page backed by the GraphQL API. State management
 beyond the Relay store
 and the Tailwind/Chakra boundary are still open decisions. Record them as ADRs

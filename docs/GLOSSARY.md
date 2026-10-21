@@ -154,9 +154,10 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
   description and actions, and exactly one UI state body (loading, empty,
   error or ready). See [`SAD.md`](copilot/frontend/SAD.md#page-frame).
 
-**Period** — A relative time span used by filters such as Activities: the last
-  30 days, 90 days, one year or the whole history. It is part of the URL
-  (`?period=`), so a view can be reloaded and shared.
+**Period** — A relative time span used by the Body-Stats chart and by the planned
+  Dashboard filters, for example the last 30 days or one year. Body-Stats keeps it in
+  the URL (`?period=`), so a view can be reloaded and shared. The Activities list has
+  no period filter; it shows the whole history.
 
 **Date range** — An inclusive pair of local calendar dates (`from` and `to`)
   that defines the exact interval shown by the Body-Stats chart and KPI
