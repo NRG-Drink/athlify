@@ -20,12 +20,19 @@ export interface DataTableColumn<T extends object> {
   /** Unit shown after the header label, for example `kg`. */
   unit?: string
   /** Hides the column below this breakpoint (phones keep only the essential columns). */
-  hideBelow?: 'sm' | 'md' | 'lg'
+  hideBelow?: Breakpoint
+  /** Secondary data: shown in a muted colour. */
+  muted?: boolean
   /** Keeps long text to one line with an ellipsis. */
   truncate?: boolean
   /** Fixed width, for example `7rem`; the other columns share the remaining space. */
   width?: string
+  /** Width bounds of a truncated column, for example `12rem`; without them it collapses to nothing. */
+  minWidth?: string
+  maxWidth?: string
 }
+
+type Breakpoint = 'sm' | 'md' | 'lg' | '2xl'
 
 export interface DataTableProps<T extends object> {
   data: readonly T[]
@@ -47,7 +54,7 @@ const features = tableFeatures({
   sortedRowModel: createSortedRowModel(),
 })
 
-const hidden = (hideBelow?: 'sm' | 'md' | 'lg') =>
+const hidden = (hideBelow?: Breakpoint) =>
   hideBelow ? { base: 'none', [hideBelow]: 'table-cell' } : undefined
 
 export function DataTable<T extends object>({
@@ -177,7 +184,9 @@ export function DataTable<T extends object>({
                     display={hidden(column.hideBelow)}
                     fontVariantNumeric={end ? 'tabular-nums' : undefined}
                     whiteSpace={column.truncate ? undefined : 'nowrap'}
-                    maxW={column.truncate ? '0' : undefined}
+                    minW={column.minWidth}
+                    maxW={column.truncate ? (column.maxWidth ?? '0') : undefined}
+                    color={column.muted ? 'fg.muted' : undefined}
                     overflow={column.truncate ? 'hidden' : undefined}
                     textOverflow={column.truncate ? 'ellipsis' : undefined}
                     position={index === 0 ? 'sticky' : undefined}

@@ -88,7 +88,7 @@ public partial class Program
             app.Services.GetRequiredService<DevelopmentCurrentUser>().UserId = developmentUserId;
 
             var seeder = scope.ServiceProvider.GetRequiredService<IDbSeeder>();
-            DbSeeding.RunIfEnabled(seeder, db, developmentUserId, seedOptions, app.Environment, app.Logger);
+            DbSeeding.RunIfEnabled(seedOptions, app.Environment, app.Logger, () => seeder.Seed(db, developmentUserId));
         }
 
         app.UseCors("FrontendDev");

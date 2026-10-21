@@ -10,7 +10,11 @@ the calendar view and Strava synchronization are not implemented yet.
 
 ## Views and functions
 
-- List/table view with filtering and multi-activity selection.
+- List/table view with filtering and multi-activity selection. The list
+  shows the date (without time), type, description, duration, distance,
+  bicycle, elevation gain, average speed and TSS; on wide screens also
+  average heart rate, effort, mood, wind, gadgets and tags. The source is
+  not a column. Missing values are shown as "—", never as 0.
 - Detail view as an edit form.
 - Calendar view with weekly summary inspired by TrainingPeaks.
 - Full CRUD for manual and synchronized activities.

@@ -11,6 +11,7 @@ import { hasActiveActivityFilters, activityFiltersToWhere, applyActivityFilters,
 import { ActivitiesFilters } from './ActivitiesFilters'
 import { ActivitiesSkeleton } from './ActivitiesSkeleton'
 import { ActivitiesTable } from './ActivitiesTable'
+import { vehicleLabel } from './activityFormatting'
 import type { ActivitiesPage_list$key } from './__generated__/ActivitiesPage_list.graphql'
 import type { ActivitiesPageQuery } from './__generated__/ActivitiesPageQuery.graphql'
 import type { ActivitiesPageMoreQuery } from './__generated__/ActivitiesPageMoreQuery.graphql'
@@ -92,7 +93,7 @@ function ActivitiesContent({ fetchKey }: ContentProps) {
   const vehicles =
     queryData.vehicles?.nodes?.map((vehicle) => ({
       id: vehicle.id,
-      label: vehicle.nickname ?? `${vehicle.brand} ${vehicle.model}`,
+      label: vehicleLabel(vehicle),
     })) ?? []
   const tags = queryData.tags?.nodes?.map((tag) => ({ id: tag.id, label: tag.name })) ?? []
   const hasMoreVehicles = queryData.vehicles?.pageInfo.hasNextPage ?? false

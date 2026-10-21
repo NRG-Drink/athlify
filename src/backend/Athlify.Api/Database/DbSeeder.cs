@@ -8,26 +8,34 @@ namespace Athlify.Api.Database;
 public class DbSeeder : IDbSeeder
 {
     private const int SampleDays = 365;
-    private const string BodyStatsSeedKey = "body-stats-v1";
-    private const string ActivitySeedKey = "activities-v1";
+    public const string BodyStatsSeedKey = "body-stats-v1";
+    public const string ActivitySeedKey = "activities-v1";
 
     public void Seed(AthlifyDbContext context, int ownerId)
     {
-        SeedBodyStats(context, ownerId);
-        SeedActivities(context, ownerId);
+        // Without a marker, days the user deleted would be refilled on every start.
+        SeedOnce(context, ownerId, BodyStatsSeedKey, () => AddBodyStats(context, ownerId));
+        SeedOnce(context, ownerId, ActivitySeedKey, () => AddActivities(context, ownerId));
     }
 
-    private static void SeedBodyStats(AthlifyDbContext context, int ownerId)
+    /// <summary>Runs <paramref name="addFixture"/> unless <paramref name="key"/> is marked, then saves fixture and marker together.</summary>
+    private static void SeedOnce(AthlifyDbContext context, int ownerId, string key, Action addFixture)
     {
-        // Without the marker, days the user deleted would be refilled on every start.
         var alreadySeeded = context.SeedMarkers
             .IgnoreQueryFilters()
-            .Any(s => s.UserId == ownerId && s.Key == BodyStatsSeedKey);
+            .Any(s => s.UserId == ownerId && s.Key == key);
         if (alreadySeeded)
         {
             return;
         }
 
+        addFixture();
+        context.SeedMarkers.Add(new SeedMarker { UserId = ownerId, Key = key });
+        context.SaveChanges();
+    }
+
+    private static void AddBodyStats(AthlifyDbContext context, int ownerId)
+    {
         var existingDates = context.BodyStats
             .IgnoreQueryFilters([AthlifyDbContext.OwnerFilter])
             .Where(b => b.UserId == ownerId)
@@ -35,27 +43,20 @@ public class DbSeeder : IDbSeeder
             .ToHashSet();
 
         var today = DateTime.UtcNow.Date;
-        var bodyStats = Enumerable.Range(1, SampleDays)
+        context.BodyStats.AddRange(Enumerable.Range(1, SampleDays)
             .Select(daysAgo => today.AddDays(-daysAgo))
             .Where(date => !existingDates.Contains(date))
-            .Select(CreateSample)
-            .ToList();
-
-        foreach (var sample in bodyStats)
-            sample.UserId = ownerId;
-
-        context.BodyStats.AddRange(bodyStats);
-        context.SeedMarkers.Add(new SeedMarker { UserId = ownerId, Key = BodyStatsSeedKey });
-        context.SaveChanges();
+            .Select(date => CreateSample(date, ownerId)));
     }
 
-    private static BodyStats CreateSample(DateTime date)
+    private static BodyStats CreateSample(DateTime date, int ownerId)
     {
         var daysAgo = (DateTime.UtcNow.Date - date).Days;
         var trend = daysAgo / 365d;
 
         return new BodyStats
         {
+            UserId = ownerId,
             Date = date,
             Weight = Math.Round(70.5 + trend * 2.5 + Math.Sin(daysAgo / 8d) * 0.35, 1),
             BodyFatPercentage = Math.Round(15.2 + trend * 1.1 + Math.Sin(daysAgo / 11d) * 0.25, 1),
@@ -65,16 +66,8 @@ public class DbSeeder : IDbSeeder
         };
     }
 
-    private static void SeedActivities(AthlifyDbContext context, int ownerId)
+    private static void AddActivities(AthlifyDbContext context, int ownerId)
     {
-        var alreadySeeded = context.SeedMarkers
-            .IgnoreQueryFilters()
-            .Any(s => s.UserId == ownerId && s.Key == ActivitySeedKey);
-        if (alreadySeeded)
-        {
-            return;
-        }
-
         var tags = GetOrCreateTags(context, ownerId, ["endurance", "intervals", "commute", "hills"]);
         var today = DateTime.UtcNow.Date;
         var activities = Enumerable.Range(0, 36)
@@ -82,7 +75,6 @@ public class DbSeeder : IDbSeeder
             .ToList();
 
         context.Activities.AddRange(activities);
-        context.SeedMarkers.Add(new SeedMarker { UserId = ownerId, Key = ActivitySeedKey });
 
         var merge = new ActivityMerge
         {
@@ -92,7 +84,6 @@ public class DbSeeder : IDbSeeder
         };
         MergeMembership.Refresh(merge, context);
         context.ActivityMerges.Add(merge);
-        context.SaveChanges();
     }
 
     private static Dictionary<string, Tag> GetOrCreateTags(

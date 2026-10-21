@@ -13,15 +13,7 @@ public class DbSeederTests
     {
         const int ownerId = 7;
         await using var context = CreateContext(ownerId);
-        context.Users.Add(new User
-        {
-            Id = ownerId,
-            Email = "seed@example.com",
-            FirstName = "Seed",
-            LastName = "User",
-            Role = Role.User,
-        });
-        await context.SaveChangesAsync();
+        await AddUserAsync(context, ownerId);
 
         var seeder = new DbSeeder();
         seeder.Seed(context, ownerId);
@@ -79,14 +71,7 @@ public class DbSeederTests
     {
         const int ownerId = 8;
         await using var context = CreateContext(ownerId);
-        context.Users.Add(new User
-        {
-            Id = ownerId,
-            Email = "existing@example.com",
-            FirstName = "Existing",
-            LastName = "User",
-            Role = Role.User,
-        });
+        await AddUserAsync(context, ownerId);
         context.Activities.Add(new Activity
         {
             UserId = ownerId,
@@ -127,7 +112,7 @@ public class DbSeederTests
         await Assert.That(await context.BodyStats.IgnoreQueryFilters().CountAsync(b => b.UserId == ownerId))
             .IsEqualTo(355);
         await Assert.That(await context.SeedMarkers.IgnoreQueryFilters()
-            .CountAsync(s => s.UserId == ownerId && s.Key == "body-stats-v1")).IsEqualTo(1);
+            .CountAsync(s => s.UserId == ownerId && s.Key == DbSeeder.BodyStatsSeedKey)).IsEqualTo(1);
     }
 
     [Test]
@@ -136,7 +121,7 @@ public class DbSeederTests
         const int ownerId = 10;
         await using var context = CreateContext(ownerId);
         await AddUserAsync(context, ownerId);
-        context.SeedMarkers.Add(new SeedMarker { UserId = ownerId, Key = "body-stats-v1" });
+        context.SeedMarkers.Add(new SeedMarker { UserId = ownerId, Key = DbSeeder.BodyStatsSeedKey });
         await context.SaveChangesAsync();
 
         new DbSeeder().Seed(context, ownerId);
@@ -168,7 +153,7 @@ public class DbSeederTests
         await Assert.That(bodyStats.Where(b => b.Comment == "My own measurement").Select(b => b.Weight))
             .IsEquivalentTo([80d, 80d, 80d, 80d, 80d]);
         await Assert.That(await context.SeedMarkers.IgnoreQueryFilters()
-            .AnyAsync(s => s.UserId == ownerId && s.Key == "body-stats-v1")).IsTrue();
+            .AnyAsync(s => s.UserId == ownerId && s.Key == DbSeeder.BodyStatsSeedKey)).IsTrue();
     }
 
     private static async Task AddUserAsync(AthlifyDbContext context, int userId)

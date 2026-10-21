@@ -72,7 +72,14 @@
       "settings": "Soon you will manage your account and the Strava connection here."
     },
     "activities": {
-      "duration": "{{value}} h",
+      "units": {
+        "duration": "h",
+        "distance": "km",
+        "elevation": "m",
+        "speed": "km/h",
+        "heartRate": "bpm",
+        "effort": "/10"
+      },
       "filters": {
         "period": "Period",
         "type": "Activity type",
@@ -90,20 +97,22 @@
         "GRAVEL": "Gravel",
         "INDOOR": "Indoor"
       },
-      "sources": {
-        "MANUAL": "Manual",
-        "STRAVA": "Strava"
-      },
       "columns": {
         "date": "Date",
         "type": "Type",
+        "description": "Description",
         "duration": "Duration",
         "distance": "Distance",
         "vehicle": "Bicycle",
-        "source": "Source",
-        "elevation": "Elevation",
-        "speed": "Speed",
-        "tss": "TSS"
+        "elevationGain": "Elevation gain",
+        "speed": "Avg. speed",
+        "tss": "TSS",
+        "heartRate": "Avg. heart rate",
+        "effort": "Effort",
+        "mood": "Mood",
+        "wind": "Wind",
+        "gadgets": "Gadgets",
+        "tags": "Tags"
       },
       "table": {
         "caption": "Activities"
@@ -116,6 +125,20 @@
         "message": "Activities you enter or import will appear here.",
         "filteredTitle": "No matching activities",
         "filteredMessage": "Adjust or reset the filters."
+      },
+      "moods": {
+        "VERY_BAD": "Very bad",
+        "BAD": "Bad",
+        "NEUTRAL": "Neutral",
+        "GOOD": "Good",
+        "VERY_GOOD": "Very good"
+      },
+      "winds": {
+        "CALM": "Calm",
+        "LIGHT": "Light",
+        "MODERATE": "Moderate",
+        "STRONG": "Strong",
+        "STORMY": "Stormy"
       }
     },
     "bodyStats": {

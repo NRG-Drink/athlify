@@ -4,7 +4,15 @@ import { graphql, useFragment } from 'react-relay'
 import { useTranslation } from 'react-i18next'
 import { DataTable, type DataTableColumn } from '../../components/DataTable'
 import { useFormat } from '../../i18n/useFormat'
-import { formatDuration, formatOptionalMeasure } from './activityFormatting'
+import {
+  enumLabel,
+  formatDuration,
+  formatHeartRate,
+  formatOptionalNumber,
+  moodRank,
+  vehicleLabel,
+  windRank,
+} from './activityFormatting'
 import type {
   ActivitiesTable_entries$data,
   ActivitiesTable_entries$key,
@@ -15,13 +23,25 @@ const tableFragment = graphql`
     id
     date
     type
+    description
     time
     distance
     averageSpeed
     elevationGain
     tss
-    source
+    heartRateMin
+    heartRateMax
+    heartRateAverage
+    mood
+    effort
+    wind
     vehicle {
+      id
+      brand
+      model
+      nickname
+    }
+    gadgets {
       id
       brand
       model
@@ -35,6 +55,15 @@ const tableFragment = graphql`
 `
 
 export type ActivityRow = ActivitiesTable_entries$data[number]
+
+const gadgetNames = (row: ActivityRow) => row.gadgets.map(vehicleLabel).join(', ')
+const tagNames = (row: ActivityRow) => row.tags.map((tag) => tag.name).join(', ')
+
+/** Shows the full text as a tooltip, because truncated cells hide the end. */
+const titled = (text: string) => (text ? <span title={text}>{text}</span> : '—')
+
+/** Secondary data: hidden on narrow screens and shown in a muted colour. */
+const secondary = { hideBelow: '2xl', muted: true } as const
 
 interface ActivitiesTableProps {
   entries: ActivitiesTable_entries$key
@@ -62,8 +91,8 @@ export function ActivitiesTable({
       id: 'date',
       header: t('activities.columns.date'),
       accessor: (row) => new Date(row.date).getTime(),
-      cell: (row) => <time dateTime={row.date}>{format.dateTime(row.date)}</time>,
-      width: '9rem',
+      cell: (row) => <time dateTime={row.date}>{format.date(row.date)}</time>,
+      width: '8rem',
     },
     {
       id: 'type',
@@ -72,27 +101,39 @@ export function ActivitiesTable({
       cell: (row) => t(`activities.types.${row.type}`),
     },
     {
+      id: 'description',
+      header: t('activities.columns.description'),
+      accessor: (row) => row.description ?? '',
+      cell: (row) => titled(row.description ?? ''),
+      hideBelow: 'md',
+      truncate: true,
+      minWidth: '12rem',
+      maxWidth: '24rem',
+    },
+    {
       id: 'time',
       header: t('activities.columns.duration'),
       accessor: (row) => row.time,
-      cell: (row) => formatDuration(row.time, t),
+      cell: (row) => formatDuration(row.time),
       align: 'end',
+      unit: t('activities.units.duration'),
     },
     {
       id: 'distance',
       header: t('activities.columns.distance'),
       accessor: (row) => row.distance,
-      cell: (row) => formatOptionalMeasure(format, row.distance, 'km', 1),
+      cell: (row) => formatOptionalNumber(format, row.distance, 1),
       align: 'end',
+      unit: t('activities.units.distance'),
     },
     {
       id: 'vehicle',
       header: t('activities.columns.vehicle'),
-      accessor: (row) => row.vehicle?.nickname ?? row.vehicle?.model ?? '',
+      accessor: (row) => (row.vehicle ? vehicleLabel(row.vehicle) : ''),
       cell: (row) =>
         row.vehicle ? (
           <Text truncate maxW="12rem">
-            {row.vehicle.nickname ?? `${row.vehicle.brand} ${row.vehicle.model}`}
+            {vehicleLabel(row.vehicle)}
           </Text>
         ) : (
           '—'
@@ -101,26 +142,21 @@ export function ActivitiesTable({
       truncate: true,
     },
     {
-      id: 'source',
-      header: t('activities.columns.source'),
-      accessor: (row) => row.source,
-      cell: (row) => t(`activities.sources.${row.source}`),
-      hideBelow: 'md',
-    },
-    {
       id: 'elevationGain',
-      header: t('activities.columns.elevation'),
+      header: t('activities.columns.elevationGain'),
       accessor: (row) => row.elevationGain ?? -1,
-      cell: (row) => formatOptionalMeasure(format, row.elevationGain, 'm', 0),
+      cell: (row) => formatOptionalNumber(format, row.elevationGain, 0),
       align: 'end',
+      unit: t('activities.units.elevation'),
       hideBelow: 'lg',
     },
     {
       id: 'averageSpeed',
       header: t('activities.columns.speed'),
       accessor: (row) => row.averageSpeed ?? -1,
-      cell: (row) => formatOptionalMeasure(format, row.averageSpeed, 'km/h', 1),
+      cell: (row) => formatOptionalNumber(format, row.averageSpeed, 1),
       align: 'end',
+      unit: t('activities.units.speed'),
       hideBelow: 'lg',
     },
     {
@@ -130,6 +166,65 @@ export function ActivitiesTable({
       cell: (row) => (row.tss == null ? '—' : format.number(row.tss, 0)),
       align: 'end',
       hideBelow: 'lg',
+    },
+    {
+      id: 'heartRate',
+      header: t('activities.columns.heartRate'),
+      accessor: (row) => row.heartRateAverage ?? -1,
+      cell: (row) => {
+        const { text, title } = formatHeartRate(
+          row.heartRateAverage,
+          row.heartRateMin,
+          row.heartRateMax,
+        )
+        return title ? <span title={title}>{text}</span> : text
+      },
+      align: 'end',
+      unit: t('activities.units.heartRate'),
+      ...secondary,
+    },
+    {
+      id: 'effort',
+      header: t('activities.columns.effort'),
+      accessor: (row) => row.effort ?? -1,
+      cell: (row) => row.effort ?? '—',
+      align: 'end',
+      unit: t('activities.units.effort'),
+      ...secondary,
+    },
+    {
+      id: 'mood',
+      header: t('activities.columns.mood'),
+      accessor: (row) => moodRank(row.mood),
+      cell: (row) => enumLabel(t, 'moods', row.mood),
+      ...secondary,
+    },
+    {
+      id: 'wind',
+      header: t('activities.columns.wind'),
+      accessor: (row) => windRank(row.wind),
+      cell: (row) => enumLabel(t, 'winds', row.wind),
+      ...secondary,
+    },
+    {
+      id: 'gadgets',
+      header: t('activities.columns.gadgets'),
+      accessor: gadgetNames,
+      cell: (row) => titled(gadgetNames(row)),
+      ...secondary,
+      truncate: true,
+      minWidth: '8rem',
+      maxWidth: '14rem',
+    },
+    {
+      id: 'tags',
+      header: t('activities.columns.tags'),
+      accessor: tagNames,
+      cell: (row) => titled(tagNames(row)),
+      ...secondary,
+      truncate: true,
+      minWidth: '8rem',
+      maxWidth: '14rem',
     },
   ], [t, format])
 
