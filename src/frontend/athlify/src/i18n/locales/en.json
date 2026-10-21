@@ -136,20 +136,31 @@
       "kpi": {
         "group": "Measurements",
         "noData": "No measurement",
-        "noPeriodData": "No measurement in this period",
+        "noRangeData": "No measurement in this date range",
         "notEnoughData": "Not enough data in this period",
         "lastMeasured": "Last measured: {{date}}"
       },
       "chart": {
-        "summary_one": "{{metric}}, {{period}}: {{from}}, 1 measurement",
-        "summary_other": "{{metric}}, {{period}}: from {{from}} to {{to}}, {{count}} measurements",
+        "summary_one": "{{metric}}, {{fromDate}} to {{toDate}}: {{from}}, 1 measurement",
+        "summary_other": "{{metric}}, {{fromDate}} to {{toDate}}: from {{from}} to {{to}}, {{count}} measurements",
         "empty": {
-          "30d": "No measurements in the last 30 days",
-          "90d": "No measurements in the last 90 days",
-          "1y": "No measurements in the last year",
-          "all": "No measurements yet"
+          "range": "No measurements in this date range."
         },
         "showAll": "Show the whole period"
+      },
+      "range": {
+        "label": "Date range",
+        "summary": "Date range: {{from}} – {{to}}",
+        "change": "Change date range",
+        "from": "From",
+        "to": "To",
+        "apply": "Apply",
+        "cancel": "Cancel",
+        "errors": {
+          "missing": "Enter both dates.",
+          "invalidDate": "Enter valid dates.",
+          "fromAfterTo": "The start date must be before the end date."
+        }
       },
       "history": "History",
       "add": {

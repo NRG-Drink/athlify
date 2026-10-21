@@ -8,8 +8,8 @@ export interface KpiTileProps {
   unit: string
   /** Pre-formatted change (for example `−0.7 kg`) and the direction used for the arrow. */
   delta?: { text: string; direction: 'up' | 'down' | 'flat' }
-  /** Line under the value: the comparison period, or why there is no change to show. */
-  note: string
+  /** Line under the value when there is no comparison to show. */
+  note?: string
   selected: boolean
   onSelect: () => void
 }
@@ -84,9 +84,11 @@ export function KpiTile({ label, value, unit, delta, note, selected, onSelect }:
               {delta.text}
             </Text>
           )}{' '}
-          <Text as="span" whiteSpace="nowrap">
-            {note}
-          </Text>
+          {note && (
+            <Text as="span" whiteSpace="nowrap">
+              {note}
+            </Text>
+          )}
         </Text>
       </Stack>
     </chakra.button>

@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
   filterByPeriod,
+  filterByRange,
   latest,
   periodDelta,
+  rangeDelta,
   sortByDate,
   type MetricPoint,
 } from '../../lib/metrics'
@@ -33,6 +35,21 @@ describe('filterByPeriod', () => {
 
   it('starts at local midnight N days before now', () => {
     expect(filterByPeriod(points, '30d', now).map((p) => p.value)).toEqual([2, 3])
+  })
+
+  describe('filterByRange', () => {
+    const points = [
+      point('2026-09-02T23:59', 1),
+      point('2026-09-03T00:00', 2),
+      point('2026-10-03T23:59', 3),
+      point('2026-10-04T00:00', 4),
+    ]
+
+    it('includes both local calendar boundaries', () => {
+      expect(filterByRange(points, { from: '2026-09-03', to: '2026-10-03' }).map((p) => p.value)).toEqual(
+        [2, 3],
+      )
+    })
   })
 
   it('keeps everything for the whole period, oldest first', () => {
@@ -70,6 +87,17 @@ describe('periodDelta', () => {
   it('is the latest value minus the first value inside the period', () => {
     expect(periodDelta(points, '30d', now)).toBeCloseTo(-0.5)
     expect(periodDelta(points, 'all', now)).toBeCloseTo(-1.5)
+  })
+
+  describe('rangeDelta', () => {
+    it('calculates the change inside the inclusive range', () => {
+      const points = [
+        point('2026-09-01T08:00', 72),
+        point('2026-09-10T08:00', 71),
+        point('2026-10-01T08:00', 70.5),
+      ]
+      expect(rangeDelta(points, { from: '2026-09-10', to: '2026-10-01' })).toBeCloseTo(-0.5)
+    })
   })
 
   it('is undefined with fewer than two points in the period', () => {

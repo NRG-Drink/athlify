@@ -240,12 +240,13 @@ remain visible on the Dashboard. Each Body-Stats entry can be viewed, updated
 and deleted by its owner. Deleting asks for confirmation.
 
 The Body-Stats page opens with one summary tile per measurement. A tile shows
-the latest value and its change within the selected period; a missing value is
-shown as a dash, never as zero. Selecting a tile shows that measurement over
-time in a chart with its own unit and axis. The period can be set to the last
-30 days, 90 days, one year or the whole history. Below the chart, the history
-table lists all measurements and offers edit and delete for each one; the note
-is shown only in the edit form, not in the table. The button for a new
+the latest value and its change within the selected date range; a missing value
+is shown as a dash, never as zero. Selecting a tile shows that measurement over
+time in a chart with its own unit and axis. The date range is selected
+dynamically with inclusive start and end dates, rather than from a fixed list
+of periods. Below the chart, the history table lists all measurements and
+offers edit and delete for each one; the note is shown only in the edit form,
+not in the table. The button for a new
 measurement sits next to the table heading. Body-Stats are private data and are available only
 within the owning user's personal context. The final list of supported
 measurements may be extended, but any additional values must remain consistent

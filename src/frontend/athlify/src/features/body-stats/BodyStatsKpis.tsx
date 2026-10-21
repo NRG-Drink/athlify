@@ -2,21 +2,20 @@ import { Box, SimpleGrid, Text } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { KpiTile } from '../../components/KpiTile'
 import { useFormat } from '../../i18n/useFormat'
-import { filterByPeriod, latest, periodDelta } from '../../lib/metrics'
-import type { Period } from '../../lib/period'
+import { filterByRange, latest, rangeDelta } from '../../lib/metrics'
+import type { DateRange } from '../../lib/period'
 import { bodyStatsMetrics, type BodyStatsMetricKey } from './bodyStatsMetrics'
 import type { BodyStatsSeries } from './bodyStatsSeries'
 
 export interface BodyStatsKpisProps {
   series: BodyStatsSeries
   metric: BodyStatsMetricKey
-  period: Period
-  now: Date
+  range: DateRange
   onSelectMetric: (metric: BodyStatsMetricKey) => void
 }
 
-/** One tile per measurement: latest value, change within the period; selecting one drives the chart. */
-export function BodyStatsKpis({ series, metric, period, now, onSelectMetric }: BodyStatsKpisProps) {
+/** One tile per measurement: latest value and range change; selecting one drives the chart. */
+export function BodyStatsKpis({ series, metric, range, onSelectMetric }: BodyStatsKpisProps) {
   const { t } = useTranslation()
   const format = useFormat()
   const newest = latest(series.weight)
@@ -35,8 +34,8 @@ export function BodyStatsKpis({ series, metric, period, now, onSelectMetric }: B
         {bodyStatsMetrics.map((definition, index) => {
           const points = series[definition.key]
           const value = latest(points)?.value
-          const delta = periodDelta(points, period, now)
-          const hasPeriodPoints = filterByPeriod(points, period, now).length > 0
+          const delta = rangeDelta(points, range)
+          const hasRangePoints = filterByRange(points, range).length > 0
 
           return (
             <Box
@@ -69,11 +68,11 @@ export function BodyStatsKpis({ series, metric, period, now, onSelectMetric }: B
                     ? t('bodyStats.kpi.noData')
                     : delta === undefined
                       ? t(
-                          hasPeriodPoints
+                          hasRangePoints
                             ? 'bodyStats.kpi.notEnoughData'
-                            : 'bodyStats.kpi.noPeriodData',
+                            : 'bodyStats.kpi.noRangeData',
                         )
-                      : t(`period.in.${period}`)
+                      : undefined
                 }
                 selected={definition.key === metric}
                 onSelect={() => onSelectMetric(definition.key)}

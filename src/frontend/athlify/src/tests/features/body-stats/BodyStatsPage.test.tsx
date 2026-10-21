@@ -86,7 +86,8 @@ describe('BodyStatsPage', () => {
 
       expect(weight).toHaveAttribute('aria-pressed', 'true')
       expect(weight).toHaveTextContent('70.5')
-      expect(weight).toHaveTextContent('−0.7 kg in 90 Tagen')
+      expect(weight).toHaveTextContent('−0.7 kg')
+      expect(weight).not.toHaveTextContent('5. Juli 2026')
       expect(tiles().getByRole('button', { name: /Körperfett/ })).toHaveAttribute(
         'aria-pressed',
         'false',
@@ -169,10 +170,10 @@ describe('BodyStatsPage', () => {
       expect(router.state.location.search).toContain('metric=bodyFatPercentage')
     })
 
-    it('restores metric and period from the URL and ignores invalid values', async () => {
+    it('restores metric and legacy period from the URL', async () => {
       page(() => okQuery(), '/body-stats?metric=boneMass&period=1y')
       expect(
-        await screen.findByRole('img', { name: /^Knochenmasse, Letztes Jahr/ }),
+        await screen.findByRole('img', { name: /^Knochenmasse, .*4 Messungen/ }),
       ).toBeInTheDocument()
     })
 
@@ -180,49 +181,51 @@ describe('BodyStatsPage', () => {
       page(() => okQuery(), '/body-stats?metric=nonsense&period=forever')
 
       expect(
-        await screen.findByRole('img', { name: /^Gewicht, Letzte 90 Tage/ }),
+        await screen.findByRole('img', { name: /^Gewicht, .*3 Messungen/ }),
       ).toBeInTheDocument()
     })
 
-    it('changes the period of chart and tiles', async () => {
-      const { user, router } = page(() => okQuery())
+    it('changes the date range of chart and tiles', async () => {
+      const { user, router, calls } = page(() => okQuery())
       await screen.findByRole('img', { name: /3 Messungen/ })
 
-      await user.click(screen.getByRole('button', { name: 'Letztes Jahr' }))
+      await user.click(screen.getByRole('button', { name: /Zeitraum ändern: Zeitraum:/ }))
+      const from = screen.getByLabelText('Von')
+      const to = screen.getByLabelText('Bis')
+      await user.clear(from)
+      await user.type(from, '2026-01-01')
+      await user.clear(to)
+      await user.type(to, '2026-10-03')
+      await user.click(screen.getByRole('button', { name: 'Anwenden' }))
 
       expect(
         await screen.findByRole('img', {
-          name: /Letztes Jahr: von 74\.0 kg auf 70\.5 kg, 4 Messungen/,
+          name: /1\. Jan\. 2026 bis 3\. Okt\. 2026: von 74\.0 kg auf 70\.5 kg, 4 Messungen/,
         }),
       ).toBeInTheDocument()
       expect(tiles().getByRole('button', { name: /Gewicht/ })).toHaveTextContent(
-        '−3.5 kg im letzten Jahr',
+        '−3.5 kg',
       )
-      expect(router.state.location.search).toContain('period=1y')
+      expect(router.state.location.search).toContain('from=2026-01-01')
+      expect(router.state.location.search).toContain('to=2026-10-03')
+      expect(calls(QUERY)).toHaveLength(1)
     })
 
-    it('says so when the period has too little data for a change', async () => {
-      page(() => okQuery([newest, longAgo]), '/body-stats?period=30d')
+    it('says so when the range has too little data for a change', async () => {
+      page(() => okQuery([newest, longAgo]), '/body-stats?from=2026-09-01&to=2026-10-03')
 
       expect(await tiles().findByRole('button', { name: /Gewicht/ })).toHaveTextContent(
         'Zu wenig Daten im Zeitraum',
       )
     })
 
-    it('offers the whole period when nothing was measured in the selected one', async () => {
-      const { user, router } = page(() => okQuery([longAgo]), '/body-stats?period=30d')
+    it('says so when nothing was measured in the selected range', async () => {
+      page(() => okQuery([longAgo]), '/body-stats?from=2026-09-01&to=2026-10-03')
 
-      expect(await screen.findByText('Keine Messungen in den letzten 30 Tagen')).toBeInTheDocument()
+      expect(await screen.findByText('Keine Messungen in diesem Zeitraum.')).toBeInTheDocument()
       expect(tiles().getByRole('button', { name: /Gewicht/ })).toHaveTextContent(
         'Keine Messung im Zeitraum',
       )
-
-      await user.click(screen.getByRole('button', { name: 'Ganzen Zeitraum anzeigen' }))
-
-      expect(
-        await screen.findByRole('img', { name: /^Gewicht, Gesamter Zeitraum/ }),
-      ).toBeInTheDocument()
-      expect(router.state.location.search).toContain('period=all')
     })
 
     it('uses the same names in tiles, table and form', async () => {
@@ -250,7 +253,10 @@ describe('BodyStatsPage', () => {
 
       await act(() => i18n.changeLanguage('en'))
 
-      expect(await tiles().findByRole('button', { name: /Weight/ })).toHaveTextContent('in 90 days')
+      expect(await tiles().findByRole('button', { name: /Weight/ })).toHaveTextContent('−0.7 kg')
+      expect(screen.getByRole('button', { name: /Change date range: Date range:/ })).toHaveTextContent(
+        'Date range: 5 Jul 2026 – 3 Oct 2026',
+      )
       expect(within(table()).getByRole('button', { name: /Weight/ })).toBeInTheDocument()
       expect(within(bodyRows()[0]).getByText(/2 Oct 2026/)).toBeInTheDocument()
     })

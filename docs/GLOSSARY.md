@@ -154,9 +154,13 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
   description and actions, and exactly one UI state body (loading, empty,
   error or ready). See [`SAD.md`](copilot/frontend/SAD.md#page-frame).
 
-**Period** — The time span that a view looks at: the last 30 days, 90 days, one
-  year or the whole history. It is part of the URL (`?period=`), so a view can
-  be reloaded and shared.
+**Period** — A relative time span used by filters such as Activities: the last
+  30 days, 90 days, one year or the whole history. It is part of the URL
+  (`?period=`), so a view can be reloaded and shared.
+
+**Date range** — An inclusive pair of local calendar dates (`from` and `to`)
+  that defines the exact interval shown by the Body-Stats chart and KPI
+  comparisons. It is part of the URL so the view can be reloaded and shared.
 
 **Primary Navigation** — The header navigation between the personal areas
   Dashboard, Activities, Garage, Body-Stats and Events. On small screens it

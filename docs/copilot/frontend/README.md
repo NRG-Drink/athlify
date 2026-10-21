@@ -58,7 +58,7 @@ Menu with language switcher and color mode, mobile drawer), the `Page` frame,
 the "Night Ride" theme in `src/theme/`
 ([ADR-005](adr/ADR-005-theme-tokens.md)), plus the Body-Stats domain page
 ([ADR-007](adr/ADR-007-domain-page-pattern.md)): summary tiles, a chart of the
-selected measurement over a selectable period, and a history table with add,
+selected measurement over a selectable date range, and a history table with add,
 edit and delete against the backend API. New entries are prefilled from the
 entry with the newest date. The Activities page is a read-only list backed by
 the `activities` connection, with period, type, bicycle and tag filters stored

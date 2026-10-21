@@ -67,7 +67,7 @@ src/frontend/athlify/src/
 ├── features/         # one folder per domain area; body-stats/ is the reference (ADR-007)
 ├── theme/            # Chakra system: palette, semantic tokens, fonts (ADR-005)
 ├── components/       # domain-free building blocks (Page, QueryBoundary, DataTable, MetricChart,
-│                     #   KpiTile, PeriodPicker, FormDialog, ConfirmDialog, BrandMark, toggles, switcher)
+│                     #   KpiTile, DateRangePicker, FormDialog, ConfirmDialog, BrandMark, toggles, switcher)
 │   └── ui/           # generated Chakra UI snippets (provider, color-mode, toaster, tooltip; the Provider mounts the Toaster)
 ├── lib/              # pure functions: metrics, period, ticks
 ├── relay/            # Relay environment
@@ -124,7 +124,7 @@ view are shown inside the layout through the route `errorElement`
 | `/dashboard` | Dashboard (placeholder) | Primary Navigation |
 | `/activities` | Activities (read-only list with URL filters and pagination) | Primary Navigation |
 | `/garage` | Garage (placeholder) | Primary Navigation |
-| `/body-stats` | Body-Stats (domain page; `?metric=` and `?period=` select the view) | Primary Navigation |
+| `/body-stats` | Body-Stats (domain page; `?metric=`, `?from=` and `?to=` select the view) | Primary Navigation |
 | `/events` | Events (placeholder) | Primary Navigation |
 | `/settings` | Settings (placeholder) | User Menu |
 | any other | Not Found page | – |
@@ -167,14 +167,18 @@ reference is `src/features/body-stats/`.
   needs the whole history for chart and tiles, so it loads pages of 200 and
   keeps calling `loadNext` until `hasNext` is false. A page that only needs the
   newest entries stops after the first page.
-- **View state:** the selected metric and period live in the URL.
+- **View state:** the selected metric and inclusive local date range live in
+  the URL; legacy `period` parameters remain readable for existing links.
 - **Formatting:** numbers, units and dates come from `useFormat()` in the active
   language; missing values show "—".
 - **Tiles and chart:** one `KpiTile` per measurement shows the latest value and
-  its change since the start of the selected period. Selecting a tile switches
-  `MetricChart`, which draws one measurement with its own unit and axis in
-  `chart.primary`. A period without data keeps the chart's height and offers
-  the whole period.
+  its change since the start of the selected date range without repeating the
+  range in every tile. Selecting a tile switches `MetricChart`, which draws
+  one measurement with its own unit and axis in `chart.primary`. The compact
+  `DateRangePicker` opens a responsive native-input editing surface: fields
+  are side by side on wider screens and stacked on phones. A range without
+  data keeps the chart's height and explains that no measurements exist in the
+  selected dates.
 - **Table:** `DataTable` sorts with the keyboard through header buttons. Row
   actions (edit, delete) are always visible; clicking a row also opens the
   editor. Columns drop out below `sm`, `md` and `lg` so that a phone shows date,

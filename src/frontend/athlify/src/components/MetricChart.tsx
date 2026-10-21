@@ -21,10 +21,10 @@ export interface MetricChartProps {
   decimals: number
   /** Accessible name; the chart is a graphic, so it also carries a text summary. */
   summary: string
-  /** Time span shown on the X axis, for the period boundary and the tick format. */
+  /** Time span shown on the X axis, for the date-range boundary and tick format. */
   domain: [Date, Date]
   emptyMessage: string
-  /** Shown under the empty message, for example a button that widens the period. */
+  /** Shown under the empty message when a view offers a range action. */
   emptyAction?: ReactNode
   height?: number
 }

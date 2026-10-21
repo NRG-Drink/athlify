@@ -10,7 +10,7 @@ import { QueryBoundary } from '../../components/QueryBoundary'
 import { useFormat } from '../../i18n/useFormat'
 import { useFetchKey } from '../../relay/useFetchKey'
 import { latest } from '../../lib/metrics'
-import { parsePeriod, type Period } from '../../lib/period'
+import { defaultDateRange, parseDateRange, type DateRange } from '../../lib/period'
 import { toaster } from '../../components/ui/toaster'
 import type { BodyStatsPage_list$key } from './__generated__/BodyStatsPage_list.graphql'
 import type { BodyStatsPageMoreQuery } from './__generated__/BodyStatsPageMoreQuery.graphql'
@@ -24,8 +24,6 @@ import { useBodyStatsSeries } from './bodyStatsSeries'
 import { BodyStatsSkeleton } from './BodyStatsSkeleton'
 import { BodyStatsTable, type BodyStatsRow } from './BodyStatsTable'
 import { useBodyStatsMutations } from './useBodyStatsMutations'
-
-const DEFAULT_PERIOD: Period = '90d'
 
 // The page works on the whole history (chart, tiles, table), so it asks for big pages and keeps
 // loading until the connection is complete. The key must match BODY_STATS_CONNECTION_KEY.
@@ -83,7 +81,7 @@ function BodyStatsContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
   const queryData = useLazyLoadQuery<BodyStatsPageQuery>(
     pageQuery,
     {},
-    { fetchKey, fetchPolicy: 'network-only' },
+    { fetchKey, fetchPolicy: 'store-or-network' },
   )
   const { data, hasNext, isLoadingNext, loadNext } = usePaginationFragment<
     BodyStatsPageMoreQuery,
@@ -116,15 +114,25 @@ function BodyStatsContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
   const mutations = useBodyStatsMutations()
 
   const metric = parseMetric(searchParams.get('metric'))
-  const period = parsePeriod(searchParams.get('period'), DEFAULT_PERIOD)
+  const range = parseDateRange(
+    searchParams.get('from'),
+    searchParams.get('to'),
+    defaultDateRange(now),
+    now,
+    searchParams.get('period'),
+  )
 
-  const setView = (next: { metric?: BodyStatsMetricKey; period?: Period }) =>
+  const setView = (next: { metric?: BodyStatsMetricKey; range?: DateRange }) =>
     startChartTransition(() =>
       setSearchParams(
         (current) => {
           const params = new URLSearchParams(current)
           if (next.metric) params.set('metric', next.metric)
-          if (next.period) params.set('period', next.period)
+          if (next.range) {
+            params.set('from', next.range.from)
+            params.set('to', next.range.to)
+            params.delete('period')
+          }
           return params
         },
         { replace: true },
@@ -171,17 +179,15 @@ function BodyStatsContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
       <BodyStatsKpis
         series={series}
         metric={metric}
-        period={period}
-        now={now}
+        range={range}
         onSelectMetric={(next) => setView({ metric: next })}
       />
       <BodyStatsChart
         series={series}
         metric={metric}
-        period={period}
-        now={now}
+        range={range}
         isPending={isChartPending}
-        onPeriodChange={(next) => setView({ period: next })}
+        onRangeChange={(next) => setView({ range: next })}
       />
       <Stack gap="4">
         <Flex justify="space-between" align="center" gap="3" wrap="wrap">
