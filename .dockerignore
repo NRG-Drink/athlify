@@ -1,0 +1,14 @@
+.git
+.github
+.idea
+.agents
+.claude
+.devcontainer
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/dist-ssr
+**/.vite
+**/coverage
+*.log

@@ -8,8 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="TUnit" Version="1.68.4" />
-    <PackageReference Include="TUnit.AspNetCore" Version="1.68.4" />
+    <PackageReference Include="TUnit" Version="1.76.0" />
+    <PackageReference Include="TUnit.AspNetCore" Version="1.76.0" />
   </ItemGroup>
 
   <ItemGroup>

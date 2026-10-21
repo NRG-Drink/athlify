@@ -33,7 +33,7 @@ TypeScript and Vite.
 | Backend contract | Hot Chocolate GraphQL | Proposed in [shared ADR-001](../adr/ADR-001-graphql-api-contract.md); IDs follow [shared ADR-006](../adr/ADR-006-relay-global-ids.md) |
 | GraphQL client | Relay (`react-relay`, `relay-compiler`, committed `schema.graphql`) | Proposed in [ADR-007](adr/ADR-007-domain-page-pattern.md) |
 | Auth | Backend-owned authentication and authorization | Planned |
-| Hosting | Open | Not decided |
+| Hosting | Docker Compose with static files served by ASP.NET Core | The combined app service serves the Vite build, provides SPA fallback and handles same-origin `/graphql/` in the same process |
 
 ## System Components
 
