@@ -17,6 +17,7 @@ public partial class Program
 
         var developmentUserOptions = builder.Configuration.GetSection(DevelopmentUserOptions.Section)
             .Get<DevelopmentUserOptions>() ?? new DevelopmentUserOptions();
+        var seedOptions = builder.Configuration.GetSection(SeedOptions.Section).Get<SeedOptions>() ?? new SeedOptions();
         builder.Services.AddSingleton<DevelopmentCurrentUser>();
         builder.Services.AddScoped<ICurrentUser>(sp => sp.GetRequiredService<DevelopmentCurrentUser>());
         builder.Services.AddHttpContextAccessor();
@@ -87,7 +88,7 @@ public partial class Program
             app.Services.GetRequiredService<DevelopmentCurrentUser>().UserId = developmentUserId;
 
             var seeder = scope.ServiceProvider.GetRequiredService<IDbSeeder>();
-            seeder.Seed(db, developmentUserId);
+            DbSeeding.RunIfEnabled(seeder, db, developmentUserId, seedOptions, app.Environment, app.Logger);
         }
 
         app.UseCors("FrontendDev");
