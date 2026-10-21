@@ -176,9 +176,14 @@ reference is `src/features/body-stats/`.
   range in every tile. Selecting a tile switches `MetricChart`, which draws
   one measurement with its own unit and axis in `chart.primary`. The compact
   `DateRangePicker` opens a responsive native-input editing surface: fields
-  are side by side on wider screens and stacked on phones. A range without
-  data keeps the chart's height and explains that no measurements exist in the
-  selected dates.
+  are side by side on wider screens and stacked on phones; its resolution
+  selector supports no aggregation, daily, weekly, monthly and yearly chart
+  buckets. With aggregation disabled, every filtered measurement is shown;
+  otherwise chart aggregation keeps the latest real local-calendar measurement
+  per bucket, while KPI values and the history table remain based on raw
+  records. A range
+  without data keeps the chart's height and explains that no measurements
+  exist in the selected dates.
 - **Table:** `DataTable` sorts with the keyboard through header buttons. Row
   actions (edit, delete) are always visible; clicking a row also opens the
   editor. Columns drop out below `sm`, `md` and `lg` so that a phone shows date,

@@ -7,16 +7,29 @@ import {
   Portal,
   Stack,
   Text,
+  NativeSelect,
 } from '@chakra-ui/react'
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LuCalendarDays } from 'react-icons/lu'
 import { useFormat } from '../i18n/useFormat'
-import { dateFromKey, validateDateRange, type DateRange } from '../lib/period'
+import {
+  aggregations,
+  dateFromKey,
+  parseAggregation,
+  validateDateRange,
+  type Aggregation,
+  type DateRange,
+} from '../lib/period'
+
+export interface DateRangeSelection {
+  range: DateRange
+  aggregation: Aggregation
+}
 
 export interface DateRangePickerProps {
-  value: DateRange
-  onChange: (range: DateRange) => void
+  value: DateRangeSelection
+  onChange: (selection: DateRangeSelection) => void
   min?: string
   max?: string
 }
@@ -28,7 +41,11 @@ export function DateRangePicker({ value, onChange, min, max }: DateRangePickerPr
   const [draft, setDraft] = useState(value)
   const [error, setError] = useState<string | undefined>()
   const [shownValue, setShownValue] = useState(value)
-  if (shownValue.from !== value.from || shownValue.to !== value.to) {
+  if (
+    shownValue.range.from !== value.range.from ||
+    shownValue.range.to !== value.range.to ||
+    shownValue.aggregation !== value.aggregation
+  ) {
     setShownValue(value)
     setDraft(value)
     setError(undefined)
@@ -36,13 +53,13 @@ export function DateRangePicker({ value, onChange, min, max }: DateRangePickerPr
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const result = validateDateRange(draft.from, draft.to)
+    const result = validateDateRange(draft.range.from, draft.range.to)
     if (!result.valid) {
       setError(t(`bodyStats.range.errors.${result.error}`))
       return
     }
     setError(undefined)
-    onChange(result.range)
+    onChange({ range: result.range, aggregation: draft.aggregation })
     setOpen(false)
   }
 
@@ -65,15 +82,17 @@ export function DateRangePicker({ value, onChange, min, max }: DateRangePickerPr
           justifyContent="flex-start"
           textAlign="start"
           aria-label={`${t('bodyStats.range.change')}: ${t('bodyStats.range.summary', {
-            from: format.date(dateFromKey(value.from)),
-            to: format.date(dateFromKey(value.to)),
+            from: format.date(dateFromKey(value.range.from)),
+            to: format.date(dateFromKey(value.range.to)),
+            aggregation: t(`bodyStats.range.aggregations.${value.aggregation}`),
           })}`}
         >
           <LuCalendarDays aria-hidden />
           <Text as="span" color="fg.muted" fontWeight="normal">
             {t('bodyStats.range.summary', {
-              from: format.date(dateFromKey(value.from)),
-              to: format.date(dateFromKey(value.to)),
+              from: format.date(dateFromKey(value.range.from)),
+              to: format.date(dateFromKey(value.range.to)),
+              aggregation: t(`bodyStats.range.aggregations.${value.aggregation}`),
             })}
           </Text>
         </Button>
@@ -96,25 +115,51 @@ export function DateRangePicker({ value, onChange, min, max }: DateRangePickerPr
                       <Field.Label>{t('bodyStats.range.from')}</Field.Label>
                       <Input
                         type="date"
-                        value={draft.from}
+                        value={draft.range.from}
                         min={min}
                         max={max}
                         aria-describedby={error ? 'body-stats-range-error' : undefined}
-                        onChange={(event) => setDraft({ ...draft, from: event.target.value })}
+                        onChange={(event) =>
+                          setDraft({ ...draft, range: { ...draft.range, from: event.target.value } })
+                        }
                       />
                     </Field.Root>
                     <Field.Root required invalid={!!error}>
                       <Field.Label>{t('bodyStats.range.to')}</Field.Label>
                       <Input
                         type="date"
-                        value={draft.to}
+                        value={draft.range.to}
                         min={min}
                         max={max}
                         aria-describedby={error ? 'body-stats-range-error' : undefined}
-                        onChange={(event) => setDraft({ ...draft, to: event.target.value })}
+                        onChange={(event) =>
+                          setDraft({ ...draft, range: { ...draft.range, to: event.target.value } })
+                        }
                       />
                     </Field.Root>
                   </Grid>
+                  <Field.Root>
+                    <Field.Label>{t('bodyStats.range.aggregation')}</Field.Label>
+                    <NativeSelect.Root>
+                      <NativeSelect.Field
+                        value={draft.aggregation}
+                        aria-label={t('bodyStats.range.aggregation')}
+                        onChange={(event) =>
+                          setDraft({
+                            ...draft,
+                            aggregation: parseAggregation(event.target.value),
+                          })
+                        }
+                      >
+                        {aggregations.map((aggregation) => (
+                          <option key={aggregation} value={aggregation}>
+                            {t(`bodyStats.range.aggregations.${aggregation}`)}
+                          </option>
+                        ))}
+                      </NativeSelect.Field>
+                      <NativeSelect.Indicator />
+                    </NativeSelect.Root>
+                  </Field.Root>
                   {error && (
                     <Field.Root invalid>
                       <Field.ErrorText id="body-stats-range-error" role="alert">

@@ -177,6 +177,19 @@ describe('BodyStatsPage', () => {
       ).toBeInTheDocument()
     })
 
+    it('restores aggregation from the URL and keeps KPI deltas raw', async () => {
+      page(
+        () => okQuery(),
+        '/body-stats?from=2026-01-01&to=2026-10-03&aggregation=month',
+      )
+
+      expect(await screen.findByRole('img', { name: /3 Messungen/ })).toBeInTheDocument()
+      expect(tiles().getByRole('button', { name: /Gewicht/ })).toHaveTextContent('−3.5 kg')
+      expect(screen.getByRole('button', { name: /Zeitraum ändern: Zeitraum:/ })).toHaveTextContent(
+        '1 M',
+      )
+    })
+
     it('falls back to the defaults for invalid URL parameters', async () => {
       page(() => okQuery(), '/body-stats?metric=nonsense&period=forever')
 
@@ -208,6 +221,43 @@ describe('BodyStatsPage', () => {
       )
       expect(router.state.location.search).toContain('from=2026-01-01')
       expect(router.state.location.search).toContain('to=2026-10-03')
+      expect(calls(QUERY)).toHaveLength(1)
+    })
+
+    it('changes aggregation locally without refetching or changing KPI delta', async () => {
+      const { user, router, calls } = page(
+        () => okQuery(),
+        '/body-stats?from=2026-01-01&to=2026-10-03',
+      )
+      await screen.findByRole('img', { name: /4 Messungen/ })
+
+      await user.click(screen.getByRole('button', { name: /Zeitraum ändern: Zeitraum:/ }))
+      await user.selectOptions(screen.getByLabelText('Auflösung'), 'year')
+      await user.click(screen.getByRole('button', { name: 'Anwenden' }))
+
+      expect(await screen.findByRole('img', { name: /1 Messung/ })).toBeInTheDocument()
+      expect(tiles().getByRole('button', { name: /Gewicht/ })).toHaveTextContent('−3.5 kg')
+      expect(router.state.location.search).toContain('aggregation=year')
+      expect(calls(QUERY)).toHaveLength(1)
+    })
+
+    it('shows every measurement when aggregation is disabled', async () => {
+      const { user, router, calls } = page(
+        () => okQuery(),
+        '/body-stats?from=2026-01-01&to=2026-10-03&aggregation=none',
+      )
+
+      expect(await screen.findByRole('img', { name: /4 Messungen/ })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Zeitraum ändern: Zeitraum:/ })).toHaveTextContent(
+        'Keine',
+      )
+
+      await user.click(screen.getByRole('button', { name: /Zeitraum ändern: Zeitraum:/ }))
+      await user.selectOptions(screen.getByLabelText('Auflösung'), 'none')
+      await user.click(screen.getByRole('button', { name: 'Anwenden' }))
+
+      expect(await screen.findByRole('img', { name: /4 Messungen/ })).toBeInTheDocument()
+      expect(router.state.location.search).toContain('aggregation=none')
       expect(calls(QUERY)).toHaveLength(1)
     })
 

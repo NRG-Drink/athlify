@@ -162,6 +162,12 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
   that defines the exact interval shown by the Body-Stats chart and KPI
   comparisons. It is part of the URL so the view can be reloaded and shared.
 
+**Chart aggregation** — The display resolution applied to the selected
+  Body-Stats chart metric: no aggregation, or daily, weekly, monthly or yearly
+  local-calendar buckets. Each bucket shows the latest real measurement when
+  aggregation is enabled; disabled aggregation shows every real measurement.
+  It does not change raw records, KPI calculations or history-table data.
+
 **Primary Navigation** — The header navigation between the personal areas
   Dashboard, Activities, Garage, Body-Stats and Events. On small screens it
   opens as a drawer. See [`SAD.md`](copilot/frontend/SAD.md#app-layout-and-routes).

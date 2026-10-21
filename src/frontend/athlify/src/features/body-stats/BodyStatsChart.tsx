@@ -11,8 +11,8 @@ import { useTranslation } from 'react-i18next'
 import { DateRangePicker } from '../../components/DateRangePicker'
 import { MetricChart } from '../../components/MetricChart'
 import { useFormat } from '../../i18n/useFormat'
-import { filterByRange, sortByDate } from '../../lib/metrics'
-import { dateFromKey, type DateRange } from '../../lib/period'
+import { aggregateByResolution, filterByRange, sortByDate } from '../../lib/metrics'
+import { dateFromKey, type Aggregation, type DateRange } from '../../lib/period'
 import { metricByKey, type BodyStatsMetricKey } from './bodyStatsMetrics'
 import type { BodyStatsSeries } from './bodyStatsSeries'
 
@@ -20,8 +20,9 @@ export interface BodyStatsChartProps {
   series: BodyStatsSeries
   metric: BodyStatsMetricKey
   range: DateRange
+  aggregation: Aggregation
   isPending?: boolean
-  onRangeChange: (range: DateRange) => void
+  onRangeChange: (selection: { range: DateRange; aggregation: Aggregation }) => void
 }
 
 const DAY = 24 * 60 * 60 * 1000
@@ -31,13 +32,14 @@ export function BodyStatsChart({
   series,
   metric,
   range,
+  aggregation,
   isPending = false,
   onRangeChange,
 }: BodyStatsChartProps) {
   const { t } = useTranslation()
   const format = useFormat()
   const definition = metricByKey(metric)
-  const points = filterByRange(series[metric], range)
+  const points = aggregateByResolution(filterByRange(series[metric], range), aggregation)
   const label = t(definition.labelKey)
 
   const start = dateFromKey(range.from)
@@ -80,7 +82,7 @@ export function BodyStatsChart({
           </Heading>
           <Text color="fg.muted">{definition.unit}</Text>
         </Flex>
-        <DateRangePicker value={range} onChange={onRangeChange} />
+        <DateRangePicker value={{ range, aggregation }} onChange={onRangeChange} />
       </Flex>
       <MetricChart
         points={points}

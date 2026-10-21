@@ -10,7 +10,13 @@ import { QueryBoundary } from '../../components/QueryBoundary'
 import { useFormat } from '../../i18n/useFormat'
 import { useFetchKey } from '../../relay/useFetchKey'
 import { latest } from '../../lib/metrics'
-import { defaultDateRange, parseDateRange, type DateRange } from '../../lib/period'
+import {
+  defaultDateRange,
+  parseAggregation,
+  parseDateRange,
+  type Aggregation,
+  type DateRange,
+} from '../../lib/period'
 import { toaster } from '../../components/ui/toaster'
 import type { BodyStatsPage_list$key } from './__generated__/BodyStatsPage_list.graphql'
 import type { BodyStatsPageMoreQuery } from './__generated__/BodyStatsPageMoreQuery.graphql'
@@ -108,7 +114,7 @@ function BodyStatsContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
     })
   }, [hasNext, isLoadingNext, pagingFailed, loadNext, startChartTransition, t])
   const series = useBodyStatsSeries(bodyStats)
-  // Periods count back from the moment the data was last loaded or changed.
+  // The default date range counts back from the moment the data was last loaded or changed.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const now = useMemo(() => new Date(), [bodyStats])
   const mutations = useBodyStatsMutations()
@@ -121,8 +127,13 @@ function BodyStatsContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
     now,
     searchParams.get('period'),
   )
+  const aggregation = parseAggregation(searchParams.get('aggregation'))
 
-  const setView = (next: { metric?: BodyStatsMetricKey; range?: DateRange }) =>
+  const setView = (next: {
+    metric?: BodyStatsMetricKey
+    range?: DateRange
+    aggregation?: Aggregation
+  }) =>
     startChartTransition(() =>
       setSearchParams(
         (current) => {
@@ -133,6 +144,7 @@ function BodyStatsContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
             params.set('to', next.range.to)
             params.delete('period')
           }
+          if (next.aggregation) params.set('aggregation', next.aggregation)
           return params
         },
         { replace: true },
@@ -186,8 +198,9 @@ function BodyStatsContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
         series={series}
         metric={metric}
         range={range}
+        aggregation={aggregation}
         isPending={isChartPending}
-        onRangeChange={(next) => setView({ range: next })}
+        onRangeChange={(next) => setView({ range: next.range, aggregation: next.aggregation })}
       />
       <Stack gap="4">
         <Flex justify="space-between" align="center" gap="3" wrap="wrap">

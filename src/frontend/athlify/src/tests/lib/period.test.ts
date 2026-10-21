@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   defaultDateRange,
+  parseAggregation,
   parseDateRange,
   parsePeriod,
   periodStart,
@@ -11,6 +12,18 @@ describe('parsePeriod', () => {
   it('accepts the known periods', () => {
     expect(parsePeriod('30d', '90d')).toBe('30d')
     expect(parsePeriod('all', '90d')).toBe('all')
+  })
+
+  describe('parseAggregation', () => {
+    it('accepts supported values and defaults invalid input to daily detail', () => {
+      expect(parseAggregation('none')).toBe('none')
+      expect(parseAggregation('day')).toBe('day')
+      expect(parseAggregation('week')).toBe('week')
+      expect(parseAggregation('month')).toBe('month')
+      expect(parseAggregation('year')).toBe('year')
+      expect(parseAggregation(null)).toBe('day')
+      expect(parseAggregation('hour')).toBe('day')
+    })
   })
 
   it('falls back for unknown or missing values', () => {

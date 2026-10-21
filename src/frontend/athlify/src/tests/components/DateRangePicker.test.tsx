@@ -4,12 +4,15 @@ import { describe, expect, it, vi } from 'vitest'
 import { DateRangePicker } from '../../components/DateRangePicker'
 import { Provider } from '../../components/ui/provider'
 
-const range = { from: '2026-07-05', to: '2026-10-03' }
+const selection = {
+  range: { from: '2026-07-05', to: '2026-10-03' },
+  aggregation: 'day' as const,
+}
 
 const renderPicker = (onChange = vi.fn()) => {
   const result = render(
     <Provider>
-      <DateRangePicker value={range} onChange={onChange} />
+      <DateRangePicker value={selection} onChange={onChange} />
     </Provider>,
   )
   return { ...result, onChange }
@@ -21,11 +24,13 @@ describe('DateRangePicker', () => {
     renderPicker()
 
     expect(screen.getByRole('button', { name: /Zeitraum ändern: Zeitraum:/ })).toHaveTextContent(
-      'Zeitraum: 5. Juli 2026 – 3. Okt. 2026',
+      'Zeitraum: 5. Juli 2026 – 3. Okt. 2026 · 1 T',
     )
     await user.click(screen.getByRole('button', { name: /Zeitraum ändern: Zeitraum:/ }))
     expect(screen.getByLabelText('Von')).toHaveValue('2026-07-05')
     expect(screen.getByLabelText('Bis')).toHaveValue('2026-10-03')
+    expect(screen.getByLabelText('Auflösung')).toHaveValue('day')
+    expect(screen.getByRole('option', { name: 'Keine' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Anwenden' })).toBeInTheDocument()
   })
 
@@ -53,6 +58,37 @@ describe('DateRangePicker', () => {
     await user.type(screen.getByLabelText('Von'), '2026-01-01')
     await user.click(screen.getByRole('button', { name: 'Anwenden' }))
 
-    expect(onChange).toHaveBeenCalledWith({ from: '2026-01-01', to: '2026-10-03' })
+    expect(onChange).toHaveBeenCalledWith({
+      range: { from: '2026-01-01', to: '2026-10-03' },
+      aggregation: 'day',
+    })
+  })
+
+  it('commits the selected aggregation with the date range', async () => {
+    const user = userEvent.setup()
+    const { onChange } = renderPicker()
+
+    await user.click(screen.getByRole('button', { name: /Zeitraum ändern: Zeitraum:/ }))
+    await user.selectOptions(screen.getByLabelText('Auflösung'), 'month')
+    await user.click(screen.getByRole('button', { name: 'Anwenden' }))
+
+    expect(onChange).toHaveBeenCalledWith({
+      range: selection.range,
+      aggregation: 'month',
+    })
+  })
+
+  it('allows aggregation to be disabled', async () => {
+    const user = userEvent.setup()
+    const { onChange } = renderPicker()
+
+    await user.click(screen.getByRole('button', { name: /Zeitraum ändern: Zeitraum:/ }))
+    await user.selectOptions(screen.getByLabelText('Auflösung'), 'none')
+    await user.click(screen.getByRole('button', { name: 'Anwenden' }))
+
+    expect(onChange).toHaveBeenCalledWith({
+      range: selection.range,
+      aggregation: 'none',
+    })
   })
 })

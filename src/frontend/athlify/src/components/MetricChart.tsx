@@ -15,7 +15,7 @@ import type { MetricPoint, MetricUnit } from '../lib/metrics'
 import { niceScale, timeTicks } from '../lib/ticks'
 
 export interface MetricChartProps {
-  /** Already filtered to the period and sorted oldest first. */
+  /** Already filtered to the selected date range and sorted oldest first. */
   points: readonly MetricPoint[]
   unit: MetricUnit
   decimals: number

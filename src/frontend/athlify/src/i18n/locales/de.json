@@ -150,12 +150,20 @@
       },
       "range": {
         "label": "Zeitraum",
-        "summary": "Zeitraum: {{from}} – {{to}}",
+        "summary": "Zeitraum: {{from}} – {{to}} · {{aggregation}}",
         "change": "Zeitraum ändern",
         "from": "Von",
         "to": "Bis",
         "apply": "Anwenden",
         "cancel": "Abbrechen",
+        "aggregation": "Auflösung",
+        "aggregations": {
+          "none": "Keine",
+          "day": "1 T",
+          "week": "1 W",
+          "month": "1 M",
+          "year": "1 J"
+        },
         "errors": {
           "missing": "Bitte gib beide Daten ein.",
           "invalidDate": "Bitte gib gültige Daten ein.",

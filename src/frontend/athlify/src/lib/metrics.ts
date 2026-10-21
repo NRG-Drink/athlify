@@ -1,4 +1,4 @@
-import { periodStart, type DateRange, type Period } from './period'
+import { periodStart, type Aggregation, type DateRange, type Period } from './period'
 
 /** Describes one measured value; tiles, chart, table columns and form fields are all generated from these. */
 export interface MetricDefinition<K extends string = string> {
@@ -37,8 +37,7 @@ export function filterByPeriod(
     dataPoints = dataPoints.filter((point) => point.date >= start)
   }
 
-  const sorted = sortByDate(dataPoints)
-  return sorted
+  return sortByDate(dataPoints)
 }
 
 /** Points whose local calendar date falls within the inclusive range, oldest first. */
@@ -54,6 +53,44 @@ export function filterByRange(
     return key >= range.from && key <= range.to
   })
   return sortByDate(dataPoints)
+}
+
+function bucketKey(date: Date, aggregation: Aggregation): string {
+  const year = date.getFullYear()
+  const month = date.getMonth()
+  const day = date.getDate()
+
+  if (aggregation === 'day') {
+    return `${year.toString().padStart(4, '0')}-${(month + 1).toString().padStart(2, '0')}-${day
+      .toString()
+      .padStart(2, '0')}`
+  }
+  if (aggregation === 'month') {
+    return `${year.toString().padStart(4, '0')}-${(month + 1).toString().padStart(2, '0')}`
+  }
+  if (aggregation === 'year') return year.toString().padStart(4, '0')
+
+  const calendarDate = Date.UTC(year, month, day)
+  const weekday = new Date(calendarDate).getUTCDay() || 7
+  const thursday = new Date(calendarDate + (4 - weekday) * 24 * 60 * 60 * 1000)
+  const weekYear = thursday.getUTCFullYear()
+  const firstThursday = Date.UTC(weekYear, 0, 4)
+  const week = 1 + Math.round((thursday.getTime() - firstThursday) / (7 * 24 * 60 * 60 * 1000))
+  return `${weekYear.toString().padStart(4, '0')}-W${week.toString().padStart(2, '0')}`
+}
+
+/** Keeps the latest real observation in each local calendar bucket. */
+export function aggregateByResolution(
+  points: readonly MetricPoint[],
+  aggregation: Aggregation,
+): MetricPoint[] {
+  if (aggregation === 'none') return sortByDate(points)
+
+  const latestByBucket = new Map<string, MetricPoint>()
+  for (const point of sortByDate(points)) {
+    latestByBucket.set(bucketKey(point.date, aggregation), point)
+  }
+  return sortByDate([...latestByBucket.values()])
 }
 
 /** The point with the newest date over all points. */

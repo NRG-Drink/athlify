@@ -2,6 +2,14 @@ export const periods = ['30d', '90d', '1y', 'all'] as const
 
 export type Period = (typeof periods)[number]
 
+export const aggregations = ['none', 'day', 'week', 'month', 'year'] as const
+
+export type Aggregation = (typeof aggregations)[number]
+
+export function parseAggregation(raw: string | null): Aggregation {
+  return aggregations.find((aggregation) => aggregation === raw) ?? 'day'
+}
+
 const periodDays: Record<Exclude<Period, 'all'>, number> = {
   '30d': 30,
   '90d': 90,

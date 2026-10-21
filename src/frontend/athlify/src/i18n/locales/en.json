@@ -150,12 +150,20 @@
       },
       "range": {
         "label": "Date range",
-        "summary": "Date range: {{from}} – {{to}}",
+        "summary": "Date range: {{from}} – {{to}} · {{aggregation}}",
         "change": "Change date range",
         "from": "From",
         "to": "To",
         "apply": "Apply",
         "cancel": "Cancel",
+        "aggregation": "Resolution",
+        "aggregations": {
+          "none": "None",
+          "day": "1d",
+          "week": "1w",
+          "month": "1m",
+          "year": "1y"
+        },
         "errors": {
           "missing": "Enter both dates.",
           "invalidDate": "Enter valid dates.",
