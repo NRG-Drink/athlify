@@ -7,11 +7,11 @@ import { useLocation, useSearchParams } from 'react-router-dom'
 import { Page, PageEmptyState } from '../../components/Page'
 import { QueryBoundary } from '../../components/QueryBoundary'
 import { useFetchKey } from '../../relay/useFetchKey'
+import { useLoadMore } from '../../relay/useLoadMore'
 import {
   activeActivityFilterKeys,
   activityFiltersToWhere,
   applyActivityFilters,
-  defaultActivityPeriod,
   parseActivityFilters,
 } from './activityFilters'
 import { ActivitiesFilterSummary } from './ActivitiesFilterSummary'
@@ -81,7 +81,6 @@ interface ContentProps {
 function ActivitiesContent({ fetchKey }: ContentProps) {
   const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [loadMoreError, setLoadMoreError] = useState(false)
   const filters = useMemo(() => parseActivityFilters(searchParams), [searchParams])
   const variables = useMemo(
     () => ({ first: PAGE_SIZE, where: activityFiltersToWhere(filters) }),
@@ -95,7 +94,10 @@ function ActivitiesContent({ fetchKey }: ContentProps) {
     ActivitiesPageMoreQuery,
     ActivitiesPage_list$key
   >(listFragment, queryData)
-  const activities = data.activities?.edges?.map((edge) => edge.node) ?? []
+  const activities = useMemo(
+    () => data.activities?.edges?.map((edge) => edge.node) ?? [],
+    [data.activities],
+  )
   const vehicles = useMemo(
     () =>
       queryData.vehicles?.nodes?.map((vehicle) => ({
@@ -117,6 +119,11 @@ function ActivitiesContent({ fetchKey }: ContentProps) {
   const location = useLocation()
   const [pendingKey, setPendingKey] = useState<string>()
   const refreshing = pendingKey !== undefined && pendingKey === location.key
+  const { loadMore, loadMoreError, setLoadMoreError } = useLoadMore(
+    loadNext,
+    isLoadingNext,
+    PAGE_SIZE,
+  )
 
   const changeFilters = useCallback(
     (next: typeof filters) => {
@@ -125,20 +132,10 @@ function ActivitiesContent({ fetchKey }: ContentProps) {
       setPendingKey(location.key)
       setSearchParams(nextParams, { replace: true })
     },
-    [location.key, searchParams, setSearchParams],
+    [location.key, searchParams, setSearchParams, setLoadMoreError],
   )
 
-  const resetFilters = () => changeFilters({ period: defaultActivityPeriod })
-
-  const loadMore = () => {
-    if (isLoadingNext) return
-    setLoadMoreError(false)
-    loadNext(PAGE_SIZE, {
-      onComplete: (error) => {
-        if (error) setLoadMoreError(true)
-      },
-    })
-  }
+  const resetFilters = () => changeFilters({})
 
   const filtered = activeActivityFilterKeys(filters).length > 0
   const summary = (
@@ -173,7 +170,6 @@ function ActivitiesContent({ fetchKey }: ContentProps) {
         isLoadingNext={isLoadingNext}
         loadMoreError={loadMoreError}
         onLoadMore={loadMore}
-        onRetryLoadMore={loadMore}
         filters={filters}
         vehicles={vehicles}
         tags={tags}

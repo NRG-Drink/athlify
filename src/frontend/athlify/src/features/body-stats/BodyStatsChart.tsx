@@ -1,12 +1,4 @@
-import {
-  Box,
-  Flex,
-  Heading,
-  Spinner,
-  Stack,
-  Text,
-  VisuallyHidden,
-} from '@chakra-ui/react'
+import { Box, Flex, Heading, Spinner, Stack, Text, VisuallyHidden } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { DateRangePicker } from '../../components/DateRangePicker'
 import { MetricChart } from '../../components/MetricChart'

@@ -47,7 +47,7 @@ export const bodyStatsMetrics: readonly MetricDefinition<BodyStatsMetricKey>[] =
   },
 ]
 
-export const defaultMetric: BodyStatsMetricKey = 'weight'
+const defaultMetric: BodyStatsMetricKey = 'weight'
 
 /** Reads a metric from user-controlled input (for example a URL parameter); unknown values fall back. */
 export function parseMetric(raw: string | null): BodyStatsMetricKey {

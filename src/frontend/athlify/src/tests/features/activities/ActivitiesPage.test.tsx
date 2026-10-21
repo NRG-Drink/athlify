@@ -55,7 +55,7 @@ const response = (nodes = [activity]) => ({
 })
 
 describe('ActivitiesPage', () => {
-  it('renders a formatted activity row and sends the default period filter', async () => {
+  it('renders a formatted activity row and sends no filter by default', async () => {
     const { calls } = renderWithRelay(<ActivitiesPage />, () => response(), {
       path: '/activities',
       routePath: '/activities',
@@ -68,10 +68,7 @@ describe('ActivitiesPage', () => {
     expect(within(table).getByText('42.5')).toBeInTheDocument()
     expect(within(table).getAllByText('—').length).toBeGreaterThan(0)
     expect(calls('ActivitiesPageQuery')).toHaveLength(1)
-    expect(calls('ActivitiesPageQuery')[0]).toMatchObject({
-      first: 50,
-      where: { date: { gte: expect.any(String) } },
-    })
+    expect(calls('ActivitiesPageQuery')[0]).toMatchObject({ first: 50, where: null })
   })
 
   it('shows a filtered empty state with a reset action', async () => {
@@ -148,6 +145,23 @@ describe('ActivitiesPage', () => {
     expect(within(table).getByText('Training')).toBeInTheDocument()
   })
 
+  it('shows the first two tags and counts the rest in a "+N" chip', async () => {
+    const manyTags = {
+      ...richActivity,
+      tags: ['Eins', 'Zwei', 'Drei', 'Vier', 'Fuenf'].map((name) => ({ id: name, name })),
+    }
+    renderWithRelay(<ActivitiesPage />, () => response([manyTags]), {
+      path: '/activities',
+      routePath: '/activities',
+    })
+
+    const table = await screen.findByRole('table')
+    expect(within(table).getByText('Eins')).toBeInTheDocument()
+    expect(within(table).getByText('Zwei')).toBeInTheDocument()
+    expect(within(table).queryByText('Drei')).not.toBeInTheDocument()
+    expect(within(table).getByText('+3')).toBeInTheDocument()
+  })
+
   it('sorts by effort, highest first, and puts rows without a value last', async () => {
     const { user } = renderWithRelay(<ActivitiesPage />, () => response([activity, richActivity]), {
       path: '/activities',
@@ -174,11 +188,14 @@ describe('ActivitiesPage', () => {
       })
 
       await screen.findByRole('table')
-      for (const label of ['Datum', 'Typ', 'Velo', 'Tags']) {
+      for (const label of ['Typ', 'Velo', 'Wind', 'Tags']) {
         expect(
           within(headerOf(label)).getByRole('button', { name: /^Nach .* filtern/, hidden: true }),
         ).toBeInTheDocument()
       }
+      expect(
+        within(headerOf('Datum')).queryByRole('button', { name: /filtern/, hidden: true }),
+      ).not.toBeInTheDocument()
       expect(
         within(headerOf('Distanz')).queryByRole('button', { name: /filtern/, hidden: true }),
       ).not.toBeInTheDocument()
@@ -232,21 +249,6 @@ describe('ActivitiesPage', () => {
       ).toBeInTheDocument()
     })
 
-    it('filters by period from the date header', async () => {
-      const { user, router } = renderWithRelay(<ActivitiesPage />, () => response(), {
-        path: '/activities',
-        routePath: '/activities',
-      })
-
-      await screen.findByRole('table')
-      await user.click(
-        within(headerOf('Datum')).getByRole('button', { name: 'Nach Zeitraum filtern' }),
-      )
-      await user.selectOptions(await screen.findByRole('combobox', { name: 'Zeitraum' }), '30d')
-
-      expect(router.state.location.search).toBe('?period=30d')
-    })
-
     it('closes the popover with Escape', async () => {
       const { user } = renderWithRelay(<ActivitiesPage />, () => response(), {
         path: '/activities',
@@ -266,18 +268,18 @@ describe('ActivitiesPage', () => {
 
     it('lists every active filter as a chip that can be removed, and resets all', async () => {
       const { user, router } = renderWithRelay(<ActivitiesPage />, () => response(), {
-        path: '/activities?type=INDOOR&period=1y',
+        path: '/activities?type=INDOOR&wind=STRONG',
         routePath: '/activities',
       })
 
       const chips = await screen.findByRole('group', { name: 'Aktive Filter' })
-      expect(within(chips).getByText('Zeitraum: Letztes Jahr')).toBeInTheDocument()
+      expect(within(chips).getByText('Wind: Stark')).toBeInTheDocument()
       expect(within(chips).getByText('Aktivitätstyp: Indoor')).toBeInTheDocument()
 
       await user.click(
         within(chips).getByRole('button', { name: 'Filter Aktivitätstyp entfernen' }),
       )
-      expect(router.state.location.search).toBe('?period=1y')
+      expect(router.state.location.search).toBe('?wind=STRONG')
 
       await user.click(
         within(await screen.findByRole('group', { name: 'Aktive Filter' })).getByRole('button', {

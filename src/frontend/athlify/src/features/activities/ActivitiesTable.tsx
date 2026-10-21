@@ -69,13 +69,15 @@ export type ActivityRow = ActivitiesTable_entries$data[number]
 const gadgetNames = (row: ActivityRow) => row.gadgets.map(vehicleLabel).join(', ')
 const tagNames = (row: ActivityRow) => row.tags.map((tag) => tag.name).join(', ')
 
-const tagChips = (row: ActivityRow) =>
-  row.tags.length === 0 ? (
-    '—'
-  ) : (
-    // One line: the cell clips the chips that do not fit, and the title lists all of them.
+const VISIBLE_TAGS = 2
+
+/** One line: the first tags as chips, the rest as a "+N" chip; the title lists all of them. */
+function TagChips({ row }: { row: ActivityRow }) {
+  const { t } = useTranslation()
+  if (row.tags.length === 0) return '—'
+  return (
     <Flex gap="1" wrap="nowrap" overflow="hidden" title={tagNames(row)}>
-      {row.tags.map((tag) => (
+      {row.tags.slice(0, VISIBLE_TAGS).map((tag) => (
         <Tag.Root
           key={tag.id}
           size="sm"
@@ -86,8 +88,16 @@ const tagChips = (row: ActivityRow) =>
           <Tag.Label>{tag.name}</Tag.Label>
         </Tag.Root>
       ))}
+      {row.tags.length > VISIBLE_TAGS && (
+        <Tag.Root size="sm" variant="outline" flexShrink={0}>
+          <Tag.Label>
+            {t('activities.moreTags', { count: row.tags.length - VISIBLE_TAGS })}
+          </Tag.Label>
+        </Tag.Root>
+      )}
     </Flex>
   )
+}
 
 /** Shows the full text as a tooltip, because truncated cells hide the end. */
 const titled = (text: string) => (text ? <span title={text}>{text}</span> : '—')
@@ -101,7 +111,6 @@ interface ActivitiesTableProps {
   isLoadingNext: boolean
   loadMoreError: boolean
   onLoadMore: () => void
-  onRetryLoadMore: () => void
   filters: ActivityFilters
   vehicles: readonly FilterOption[]
   tags: readonly FilterOption[]
@@ -120,7 +129,6 @@ export function ActivitiesTable({
   isLoadingNext,
   loadMoreError,
   onLoadMore,
-  onRetryLoadMore,
   filters,
   vehicles,
   tags,
@@ -162,7 +170,6 @@ export function ActivitiesTable({
       }
     }
     return {
-      date: filterFor('period'),
       type: filterFor('type'),
       vehicle: filterFor('vehicle'),
       tags: filterFor('tag'),
@@ -178,7 +185,6 @@ export function ActivitiesTable({
         accessor: (row) => new Date(row.date).getTime(),
         cell: (row) => <time dateTime={row.date}>{format.date(row.date)}</time>,
         width: '8rem',
-        filter: columnFilters.date,
       },
       {
         id: 'type',
@@ -310,7 +316,7 @@ export function ActivitiesTable({
         id: 'tags',
         header: t('activities.columns.tags'),
         accessor: tagNames,
-        cell: tagChips,
+        cell: (row) => <TagChips row={row} />,
         ...secondary,
         hideBelow: filterColumnBreakpoint.tag,
         filter: columnFilters.tags,
@@ -337,7 +343,7 @@ export function ActivitiesTable({
           <Text role="alert" color="fg.error">
             {t('activities.loadMoreFailed')}
           </Text>
-          <Button size="sm" variant="outline" onClick={onRetryLoadMore}>
+          <Button size="sm" variant="outline" onClick={onLoadMore}>
             {t('page.retry')}
           </Button>
         </Flex>

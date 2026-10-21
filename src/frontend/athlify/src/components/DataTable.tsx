@@ -102,7 +102,14 @@ export function DataTable<T extends object>({
   }
 
   return (
-    <Table.ScrollArea opacity={busy ? 0.6 : undefined} transition="opacity 0.15s">
+    // Bounded height: the horizontal scrollbar then sits at the bottom of the visible area instead
+    // of the end of a long list, and the header stays in view while scrolling vertically.
+    <Table.ScrollArea
+      maxH="calc(100dvh - 14rem)"
+      minH="16rem"
+      opacity={busy ? 0.6 : undefined}
+      transition="opacity 0.15s"
+    >
       <Table.Root size="md" css={{ tableLayout: 'auto' }} aria-busy={busy || undefined}>
         <Table.Caption srOnly>{caption}</Table.Caption>
         <Table.Header>
@@ -120,10 +127,11 @@ export function DataTable<T extends object>({
                     display={hidden(column.hideBelow)}
                     w={column.width}
                     whiteSpace="nowrap"
-                    position={index === 0 ? 'sticky' : undefined}
+                    position="sticky"
+                    top="0"
                     left={index === 0 ? '0' : undefined}
-                    zIndex={index === 0 ? 1 : undefined}
-                    bg={index === 0 ? 'bg' : undefined}
+                    zIndex={index === 0 ? 2 : 1}
+                    bg="bg"
                     aria-sort={
                       sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : 'none'
                     }

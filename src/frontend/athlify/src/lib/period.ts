@@ -69,7 +69,7 @@ export function validateDateRange(from: string, to: string): DateRangeValidation
   return { valid: true, range: { from, to } }
 }
 
-export function rangeFromPeriod(period: Period, now: Date): DateRange {
+function rangeFromPeriod(period: Period, now: Date): DateRange {
   if (period === 'all') return { from: '1900-01-01', to: localDateKey(now) }
   const start = periodStart(period, now) ?? now
   return { from: localDateKey(start), to: localDateKey(now) }

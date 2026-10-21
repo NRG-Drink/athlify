@@ -40,7 +40,6 @@ export interface BodyStatsTableProps {
   isLoadingNext: boolean
   loadMoreError: boolean
   onLoadMore: () => void
-  onRetryLoadMore: () => void
   onEdit: (row: BodyStatsRow) => void
   onDelete: (row: BodyStatsRow) => void
 }
@@ -51,7 +50,6 @@ export function BodyStatsTable({
   isLoadingNext,
   loadMoreError,
   onLoadMore,
-  onRetryLoadMore,
   onEdit,
   onDelete,
 }: BodyStatsTableProps) {
@@ -66,9 +64,9 @@ export function BodyStatsTable({
         header: t('bodyStats.columns.date'),
         accessor: (row) => new Date(row.date).getTime(),
         cell: (row) => (
-            <time dateTime={row.date} title={format.dateTime(row.date)}>
-              {format.dateTime(row.date)}
-            </time>
+          <time dateTime={row.date} title={format.dateTime(row.date)}>
+            {format.dateTime(row.date)}
+          </time>
         ),
         width: '8rem',
       },
@@ -124,18 +122,13 @@ export function BodyStatsTable({
           <Text role="alert" color="fg.error">
             {t('bodyStats.loadMoreFailed')}
           </Text>
-          <Button size="sm" variant="outline" onClick={onRetryLoadMore}>
+          <Button size="sm" variant="outline" onClick={onLoadMore}>
             {t('page.retry')}
           </Button>
         </Flex>
       )}
       {hasNextPage && !loadMoreError && (
-        <Button
-          alignSelf="center"
-          variant="outline"
-          loading={isLoadingNext}
-          onClick={onLoadMore}
-        >
+        <Button alignSelf="center" variant="outline" loading={isLoadingNext} onClick={onLoadMore}>
           {t('bodyStats.loadMore')}
         </Button>
       )}

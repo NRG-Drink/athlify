@@ -81,7 +81,6 @@
         "effort": "/10"
       },
       "filters": {
-        "period": "Zeitraum",
         "type": "Aktivitätstyp",
         "vehicle": "Velo",
         "tag": "Tag",
@@ -123,6 +122,7 @@
       "table": {
         "caption": "Aktivitäten"
       },
+      "moreTags": "+{{count}}",
       "loadMore": "Weitere Aktivitäten laden",
       "loadMoreFailed": "Weitere Aktivitäten konnten nicht geladen werden.",
       "loadFailed": "Aktivitäten konnten nicht geladen werden.",

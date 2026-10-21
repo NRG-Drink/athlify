@@ -47,8 +47,8 @@ const deleteMutation = graphql`
 export type BodyStatsInput = useBodyStatsMutationsAddMutation['variables']['input']
 
 /** Keys of the analytics and history connections edited by Body-Stats mutations. */
-export const BODY_STATS_ANALYTICS_CONNECTION_KEY = 'BodyStatsPage_analytics__bodyStats'
-export const BODY_STATS_HISTORY_CONNECTION_KEY = 'BodyStatsPage_history__bodyStats'
+const BODY_STATS_ANALYTICS_CONNECTION_KEY = 'BodyStatsPage_analytics__bodyStats'
+const BODY_STATS_HISTORY_CONNECTION_KEY = 'BodyStatsPage_history__bodyStats'
 
 const connectionIds = () => [
   ConnectionHandler.getConnectionID(ROOT_ID, BODY_STATS_ANALYTICS_CONNECTION_KEY),

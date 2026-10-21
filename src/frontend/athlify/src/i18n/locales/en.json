@@ -81,7 +81,6 @@
         "effort": "/10"
       },
       "filters": {
-        "period": "Period",
         "type": "Activity type",
         "vehicle": "Bicycle",
         "tag": "Tag",
@@ -123,6 +122,7 @@
       "table": {
         "caption": "Activities"
       },
+      "moreTags": "+{{count}}",
       "loadMore": "Load more activities",
       "loadMoreFailed": "More activities could not be loaded.",
       "loadFailed": "Activities could not be loaded.",

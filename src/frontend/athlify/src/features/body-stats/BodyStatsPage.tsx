@@ -9,6 +9,7 @@ import { Page, PageEmptyState } from '../../components/Page'
 import { QueryBoundary } from '../../components/QueryBoundary'
 import { useFormat } from '../../i18n/useFormat'
 import { useFetchKey } from '../../relay/useFetchKey'
+import { useLoadMore } from '../../relay/useLoadMore'
 import { latest } from '../../lib/metrics'
 import {
   defaultDateRange,
@@ -47,8 +48,7 @@ const analyticsFragment = graphql`
   fragment BodyStatsPage_analytics on Query
   @refetchable(queryName: "BodyStatsPageMoreQuery")
   @argumentDefinitions(first: { type: "Int", defaultValue: 200 }, after: { type: "String" }) {
-    bodyStats(first: $first, after: $after)
-      @connection(key: "BodyStatsPage_analytics__bodyStats") {
+    bodyStats(first: $first, after: $after) @connection(key: "BodyStatsPage_analytics__bodyStats") {
       edges {
         node {
           ...bodyStatsSeries_entries
@@ -71,8 +71,7 @@ const historyFragment = graphql`
   fragment BodyStatsPage_history on Query
   @refetchable(queryName: "BodyStatsPageHistoryMoreQuery")
   @argumentDefinitions(first: { type: "Int", defaultValue: 50 }, after: { type: "String" }) {
-    bodyStats(first: $first, after: $after)
-      @connection(key: "BodyStatsPage_history__bodyStats") {
+    bodyStats(first: $first, after: $after) @connection(key: "BodyStatsPage_history__bodyStats") {
       edges {
         node {
           ...BodyStatsTable_entries
@@ -241,26 +240,19 @@ function BodyStatsHistory({ fetchKey, onCreate, onEdit, onDelete }: HistoryProps
   const { data, hasNext, isLoadingNext, loadNext } = usePaginationFragment<
     BodyStatsPageHistoryMoreQuery,
     BodyStatsPage_history$key
-  >(historyFragment, useLazyLoadQuery<BodyStatsPageHistoryQuery>(
-    historyQuery,
-    {},
-    { fetchKey, fetchPolicy: 'store-or-network' },
-  ))
-  const [loadMoreError, setLoadMoreError] = useState(false)
+  >(
+    historyFragment,
+    useLazyLoadQuery<BodyStatsPageHistoryQuery>(
+      historyQuery,
+      {},
+      { fetchKey, fetchPolicy: 'store-or-network' },
+    ),
+  )
+  const { loadMore, loadMoreError } = useLoadMore(loadNext, isLoadingNext, HISTORY_PAGE_SIZE)
   const rows = useMemo(
     () => (data.bodyStats?.edges ?? []).map((edge) => edge.node),
     [data.bodyStats],
   )
-
-  const loadMore = () => {
-    if (isLoadingNext) return
-    setLoadMoreError(false)
-    loadNext(HISTORY_PAGE_SIZE, {
-      onComplete: (error) => {
-        if (error) setLoadMoreError(true)
-      },
-    })
-  }
 
   return (
     <Stack gap="4">
@@ -279,7 +271,6 @@ function BodyStatsHistory({ fetchKey, onCreate, onEdit, onDelete }: HistoryProps
         isLoadingNext={isLoadingNext}
         loadMoreError={loadMoreError}
         onLoadMore={loadMore}
-        onRetryLoadMore={loadMore}
         onEdit={onEdit}
         onDelete={onDelete}
       />
@@ -290,7 +281,9 @@ function BodyStatsHistory({ fetchKey, onCreate, onEdit, onDelete }: HistoryProps
 function BodyStatsHistorySkeleton() {
   return (
     <Stack gap="2" role="status" aria-busy="true">
-      {Array.from({ length: 4 }, (_, i) => <Skeleton key={i} h="10" />)}
+      {Array.from({ length: 4 }, (_, i) => (
+        <Skeleton key={i} h="10" />
+      ))}
     </Stack>
   )
 }

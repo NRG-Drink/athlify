@@ -1,6 +1,5 @@
 import { Field, NativeSelect, Text } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
-import { periods } from '../../lib/period'
 import {
   activityTypes,
   setActivityFilter,
@@ -32,37 +31,37 @@ export function ActivityFilterField({
 }: ActivityFilterFieldProps) {
   const { t } = useTranslation()
   const label = t(`activities.filters.${field}`)
-  const options: readonly FilterOption[] =
-    field === 'period'
-      ? periods.map((period) => ({ id: period, label: t(`period.long.${period}`) }))
-      : field === 'type'
-        ? activityTypes.map((type) => ({ id: type, label: t(`activities.types.${type}`) }))
-        : field === 'wind'
-          ? winds.map((wind) => ({ id: wind, label: t(`activities.winds.${wind}`) }))
-          : field === 'vehicle'
-            ? vehicles
-            : tags
-  const selected =
-    field === 'period'
-      ? value.period
-      : field === 'type'
-        ? (value.type ?? '')
-        : field === 'wind'
-          ? (value.wind ?? '')
-          : field === 'vehicle'
-            ? (value.vehicleId ?? '')
-            : (value.tagId ?? '')
-  const allLabel =
-    field === 'type'
-      ? t('activities.filters.allTypes')
-      : field === 'vehicle'
-        ? t('activities.filters.allVehicles')
-        : field === 'tag'
-          ? t('activities.filters.allTags')
-          : field === 'wind'
-            ? t('activities.filters.allWinds')
-            : undefined
-  const hasMore = field === 'vehicle' ? hasMoreVehicles : field === 'tag' ? hasMoreTags : false
+  // What differs per filter: its options, the selected value and the "all" option.
+  const config: Record<
+    ActivityFilterKey,
+    { options: readonly FilterOption[]; selected: string; allLabel: string; hasMore: boolean }
+  > = {
+    type: {
+      options: activityTypes.map((type) => ({ id: type, label: t(`activities.types.${type}`) })),
+      selected: value.type ?? '',
+      allLabel: t('activities.filters.allTypes'),
+      hasMore: false,
+    },
+    vehicle: {
+      options: vehicles,
+      selected: value.vehicleId ?? '',
+      allLabel: t('activities.filters.allVehicles'),
+      hasMore: hasMoreVehicles,
+    },
+    tag: {
+      options: tags,
+      selected: value.tagId ?? '',
+      allLabel: t('activities.filters.allTags'),
+      hasMore: hasMoreTags,
+    },
+    wind: {
+      options: winds.map((wind) => ({ id: wind, label: t(`activities.winds.${wind}`) })),
+      selected: value.wind ?? '',
+      allLabel: t('activities.filters.allWinds'),
+      hasMore: false,
+    },
+  }
+  const { options, selected, allLabel, hasMore } = config[field]
 
   return (
     <Field.Root>
@@ -73,7 +72,7 @@ export function ActivityFilterField({
           aria-label={label}
           onChange={(event) => onChange(setActivityFilter(value, field, event.target.value))}
         >
-          {allLabel && <option value="">{allLabel}</option>}
+          <option value="">{allLabel}</option>
           {options.map((option) => (
             <option key={option.id} value={option.id}>
               {option.label}
