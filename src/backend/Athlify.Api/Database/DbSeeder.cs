@@ -10,12 +10,18 @@ public class DbSeeder : IDbSeeder
     private const int SampleDays = 365;
     public const string BodyStatsSeedKey = "body-stats-v1";
     public const string ActivitySeedKey = "activities-v1";
+    public const string MoreActivitiesSeedKey = "activities-more-v1";
+    public const int BaseActivityCount = 36;
+    public const int ExtraActivityCount = 84;
+    public static readonly IReadOnlyList<string> SampleTagNames = ["endurance", "intervals", "commute", "hills"];
 
     public void Seed(AthlifyDbContext context, int ownerId)
     {
         // Without a marker, days the user deleted would be refilled on every start.
         SeedOnce(context, ownerId, BodyStatsSeedKey, () => AddBodyStats(context, ownerId));
         SeedOnce(context, ownerId, ActivitySeedKey, () => AddActivities(context, ownerId));
+        // Extra rides so the list spans several pages; a separate marker tops up users seeded before.
+        SeedOnce(context, ownerId, MoreActivitiesSeedKey, () => AddMoreActivities(context, ownerId));
     }
 
     /// <summary>Runs <paramref name="addFixture"/> unless <paramref name="key"/> is marked, then saves fixture and marker together.</summary>
@@ -68,13 +74,7 @@ public class DbSeeder : IDbSeeder
 
     private static void AddActivities(AthlifyDbContext context, int ownerId)
     {
-        var tags = GetOrCreateTags(context, ownerId, ["endurance", "intervals", "commute", "hills"]);
-        var today = DateTime.UtcNow.Date;
-        var activities = Enumerable.Range(0, 36)
-            .Select(index => CreateActivity(index, today, ownerId, tags))
-            .ToList();
-
-        context.Activities.AddRange(activities);
+        var activities = AddActivityRange(context, ownerId, 0, BaseActivityCount);
 
         var merge = new ActivityMerge
         {
@@ -84,6 +84,26 @@ public class DbSeeder : IDbSeeder
         };
         MergeMembership.Refresh(merge, context);
         context.ActivityMerges.Add(merge);
+    }
+
+    private static void AddMoreActivities(AthlifyDbContext context, int ownerId)
+    {
+        AddActivityRange(context, ownerId, BaseActivityCount, ExtraActivityCount);
+    }
+
+    private static List<Activity> AddActivityRange(
+        AthlifyDbContext context,
+        int ownerId,
+        int startIndex,
+        int count)
+    {
+        var tags = GetOrCreateTags(context, ownerId, SampleTagNames);
+        var today = DateTime.UtcNow.Date;
+        var activities = Enumerable.Range(startIndex, count)
+            .Select(index => CreateActivity(index, today, ownerId, tags))
+            .ToList();
+        context.Activities.AddRange(activities);
+        return activities;
     }
 
     private static Dictionary<string, Tag> GetOrCreateTags(

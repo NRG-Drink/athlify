@@ -47,14 +47,14 @@ public class DbSeederTests
             .Include(m => m.Activities)
             .ToListAsync();
 
-        await Assert.That(activities).Count().IsEqualTo(36);
+        await Assert.That(activities).Count().IsEqualTo(DbSeeder.BaseActivityCount + DbSeeder.ExtraActivityCount);
         await Assert.That(activities.Select(a => a.Type).Distinct()).Count().IsEqualTo(4);
         await Assert.That(activities.Select(a => a.Id)).IsEquivalentTo(firstActivityIds);
         await Assert.That(activities.All(a => a.Description == "Edited by developer")).IsTrue();
         await Assert.That(activities.Any(a => a.AverageSpeed is not null)).IsTrue();
         await Assert.That(activities.Any(a => a.Effort is null && a.HeartRateAverage is null)).IsTrue();
         await Assert.That(activities.SelectMany(a => a.Tags).Select(t => t.Name).Distinct())
-            .IsEquivalentTo(["endurance", "intervals", "commute", "hills"]);
+            .IsEquivalentTo(DbSeeder.SampleTagNames);
         await Assert.That(await context.Tags.IgnoreQueryFilters().CountAsync(t => t.UserId == ownerId))
             .IsEqualTo(firstTagCount);
         await Assert.That(await context.ActivityMerges.IgnoreQueryFilters().CountAsync(m => m.UserId == ownerId))
@@ -85,8 +85,9 @@ public class DbSeederTests
 
         new DbSeeder().Seed(context, ownerId);
 
+        // The one existing activity plus the full seed.
         await Assert.That(await context.Activities.IgnoreQueryFilters().CountAsync(a => a.UserId == ownerId))
-            .IsEqualTo(37);
+            .IsEqualTo(1 + DbSeeder.BaseActivityCount + DbSeeder.ExtraActivityCount);
         await Assert.That(await context.Activities.IgnoreQueryFilters()
             .AnyAsync(a => a.UserId == ownerId && a.Description == "My own ride")).IsTrue();
     }

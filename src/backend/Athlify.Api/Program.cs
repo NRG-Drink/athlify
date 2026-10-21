@@ -91,7 +91,12 @@ public partial class Program
             DbSeeding.RunIfEnabled(seedOptions, app.Environment, app.Logger, () => seeder.Seed(db, developmentUserId));
         }
 
-        app.UseCors("FrontendDev");
+        // Only the local Vite dev server needs cross-origin access; other environments are same-origin.
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseCors("FrontendDev");
+        }
+
         app.UseDefaultFiles();
         app.UseStaticFiles();
 
