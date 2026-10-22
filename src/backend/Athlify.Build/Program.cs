@@ -82,6 +82,7 @@ internal class Program
             .AddModule<DotnetTestReportGenerate>()
                 .AddModule<DotnetToolRestore>()
                 .AddModule<DotnetTestReportOpen>()
+                .AddModule<DotnetTestReportCopyToArtifactsUpload>()
                 .AddModule<DotnetTestReportAppendToGitHubSummary>();
 
         // Node
@@ -95,7 +96,8 @@ internal class Program
             .AddModule<NodeRelay>()
             .AddModule<NodeBuild>()
             .AddModule<NodeTestWithCoverage>()
-                .AddModule<NodeTestReportOpen>();
+                .AddModule<NodeTestReportOpen>()
+                .AddModule<NodeTestReportCopyToArtifactsUpload>();
 
         if (!args.Contains("test-only"))
         {

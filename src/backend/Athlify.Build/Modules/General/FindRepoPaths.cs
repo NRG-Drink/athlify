@@ -23,7 +23,7 @@ public class FindRepoPaths(IOptions<FindRepoPathSettings> repoPathSettings) : Mo
     protected override async Task<RepoPaths?> ExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
     {
         var rootDir = context.Git().RootDirectory;
-        var isServer = context.GitHub().EnvironmentVariables.CI;
+        var isServer = context.IsRunningInCI();
         var paths = new RepoPaths()
         {
             IsServer = isServer,

@@ -9,15 +9,20 @@ public record RepoPaths
     public static readonly string RunStart = $"{DateTime.Now:yyyy-MM-ddTHHmmss}";
     public required bool IsServer { get; init; }
 
+    // General
     public required Folder Repo { get; init; } = new(".");
+    public Folder Artifacts => new(Path.Combine(Repo.Path, IsServer ? "artifacts" : ".artifacts"));
+    public Folder ArtifactsUpload => new(Path.Combine(Repo.Path, "artifacts-upload"));
+    public Folder ArtifactsUploadTestReports => new(Path.Combine(ArtifactsUpload.Path, "test-reports"));
 
     // Frontend
-    public Folder FrontendRoot { get; set; } = new("./src/frontend/athlify");
+    public Folder FrontendRoot { get; set; } = new(Path.Combine(".", "src", "frontend", "athlify"));
     public Folder FrontendDist => new(Path.Combine(FrontendRoot.Path, "dist"));
+    public Folder FrontendCoverage => new(Path.Combine(FrontendRoot.Path, "coverage"));
     public MPFile FrontendTestReportHtml => new(Path.Combine(FrontendRoot.Path, "coverage", "index.html"));
 
     // Backend
-    public Folder BackendRoot { get; set; } = new("./src/backend");
+    public Folder BackendRoot { get; set; } = new(Path.Combine(".", "src", "backend"));
     public string BackendWwwRootAppRelative { get; set; } = Path.Combine("wwwroot");
     public MPFile Solution { get; init; } = new(".");
 
@@ -28,7 +33,6 @@ public record RepoPaths
     public List<MPFile> ModuleProjects { get; init; } = [];
     public List<MPFile> ContainerProjects { get; init; } = [];
 
-    public Folder Artifacts => new(Path.Combine(Repo.Path, IsServer ? "artifacts" : ".artifacts"));
     // Test
     public Folder TestResultsBase => new(Path.Combine(Repo.Path, ".test-results"));
     public Folder TestHistory => new(Path.Combine(TestResultsBase.Path, $"_history"));
