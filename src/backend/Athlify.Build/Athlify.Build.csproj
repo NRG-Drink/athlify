@@ -22,6 +22,7 @@
 
 <ItemGroup>
   <None Include="..\..\..\.github\workflows\ci-cd.build-test-pack-publish-push.yml" Link="workflows\ci-cd.build-test-pack-publish-push.yml" />
+  <None Include="..\..\..\.github\workflows\ci-cd.build-test.yml" Link="workflows\ci-cd.build-test.yml" />
 </ItemGroup>
 
 </Project>
