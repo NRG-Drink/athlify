@@ -13,7 +13,7 @@ export type BodyStatsFormErrors = Partial<Record<BodyStatsMetricKey | 'date', st
 export const MAX_NOTE_LENGTH = 2000
 
 /** Current local date and time in the `datetime-local` input format. */
-export function nowInputValue(now = new Date()): string {
+function nowInputValue(now = new Date()): string {
   const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
   return local.toISOString().slice(0, 16)
 }
@@ -24,7 +24,7 @@ export function toInputValue(iso: string): string {
 }
 
 /** Parses user input with a decimal point or comma; `NaN` for anything that is not a number. */
-export function parseDecimal(raw: string): number {
+function parseDecimal(raw: string): number {
   const text = raw.trim().replace(',', '.')
   return text === '' ? NaN : Number(text)
 }

@@ -55,13 +55,17 @@ If a requirement is not supported by these sources, do not invent a function. Do
 The frontend is under `../../../src/frontend/athlify/`. It uses React 19,
 TypeScript, Vite, Chakra UI v3, Tailwind CSS v4, react-router-dom and
 i18next. It provides the App Layout (header with Primary Navigation, User
-Menu with language switcher and color mode, mobile drawer), the `Page` frame
-and placeholder pages, the "Night Ride" theme in `src/theme/`
+Menu with language switcher and color mode, mobile drawer), the `Page` frame,
+the "Night Ride" theme in `src/theme/`
 ([ADR-005](adr/ADR-005-theme-tokens.md)), plus the Body-Stats domain page
 ([ADR-007](adr/ADR-007-domain-page-pattern.md)): summary tiles, a chart of the
-selected measurement over a selectable period, and a history table with add,
+selected measurement over a selectable date range, and a history table with add,
 edit and delete against the backend API. New entries are prefilled from the
-entry with the newest date. The other areas are placeholders, although their backend API exists. The backend is under `../../../src/backend/`. See
+entry with the newest date. The Activities page is a read-only list backed by
+the `activities` connection, with period, type, bicycle and tag filters stored
+in the URL and cursor-based "load more" pagination. Dashboard, Garage and
+Events remain placeholders, although their backend API exists. The backend is
+under `../../../src/backend/`. See
 [`SAD.md`](SAD.md) for the folder layout and open decisions. Do not present
 the exploration UI as completed product functionality.
 

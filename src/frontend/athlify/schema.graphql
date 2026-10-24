@@ -150,7 +150,6 @@ type Query {
       requireOneSlicingArgument: false
     )
     @cost(weight: "10")
-  helloPerson(name: String! = "World"): String!
 }
 
 type Mutation {

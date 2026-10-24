@@ -1,4 +1,4 @@
-import { Table, Text, VisuallyHidden, chakra } from '@chakra-ui/react'
+import { Flex, Table, Text, VisuallyHidden, chakra } from '@chakra-ui/react'
 import {
   createColumnHelper,
   createSortedRowModel,
@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-table'
 import { useMemo, type KeyboardEvent, type ReactNode } from 'react'
 import { LuArrowDown, LuArrowUp, LuArrowUpDown } from 'react-icons/lu'
+import { ColumnFilter, type DataTableColumnFilter } from './ColumnFilter'
 
 export interface DataTableColumn<T extends object> {
   id: string
@@ -20,12 +21,21 @@ export interface DataTableColumn<T extends object> {
   /** Unit shown after the header label, for example `kg`. */
   unit?: string
   /** Hides the column below this breakpoint (phones keep only the essential columns). */
-  hideBelow?: 'sm' | 'md' | 'lg'
+  hideBelow?: Breakpoint
+  /** Secondary data: shown in a muted colour. */
+  muted?: boolean
   /** Keeps long text to one line with an ellipsis. */
   truncate?: boolean
   /** Fixed width, for example `7rem`; the other columns share the remaining space. */
   width?: string
+  /** Width bounds of a truncated column, for example `12rem`; without them it collapses to nothing. */
+  minWidth?: string
+  maxWidth?: string
+  /** Filter popover next to the sort button of the header. */
+  filter?: DataTableColumnFilter
 }
+
+type Breakpoint = 'sm' | 'md' | 'lg' | '2xl'
 
 export interface DataTableProps<T extends object> {
   data: readonly T[]
@@ -40,6 +50,10 @@ export interface DataTableProps<T extends object> {
   rowActions?: (row: T) => ReactNode
   /** Opens the row's default action (click, or Enter on the focused row). */
   onRowClick?: (row: T) => void
+  /** Shown in a full-width row instead of the body when `data` is empty; the header stays. */
+  emptyMessage?: ReactNode
+  /** The data is being refreshed: the rows stay, dimmed, and the table is marked busy. */
+  busy?: boolean
 }
 
 const features = tableFeatures({
@@ -47,7 +61,7 @@ const features = tableFeatures({
   sortedRowModel: createSortedRowModel(),
 })
 
-const hidden = (hideBelow?: 'sm' | 'md' | 'lg') =>
+const hidden = (hideBelow?: Breakpoint) =>
   hideBelow ? { base: 'none', [hideBelow]: 'table-cell' } : undefined
 
 export function DataTable<T extends object>({
@@ -59,6 +73,8 @@ export function DataTable<T extends object>({
   actionsLabel,
   rowActions,
   onRowClick,
+  emptyMessage,
+  busy,
 }: DataTableProps<T>) {
   const rows = useMemo(() => [...data], [data])
   const byId = useMemo(() => new Map(columns.map((column) => [column.id, column])), [columns])
@@ -86,8 +102,15 @@ export function DataTable<T extends object>({
   }
 
   return (
-    <Table.ScrollArea>
-      <Table.Root size="md" css={{ tableLayout: 'auto' }}>
+    // Bounded height: the horizontal scrollbar then sits at the bottom of the visible area instead
+    // of the end of a long list, and the header stays in view while scrolling vertically.
+    <Table.ScrollArea
+      maxH="calc(100dvh - 14rem)"
+      minH="16rem"
+      opacity={busy ? 0.6 : undefined}
+      transition="opacity 0.15s"
+    >
+      <Table.Root size="md" css={{ tableLayout: 'auto' }} aria-busy={busy || undefined}>
         <Table.Caption srOnly>{caption}</Table.Caption>
         <Table.Header>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -104,46 +127,62 @@ export function DataTable<T extends object>({
                     display={hidden(column.hideBelow)}
                     w={column.width}
                     whiteSpace="nowrap"
-                    position={index === 0 ? 'sticky' : undefined}
+                    position="sticky"
+                    top="0"
                     left={index === 0 ? '0' : undefined}
-                    zIndex={index === 0 ? 1 : undefined}
-                    bg={index === 0 ? 'bg' : undefined}
+                    zIndex={index === 0 ? 2 : 1}
+                    bg="bg"
                     aria-sort={
                       sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : 'none'
                     }
+                    css={{
+                      '& [data-filter-idle]': { opacity: 0 },
+                      '&:hover [data-filter-idle], &:focus-within [data-filter-idle]': {
+                        opacity: 0.6,
+                      },
+                      '@media (hover: none)': { '& [data-filter-idle]': { opacity: 0.6 } },
+                    }}
                   >
-                    <chakra.button
-                      type="button"
-                      onClick={header.column.getToggleSortingHandler()}
+                    <Flex
                       display="inline-flex"
-                      alignItems="center"
+                      align="center"
                       gap="1"
                       flexDirection={end ? 'row-reverse' : 'row'}
-                      font="inherit"
-                      color="inherit"
-                      cursor="pointer"
-                      borderRadius="l1"
-                      focusVisibleRing="outside"
-                      css={{
-                        '& [data-sort-idle]': { opacity: 0 },
-                        '&:hover [data-sort-idle], &:focus-visible [data-sort-idle]': {
-                          opacity: 0.6,
-                        },
-                      }}
                     >
-                      <span>
-                        {column.header}
-                        {column.unit && (
-                          <Text as="span" fontWeight="normal" color="fg.muted">
-                            {' '}
-                            {column.unit}
-                          </Text>
-                        )}
-                      </span>
-                      {sorted === 'asc' && <LuArrowUp aria-hidden />}
-                      {sorted === 'desc' && <LuArrowDown aria-hidden />}
-                      {!sorted && <LuArrowUpDown aria-hidden data-sort-idle />}
-                    </chakra.button>
+                      <chakra.button
+                        type="button"
+                        onClick={header.column.getToggleSortingHandler()}
+                        display="inline-flex"
+                        alignItems="center"
+                        gap="1"
+                        flexDirection={end ? 'row-reverse' : 'row'}
+                        font="inherit"
+                        color="inherit"
+                        cursor="pointer"
+                        borderRadius="l1"
+                        focusVisibleRing="outside"
+                        css={{
+                          '& [data-sort-idle]': { opacity: 0 },
+                          '&:hover [data-sort-idle], &:focus-visible [data-sort-idle]': {
+                            opacity: 0.6,
+                          },
+                        }}
+                      >
+                        <span>
+                          {column.header}
+                          {column.unit && (
+                            <Text as="span" fontWeight="normal" color="fg.muted">
+                              {' '}
+                              {column.unit}
+                            </Text>
+                          )}
+                        </span>
+                        {sorted === 'asc' && <LuArrowUp aria-hidden />}
+                        {sorted === 'desc' && <LuArrowDown aria-hidden />}
+                        {!sorted && <LuArrowUpDown aria-hidden data-sort-idle />}
+                      </chakra.button>
+                      {column.filter && <ColumnFilter {...column.filter} />}
+                    </Flex>
                   </Table.ColumnHeader>
                 )
               })}
@@ -156,6 +195,13 @@ export function DataTable<T extends object>({
           ))}
         </Table.Header>
         <Table.Body>
+          {rows.length === 0 && emptyMessage && (
+            <Table.Row>
+              <Table.Cell colSpan={columns.length + (rowActions ? 1 : 0)}>
+                {emptyMessage}
+              </Table.Cell>
+            </Table.Row>
+          )}
           {table.getRowModel().rows.map((row) => (
             <Table.Row
               key={row.id}
@@ -177,7 +223,9 @@ export function DataTable<T extends object>({
                     display={hidden(column.hideBelow)}
                     fontVariantNumeric={end ? 'tabular-nums' : undefined}
                     whiteSpace={column.truncate ? undefined : 'nowrap'}
-                    maxW={column.truncate ? '0' : undefined}
+                    minW={column.minWidth}
+                    maxW={column.truncate ? (column.maxWidth ?? '0') : undefined}
+                    color={column.muted ? 'fg.muted' : undefined}
                     overflow={column.truncate ? 'hidden' : undefined}
                     textOverflow={column.truncate ? 'ellipsis' : undefined}
                     position={index === 0 ? 'sticky' : undefined}

@@ -202,4 +202,36 @@ public class ActivityTests : WebApiTestBase
         await Assert.That(ids[^1]).IsEqualTo(older);
         await Assert.That(second.GetProperty("pageInfo").GetProperty("hasNextPage").GetBoolean()).IsFalse();
     }
+
+    // The cost limit is checked statically from the query shape, so one activity is enough. This is the
+    // query of the frontend's Activities page (a page of 50 with a period filter, vehicle, gadgets and tags).
+    [Test]
+    public async Task ActivitiesPageQueryStaysWithinTheCostLimit()
+    {
+        var client = await CreateUserClientAsync();
+        await CreateActivityAsync(client, ActivityInput());
+
+        const string pageQuery = """
+            query($first: Int = 50, $where: ActivityFilterInput) {
+              activities(first: $first, where: $where) {
+                edges {
+                  node {
+                    id date type description time distance averageSpeed elevationGain tss
+                    heartRateMin heartRateMax heartRateAverage mood effort wind
+                    vehicle { id brand model nickname }
+                    gadgets { id brand model nickname }
+                    tags { id name }
+                  }
+                  cursor
+                }
+                pageInfo { hasNextPage endCursor }
+              }
+            }
+            """;
+        var where = new { date = new { gte = DateTime.UtcNow.AddDays(-90).ToString("O") } };
+
+        var data = await DataAsync(client, pageQuery, new { first = 50, where });
+
+        await Assert.That(data.GetProperty("activities").GetProperty("edges").GetArrayLength()).IsEqualTo(1);
+    }
 }

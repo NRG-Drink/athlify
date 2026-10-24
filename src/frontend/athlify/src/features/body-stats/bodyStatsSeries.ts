@@ -19,7 +19,7 @@ const seriesFragment = graphql`
 
 export type BodyStatsSeries = Record<BodyStatsMetricKey, MetricPoint[]>
 
-export function toSeries(entries: bodyStatsSeries_entries$data): BodyStatsSeries {
+function toSeries(entries: bodyStatsSeries_entries$data): BodyStatsSeries {
   const series = {} as BodyStatsSeries
   for (const { key } of bodyStatsMetrics) {
     series[key] = entries.map((entry) => ({ date: new Date(entry.date), value: entry[key] }))
@@ -31,5 +31,3 @@ export function toSeries(entries: bodyStatsSeries_entries$data): BodyStatsSeries
 export function useBodyStatsSeries(entries: bodyStatsSeries_entries$key): BodyStatsSeries {
   return toSeries(useFragment(seriesFragment, entries))
 }
-
-export type { bodyStatsSeries_entries$key }

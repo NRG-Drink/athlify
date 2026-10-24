@@ -15,16 +15,16 @@ import type { MetricPoint, MetricUnit } from '../lib/metrics'
 import { niceScale, timeTicks } from '../lib/ticks'
 
 export interface MetricChartProps {
-  /** Already filtered to the period and sorted oldest first. */
+  /** Already filtered to the selected date range and sorted oldest first. */
   points: readonly MetricPoint[]
   unit: MetricUnit
   decimals: number
   /** Accessible name; the chart is a graphic, so it also carries a text summary. */
   summary: string
-  /** Time span shown on the X axis, for the period boundary and the tick format. */
+  /** Time span shown on the X axis, for the date-range boundary and tick format. */
   domain: [Date, Date]
   emptyMessage: string
-  /** Shown under the empty message, for example a button that widens the period. */
+  /** Shown under the empty message when a view offers a range action. */
   emptyAction?: ReactNode
   height?: number
 }
@@ -73,8 +73,9 @@ export function MetricChart({
   }
 
   const values = data.map((entry) => entry.value)
-  const min = Math.min(...values)
-  const max = Math.max(...values)
+  // A reduce instead of Math.min(...values): spreading a long history can exceed the argument limit.
+  const min = values.reduce((low, value) => (value < low ? value : low))
+  const max = values.reduce((high, value) => (value > high ? value : high))
   const scale = niceScale(min, max, 4)
   const span = spanFor(domain)
 

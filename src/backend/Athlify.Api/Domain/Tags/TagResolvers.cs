@@ -4,6 +4,7 @@ using GreenDonut.Data;
 using HotChocolate.Types.Pagination;
 using HotChocolate.Types.Relay;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Athlify.Api.Domain.Tags;
 
@@ -111,7 +112,8 @@ public static partial class TagMutation
         {
             await db.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException)
+        // Only a unique violation (SQLSTATE 23505) is a duplicate name; other database errors must surface as they are.
+        catch (DbUpdateException exception) when (exception.InnerException is PostgresException { SqlState: "23505" })
         {
             throw DomainErrors.Validation("A tag with this name already exists.");
         }

@@ -86,7 +86,8 @@ describe('BodyStatsPage', () => {
 
       expect(weight).toHaveAttribute('aria-pressed', 'true')
       expect(weight).toHaveTextContent('70.5')
-      expect(weight).toHaveTextContent('−0.7 kg in 90 Tagen')
+      expect(weight).toHaveTextContent('−0.7 kg')
+      expect(weight).not.toHaveTextContent('5. Juli 2026')
       expect(tiles().getByRole('button', { name: /Körperfett/ })).toHaveAttribute(
         'aria-pressed',
         'false',
@@ -101,17 +102,38 @@ describe('BodyStatsPage', () => {
       expect(calls(QUERY)).toHaveLength(1)
     })
 
-    it('keeps loading pages until the whole history is there', async () => {
+    it('keeps loading pages of the analytics history while the table shows its first page', async () => {
       const { calls } = page((operation) =>
         operation === MORE
           ? { data: { bodyStats: connection([oldest, longAgo]) } }
           : { data: { bodyStats: connection([newest, middle], true) } },
       )
 
-      await waitFor(() => expect(rowCount()).toBe(4))
+      await waitFor(() => expect(calls(MORE)).toHaveLength(1))
 
       expect(calls(MORE)).toEqual([{ first: 200, after: 'bs-b' }])
       expect(calls(QUERY)).toHaveLength(1)
+      expect(rowCount()).toBe(2)
+      expect(screen.getByRole('button', { name: 'Weitere Messungen laden' })).toBeInTheDocument()
+    })
+
+    it('keeps the content on screen while further pages load', async () => {
+      const { calls } = page((operation) =>
+        operation === MORE
+          ? { data: { bodyStats: connection([oldest, longAgo]) } }
+          : { data: { bodyStats: connection([newest, middle], true) } },
+      )
+      await tiles().findByRole('button', { name: /Gewicht/ })
+
+      let skeletonShown = false
+      const observer = new MutationObserver(() => {
+        if (document.querySelector('[aria-busy="true"]')) skeletonShown = true
+      })
+      observer.observe(document.body, { childList: true, subtree: true, attributes: true })
+      await waitFor(() => expect(calls(MORE)).toHaveLength(1))
+      observer.disconnect()
+
+      expect(skeletonShown).toBe(false)
     })
 
     it('stops loading and tells the user when a further page fails', async () => {
@@ -150,60 +172,112 @@ describe('BodyStatsPage', () => {
       expect(router.state.location.search).toContain('metric=bodyFatPercentage')
     })
 
-    it('restores metric and period from the URL and ignores invalid values', async () => {
+    it('restores metric and legacy period from the URL', async () => {
       page(() => okQuery(), '/body-stats?metric=boneMass&period=1y')
       expect(
-        await screen.findByRole('img', { name: /^Knochenmasse, Letztes Jahr/ }),
+        await screen.findByRole('img', { name: /^Knochenmasse, .*4 Messungen/ }),
       ).toBeInTheDocument()
+    })
+
+    it('restores aggregation from the URL and keeps KPI deltas raw', async () => {
+      page(
+        () => okQuery(),
+        '/body-stats?from=2026-01-01&to=2026-10-03&aggregation=month',
+      )
+
+      expect(await screen.findByRole('img', { name: /3 Messungen/ })).toBeInTheDocument()
+      expect(tiles().getByRole('button', { name: /Gewicht/ })).toHaveTextContent('−3.5 kg')
+      expect(screen.getByRole('button', { name: /Zeitraum ändern: Zeitraum:/ })).toHaveTextContent(
+        '1 M',
+      )
     })
 
     it('falls back to the defaults for invalid URL parameters', async () => {
       page(() => okQuery(), '/body-stats?metric=nonsense&period=forever')
 
       expect(
-        await screen.findByRole('img', { name: /^Gewicht, Letzte 90 Tage/ }),
+        await screen.findByRole('img', { name: /^Gewicht, .*3 Messungen/ }),
       ).toBeInTheDocument()
     })
 
-    it('changes the period of chart and tiles', async () => {
-      const { user, router } = page(() => okQuery())
+    it('changes the date range of chart and tiles', async () => {
+      const { user, router, calls } = page(() => okQuery())
       await screen.findByRole('img', { name: /3 Messungen/ })
 
-      await user.click(screen.getByRole('button', { name: 'Letztes Jahr' }))
+      await user.click(screen.getByRole('button', { name: /Zeitraum ändern: Zeitraum:/ }))
+      const from = screen.getByLabelText('Von')
+      const to = screen.getByLabelText('Bis')
+      await user.clear(from)
+      await user.type(from, '2026-01-01')
+      await user.clear(to)
+      await user.type(to, '2026-10-03')
+      await user.click(screen.getByRole('button', { name: 'Anwenden' }))
 
       expect(
         await screen.findByRole('img', {
-          name: /Letztes Jahr: von 74\.0 kg auf 70\.5 kg, 4 Messungen/,
+          name: /1\. Jan\. 2026 bis 3\. Okt\. 2026: von 74\.0 kg auf 70\.5 kg, 4 Messungen/,
         }),
       ).toBeInTheDocument()
       expect(tiles().getByRole('button', { name: /Gewicht/ })).toHaveTextContent(
-        '−3.5 kg im letzten Jahr',
+        '−3.5 kg',
       )
-      expect(router.state.location.search).toContain('period=1y')
+      expect(router.state.location.search).toContain('from=2026-01-01')
+      expect(router.state.location.search).toContain('to=2026-10-03')
+      expect(calls(QUERY)).toHaveLength(1)
     })
 
-    it('says so when the period has too little data for a change', async () => {
-      page(() => okQuery([newest, longAgo]), '/body-stats?period=30d')
+    it('changes aggregation locally without refetching or changing KPI delta', async () => {
+      const { user, router, calls } = page(
+        () => okQuery(),
+        '/body-stats?from=2026-01-01&to=2026-10-03',
+      )
+      await screen.findByRole('img', { name: /4 Messungen/ })
+
+      await user.click(screen.getByRole('button', { name: /Zeitraum ändern: Zeitraum:/ }))
+      await user.selectOptions(screen.getByLabelText('Auflösung'), 'year')
+      await user.click(screen.getByRole('button', { name: 'Anwenden' }))
+
+      expect(await screen.findByRole('img', { name: /1 Messung/ })).toBeInTheDocument()
+      expect(tiles().getByRole('button', { name: /Gewicht/ })).toHaveTextContent('−3.5 kg')
+      expect(router.state.location.search).toContain('aggregation=year')
+      expect(calls(QUERY)).toHaveLength(1)
+    })
+
+    it('shows every measurement when aggregation is disabled', async () => {
+      const { user, router, calls } = page(
+        () => okQuery(),
+        '/body-stats?from=2026-01-01&to=2026-10-03&aggregation=none',
+      )
+
+      expect(await screen.findByRole('img', { name: /4 Messungen/ })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Zeitraum ändern: Zeitraum:/ })).toHaveTextContent(
+        'Keine',
+      )
+
+      await user.click(screen.getByRole('button', { name: /Zeitraum ändern: Zeitraum:/ }))
+      await user.selectOptions(screen.getByLabelText('Auflösung'), 'none')
+      await user.click(screen.getByRole('button', { name: 'Anwenden' }))
+
+      expect(await screen.findByRole('img', { name: /4 Messungen/ })).toBeInTheDocument()
+      expect(router.state.location.search).toContain('aggregation=none')
+      expect(calls(QUERY)).toHaveLength(1)
+    })
+
+    it('says so when the range has too little data for a change', async () => {
+      page(() => okQuery([newest, longAgo]), '/body-stats?from=2026-09-01&to=2026-10-03')
 
       expect(await tiles().findByRole('button', { name: /Gewicht/ })).toHaveTextContent(
         'Zu wenig Daten im Zeitraum',
       )
     })
 
-    it('offers the whole period when nothing was measured in the selected one', async () => {
-      const { user, router } = page(() => okQuery([longAgo]), '/body-stats?period=30d')
+    it('says so when nothing was measured in the selected range', async () => {
+      page(() => okQuery([longAgo]), '/body-stats?from=2026-09-01&to=2026-10-03')
 
-      expect(await screen.findByText('Keine Messungen in den letzten 30 Tagen')).toBeInTheDocument()
+      expect(await screen.findByText('Keine Messungen in diesem Zeitraum.')).toBeInTheDocument()
       expect(tiles().getByRole('button', { name: /Gewicht/ })).toHaveTextContent(
         'Keine Messung im Zeitraum',
       )
-
-      await user.click(screen.getByRole('button', { name: 'Ganzen Zeitraum anzeigen' }))
-
-      expect(
-        await screen.findByRole('img', { name: /^Gewicht, Gesamter Zeitraum/ }),
-      ).toBeInTheDocument()
-      expect(router.state.location.search).toContain('period=all')
     })
 
     it('uses the same names in tiles, table and form', async () => {
@@ -231,7 +305,10 @@ describe('BodyStatsPage', () => {
 
       await act(() => i18n.changeLanguage('en'))
 
-      expect(await tiles().findByRole('button', { name: /Weight/ })).toHaveTextContent('in 90 days')
+      expect(await tiles().findByRole('button', { name: /Weight/ })).toHaveTextContent('−0.7 kg')
+      expect(screen.getByRole('button', { name: /Change date range: Date range:/ })).toHaveTextContent(
+        'Date range: 5 Jul 2026 – 3 Oct 2026',
+      )
       expect(within(table()).getByRole('button', { name: /Weight/ })).toBeInTheDocument()
       expect(within(bodyRows()[0]).getByText(/2 Oct 2026/)).toBeInTheDocument()
     })
@@ -241,7 +318,8 @@ describe('BodyStatsPage', () => {
     it('shows a skeleton of the page while loading', async () => {
       page(() => new Promise(() => {}))
 
-      expect(await screen.findByRole('status')).toHaveAttribute('aria-busy', 'true')
+      const [skeleton] = await screen.findAllByRole('status')
+      expect(skeleton).toHaveAttribute('aria-busy', 'true')
       expect(screen.getByRole('heading', { level: 1, name: 'Body-Stats' })).toBeInTheDocument()
     })
 
@@ -300,6 +378,82 @@ describe('BodyStatsPage', () => {
       expect(await tiles().findByRole('button', { name: /Gewicht/ })).toBeInTheDocument()
       expect(screen.queryByRole('alert')).not.toBeInTheDocument()
       expect(calls(QUERY)).toHaveLength(2)
+    })
+  })
+
+  describe('history paging', () => {
+    const HISTORY = 'BodyStatsPageHistoryQuery'
+    const HISTORY_MORE = 'BodyStatsPageHistoryMoreQuery'
+    const LOAD_MORE = { name: 'Weitere Messungen laden' }
+
+    it('loads the next history page on request and appends it', async () => {
+      const { calls, user } = page((operation) => {
+        if (operation === HISTORY_MORE) return { data: { bodyStats: connection([longAgo]) } }
+        if (operation === HISTORY) return { data: { bodyStats: connection([newest, middle], true) } }
+        return okQuery()
+      })
+
+      await user.click(await screen.findByRole('button', LOAD_MORE))
+
+      await waitFor(() => expect(rowCount()).toBe(3))
+      expect(calls(HISTORY_MORE)).toEqual([{ first: 50, after: 'bs-b' }])
+      expect(screen.queryByRole('button', LOAD_MORE)).not.toBeInTheDocument()
+    })
+
+    it('keeps the rows, shows an alert and retries the same cursor', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+      let attempt = 0
+      const { calls, user } = page((operation) => {
+        if (operation === HISTORY_MORE) {
+          attempt += 1
+          return attempt === 1
+            ? { data: null, errors: [{ message: 'boom' }] }
+            : { data: { bodyStats: connection([longAgo]) } }
+        }
+        if (operation === HISTORY) return { data: { bodyStats: connection([newest, middle], true) } }
+        return okQuery()
+      })
+
+      await user.click(await screen.findByRole('button', LOAD_MORE))
+      const alert = await screen.findByRole('alert')
+
+      expect(alert).toHaveTextContent('Weitere Messungen konnten nicht geladen werden.')
+      expect(rowCount()).toBe(2)
+      await user.click(screen.getByRole('button', { name: 'Erneut versuchen' }))
+
+      await waitFor(() => expect(rowCount()).toBe(3))
+      expect(calls(HISTORY_MORE)).toEqual([
+        { first: 50, after: 'bs-b' },
+        { first: 50, after: 'bs-b' },
+      ])
+    })
+
+    it('offers no load-more action when the history is complete', async () => {
+      page(() => okQuery())
+
+      await tiles().findByRole('button', { name: /Gewicht/ })
+
+      expect(screen.queryByRole('button', LOAD_MORE)).not.toBeInTheDocument()
+    })
+
+    it('retries a failed history load with a new request', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+      let attempt = 0
+      const { calls, user } = page((operation) => {
+        if (operation === HISTORY) {
+          attempt += 1
+          return attempt === 1
+            ? Promise.reject(new Error('offline'))
+            : Promise.resolve({ data: { bodyStats: connection([newest, middle]) } })
+        }
+        return okQuery()
+      })
+
+      const alert = await screen.findByRole('alert')
+      await user.click(within(alert).getByRole('button', { name: 'Erneut versuchen' }))
+
+      await waitFor(() => expect(rowCount()).toBe(2))
+      expect(calls(HISTORY)).toHaveLength(2)
     })
   })
 
@@ -376,7 +530,10 @@ describe('BodyStatsPage', () => {
             boneMass: 3.2,
             comment: 'neu',
           },
-          connections: [expect.stringContaining('BodyStatsPage_bodyStats')],
+          connections: [
+            expect.stringContaining('BodyStatsPage_analytics__bodyStats'),
+            expect.stringContaining('BodyStatsPage_history__bodyStats'),
+          ],
         },
       ])
       expect(rowCount()).toBe(5)
@@ -554,7 +711,13 @@ describe('BodyStatsPage', () => {
 
       await waitFor(() => expect(rowCount()).toBe(3))
       expect(calls(DELETE)).toEqual([
-        { id: 'bs-a', connections: [expect.stringContaining('BodyStatsPage_bodyStats')] },
+        {
+          id: 'bs-a',
+          connections: [
+            expect.stringContaining('BodyStatsPage_analytics__bodyStats'),
+            expect.stringContaining('BodyStatsPage_history__bodyStats'),
+          ],
+        },
       ])
       expect(await screen.findByText('Messung gelöscht.')).toBeInTheDocument()
       expect(calls(QUERY)).toHaveLength(1)

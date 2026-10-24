@@ -84,4 +84,43 @@ public class BodyStatsQueryTests : WebApiTestBase
         await Assert.That(second.GetProperty("pageInfo").GetProperty("hasNextPage").GetBoolean()).IsFalse();
         await Assert.That(weights.Distinct().Count()).IsEqualTo(3);
     }
+
+    [Test]
+    public async Task ListPagesAcrossTheConfiguredPageSize()
+    {
+        var client = await CreateUserClientAsync();
+        var sameDay = DateTime.UtcNow.Date;
+        const int totalEntries = 205;
+
+        foreach (var weight in Enumerable.Range(0, totalEntries))
+            await AddAsync(client, Input(date: sameDay, weight: weight + 50));
+
+        const string page = """
+            query($after: String) {
+              bodyStats(first: 200, after: $after) {
+                edges { node { weight } }
+                pageInfo { hasNextPage endCursor }
+              }
+            }
+            """;
+
+        var allWeights = new List<double>();
+        string? cursor = null;
+        var pageCount = 0;
+        bool hasNext;
+
+        do
+        {
+            var result = (await DataAsync(client, page, new { after = cursor })).GetProperty("bodyStats");
+            allWeights.AddRange(result.GetProperty("edges").EnumerateArray()
+                .Select(edge => edge.GetProperty("node").GetProperty("weight").GetDouble()));
+            cursor = result.GetProperty("pageInfo").GetProperty("endCursor").GetString();
+            hasNext = result.GetProperty("pageInfo").GetProperty("hasNextPage").GetBoolean();
+            pageCount++;
+        } while (hasNext);
+
+        await Assert.That(pageCount).IsEqualTo(2);
+        await Assert.That(allWeights.Count).IsEqualTo(totalEntries);
+        await Assert.That(allWeights.Distinct().Count()).IsEqualTo(totalEntries);
+    }
 }

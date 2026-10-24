@@ -1,7 +1,7 @@
 # Athlify Frontend – Software Architecture Document
 
 **Project**: Athlify
-**Last Updated**: 2026-10-03
+**Last Updated**: 2026-10-21
 **Version**: 1.0
 
 ## Overview
@@ -51,9 +51,11 @@ This document describes the technical context for frontend changes. The function
 
 The frontend is under `../../../src/frontend/athlify/`. It is a standalone
 npm package with its own `package.json` and `package-lock.json`. It is an app
-shell with one finished domain page: Body-Stats, which is the reference for
-all further domain pages (see [Domain page pattern](#domain-page-pattern)).
-The other areas are placeholders.
+shell with two implemented domain slices: Body-Stats is the reference for
+domain pages (see [Domain page pattern](#domain-page-pattern)), and Activities
+is the first read-only list slice. The Activities page lists activities
+from the backend connection, applies URL-backed filters and loads additional
+pages on demand. Dashboard, Garage and Events remain placeholders.
 
 ```text
 src/frontend/athlify/src/
@@ -65,7 +67,7 @@ src/frontend/athlify/src/
 ├── features/         # one folder per domain area; body-stats/ is the reference (ADR-007)
 ├── theme/            # Chakra system: palette, semantic tokens, fonts (ADR-005)
 ├── components/       # domain-free building blocks (Page, QueryBoundary, DataTable, MetricChart,
-│                     #   KpiTile, PeriodPicker, FormDialog, ConfirmDialog, BrandMark, toggles, switcher)
+│                     #   KpiTile, DateRangePicker, FormDialog, ConfirmDialog, BrandMark, toggles, switcher)
 │   └── ui/           # generated Chakra UI snippets (provider, color-mode, toaster, tooltip; the Provider mounts the Toaster)
 ├── lib/              # pure functions: metrics, period, ticks
 ├── relay/            # Relay environment
@@ -76,9 +78,12 @@ src/frontend/athlify/src/
 └── index.css         # Tailwind import only
 ```
 
-The App Layout and routing are implemented. Dashboard, Activities, Garage,
-Events and Settings render placeholder pages. The `/body-stats` view is a
-domain page backed by the GraphQL API. State management beyond the Relay store
+The App Layout and routing are implemented. Dashboard, Garage, Events and
+Settings render placeholder pages. The `/activities` view is a read-only
+domain page backed by the GraphQL API; its type, bicycle, wind and tag
+filters are checklists of ticked values, kept in the URL as repeated parameters, operated from the column headers and its list uses Relay cursor pagination (50 per page, "load more"). The
+`/body-stats` view is a domain page backed by the GraphQL API. State management
+beyond the Relay store
 and the Tailwind/Chakra boundary are still open decisions. Record them as ADRs
 when they are made.
 
@@ -117,9 +122,9 @@ view are shown inside the layout through the route `errorElement`
 | --- | --- | --- |
 | `/` | redirects to `/dashboard` | – |
 | `/dashboard` | Dashboard (placeholder) | Primary Navigation |
-| `/activities` | Activities (placeholder) | Primary Navigation |
+| `/activities` | Activities (read-only list with URL filters and pagination) | Primary Navigation |
 | `/garage` | Garage (placeholder) | Primary Navigation |
-| `/body-stats` | Body-Stats (domain page; `?metric=` and `?period=` select the view) | Primary Navigation |
+| `/body-stats` | Body-Stats (domain page; `?metric=`, `?from=` and `?to=` select the view) | Primary Navigation |
 | `/events` | Events (placeholder) | Primary Navigation |
 | `/settings` | Settings (placeholder) | User Menu |
 | any other | Not Found page | – |
@@ -162,18 +167,34 @@ reference is `src/features/body-stats/`.
   needs the whole history for chart and tiles, so it loads pages of 200 and
   keeps calling `loadNext` until `hasNext` is false. A page that only needs the
   newest entries stops after the first page.
-- **View state:** the selected metric and period live in the URL.
+- **View state:** the selected metric and inclusive local date range live in
+  the URL; legacy `period` parameters remain readable for existing links.
 - **Formatting:** numbers, units and dates come from `useFormat()` in the active
   language; missing values show "—".
 - **Tiles and chart:** one `KpiTile` per measurement shows the latest value and
-  its change since the start of the selected period. Selecting a tile switches
-  `MetricChart`, which draws one measurement with its own unit and axis in
-  `chart.primary`. A period without data keeps the chart's height and offers
-  the whole period.
+  its change since the start of the selected date range without repeating the
+  range in every tile. Selecting a tile switches `MetricChart`, which draws
+  one measurement with its own unit and axis in `chart.primary`. The compact
+  `DateRangePicker` opens a responsive native-input editing surface: fields
+  are side by side on wider screens and stacked on phones; its resolution
+  selector supports no aggregation, daily, weekly, monthly and yearly chart
+  buckets. With aggregation disabled, every filtered measurement is shown;
+  otherwise chart aggregation keeps the latest real local-calendar measurement
+  per bucket, while KPI values and the history table remain based on raw
+  records. A range
+  without data keeps the chart's height and explains that no measurements
+  exist in the selected dates.
 - **Table:** `DataTable` sorts with the keyboard through header buttons. Row
   actions (edit, delete) are always visible; clicking a row also opens the
   editor. Columns drop out below `sm`, `md` and `lg` so that a phone shows date,
-  weight and the actions.
+  weight and the actions. A column may declare a `filter`: `DataTable` then
+  renders a funnel button beside the sort button that opens a `FilterPopover`: a
+  popover (portal) from `sm`, a bottom sheet below it. The count of ticked values
+  sits on the button; the table stays domain-free. `emptyMessage` keeps
+  the header when no row matches, and `busy` dims the rows and sets `aria-busy`
+  while data refreshes. On Activities, the filters of columns hidden at the current
+  breakpoint are buttons above the table, and one chip per active filter lists
+  its values. The checklist applies each tick at once and stays open until "Fertig".
 - **Dialogs:** `FormDialog` (a bottom sheet on phones) and `ConfirmDialog`
   (`alertdialog`, Cancel focused). Neither can be dismissed while a request is
   in flight.

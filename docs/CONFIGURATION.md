@@ -12,9 +12,8 @@ repository. Never commit credentials or tokens.
 | Logging | `appsettings.json`, `appsettings.Development.json` | `Information`; `Microsoft.AspNetCore` at `Warning` |
 | Database | `Program.cs` | PostgreSQL through `AddDbContext` + `EnrichNpgsqlDbContext` (connection `postgres-db`, provided by the Aspire AppHost); pending EF Core migrations from `Database/Migrations/` are applied at startup. Endpoint tests swap in EF Core InMemory |
 | Development user | `Athlify:DevelopmentUser` (`Email`, `FirstName`, `LastName`) | Until authentication exists, every request acts as this Administrator, created at startup if missing. Defaults: `admin@athlify.local`, `Athlify`, `Admin` |
-| Seeding | `Program.cs`, `Database/DbSeeder.cs` | Sample Body-Stats for the development user are seeded at startup when that user has none |
+| Seeding | `Athlify:Seed:Enabled` (`Database/SeedOptions.cs`, `DbSeeding.cs`, `DbSeeder.cs`) | Off by default; `appsettings.Development.json` turns it on. Environment variable `Athlify__Seed__Enabled` (`true`/`false`). When on, sample Body-Stats and Activities are written for the development user once, guarded by the `body-stats-v1` and `activities-v1` seed markers. Outside `Development` this logs a warning |
 | GraphQL limits | `Program.cs` | Pages of at most 200 (default 100); query cost limits raised to 10,000 |
-| `ShouldSeedDb` | `Models/AppSettings.cs` | Defined (default `false`) but not read yet |
 
 Standard ASP.NET Core configuration precedence applies. Environment
 variables override `appsettings.{Environment}.json`, which overrides
@@ -92,6 +91,12 @@ The frontend keeps its relative `/graphql/` endpoint, so no API URL is baked
 into the static build. The Compose app receives the database password through
 the runtime environment and adds it to the connection string without baking it
 into the image.
+
+The Compose stack starts without sample data. Set
+`ATHLIFY_SEED_ENABLED=true` in `.env` only for a demo instance: the
+application then writes sample Body-Stats and Activities for the
+development user once and logs a warning, because they cannot be told
+apart from real data later.
 
 For upgrades, take a PostgreSQL backup before replacing images. A minimal
 manual backup and restore flow is:

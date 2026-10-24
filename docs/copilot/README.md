@@ -26,9 +26,10 @@ When statements conflict, use this order:
 The concept describes the intended product. Source code describes the current
 implementation. The current repository contains a GraphQL backend with the
 owner-scoped domain model under `src/backend/` (no authentication, Strava
-synchronization or Dashboard analyses yet) and a React/TypeScript app shell
-under `src/frontend/athlify/`. Do not present either one as completed product
-functionality.
+synchronization or Dashboard analyses yet) and a React/TypeScript frontend
+under `src/frontend/athlify/`. Body-Stats and the first read-only Activities
+slice are implemented; the remaining areas are still placeholders. Do not
+present the implemented slices as completed product functionality.
 
 ## Documentation map
 
@@ -41,6 +42,7 @@ functionality.
 | Shared technical context | [`../concept/`](../concept/CONCEPT.md) | Architecture, data model, API, security and deployment details |
 | Shared terminology | [`../GLOSSARY.md`](../GLOSSARY.md) | Binding domain, user-facing and technical terms |
 | Shared decisions | [`adr/README.md`](adr/README.md) | Cross-cutting architectural decisions |
+| Shared learnings | [`LEARNINGS.md`](LEARNINGS.md) | Durable cross-cutting implementation decisions |
 | Frontend | [`frontend/README.md`](frontend/README.md) | UI responsibility, interaction and frontend context |
 | Backend | [`backend/README.md`](backend/README.md) | API, persistence, ownership and backend context |
 
@@ -107,8 +109,9 @@ src/
   authentication yet; every request acts as a development user. See
   [`backend/SAD.md`](backend/SAD.md).
 - **Frontend**: Chakra UI, Tailwind CSS, react-router-dom and i18next app
-  shell with the App Layout, placeholder pages and the Body-Stats domain
-  page, which reads and changes data through the GraphQL API. See
+  shell with the App Layout, a Body-Stats domain page, and a read-only
+  Activities list with URL-backed filters and Relay pagination. Dashboard,
+  Garage, Events and Settings remain placeholders. See
   [`frontend/SAD.md`](frontend/SAD.md).
 - **Tooling**: the frontend is a standalone npm package with its own
   `package.json` and lockfile; the repository root has none. There are no

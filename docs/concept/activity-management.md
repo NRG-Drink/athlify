@@ -10,7 +10,19 @@ the calendar view and Strava synchronization are not implemented yet.
 
 ## Views and functions
 
-- List/table view with filtering and multi-activity selection.
+- List/table view with filtering and multi-activity selection. The list
+  shows the date (without time), type, description, duration, distance,
+  bicycle, elevation gain, average speed and TSS; on wide screens also
+  average heart rate, effort, mood, wind, gadgets and tags (shown as tag chips). The source is
+  not a column. Missing values are shown as "—", never as 0. The filters
+  (type, bicycle, wind, tag) sit in the headers of their columns next to
+  the sort button. Each filter is a checklist: several values can be ticked, and
+  a row matches when it has any of them (OR within a filter); the filters combine
+  (AND across filters). A filter shows its number of ticked values on its header
+  and is listed as a removable chip above the table. On small screens, where the
+  bicycle, wind and tag columns are hidden, their filters appear above the table
+  as buttons and open as a bottom sheet. A filter with no matches keeps the table
+  header and its filters and offers a reset.
 - Detail view as an edit form.
 - Calendar view with weekly summary inspired by TrainingPeaks.
 - Full CRUD for manual and synchronized activities.

@@ -22,7 +22,7 @@
       "empty": "No data yet.",
       "error": "The data could not be loaded.",
       "retry": "Try again",
-      "comingSoon": "Coming soon."
+      "comingSoon": "Coming soon. {{message}}"
     },
     "form": {
       "cancel": "Cancel",
@@ -71,6 +71,84 @@
       "events": "Soon you will document crashes, repairs, breaks and other events here.",
       "settings": "Soon you will manage your account and the Strava connection here."
     },
+    "activities": {
+      "units": {
+        "duration": "h",
+        "distance": "km",
+        "elevation": "m",
+        "speed": "km/h",
+        "heartRate": "bpm",
+        "effort": "/10"
+      },
+      "filters": {
+        "type": "Activity type",
+        "vehicle": "Bicycle",
+        "tag": "Tag",
+        "wind": "Wind",
+        "selectedCount": "{{count}} selected",
+        "clear": "Clear selection",
+        "searchPlaceholder": "Search …",
+        "noMatches": "No matches.",
+        "more": "+{{count}}",
+        "done": "Done",
+        "moreOptions": "Only the first options are shown.",
+        "reset": "Reset filters",
+        "filterBy": "Filter by {{column}}",
+        "filterByActive": "Filter by {{column}}, active: {{value}}",
+        "active": "Active filters",
+        "remove": "Remove {{filter}} filter"
+      },
+      "types": {
+        "ROAD": "Road",
+        "MOUNTAIN": "Mountain",
+        "GRAVEL": "Gravel",
+        "INDOOR": "Indoor"
+      },
+      "columns": {
+        "date": "Date",
+        "type": "Type",
+        "description": "Description",
+        "duration": "Duration",
+        "distance": "Distance",
+        "vehicle": "Bicycle",
+        "elevationGain": "Elevation gain",
+        "speed": "Avg. speed",
+        "tss": "TSS",
+        "heartRate": "Avg. heart rate",
+        "effort": "Effort",
+        "mood": "Mood",
+        "wind": "Wind",
+        "gadgets": "Gadgets",
+        "tags": "Tags"
+      },
+      "table": {
+        "caption": "Activities"
+      },
+      "moreTags": "+{{count}}",
+      "loadMore": "Load more activities",
+      "loadMoreFailed": "More activities could not be loaded.",
+      "loadFailed": "Activities could not be loaded.",
+      "empty": {
+        "title": "No activities yet",
+        "message": "Activities you enter or import will appear here.",
+        "filteredTitle": "No matching activities",
+        "filteredMessage": "Adjust or reset the filters."
+      },
+      "moods": {
+        "VERY_BAD": "Very bad",
+        "BAD": "Bad",
+        "NEUTRAL": "Neutral",
+        "GOOD": "Good",
+        "VERY_GOOD": "Very good"
+      },
+      "winds": {
+        "CALM": "Calm",
+        "LIGHT": "Light",
+        "MODERATE": "Moderate",
+        "STRONG": "Strong",
+        "STORMY": "Stormy"
+      }
+    },
     "bodyStats": {
       "metrics": {
         "weight": "Weight",
@@ -89,20 +167,39 @@
       "kpi": {
         "group": "Measurements",
         "noData": "No measurement",
-        "noPeriodData": "No measurement in this period",
+        "noRangeData": "No measurement in this date range",
         "notEnoughData": "Not enough data in this period",
         "lastMeasured": "Last measured: {{date}}"
       },
       "chart": {
-        "summary_one": "{{metric}}, {{period}}: {{from}}, 1 measurement",
-        "summary_other": "{{metric}}, {{period}}: from {{from}} to {{to}}, {{count}} measurements",
+        "summary_one": "{{metric}}, {{fromDate}} to {{toDate}}: {{from}}, 1 measurement",
+        "summary_other": "{{metric}}, {{fromDate}} to {{toDate}}: from {{from}} to {{to}}, {{count}} measurements",
         "empty": {
-          "30d": "No measurements in the last 30 days",
-          "90d": "No measurements in the last 90 days",
-          "1y": "No measurements in the last year",
-          "all": "No measurements yet"
+          "range": "No measurements in this date range."
         },
-        "showAll": "Show the whole period"
+        "emptySummary": "{{metric}}: {{message}}"
+      },
+      "range": {
+        "label": "Date range",
+        "summary": "Date range: {{from}} – {{to}} · {{aggregation}}",
+        "changeLabel": "Change date range: {{summary}}",
+        "from": "From",
+        "to": "To",
+        "apply": "Apply",
+        "cancel": "Cancel",
+        "aggregation": "Resolution",
+        "aggregations": {
+          "none": "None",
+          "day": "1d",
+          "week": "1w",
+          "month": "1m",
+          "year": "1y"
+        },
+        "errors": {
+          "missing": "Enter both dates.",
+          "invalidDate": "Enter valid dates.",
+          "fromAfterTo": "The start date must be before the end date."
+        }
       },
       "history": "History",
       "add": {
@@ -139,7 +236,9 @@
         "message": "Add your first measurement to see weight and body values over time.",
         "action": "Add first measurement"
       },
-      "loadFailed": "Body stats could not be loaded."
+      "loadFailed": "Body stats could not be loaded.",
+      "loadMore": "Load more measurements",
+      "loadMoreFailed": "More measurements could not be loaded."
     }
   }
 }

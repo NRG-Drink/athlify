@@ -4,7 +4,7 @@ import { paths } from './paths'
 
 export type NavItemId = 'dashboard' | 'activities' | 'garage' | 'bodyStats' | 'events'
 
-export interface NavItem {
+interface NavItem {
   id: NavItemId
   path: (typeof paths)[NavItemId]
   labelKey: `nav.${NavItemId}`

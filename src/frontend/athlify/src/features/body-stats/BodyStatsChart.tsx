@@ -1,42 +1,41 @@
-import { Button, Flex, Heading, Stack, Text } from '@chakra-ui/react'
+import { Box, Flex, Heading, Spinner, Stack, Text, VisuallyHidden } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
+import { DateRangePicker } from '../../components/DateRangePicker'
 import { MetricChart } from '../../components/MetricChart'
-import { PeriodPicker } from '../../components/PeriodPicker'
 import { useFormat } from '../../i18n/useFormat'
-import { filterByPeriod, sortByDate } from '../../lib/metrics'
-import { periodStart, type Period } from '../../lib/period'
+import { aggregateByResolution, filterByRange, sortByDate } from '../../lib/metrics'
+import { dateFromKey, type Aggregation, type DateRange } from '../../lib/period'
 import { metricByKey, type BodyStatsMetricKey } from './bodyStatsMetrics'
 import type { BodyStatsSeries } from './bodyStatsSeries'
 
 export interface BodyStatsChartProps {
   series: BodyStatsSeries
   metric: BodyStatsMetricKey
-  period: Period
-  now: Date
-  onPeriodChange: (period: Period) => void
+  range: DateRange
+  aggregation: Aggregation
+  isPending?: boolean
+  onRangeChange: (selection: { range: DateRange; aggregation: Aggregation }) => void
 }
 
 const DAY = 24 * 60 * 60 * 1000
 
-/** The selected measurement over the selected period, with the period picker. */
+/** The selected measurement over the selected date range, with its range picker. */
 export function BodyStatsChart({
   series,
   metric,
-  period,
-  now,
-  onPeriodChange,
+  range,
+  aggregation,
+  isPending = false,
+  onRangeChange,
 }: BodyStatsChartProps) {
   const { t } = useTranslation()
   const format = useFormat()
   const definition = metricByKey(metric)
-  const points = filterByPeriod(series[metric], period, now)
+  const points = aggregateByResolution(filterByRange(series[metric], range), aggregation)
   const label = t(definition.labelKey)
 
-  // A bounded period always spans the whole period, so gaps without data stay visible.
-  const first = points[0]?.date ?? now
-  const last = points[points.length - 1]?.date ?? now
-  const start = periodStart(period, now) ?? first
-  const end = period === 'all' ? last : new Date(Math.max(now.getTime(), last.getTime()))
+  const start = dateFromKey(range.from)
+  const end = dateFromKey(range.to)
   const domain: [Date, Date] =
     end.getTime() > start.getTime()
       ? [start, end]
@@ -44,25 +43,41 @@ export function BodyStatsChart({
 
   const summary =
     points.length === 0
-      ? `${label}: ${t(`bodyStats.chart.empty.${period}`)}`
+      ? t('bodyStats.chart.emptySummary', {
+          metric: label,
+          message: t('bodyStats.chart.empty.range'),
+        })
       : t('bodyStats.chart.summary', {
           metric: label,
-          period: t(`period.long.${period}`),
+          fromDate: format.date(dateFromKey(range.from)),
+          toDate: format.date(dateFromKey(range.to)),
           from: format.measure(sortByDate(points)[0].value, definition.unit, definition.decimals),
           to: format.measure(points[points.length - 1].value, definition.unit, definition.decimals),
           count: points.length,
         })
 
   return (
-    <Stack gap="4" bg="bg.panel" borderWidth="1px" borderRadius="l3" p={{ base: '4', md: '6' }}>
-      <Flex justify="space-between" align="center" gap="3" wrap="wrap">
+    <Stack
+      position="relative"
+      gap="4"
+      bg="bg.panel"
+      borderWidth="1px"
+      borderRadius="l3"
+      p={{ base: '4', md: '6' }}
+    >
+      <Flex
+        direction={{ base: 'column', md: 'row' }}
+        justify="space-between"
+        align={{ base: 'stretch', md: 'start' }}
+        gap="4"
+      >
         <Flex align="baseline" gap="2">
           <Heading as="h2" size="lg">
             {label}
           </Heading>
           <Text color="fg.muted">{definition.unit}</Text>
         </Flex>
-        <PeriodPicker value={period} onChange={onPeriodChange} />
+        <DateRangePicker value={{ range, aggregation }} onChange={onRangeChange} />
       </Flex>
       <MetricChart
         points={points}
@@ -70,15 +85,24 @@ export function BodyStatsChart({
         decimals={definition.decimals}
         summary={summary}
         domain={domain}
-        emptyMessage={t(`bodyStats.chart.empty.${period}`)}
-        emptyAction={
-          period === 'all' ? undefined : (
-            <Button size="sm" variant="ghost" onClick={() => onPeriodChange('all')}>
-              {t('bodyStats.chart.showAll')}
-            </Button>
-          )
-        }
+        emptyMessage={t('bodyStats.chart.empty.range')}
       />
+      {isPending && (
+        <Box
+          position="absolute"
+          inset="0"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          bg="bg.panel/80"
+          borderRadius="inherit"
+          role="status"
+          aria-live="polite"
+        >
+          <Spinner size="lg" color="colorPalette.solid" />
+          <VisuallyHidden>{t('page.loading')}</VisuallyHidden>
+        </Box>
+      )}
     </Stack>
   )
 }

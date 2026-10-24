@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { DataTable, type DataTableColumn } from '../../components/DataTable'
@@ -124,5 +124,48 @@ describe('DataTable', () => {
     within(screen.getAllByRole('row')[3]).getAllByRole('cell')[0].closest('tr')?.focus()
     await user.keyboard('{Enter}')
     expect(onRowClick).toHaveBeenLastCalledWith(rows[2])
+  })
+
+  it('renders a filter trigger only for columns with a filter and passes close to its content', async () => {
+    const user = userEvent.setup()
+    renderTable({
+      columns: [
+        {
+          ...columns[0],
+          filter: {
+            label: 'Nach Name filtern',
+            active: true,
+            activeLabel: 'Nach Name filtern, aktiv: Anna',
+            content: (close) => (
+              <button type="button" onClick={close}>
+                Schliessen
+              </button>
+            ),
+          },
+        },
+        columns[1],
+      ],
+    })
+
+    const trigger = await screen.findByRole('button', { name: 'Nach Name filtern, aktiv: Anna' })
+    expect(screen.getAllByRole('button', { name: /filtern/ })).toHaveLength(1)
+    await user.click(trigger)
+    await user.click(await screen.findByRole('button', { name: 'Schliessen' }))
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Schliessen' })).not.toBeInTheDocument(),
+    )
+  })
+
+  it('shows the empty message in the body and keeps the header', async () => {
+    renderTable({ data: [], emptyMessage: 'Nichts gefunden' })
+
+    expect(await screen.findByText('Nichts gefunden')).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: /Name/ })).toBeInTheDocument()
+  })
+
+  it('marks the table busy while refreshing', async () => {
+    renderTable({ busy: true })
+
+    expect(await screen.findByRole('table')).toHaveAttribute('aria-busy', 'true')
   })
 })

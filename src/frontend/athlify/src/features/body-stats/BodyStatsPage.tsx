@@ -1,5 +1,5 @@
-import { Button, Flex, Heading, Stack } from '@chakra-ui/react'
-import { useEffect, useMemo, useState } from 'react'
+import { Button, Flex, Heading, Skeleton, Stack } from '@chakra-ui/react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import { graphql, useLazyLoadQuery, usePaginationFragment } from 'react-relay'
 import { useTranslation } from 'react-i18next'
 import { LuActivity, LuPlus } from 'react-icons/lu'
@@ -9,12 +9,22 @@ import { Page, PageEmptyState } from '../../components/Page'
 import { QueryBoundary } from '../../components/QueryBoundary'
 import { useFormat } from '../../i18n/useFormat'
 import { useFetchKey } from '../../relay/useFetchKey'
+import { useLoadMore } from '../../relay/useLoadMore'
 import { latest } from '../../lib/metrics'
-import { parsePeriod, type Period } from '../../lib/period'
+import {
+  defaultDateRange,
+  parseAggregation,
+  parseDateRange,
+  type Aggregation,
+  type DateRange,
+} from '../../lib/period'
 import { toaster } from '../../components/ui/toaster'
-import type { BodyStatsPage_list$key } from './__generated__/BodyStatsPage_list.graphql'
+import type { BodyStatsPage_analytics$key } from './__generated__/BodyStatsPage_analytics.graphql'
 import type { BodyStatsPageMoreQuery } from './__generated__/BodyStatsPageMoreQuery.graphql'
 import type { BodyStatsPageQuery } from './__generated__/BodyStatsPageQuery.graphql'
+import type { BodyStatsPage_history$key } from './__generated__/BodyStatsPage_history.graphql'
+import type { BodyStatsPageHistoryMoreQuery } from './__generated__/BodyStatsPageHistoryMoreQuery.graphql'
+import type { BodyStatsPageHistoryQuery } from './__generated__/BodyStatsPageHistoryQuery.graphql'
 import { BodyStatsChart } from './BodyStatsChart'
 import { emptyValues, toInputValue, type BodyStatsFormValues } from './bodyStatsForm'
 import { BodyStatsFormDialog } from './BodyStatsFormDialog'
@@ -25,35 +35,57 @@ import { BodyStatsSkeleton } from './BodyStatsSkeleton'
 import { BodyStatsTable, type BodyStatsRow } from './BodyStatsTable'
 import { useBodyStatsMutations } from './useBodyStatsMutations'
 
-const DEFAULT_PERIOD: Period = '90d'
+const ANALYTICS_PAGE_SIZE = 200
+const HISTORY_PAGE_SIZE = 50
 
-// The page works on the whole history (chart, tiles, table), so it asks for big pages and keeps
-// loading until the connection is complete. The key must match BODY_STATS_CONNECTION_KEY.
-const PAGE_SIZE = 200
-
-const pageQuery = graphql`
+const analyticsQuery = graphql`
   query BodyStatsPageQuery {
-    ...BodyStatsPage_list
+    ...BodyStatsPage_analytics
   }
 `
 
-const listFragment = graphql`
-  fragment BodyStatsPage_list on Query
+const analyticsFragment = graphql`
+  fragment BodyStatsPage_analytics on Query
   @refetchable(queryName: "BodyStatsPageMoreQuery")
   @argumentDefinitions(first: { type: "Int", defaultValue: 200 }, after: { type: "String" }) {
-    bodyStats(first: $first, after: $after) @connection(key: "BodyStatsPage_bodyStats") {
+    bodyStats(first: $first, after: $after) @connection(key: "BodyStatsPage_analytics__bodyStats") {
       edges {
         node {
-          id
           ...bodyStatsSeries_entries
+        }
+      }
+      pageInfo {
+        hasNextPage
+      }
+    }
+  }
+`
+
+const historyQuery = graphql`
+  query BodyStatsPageHistoryQuery {
+    ...BodyStatsPage_history
+  }
+`
+
+const historyFragment = graphql`
+  fragment BodyStatsPage_history on Query
+  @refetchable(queryName: "BodyStatsPageHistoryMoreQuery")
+  @argumentDefinitions(first: { type: "Int", defaultValue: 50 }, after: { type: "String" }) {
+    bodyStats(first: $first, after: $after) @connection(key: "BodyStatsPage_history__bodyStats") {
+      edges {
+        node {
           ...BodyStatsTable_entries
         }
+      }
+      pageInfo {
+        hasNextPage
       }
     }
   }
 `
 
 type Dialog = { kind: 'closed' } | { kind: 'create' } | { kind: 'edit'; row: BodyStatsRow }
+type AnalyticsStatus = 'pending' | 'ready' | 'empty'
 
 function rowToValues(row: BodyStatsRow): BodyStatsFormValues {
   return {
@@ -67,96 +99,112 @@ function rowToValues(row: BodyStatsRow): BodyStatsFormValues {
   }
 }
 
-interface ContentProps {
+interface AnalyticsProps {
   fetchKey: number
-  dialog: Dialog
-  onDialogChange: (dialog: Dialog) => void
+  onCreate: () => void
+  onStatusChange: (status: Exclude<AnalyticsStatus, 'pending'>) => void
+  onLatestChange: (values: Partial<Record<BodyStatsMetricKey, number>>) => void
 }
 
-function BodyStatsContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
+function BodyStatsAnalytics({
+  fetchKey,
+  onCreate,
+  onStatusChange,
+  onLatestChange,
+}: AnalyticsProps) {
   const { t } = useTranslation()
-  const format = useFormat()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [deleting, setDeleting] = useState<BodyStatsRow | null>(null)
-
+  const [isChartPending, startChartTransition] = useTransition()
+  const [pagingFailed, setPagingFailed] = useState(false)
   const queryData = useLazyLoadQuery<BodyStatsPageQuery>(
-    pageQuery,
+    analyticsQuery,
     {},
-    { fetchKey, fetchPolicy: 'network-only' },
+    { fetchKey, fetchPolicy: 'store-or-network' },
   )
   const { data, hasNext, isLoadingNext, loadNext } = usePaginationFragment<
     BodyStatsPageMoreQuery,
-    BodyStatsPage_list$key
-  >(listFragment, queryData)
+    BodyStatsPage_analytics$key
+  >(analyticsFragment, queryData)
   const bodyStats = useMemo(
     () => (data.bodyStats?.edges ?? []).map((edge) => edge.node),
     [data.bodyStats],
   )
 
-  // Fetch the remaining pages, so chart and tiles never show a silently cut-off history.
-  const [pagingFailed, setPagingFailed] = useState(false)
+  useEffect(() => {
+    onStatusChange(bodyStats.length === 0 && !hasNext ? 'empty' : 'ready')
+  }, [bodyStats.length, hasNext, onStatusChange])
+
   useEffect(() => {
     if (!hasNext || isLoadingNext || pagingFailed) return
-    loadNext(PAGE_SIZE, {
-      onComplete: (error) => {
-        if (!error) return
-        setPagingFailed(true)
-        toaster.create({ type: 'error', title: t('bodyStats.loadFailed') })
-      },
+    startChartTransition(() => {
+      loadNext(ANALYTICS_PAGE_SIZE, {
+        onComplete: (error) => {
+          if (!error) return
+          setPagingFailed(true)
+          toaster.create({ type: 'error', title: t('bodyStats.loadFailed') })
+        },
+      })
     })
-  }, [hasNext, isLoadingNext, pagingFailed, loadNext, t])
+  }, [hasNext, isLoadingNext, loadNext, pagingFailed, startChartTransition, t])
+
   const series = useBodyStatsSeries(bodyStats)
-  // Periods count back from the moment the data was last loaded or changed.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const now = useMemo(() => new Date(), [bodyStats])
-  const mutations = useBodyStatsMutations()
-
-  const metric = parseMetric(searchParams.get('metric'))
-  const period = parsePeriod(searchParams.get('period'), DEFAULT_PERIOD)
-
-  const setView = (next: { metric?: BodyStatsMetricKey; period?: Period }) =>
-    setSearchParams(
-      (current) => {
-        const params = new URLSearchParams(current)
-        if (next.metric) params.set('metric', next.metric)
-        if (next.period) params.set('period', next.period)
-        return params
-      },
-      { replace: true },
-    )
-
-  // New entries start from the newest measurement, because values change only slightly.
-  const prefill = useMemo(() => {
+  // The series is rebuilt on every render, so the memo is keyed on the entries it derives from.
+  const latestValues = useMemo(() => {
     const values: Partial<Record<BodyStatsMetricKey, number>> = {}
     for (const { key } of bodyStatsMetrics) values[key] = latest(series[key])?.value
     return values
-  }, [series])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bodyStats])
 
-  const closeDialog = () => onDialogChange({ kind: 'closed' })
+  useEffect(() => onLatestChange(latestValues), [latestValues, onLatestChange])
 
-  if (bodyStats.length === 0) {
-    return (
-      <>
-        <PageEmptyState
-          icon={LuActivity}
-          title={t('bodyStats.empty.title')}
-          message={t('bodyStats.empty.message')}
-          action={
-            <Button onClick={() => onDialogChange({ kind: 'create' })}>
-              <LuPlus aria-hidden />
-              {t('bodyStats.empty.action')}
-            </Button>
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const now = useMemo(() => new Date(), [bodyStats])
+  const metric = parseMetric(searchParams.get('metric'))
+  const range = parseDateRange(
+    searchParams.get('from'),
+    searchParams.get('to'),
+    defaultDateRange(now),
+    now,
+    searchParams.get('period'),
+  )
+  const aggregation = parseAggregation(searchParams.get('aggregation'))
+
+  const setView = (next: {
+    metric?: BodyStatsMetricKey
+    range?: DateRange
+    aggregation?: Aggregation
+  }) =>
+    startChartTransition(() =>
+      setSearchParams(
+        (current) => {
+          const params = new URLSearchParams(current)
+          if (next.metric) params.set('metric', next.metric)
+          if (next.range) {
+            params.set('from', next.range.from)
+            params.set('to', next.range.to)
+            params.delete('period')
           }
-        />
-        <BodyStatsFormDialog
-          open={dialog.kind === 'create'}
-          onOpenChange={(open) => !open && closeDialog()}
-          mode="create"
-          initialValues={emptyValues()}
-          busy={mutations.isSaving}
-          onSave={(input) => mutations.add(input, { onSuccess: closeDialog })}
-        />
-      </>
+          if (next.aggregation) params.set('aggregation', next.aggregation)
+          return params
+        },
+        { replace: true },
+      ),
+    )
+
+  if (bodyStats.length === 0 && !hasNext) {
+    return (
+      <PageEmptyState
+        icon={LuActivity}
+        title={t('bodyStats.empty.title')}
+        message={t('bodyStats.empty.message')}
+        action={
+          <Button onClick={onCreate}>
+            <LuPlus aria-hidden />
+            {t('bodyStats.empty.action')}
+          </Button>
+        }
+      />
     )
   }
 
@@ -165,39 +213,137 @@ function BodyStatsContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
       <BodyStatsKpis
         series={series}
         metric={metric}
-        period={period}
-        now={now}
+        range={range}
         onSelectMetric={(next) => setView({ metric: next })}
       />
       <BodyStatsChart
         series={series}
         metric={metric}
-        period={period}
-        now={now}
-        onPeriodChange={(next) => setView({ period: next })}
+        range={range}
+        aggregation={aggregation}
+        isPending={isChartPending}
+        onRangeChange={(next) => setView({ range: next.range, aggregation: next.aggregation })}
       />
-      <Stack gap="4">
-        <Flex justify="space-between" align="center" gap="3" wrap="wrap">
-          <Heading as="h2" size="lg">
-            {t('bodyStats.history')}
-          </Heading>
-          <Button onClick={() => onDialogChange({ kind: 'create' })}>
-            <LuPlus aria-hidden />
-            {t('bodyStats.add.open')}
-          </Button>
-        </Flex>
-        <BodyStatsTable
-          entries={bodyStats}
-          onEdit={(row) => onDialogChange({ kind: 'edit', row })}
-          onDelete={setDeleting}
+    </Stack>
+  )
+}
+
+interface HistoryProps {
+  fetchKey: number
+  onCreate: () => void
+  onEdit: (row: BodyStatsRow) => void
+  onDelete: (row: BodyStatsRow) => void
+}
+
+function BodyStatsHistory({ fetchKey, onCreate, onEdit, onDelete }: HistoryProps) {
+  const { t } = useTranslation()
+  const { data, hasNext, isLoadingNext, loadNext } = usePaginationFragment<
+    BodyStatsPageHistoryMoreQuery,
+    BodyStatsPage_history$key
+  >(
+    historyFragment,
+    useLazyLoadQuery<BodyStatsPageHistoryQuery>(
+      historyQuery,
+      {},
+      { fetchKey, fetchPolicy: 'store-or-network' },
+    ),
+  )
+  const { loadMore, loadMoreError } = useLoadMore(loadNext, isLoadingNext, HISTORY_PAGE_SIZE)
+  const rows = useMemo(
+    () => (data.bodyStats?.edges ?? []).map((edge) => edge.node),
+    [data.bodyStats],
+  )
+
+  return (
+    <Stack gap="4">
+      <Flex justify="space-between" align="center" gap="3" wrap="wrap">
+        <Heading as="h2" size="lg">
+          {t('bodyStats.history')}
+        </Heading>
+        <Button onClick={onCreate}>
+          <LuPlus aria-hidden />
+          {t('bodyStats.add.open')}
+        </Button>
+      </Flex>
+      <BodyStatsTable
+        entries={rows}
+        hasNextPage={hasNext}
+        isLoadingNext={isLoadingNext}
+        loadMoreError={loadMoreError}
+        onLoadMore={loadMore}
+        onEdit={onEdit}
+        onDelete={onDelete}
+      />
+    </Stack>
+  )
+}
+
+function BodyStatsHistorySkeleton() {
+  return (
+    <Stack gap="2" role="status" aria-busy="true">
+      {Array.from({ length: 4 }, (_, i) => (
+        <Skeleton key={i} h="10" />
+      ))}
+    </Stack>
+  )
+}
+
+interface ContentProps {
+  fetchKey: number
+  dialog: Dialog
+  onDialogChange: (dialog: Dialog) => void
+  onRetry: () => void
+}
+
+function BodyStatsContent({ fetchKey, dialog, onDialogChange, onRetry }: ContentProps) {
+  const { t } = useTranslation()
+  const format = useFormat()
+  const [deleting, setDeleting] = useState<BodyStatsRow | null>(null)
+  const [analyticsStatus, setAnalyticsStatus] = useState<AnalyticsStatus>('pending')
+  const [latestValues, setLatestValues] = useState<Partial<Record<BodyStatsMetricKey, number>>>({})
+  const mutations = useBodyStatsMutations()
+
+  // New entries start from the latest known value of each measurement, which may come from an older entry.
+  const prefill = useMemo(() => emptyValues(latestValues), [latestValues])
+
+  const closeDialog = () => onDialogChange({ kind: 'closed' })
+  const openCreate = () => onDialogChange({ kind: 'create' })
+
+  return (
+    <Stack gap="8">
+      <QueryBoundary
+        onRetry={onRetry}
+        fallback={<BodyStatsSkeleton />}
+        errorMessage={t('bodyStats.loadFailed')}
+      >
+        <BodyStatsAnalytics
+          fetchKey={fetchKey}
+          onCreate={openCreate}
+          onStatusChange={setAnalyticsStatus}
+          onLatestChange={setLatestValues}
         />
-      </Stack>
+      </QueryBoundary>
+
+      {analyticsStatus !== 'empty' && (
+        <QueryBoundary
+          onRetry={onRetry}
+          fallback={<BodyStatsHistorySkeleton />}
+          errorMessage={t('bodyStats.loadFailed')}
+        >
+          <BodyStatsHistory
+            fetchKey={fetchKey}
+            onCreate={openCreate}
+            onEdit={(row) => onDialogChange({ kind: 'edit', row })}
+            onDelete={setDeleting}
+          />
+        </QueryBoundary>
+      )}
 
       <BodyStatsFormDialog
         open={dialog.kind !== 'closed'}
         onOpenChange={(open) => !open && closeDialog()}
         mode={dialog.kind === 'edit' ? 'edit' : 'create'}
-        initialValues={dialog.kind === 'edit' ? rowToValues(dialog.row) : emptyValues(prefill)}
+        initialValues={dialog.kind === 'edit' ? rowToValues(dialog.row) : prefill}
         busy={mutations.isSaving}
         onSave={(input) =>
           dialog.kind === 'edit'
@@ -239,7 +385,12 @@ export function BodyStatsPage() {
         fallback={<BodyStatsSkeleton />}
         errorMessage={t('bodyStats.loadFailed')}
       >
-        <BodyStatsContent fetchKey={fetchKey} dialog={dialog} onDialogChange={setDialog} />
+        <BodyStatsContent
+          fetchKey={fetchKey}
+          dialog={dialog}
+          onDialogChange={setDialog}
+          onRetry={retry}
+        />
       </QueryBoundary>
     </Page>
   )

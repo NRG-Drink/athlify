@@ -38,9 +38,11 @@ The product is not implemented yet. The repository currently contains:
   PostgreSQL with EF Core migrations, plus endpoint tests. Every record
   belongs to a user; until login exists, every request acts as a development
   user. Strava synchronization and Dashboard analyses are not implemented.
-- **Frontend app shell**: a React app with light/dark color mode, a
-  German/English language switcher, routing and a Body-Stats page (summary
-  tiles, chart, history table, add/edit/delete) that uses the backend API.
+- **Frontend**: a React app with light/dark color mode, a German/English
+  language switcher and routing. The Activities page lists activities in a
+  paged table; type, bicycle, wind and tag filters sit in the column headers
+  and live in the URL. The Body-Stats page shows summary tiles, a chart, a
+  paged history table and add/edit/delete. Both use the backend API.
 
 ## Tech Stack & Sources
 
@@ -123,6 +125,8 @@ volume was created before the migrations existed; remove it once with
 - Open `http://localhost:5095/graphql` to explore the schema in the
   Hot Chocolate GraphQL IDE (for example, `me`, `activities`,
   `createActivity`, `vehicles`, `events`, `bodyStats`).
+- Open the frontend and go to **Activities** to browse the list, filter it from
+  the column headers and load more rows.
 - Open the frontend and go to **Body-Stats** to see the measurements, add,
   edit or delete one, and switch the chart between measurements and periods.
   Use the user menu in the header to switch the color mode and the language.

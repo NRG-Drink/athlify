@@ -62,14 +62,15 @@ Relay confirmed as the GraphQL client.
    definitions owned by the feature.
 7. Numbers, units and dates are formatted only through `useFormat()` in the
    active UI language.
-8. The selected view (metric, period) lives in the URL search parameters.
+8. The selected view (metric, inclusive date range) lives in the URL search
+   parameters.
 
 ## Consequences
 
 ### Positive
 
 - A new area copies one folder and reuses `DataTable`, `MetricChart`,
-  `KpiTile`, `PeriodPicker`, `FormDialog`, `ConfirmDialog` and `QueryBoundary`.
+  `KpiTile`, `DateRangePicker`, `FormDialog`, `ConfirmDialog` and `QueryBoundary`.
 - Components own their data needs, so they can be moved and tested alone.
 - Large lists do not reload after a change.
 - The chart library is replaceable behind `MetricChart`.
@@ -90,7 +91,7 @@ Relay confirmed as the GraphQL client.
 
 - Reference implementation: `src/frontend/athlify/src/features/body-stats/`.
 - Shared building blocks: `src/components/` (`DataTable`, `MetricChart`,
-  `KpiTile`, `PeriodPicker`, `FormDialog`, `ConfirmDialog`, `QueryBoundary`,
+  `KpiTile`, `DateRangePicker`, `FormDialog`, `ConfirmDialog`, `QueryBoundary`,
   `Page`), `src/lib/` (`metrics`, `period`, `ticks`), `src/relay/`
   (`environment`), `src/i18n/useFormat.ts`.
 - The identifier convention is [ADR-006](../../adr/ADR-006-relay-global-ids.md).
