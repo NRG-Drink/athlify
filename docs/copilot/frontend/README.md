@@ -27,6 +27,7 @@ If a requirement is not supported by these sources, do not invent a function. Do
 | [`PRD.md`](PRD.md) | Product scope, priorities, acceptance criteria and explicit non-goals |
 | [`SAD.md`](SAD.md) | Frontend architecture, UI states and boundaries for code changes |
 | [`../../GLOSSARY.md`](../../GLOSSARY.md) | Shared binding terminology; update it in the same change when adding terminology |
+| [`DESIGN-SYSTEM.md`](DESIGN-SYSTEM.md) | Brand book for the "Night Ride" theme: voice, colour meanings, type, spacing, states and components to reuse; loaded by `plan-design-review` and build agents |
 | [`LEARNINGS.md`](LEARNINGS.md) | Verified findings and recurring pitfalls, recorded as dated one-line entries; actively review it at the end of every task and maintain it when new durable learnings arise |
 | [`../adr/README.md`](../adr/README.md) | Shared cross-cutting architecture decisions |
 
