@@ -6,9 +6,9 @@ import { DataTable, type DataTableColumn } from '../../components/DataTable'
 import { useFormat } from '../../i18n/useFormat'
 import { ActivityFilterField } from './ActivityFilterField'
 import {
-  activeActivityFilterKeys,
-  activeFilterValueLabel,
+  activeFilterSummary,
   filterColumnBreakpoint,
+  filterValueCount,
   type ActivityFilterKey,
   type ActivityFilters,
   type FilterOption,
@@ -143,17 +143,20 @@ export function ActivitiesTable({
   const rows = useFragment(tableFragment, entries)
 
   const columnFilters = useMemo(() => {
-    const active = activeActivityFilterKeys(filters)
     const filterFor = (key: ActivityFilterKey) => {
       const column = t(`activities.filters.${key}`)
+      const count = filterValueCount(key, filters)
       return {
+        title: column,
         label: t('activities.filters.filterBy', { column }),
-        active: active.includes(key),
+        active: count > 0,
+        count,
         activeLabel: t('activities.filters.filterByActive', {
           column,
-          value: activeFilterValueLabel(key, filters, vehicles, tags, t),
+          value: activeFilterSummary(key, filters, vehicles, tags, t),
         }),
-        content: (close: () => void) => (
+        // The panel stays open while values are ticked; its "Fertig" button closes it.
+        content: () => (
           <ActivityFilterField
             field={key}
             value={filters}
@@ -161,10 +164,7 @@ export function ActivitiesTable({
             tags={tags}
             hasMoreVehicles={hasMoreVehicles}
             hasMoreTags={hasMoreTags}
-            onChange={(next) => {
-              onFiltersChange(next)
-              close()
-            }}
+            onChange={onFiltersChange}
           />
         ),
       }

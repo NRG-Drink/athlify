@@ -1,5 +1,6 @@
 import { act, screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import type { UserEvent } from '@testing-library/user-event'
+import { describe, expect, it, vi } from 'vitest'
 import { ActivitiesPage } from '../../../features/activities/ActivitiesPage'
 import { renderWithRelay } from '../../utils/relay'
 
@@ -69,6 +70,19 @@ describe('ActivitiesPage', () => {
     expect(within(table).getAllByText('—').length).toBeGreaterThan(0)
     expect(calls('ActivitiesPageQuery')).toHaveLength(1)
     expect(calls('ActivitiesPageQuery')[0]).toMatchObject({ first: 50, where: null })
+  })
+
+  it('shows the duration in hours and minutes, like the "Std." header', async () => {
+    // 18 km in 40 min is 27 km/h, the speed the backend computes from distance and time.
+    const fortyMinutes = { ...activity, time: 2400, distance: 18, averageSpeed: 27 }
+    renderWithRelay(<ActivitiesPage />, () => response([fortyMinutes]), {
+      path: '/activities',
+      routePath: '/activities',
+    })
+
+    const table = await screen.findByRole('table')
+    expect(within(table).getByText('0:40')).toBeInTheDocument()
+    expect(within(table).getByText(/^27[.,]0$/)).toBeInTheDocument()
   })
 
   it('shows a filtered empty state with a reset action', async () => {
@@ -181,6 +195,15 @@ describe('ActivitiesPage', () => {
     const headerOf = (label: string) =>
       within(screen.getByRole('table')).getByText(label).closest('th') as HTMLElement
 
+    // Phones in jsdom: the filter opens as a bottom sheet, which is modal and hides the table.
+    const tickValue = async (user: UserEvent, name: string) =>
+      user.click(await screen.findByRole('checkbox', { name }))
+
+    const closeFilter = async (user: UserEvent) => {
+      await user.click(screen.getByRole('button', { name: 'Fertig' }))
+      await waitFor(() => expect(screen.queryByRole('button', { name: 'Fertig' })).toBeNull())
+    }
+
     it('offers a filter trigger next to the sort button of the filterable columns only', async () => {
       renderWithRelay(<ActivitiesPage />, () => response(), {
         path: '/activities',
@@ -213,43 +236,114 @@ describe('ActivitiesPage', () => {
       expect(header).toHaveAttribute('aria-sort', 'ascending')
       expect(router.state.location.search).toBe('')
       await user.click(within(header).getByRole('button', { name: 'Nach Aktivitätstyp filtern' }))
-      expect(await screen.findByRole('combobox', { name: 'Aktivitätstyp' })).toBeInTheDocument()
+      expect(await screen.findByRole('group', { name: 'Aktivitätstyp' })).toBeInTheDocument()
       expect(header).toHaveAttribute('aria-sort', 'ascending')
     })
 
-    it('filters by type from the header, closes the popover and returns the focus', async () => {
+    it('ticks a type from the header, keeps the checklist open and returns the focus on "Fertig"', async () => {
       const { user, router, calls } = renderWithRelay(<ActivitiesPage />, () => response(), {
         path: '/activities',
         routePath: '/activities',
       })
 
       await screen.findByRole('table')
-      const trigger = within(headerOf('Typ')).getByRole('button', {
-        name: 'Nach Aktivitätstyp filtern',
-      })
-      await user.click(trigger)
-      await user.selectOptions(
-        await screen.findByRole('combobox', { name: 'Aktivitätstyp' }),
-        'INDOOR',
+      await user.click(
+        within(headerOf('Typ')).getByRole('button', { name: 'Nach Aktivitätstyp filtern' }),
       )
+      await tickValue(user, 'Indoor')
 
       expect(router.state.location.search).toBe('?type=INDOOR')
       await waitFor(() =>
         expect(calls('ActivitiesPageQuery').at(-1)).toMatchObject({
-          where: { type: { eq: 'INDOOR' } },
+          where: { type: { in: ['INDOOR'] } },
         }),
       )
-      await waitFor(() =>
-        expect(screen.queryByRole('combobox', { name: 'Aktivitätstyp' })).not.toBeInTheDocument(),
-      )
-      expect(
-        await within(headerOf('Typ')).findByRole('button', {
-          name: 'Nach Aktivitätstyp filtern, aktiv: Indoor',
-        }),
-      ).toBeInTheDocument()
+      expect(screen.getByRole('group', { name: 'Aktivitätstyp' })).toBeInTheDocument()
+
+      await closeFilter(user)
+      const trigger = await within(headerOf('Typ')).findByRole('button', {
+        name: 'Nach Aktivitätstyp filtern, aktiv: Indoor',
+      })
+      await waitFor(() => expect(trigger).toHaveFocus())
     })
 
-    it('closes the popover with Escape', async () => {
+    it('ticks several types, shows the count and clears them together', async () => {
+      const { user, router, calls } = renderWithRelay(<ActivitiesPage />, () => response(), {
+        path: '/activities?type=ROAD',
+        routePath: '/activities',
+      })
+
+      await screen.findByRole('table')
+      await user.click(
+        within(headerOf('Typ')).getByRole('button', {
+          name: 'Nach Aktivitätstyp filtern, aktiv: Strasse',
+        }),
+      )
+      await tickValue(user, 'Gravel')
+
+      expect(router.state.location.search).toBe('?type=ROAD&type=GRAVEL')
+      await waitFor(() =>
+        expect(calls('ActivitiesPageQuery').at(-1)).toMatchObject({
+          where: { type: { in: ['ROAD', 'GRAVEL'] } },
+        }),
+      )
+      expect(await screen.findByText('2 ausgewählt')).toBeInTheDocument()
+      await closeFilter(user)
+      expect(
+        await within(headerOf('Typ')).findByRole('button', {
+          name: 'Nach Aktivitätstyp filtern, aktiv: Strasse, Gravel',
+        }),
+      ).toBeInTheDocument()
+
+      await user.click(within(headerOf('Typ')).getByRole('button', { name: /Nach Aktivitätstyp/ }))
+      await user.click(await screen.findByRole('button', { name: 'Auswahl löschen' }))
+      await waitFor(() => expect(router.state.location.search).toBe(''))
+    })
+
+    it('narrows the bicycle checklist with the search field', async () => {
+      const withVehicles = () => ({
+        data: {
+          ...response().data,
+          vehicles: {
+            nodes: [
+              { id: 'vehicle-1', brand: 'Canyon', model: 'Ultimate', nickname: null },
+              { id: 'vehicle-2', brand: 'Specialized', model: 'Tarmac', nickname: 'Renner' },
+            ],
+            pageInfo: { hasNextPage: false },
+          },
+        },
+      })
+      const { user, router } = renderWithRelay(<ActivitiesPage />, withVehicles, {
+        path: '/activities',
+        routePath: '/activities',
+      })
+
+      await screen.findByRole('table')
+      // The header's sort button has the same name, so take the summary button outside the table.
+      const summaryButton = screen
+        .getAllByRole('button', { name: 'Velo' })
+        .find((button) => !button.closest('table'))
+      await user.click(summaryButton as HTMLElement)
+      await user.type(await screen.findByRole('searchbox', { name: 'Suchen …' }), 'ren')
+
+      expect(screen.queryByRole('checkbox', { name: 'Canyon Ultimate' })).not.toBeInTheDocument()
+      await tickValue(user, 'Renner')
+      expect(router.state.location.search).toBe('?vehicle=vehicle-2')
+    })
+
+    it('keeps the table reachable while the popover is open from sm', async () => {
+      // Wider than sm: every min-width query matches, so the filter opens as a popover.
+      vi.spyOn(window, 'matchMedia').mockImplementation(
+        (query) =>
+          ({
+            matches: query.includes('min-width'),
+            media: query,
+            addListener: () => {},
+            removeListener: () => {},
+            addEventListener: () => {},
+            removeEventListener: () => {},
+          }) as unknown as MediaQueryList,
+      )
       const { user } = renderWithRelay(<ActivitiesPage />, () => response(), {
         path: '/activities',
         routePath: '/activities',
@@ -259,10 +353,25 @@ describe('ActivitiesPage', () => {
       await user.click(
         within(headerOf('Typ')).getByRole('button', { name: 'Nach Aktivitätstyp filtern' }),
       )
-      await screen.findByRole('combobox', { name: 'Aktivitätstyp' })
+      await tickValue(user, 'Indoor')
+      expect(screen.getByRole('table')).toBeInTheDocument()
+      await closeFilter(user)
+    })
+
+    it('closes the filter with Escape', async () => {
+      const { user } = renderWithRelay(<ActivitiesPage />, () => response(), {
+        path: '/activities',
+        routePath: '/activities',
+      })
+
+      await screen.findByRole('table')
+      await user.click(
+        within(headerOf('Typ')).getByRole('button', { name: 'Nach Aktivitätstyp filtern' }),
+      )
+      await screen.findByRole('group', { name: 'Aktivitätstyp' })
       await user.keyboard('{Escape}')
       await waitFor(() =>
-        expect(screen.queryByRole('combobox', { name: 'Aktivitätstyp' })).not.toBeInTheDocument(),
+        expect(screen.queryByRole('group', { name: 'Aktivitätstyp' })).not.toBeInTheDocument(),
       )
     })
 
@@ -304,10 +413,8 @@ describe('ActivitiesPage', () => {
       await user.click(
         within(headerOf('Typ')).getByRole('button', { name: 'Nach Aktivitätstyp filtern' }),
       )
-      await user.selectOptions(
-        await screen.findByRole('combobox', { name: 'Aktivitätstyp' }),
-        'INDOOR',
-      )
+      await tickValue(user, 'Indoor')
+      await closeFilter(user)
 
       await waitFor(() => expect(screen.getByRole('table')).toHaveAttribute('aria-busy', 'true'))
       expect(screen.getByRole('table')).toBe(table)
@@ -328,10 +435,8 @@ describe('ActivitiesPage', () => {
       await user.click(
         within(headerOf('Typ')).getByRole('button', { name: 'Nach Aktivitätstyp filtern' }),
       )
-      await user.selectOptions(
-        await screen.findByRole('combobox', { name: 'Aktivitätstyp' }),
-        'INDOOR',
-      )
+      await tickValue(user, 'Indoor')
+      await closeFilter(user)
       await waitFor(() => expect(router.state.location.search).toBe('?type=INDOOR'))
       await waitFor(() => expect(screen.getByRole('table')).not.toHaveAttribute('aria-busy'))
 
@@ -362,7 +467,7 @@ describe('ActivitiesPage', () => {
 
       await screen.findByRole('table')
       expect(calls('ActivitiesPageQuery')[0]).toMatchObject({
-        where: { wind: { eq: 'STRONG' } },
+        where: { wind: { in: ['STRONG'] } },
       })
     })
 

@@ -2,14 +2,11 @@ import type { TFunction } from 'i18next'
 import type { Formatter } from '../../i18n/useFormat'
 import { winds } from './activityFilters'
 
+/** Hours and minutes, matching the "Std." unit of the column: 2400 s is "0:40", 5400 s is "1:30". */
 export function formatDuration(seconds: number) {
-  const totalMinutes = Math.floor(seconds / 60)
-  const hours = Math.floor(totalMinutes / 60)
-  const minutes = totalMinutes % 60
-  const remainingSeconds = seconds % 60
-  return hours > 0
-    ? `${hours}:${String(minutes).padStart(2, '0')}`
-    : `${minutes}:${String(remainingSeconds).padStart(2, '0')}`
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  return `${hours}:${String(minutes).padStart(2, '0')}`
 }
 
 /** The unit is shown in the column header, so the cell holds the number only. */

@@ -166,7 +166,8 @@ Before designing something new, check whether one of these already covers it
 | `KpiTile` | Selectable total with kicker, `kpi` value, unit, delta arrow and note; selected = `brand.subtle` + indicator bar. |
 | `MetricChart` | One Recharts series over time, coloured through theme CSS variables. |
 | `PeriodPicker` | Attached toggle group for 30 T / 90 T / 1 J / Alle. |
-| `DataTable` | Sortable history table (`@tanstack/react-table`). |
+| `DataTable` | Sortable history table (`@tanstack/react-table`). A column can declare a `filter`: its trigger shows the ticked count (`brand.subtle` badge with `brand.fg`) and opens a `FilterPopover`. |
+| `FilterChecklist` | Multi-select of a filter: a group of checkboxes (`fg.muted` outline, `brand.solid` when ticked), an optional search for long lists, "N ausgewählt" and "Auswahl löschen". Lives in the `FilterPopover` (popover from `sm`, bottom sheet below), which ends with "Fertig". |
 | `FormDialog`, `ConfirmDialog` | Add/edit dialog and destructive confirmation. |
 | `PrimaryNav`, `MobileNav`, `UserMenu`, `AppHeader` | Shell navigation with the indicator bar. |
 | `BrandMark` | The logo mark with the `volt` gradient. |
