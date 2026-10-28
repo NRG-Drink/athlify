@@ -17,7 +17,7 @@ namespace Athlify.Api.Database.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -218,6 +218,78 @@ namespace Athlify.Api.Database.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("ActivityMerges");
+                });
+
+            modelBuilder.Entity("Athlify.Api.Domain.Auth.RefreshToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedByIp")
+                        .IsRequired()
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ParentTokenId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ReasonRevoked")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("Revoked")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RevokedByIp")
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid>("Uid")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("FamilyId");
+
+                    b.HasIndex("ParentTokenId");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("Uid")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RefreshTokens");
                 });
 
             modelBuilder.Entity("Athlify.Api.Domain.Body.BodyStats", b =>
@@ -531,12 +603,19 @@ namespace Athlify.Api.Database.Migrations
                     b.Property<Guid>("Uid")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
                         .IsUnique();
 
                     b.HasIndex("Uid")
+                        .IsUnique();
+
+                    b.HasIndex("Username")
                         .IsUnique();
 
                     b.ToTable("Users");
@@ -801,6 +880,23 @@ namespace Athlify.Api.Database.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Athlify.Api.Domain.Auth.RefreshToken", b =>
+                {
+                    b.HasOne("Athlify.Api.Domain.Auth.RefreshToken", "ParentToken")
+                        .WithMany()
+                        .HasForeignKey("ParentTokenId");
+
+                    b.HasOne("Athlify.Api.Domain.Users.User", "User")
+                        .WithMany("RefreshTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ParentToken");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Athlify.Api.Domain.Body.BodyStats", b =>
                 {
                     b.HasOne("Athlify.Api.Domain.Users.User", null)
@@ -946,6 +1042,11 @@ namespace Athlify.Api.Database.Migrations
             modelBuilder.Entity("Athlify.Api.Domain.Gadgets.Gadget", b =>
                 {
                     b.Navigation("MaintenanceCycles");
+                });
+
+            modelBuilder.Entity("Athlify.Api.Domain.Users.User", b =>
+                {
+                    b.Navigation("RefreshTokens");
                 });
 
             modelBuilder.Entity("Athlify.Api.Domain.Vehicles.Vehicle", b =>

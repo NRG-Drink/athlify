@@ -1,3 +1,4 @@
+using Athlify.Api.Domain.Auth;
 using Athlify.Api.Domain.Common;
 
 namespace Athlify.Api.Domain.Users;
@@ -17,6 +18,7 @@ public enum Language
 /// <summary>An account. An Administrator keeps every regular-user permission and can also manage users.</summary>
 public class User : Entity
 {
+    public string Username { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
 
     /// <summary>Set by the authentication feature; never exposed through the API.</summary>
@@ -26,4 +28,6 @@ public class User : Entity
     public string LastName { get; set; } = string.Empty;
     public Language Language { get; set; } = Language.De;
     public Role Role { get; set; } = Role.User;
+
+    public ICollection<RefreshToken> RefreshTokens { get; set; } = [];
 }
