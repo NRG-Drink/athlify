@@ -1,4 +1,5 @@
 using Athlify.Api.Database;
+using Athlify.Api.Domain.Auth;
 using Athlify.Api.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -12,11 +13,12 @@ public partial class Program
     private static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-        builder.Configuration.AddJsonFile("appsettings.json", optional: true);
         builder.Services.AddSingleton<IDbSeeder, DbSeeder>();
 
-        var developmentUserOptions = builder.Configuration.GetSection(DevelopmentUserOptions.Section)
-            .Get<DevelopmentUserOptions>() ?? new DevelopmentUserOptions();
+        var developmentUserOptions = builder.Configuration
+            .GetSection(DevelopmentUserOptions.Section)
+            .Get<DevelopmentUserOptions>() 
+            ?? new DevelopmentUserOptions();
         var seedOptions = builder.Configuration.GetSection(SeedOptions.Section).Get<SeedOptions>() ?? new SeedOptions();
         builder.Services.AddSingleton<DevelopmentCurrentUser>();
         builder.Services.AddScoped<ICurrentUser>(sp => sp.GetRequiredService<DevelopmentCurrentUser>());
@@ -25,7 +27,8 @@ public partial class Program
         // Not pooled: the context takes the scoped ICurrentUser for its owner query filter, and a pooled
         // context would keep the user of an earlier request. EnrichNpgsqlDbContext keeps Aspire's retries,
         // health check and telemetry that AddNpgsqlDbContext would add.
-        var postgresConnectionString = builder.Configuration.GetConnectionString("postgres-db")
+        var postgresConnectionString = builder.Configuration
+            .GetConnectionString("postgres-db")
             ?? throw new InvalidOperationException("ConnectionStrings:postgres-db is required.");
         var postgresPassword = builder.Configuration["POSTGRES_PASSWORD"];
         if (!string.IsNullOrEmpty(postgresPassword))
@@ -37,8 +40,7 @@ public partial class Program
             postgresConnectionString = connectionBuilder.ConnectionString;
         }
 
-        builder.Services.AddDbContext<AthlifyDbContext>(options =>
-            options.UseNpgsql(postgresConnectionString));
+        builder.Services.AddDbContext<AthlifyDbContext>(options => options.UseNpgsql(postgresConnectionString));
         builder.EnrichNpgsqlDbContext<AthlifyDbContext>();
 
         // Allows the local Vite dev server to call the GraphQL endpoint during development.
@@ -51,9 +53,10 @@ public partial class Program
                     .AllowAnyMethod());
         });
 
-        builder
-            .AddGraphQL()
-            .AddTypes()
+        builder.Services
+            .AddGraphQLServer()
+            .AddAuthorization()
+            .AddAthlifyTypes()
             .AddGlobalObjectIdentification()
             .AddProjections()
             .AddFiltering()
@@ -71,7 +74,11 @@ public partial class Program
                 options.MaxTypeCost = 10_000;
             });
 
+        builder.AddAuth();
         var app = builder.Build();
+        app.UseAuth();
+
+        if (app.Configuration.GetValue<bool>("Database:AutoMigrate", true))
         {
             await using var scope = app.Services.CreateAsyncScope();
             var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
