@@ -165,7 +165,7 @@ public class DbSeederTests
             Email = $"seed-{userId}@example.com",
             FirstName = "Seed",
             LastName = "User",
-            Role = Role.User,
+            Role = UserRole.User,
         });
         await context.SaveChangesAsync();
     }
@@ -180,6 +180,6 @@ public class DbSeederTests
 
     private sealed class FixedCurrentUser(int userId) : ICurrentUser
     {
-        public int UserId => userId;
+        public int? UserId => userId;
     }
 }

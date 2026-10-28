@@ -18,7 +18,7 @@ public abstract class WebApiTestBase : WebApplicationTest<MyWebApplicationFactor
     /// Creates a user in this test's database and returns a client that acts as that user.
     /// <c>Factory.CreateClient()</c> without this helper acts as nobody (<c>NOT_AUTHENTICATED</c>).
     /// </summary>
-    protected async Task<HttpClient> CreateUserClientAsync(string email = "luca@example.com", Role role = Role.User)
+    protected async Task<HttpClient> CreateUserClientAsync(string email = "luca@example.com", string role = UserRole.User)
     {
         int userId;
         await using (var scope = Factory.Services.CreateAsyncScope())
@@ -99,7 +99,7 @@ public class TestCurrentUser(IHttpContextAccessor httpContextAccessor) : ICurren
 {
     public const string Header = "X-Test-User-Id";
 
-    public int UserId =>
+    public int? UserId =>
         httpContextAccessor.HttpContext?.Request.Headers[Header] is { Count: 1 } value
         && int.TryParse(value[0], out var id)
             ? id
