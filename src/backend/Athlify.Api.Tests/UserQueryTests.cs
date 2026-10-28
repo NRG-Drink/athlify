@@ -9,7 +9,7 @@ public class UserQueryTests : WebApiTestBase
     [Test]
     public async Task MeReturnsTheSignedInUser()
     {
-        var client = await CreateUserClientAsync("admin@example.com", Role.Administrator);
+        var client = await CreateUserClientAsync("admin@example.com", UserRole.Admin);
 
         var me = (await DataAsync(client, "query { me { id email role language } }")).GetProperty("me");
 
