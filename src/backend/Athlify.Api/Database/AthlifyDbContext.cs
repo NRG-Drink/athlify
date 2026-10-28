@@ -1,4 +1,5 @@
 using Athlify.Api.Domain.Activities;
+using Athlify.Api.Domain.Auth;
 using Athlify.Api.Domain.Body;
 using Athlify.Api.Domain.Common;
 using Athlify.Api.Domain.Events;
@@ -10,7 +11,6 @@ using Athlify.Api.Domain.Vehicles;
 using Microsoft.EntityFrameworkCore;
 
 namespace Athlify.Api.Database;
-
 
 // cd .\Athlify.Api\
 // dotnet ef migrations add Init --output-dir Database\Migrations
@@ -40,6 +40,7 @@ public class AthlifyDbContext(DbContextOptions<AthlifyDbContext> options, ICurre
     public DbSet<Event> Events => Set<Event>();
     public DbSet<StravaConnection> StravaConnections => Set<StravaConnection>();
     public DbSet<SeedMarker> SeedMarkers => Set<SeedMarker>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     /// <summary>
     /// Read by the query filters each time a query runs (EF Core parameterizes context members), so one
