@@ -46,7 +46,7 @@ public class AthlifyDbContext(DbContextOptions<AthlifyDbContext> options, ICurre
     /// Read by the query filters each time a query runs (EF Core parameterizes context members), so one
     /// model serves every user. Throws <c>NOT_AUTHENTICATED</c> when nobody is signed in.
     /// </summary>
-    private int CurrentUserId => currentUser.UserId;
+    private int CurrentUserId => currentUser.UserId ?? throw DomainErrors.NotAuthenticated();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
