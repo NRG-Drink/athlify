@@ -70,8 +70,8 @@ public partial class Program
             // as Relay does, already costs about 6600. Pages are capped at 200 and every request is a user's own.
             .ModifyCostOptions(options =>
             {
-                options.MaxFieldCost = 10_000;
-                options.MaxTypeCost = 10_000;
+                options.MaxFieldCost = 10_000_000;
+                options.MaxTypeCost = 10_000_000;
             });
 
         builder.AddAuth();

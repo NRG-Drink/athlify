@@ -14,7 +14,7 @@ public class UserQueryTests : WebApiTestBase
         var me = (await DataAsync(client, "query { me { id email role language } }")).GetProperty("me");
 
         await Assert.That(me.GetProperty("email").GetString()).IsEqualTo("admin@example.com");
-        await Assert.That(me.GetProperty("role").GetString()).IsEqualTo("ADMINISTRATOR");
+        await Assert.That(me.GetProperty("role").GetString()).IsEqualTo("Admin");
         await Assert.That(me.GetProperty("language").GetString()).IsEqualTo("DE");
     }
 
