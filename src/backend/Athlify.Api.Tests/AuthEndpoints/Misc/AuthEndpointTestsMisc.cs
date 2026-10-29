@@ -13,11 +13,28 @@ public class MiscTestFactory : AuthApiFactory
 public sealed class AuthEndpointTestsMisc(AuthApiTestFixture<MiscTestFactory> fixture) : AuthEndpointsTestsBase<MiscTestFactory>(fixture)
 {
     [Test]
-    public async Task Login_WithInvalidCredentials_ShouldFail()
+    public async Task Login_WithInvalidPassword_ShouldFail()
     {
         await TestIsNotAuthorized();
 
         using var response = await LoginAsync("test", "wrongpassword");
+        var content = await response.Content.ReadAsStringAsync();
+        var cookies = response.Headers.TryGetValues("Set-Cookie", out var headerValues);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
+        await Assert.That(content).IsEmpty();
+        await Assert.That(cookies).IsFalse();
+        await Assert.That(headerValues).IsNull();
+
+        await TestIsNotAuthorized();
+    }
+
+    [Test]
+    public async Task Login_WithNotExistingUser_ShouldFail()
+    {
+        await TestIsNotAuthorized();
+
+        using var response = await LoginAsync("notexistinguser", "password");
         var content = await response.Content.ReadAsStringAsync();
         var cookies = response.Headers.TryGetValues("Set-Cookie", out var headerValues);
 
