@@ -1,17 +1,17 @@
 ﻿using Athlify.Api.Domain.Users;
+using System.Security.Claims;
 
 namespace Athlify.Api.Domain.Auth;
 
 public class CurrentUserFromHttpContext(IHttpContextAccessor httpContextAccessor) : ICurrentUser
 {
-    public int? UserId
+    public int? UserId => GetUserIdFromHttpContext();
+
+    private int? GetUserIdFromHttpContext()
     {
-        get
-        {
-            var userIdClaim = httpContextAccessor.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            return int.TryParse(userIdClaim, out var userId) 
-                ? userId 
-                : throw new InvalidOperationException("User is not authenticated.");
-        }
+        var idString = httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        return int.TryParse(idString, out var idInt) 
+            ? idInt 
+            : null;
     }
 }
