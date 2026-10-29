@@ -30,7 +30,8 @@ public class TokenService(
         var expiresAt = DateTimeOffset.UtcNow.AddMinutes(jwtOptions.Value.LifetimeMinutes);
         var claims = new[]
         {
-            new Claim(ClaimTypes.NameIdentifier, dbUser.Username),
+            new Claim(ClaimTypes.NameIdentifier, dbUser.Id.ToString()),
+            new Claim(ClaimTypes.Name, dbUser.Username),
             new Claim(ClaimTypes.Email, dbUser.Username),
             new Claim(ClaimTypes.Role, dbUser.Role),
         };
@@ -119,4 +120,3 @@ public class TokenService(
         await db.SaveChangesAsync();
     }
 }
-

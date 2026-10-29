@@ -18,28 +18,28 @@ public partial class AuthTestQuery
     [Authorize]
     public async Task<HelloData> HelloUser(ClaimsPrincipal claimsPrincipal)
     {
-        var userId = claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
-        return new HelloData($"Hello user {userId}!", DateTime.UtcNow);
+        var userName = claimsPrincipal.FindFirstValue(ClaimTypes.Name);
+        return new HelloData($"Hello user {userName}!", DateTime.UtcNow);
     }
 
     [Authorize(Roles = [UserRole.Admin])]
     public async Task<HelloData> HelloAdmin(ClaimsPrincipal claimsPrincipal)
     {
-        var userId = claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
-        return new HelloData($"Hello admin {userId}!", DateTime.UtcNow);
+        var userName = claimsPrincipal.FindFirstValue(ClaimTypes.Name);
+        return new HelloData($"Hello admin {userName}!", DateTime.UtcNow);
     }
 
     [Authorize(Roles = [UserRole.User])]
     public async Task<HelloData> HelloStaff(ClaimsPrincipal claimsPrincipal)
     {
-        var userId = claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
-        return new HelloData($"Hello staff {userId}!", DateTime.UtcNow);
+        var userName = claimsPrincipal.FindFirstValue(ClaimTypes.Name);
+        return new HelloData($"Hello staff {userName}!", DateTime.UtcNow);
     }
 
     [Authorize(Roles = [UserRole.User, UserRole.Admin])]
     public async Task<HelloData> HelloEmployee(ClaimsPrincipal claimsPrincipal)
     {
-        var userId = claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
-        return new HelloData($"Hello employee {userId}!", DateTime.UtcNow);
+        var userName = claimsPrincipal.FindFirstValue(ClaimTypes.Name);
+        return new HelloData($"Hello employee {userName}!", DateTime.UtcNow);
     }
 }
