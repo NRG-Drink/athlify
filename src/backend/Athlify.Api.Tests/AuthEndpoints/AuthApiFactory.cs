@@ -4,6 +4,7 @@ using Athlify.Api.Domain.Users;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -43,16 +44,16 @@ public abstract class AuthApiFactory : TestWebApplicationFactory<Program>
         builder.UseEnvironment("Development");
         builder.ConfigureServices((context, services) =>
         {
+            services.RemoveAll<IDbContextOptionsConfiguration<AthlifyDbContext>>();
             services.RemoveAll<DbContextOptions<AthlifyDbContext>>();
             services.RemoveAll<AthlifyDbContext>();
+            services.RemoveAll<DbContext>();
             services
                 .Configure<JwtOptions>(context.Configuration.GetRequiredSection(JwtOptions.SectionName))
                 .AddScoped<ITokenService, TokenService>()
                 .AddScoped<ICookieService, CookieService>()
                 .AddScoped<IHashService, HashService>()
-                .AddScoped<ICurrentUser, TestCurrentUser>()
-                //.AddDbContext<AthlifyDbContext>(options => options.UseSqlite(connection));
-                .AddScoped<AthlifyDbContext>(provider => DbFactory());
+                .AddDbContext<AthlifyDbContext>(options => options.UseSqlite(connection));
         });
     }
 
