@@ -14,6 +14,8 @@ namespace Athlify.Api.Tests.AuthEndpoints;
 
 public abstract class AuthApiFactory : TestWebApplicationFactory<Program>
 {
+    private SqliteConnection? keepAliveConnection;
+
     public static readonly string RootPath = Path.Combine(Directory.GetCurrentDirectory(), "AuthEndpoints");
     public virtual string ContentRootPath => RootPath;
     public Func<AthlifyDbContext> DbFactory { get; private set; } = () => throw new InvalidOperationException("DbFactory is not initialized.");
@@ -26,10 +28,11 @@ public abstract class AuthApiFactory : TestWebApplicationFactory<Program>
             config.AddJsonFile(Path.Combine(ContentRootPath, "appsettings.json"), optional: false);
         });
 
-        var connection = new SqliteConnection("Data Source=:memory:");
-        connection.Open();
+        var connectionString = $"Data Source=auth-tests-{Guid.NewGuid()};Mode=Memory;Cache=Shared";
+        keepAliveConnection = new SqliteConnection(connectionString);
+        keepAliveConnection.Open();
 
-        DbFactory = () => new AthlifyDbContext(new DbContextOptionsBuilder<AthlifyDbContext>().UseSqlite(connection).Options, new TestCurrentUser());
+        DbFactory = () => new AthlifyDbContext(new DbContextOptionsBuilder<AthlifyDbContext>().UseSqlite(connectionString).Options, new TestCurrentUser());
         using var db = DbFactory();
         db.Database.EnsureCreated();
         SeedDbFunc(db);
@@ -47,8 +50,14 @@ public abstract class AuthApiFactory : TestWebApplicationFactory<Program>
                 .AddScoped<ITokenService, TokenService>()
                 .AddScoped<ICookieService, CookieService>()
                 .AddScoped<IHashService, HashService>()
-                .AddDbContext<AthlifyDbContext>(options => options.UseSqlite(connection));
+                .AddDbContext<AthlifyDbContext>(options => options.UseSqlite(connectionString));
         });
+    }
+
+    public new void Dispose()
+    {
+        base.Dispose();
+        keepAliveConnection?.Dispose();
     }
 
     protected static User AddTestUser(

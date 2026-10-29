@@ -1,3 +1,6 @@
+using Microsoft.EntityFrameworkCore;
+using System.Net;
+
 namespace Athlify.Api.Tests.AuthEndpoints.Reuse;
 
 public class ReuseTestFactory : AuthApiFactory
@@ -71,5 +74,36 @@ public class AuthEndpointTestsReuse(AuthApiTestFixture<ReuseTestFactory> fixture
 
         var (_, _, refresh2AT) = await GetRtAndAtFromStateBag(nameof(Refresh_WithValidRT_ShouldWorkAgain));
         await TestIsAuthorized(refresh2AT);
+    }
+
+    [Test, DependsOn(nameof(Access_AfterTokenRevocation_ShouldWork))]
+    public async Task Refresh_ConcurrentRequests_ShouldConsumeTokenOnce()
+    {
+        using var loginResponse = await LoginAsync("test", "test");
+        var (refreshToken, refreshCookie) = await GetAndTestRefreshCookie(loginResponse, isLogin: true);
+
+        var responses = await Task.WhenAll(
+            RefreshTokenAsync(refreshCookie),
+            RefreshTokenAsync(refreshCookie));
+        using var firstResponse = responses[0];
+        using var secondResponse = responses[1];
+
+        await Assert.That(responses.Count(r => r.StatusCode == HttpStatusCode.OK)).IsEqualTo(1);
+        await Assert.That(responses.Count(r => r.StatusCode == HttpStatusCode.Unauthorized)).IsEqualTo(1);
+
+        using var db = fixture.Factory.DbFactory();
+        var tokenHash = HashService.HashToken(refreshToken);
+        var parent = await db.RefreshTokens.SingleAsync(t => t.TokenHash == tokenHash);
+        var children = await db.RefreshTokens
+            .Where(t => t.ParentTokenId == parent.Id)
+            .ToArrayAsync();
+        await Assert.That(children).Count().IsEqualTo(1);
+
+        var family = await db.RefreshTokens
+            .Where(t => t.FamilyId == parent.FamilyId)
+            .ToArrayAsync();
+        await Assert.That(family)
+            .ContainsOnly(t => t.Revoked is not null)
+            .And.ContainsOnly(t => t.ReasonRevoked is not null);
     }
 }
