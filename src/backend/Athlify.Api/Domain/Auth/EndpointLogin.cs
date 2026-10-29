@@ -17,7 +17,9 @@ public class EndpointLogin
     {
         try
         {
-            var dbUser = await db.Users.FirstOrDefaultAsync(u => u.Username == input.Username);
+            var dbUser = await db.Users
+                .IgnoreQueryFilters([AthlifyDbContext.OwnerFilter])
+                .FirstOrDefaultAsync(u => u.Username == input.Username);
 
             var inputPasswordHash = hashService.HashPassword(input.Password);
             var isPasswordValid = IsPasswordValid(inputPasswordHash, dbUser?.PasswordHash);

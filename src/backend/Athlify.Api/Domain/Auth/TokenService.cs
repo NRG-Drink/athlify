@@ -95,7 +95,9 @@ public class TokenService(
             throw new UnauthorizedAccessException("Refresh token has expired.");
         }
 
-        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == stored.UserId)
+        var user = await db.Users
+            .IgnoreQueryFilters([AthlifyDbContext.OwnerFilter])
+            .FirstOrDefaultAsync(u => u.Id == stored.UserId)
             ?? throw new UnauthorizedAccessException("User not found for the provided refresh token.");
 
         var refreshTokenResponse = await GenerateRefreshTokenAsync(user, ip, stored);
