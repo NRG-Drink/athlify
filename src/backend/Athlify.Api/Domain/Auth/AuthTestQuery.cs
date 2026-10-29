@@ -4,6 +4,7 @@ using System.Security.Claims;
 
 namespace Athlify.Api.Domain.Auth;
 
+// TODO: Remove this query in production.
 [QueryType]
 public partial class AuthTestQuery
 {

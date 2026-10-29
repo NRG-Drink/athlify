@@ -13,7 +13,7 @@ namespace Athlify.Api.Domain.Auth;
 public interface ITokenService
 {
     TokenResponse GenerateAccessToken(User dbUser);
-    Task<TokenResponse> GenerateRefreshTokenAsync(User user, string ip, RefreshToken? stored);
+    Task<TokenResponse> GenerateRefreshTokenAsync(User user, string ip);
     Task RevokeTokenFamily(Guid familyId, string ip, RefreshToken.RevokeReason reason = RefreshToken.RevokeReason.ReuseDetected);
     Task<(TokenResponse Token, User User)> RotateRefreshTokenOrThrow(HttpContext httpContext);
 }
@@ -22,7 +22,7 @@ public class TokenService(
     IOptions<JwtOptions> jwtOptions,
     ICookieService cookieService,
     IHashService hashService,
-    AthlifyDbContext db) 
+    AthlifyDbContext db)
     : ITokenService
 {
     public TokenResponse GenerateAccessToken(User dbUser)
@@ -49,60 +49,35 @@ public class TokenService(
         return new TokenResponse(accessToken, expiresAt);
     }
 
-    public async Task<TokenResponse> GenerateRefreshTokenAsync(User user, string ip, RefreshToken? stored)
+    public async Task<TokenResponse> GenerateRefreshTokenAsync(User user, string ip)
+    {
+        var (rawToken, refreshToken) = GetRefreshToken(user.Id, ip);
+
+        var entity = await db.RefreshTokens.AddAsync(refreshToken);
+        await db.SaveChangesAsync();
+
+        return new(rawToken, entity.Entity.ExpiresAt);
+    }
+
+    private (string RawToken, RefreshToken RefreshToken) GetRefreshToken(
+        int userId,
+        string ip,
+        RefreshToken? parentToken = null)
     {
         var newRawToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+        var now = DateTime.UtcNow;
         var newRefreshToken = new RefreshToken
         {
             TokenHash = hashService.HashToken(newRawToken),
-            FamilyId = stored?.FamilyId ?? Guid.NewGuid(),          // same family!
-            UserId = stored?.UserId ?? user.Id,
-            Created = DateTime.UtcNow,
+            FamilyId = parentToken?.FamilyId ?? Guid.NewGuid(),
+            UserId = parentToken?.UserId ?? userId,
+            Created = now,
             CreatedByIp = ip,
-            ExpiresAt = DateTime.UtcNow.AddDays(jwtOptions.Value.RefreshTokenLifetimeDays),
-            ParentTokenId = stored?.Id
+            ExpiresAt = now.AddDays(jwtOptions.Value.RefreshTokenLifetimeDays),
+            ParentTokenId = parentToken?.Id
         };
 
-        stored?.Revoked = DateTime.UtcNow;
-        stored?.RevokedByIp = ip;
-        stored?.ReasonRevoked = RefreshToken.RevokeReason.Rotated;
-
-        var entity = await db.RefreshTokens.AddAsync(newRefreshToken);
-        await db.SaveChangesAsync();
-
-        return new(newRawToken, entity.Entity.ExpiresAt);
-    }
-
-    public async Task<(TokenResponse Token, User User)> RotateRefreshTokenOrThrow(HttpContext httpContext)
-    {
-        var ip = cookieService.GetIpAddress(httpContext);
-        var oldRefreshToken = cookieService.GetRefreshTokenCookie(httpContext)
-            ?? throw new UnauthorizedAccessException("Refresh token not found.");
-        var oldTokenHash = hashService.HashToken(oldRefreshToken);
-        var stored = await db.RefreshTokens.FirstOrDefaultAsync(t => t.TokenHash == oldTokenHash)
-            // Unknown token → forged/garbage → plain rejection
-            ?? throw new UnauthorizedAccessException("Refresh token not found in database.");
-
-        // Check if the old token has been revoked (indicating reuse)
-        if (stored.Revoked is not null)
-        {
-            await RevokeTokenFamily(stored.FamilyId, ip);
-            cookieService.DeleteRefreshTokenCookie(httpContext);
-            throw new UnauthorizedAccessException("Refresh token reuse detected. All tokens in this family have been revoked.");
-        }
-
-        if (stored.IsExpired)
-        {
-            throw new UnauthorizedAccessException("Refresh token has expired.");
-        }
-
-        var user = await db.Users
-            .IgnoreQueryFilters([AthlifyDbContext.OwnerFilter])
-            .FirstOrDefaultAsync(u => u.Id == stored.UserId)
-            ?? throw new UnauthorizedAccessException("User not found for the provided refresh token.");
-
-        var refreshTokenResponse = await GenerateRefreshTokenAsync(user, ip, stored);
-        return (refreshTokenResponse, user);
+        return (newRawToken, newRefreshToken);
     }
 
     public async Task RevokeTokenFamily(
@@ -116,7 +91,90 @@ public class TokenService(
                 .SetProperty(t => t.Revoked, DateTime.UtcNow)
                 .SetProperty(t => t.RevokedByIp, ip)
                 .SetProperty(t => t.ReasonRevoked, reason));
+    }
 
-        await db.SaveChangesAsync();
+    public async Task<(TokenResponse Token, User User)> RotateRefreshTokenOrThrow(HttpContext httpContext)
+    {
+        var ip = cookieService.GetIpAddress(httpContext);
+        var cookieToken = cookieService.GetRefreshTokenCookie(httpContext)
+            ?? throw new UnauthorizedAccessException("Refresh token not found.");
+        var cookieHash = hashService.HashToken(cookieToken);
+        var storedToken = await db.RefreshTokens.AsNoTracking().FirstOrDefaultAsync(t => t.TokenHash == cookieHash)
+            // Unknown token → forged/garbage → plain rejection
+            ?? throw new UnauthorizedAccessException("Refresh token not found in database.");
+
+        var user = await db.Users
+            .IgnoreQueryFilters([AthlifyDbContext.OwnerFilter])
+            .FirstOrDefaultAsync(u => u.Id == storedToken.UserId)
+            ?? throw new UnauthorizedAccessException("User not found for the provided refresh token.");
+
+        var (newRawToken, newRefreshToken) = GetRefreshToken(user.Id, ip, storedToken);
+
+        var isRotateSuccess = await TryRotateToken(ip, storedToken, newRefreshToken);
+        if (!isRotateSuccess)
+        {
+            await ThrowNotRotated(httpContext, ip, storedToken.Id);
+        }
+
+        return (new(newRawToken, newRefreshToken.ExpiresAt), user);
+    }
+
+    private async Task<bool> TryRotateToken(
+        string ip,
+        RefreshToken stored,
+        RefreshToken newRefreshToken)
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        var affectedRows = await db.RefreshTokens
+            .Where(t => t.Id == stored.Id && t.Revoked == null && t.ExpiresAt > newRefreshToken.Created)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(t => t.Revoked, newRefreshToken.Created)
+                .SetProperty(t => t.RevokedByIp, ip)
+                .SetProperty(t => t.ReasonRevoked, RefreshToken.RevokeReason.Rotated));
+
+        if (affectedRows > 1)
+        {
+            throw new InvalidOperationException("Refresh-token consumption affected more than one row.");
+        }
+
+        if (affectedRows == 1)
+        {
+            await db.RefreshTokens.AddAsync(newRefreshToken);
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return true;
+        }
+
+        await transaction.RollbackAsync();
+        return false;
+    }
+
+    private async Task ThrowNotRotated(
+        HttpContext httpContext,
+        string ip,
+        int tokenId)
+    {
+        var currentToken = await db.RefreshTokens
+            .AsNoTracking()
+            .FirstOrDefaultAsync(token => token.Id == tokenId);
+
+        if (currentToken?.Revoked is not null)
+        {
+            await RevokeTokenFamily(currentToken.FamilyId, ip);
+            cookieService.DeleteRefreshTokenCookie(httpContext);
+            throw new UnauthorizedAccessException("Refresh token reuse detected. All tokens in this family have been revoked.");
+        }
+
+        if (currentToken is null)
+        {
+            throw new UnauthorizedAccessException("Refresh token not found in database.");
+        }
+
+        if (currentToken.IsExpired)
+        {
+            throw new UnauthorizedAccessException("Refresh token has expired.");
+        }
+
+        throw new InvalidOperationException("Active refresh token could not be consumed.");
     }
 }
