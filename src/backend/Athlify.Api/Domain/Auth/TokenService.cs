@@ -32,7 +32,7 @@ public class TokenService(
         {
             new Claim(ClaimTypes.NameIdentifier, dbUser.Id.ToString()),
             new Claim(ClaimTypes.Name, dbUser.Username),
-            new Claim(ClaimTypes.Email, dbUser.Username),
+            new Claim(ClaimTypes.Email, dbUser.Email),
             new Claim(ClaimTypes.Role, dbUser.Role),
         };
 
