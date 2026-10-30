@@ -21,6 +21,6 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AthlifyDbC
 
     private sealed class NoCurrentUser : ICurrentUser
     {
-        public int UserId => throw DomainErrors.NotAuthenticated();
+        public int? UserId => throw DomainErrors.NotAuthenticated();
     }
 }
