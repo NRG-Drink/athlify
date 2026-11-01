@@ -10,6 +10,8 @@ export interface FormDialogProps {
   /** A save is in flight: the dialog cannot be submitted again or dismissed. */
   busy: boolean
   onSubmit: () => void
+  /** Width from `sm` up; long forms take `lg`. */
+  size?: 'md' | 'lg'
   children: ReactNode
 }
 
@@ -21,6 +23,7 @@ export function FormDialog({
   submitLabel,
   busy,
   onSubmit,
+  size = 'md',
   children,
 }: FormDialogProps) {
   const { t } = useTranslation()
@@ -39,6 +42,7 @@ export function FormDialog({
       placement={{ base: 'bottom', sm: 'center' }}
       motionPreset="slide-in-bottom"
       scrollBehavior="inside"
+      size={size}
     >
       <Portal>
         <Dialog.Backdrop />

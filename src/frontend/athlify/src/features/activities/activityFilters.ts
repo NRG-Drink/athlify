@@ -59,6 +59,29 @@ export function activityFiltersToWhere(filters: ActivityFilters) {
   return Object.keys(where).length > 0 ? where : undefined
 }
 
+/**
+ * Whether an activity with these values is shown under the filters, by the same rules as the server:
+ * any ticked value within a filter, every active filter.
+ */
+export function matchesActivityFilters(
+  filters: ActivityFilters,
+  activity: {
+    type: string
+    vehicleId: string | null
+    tagIds: readonly string[]
+    wind: string | null
+  },
+): boolean {
+  const within = (ticked: readonly string[] | undefined, values: readonly (string | null)[]) =>
+    !ticked || values.some((value) => value !== null && ticked.includes(value))
+  return (
+    within(filters.types, [activity.type]) &&
+    within(filters.vehicleIds, [activity.vehicleId]) &&
+    within(filters.tagIds, activity.tagIds) &&
+    within(filters.winds, [activity.wind])
+  )
+}
+
 /** Each filter key, in column order, with the field of ActivityFilters that holds its values. The key is also the URL parameter. */
 export const activityFilterFields = {
   type: 'types',

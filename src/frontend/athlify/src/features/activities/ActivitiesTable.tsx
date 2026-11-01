@@ -1,7 +1,8 @@
-import { Flex, Tag, Text } from '@chakra-ui/react'
-import { useMemo, type ReactNode } from 'react'
+import { Flex, IconButton, Menu, Portal, Tag, Text } from '@chakra-ui/react'
+import { useMemo, type ReactNode, type Ref } from 'react'
 import { graphql, useFragment } from 'react-relay'
 import { useTranslation } from 'react-i18next'
+import { LuCopy, LuEllipsis, LuPencil, LuTrash2 } from 'react-icons/lu'
 import { DataTable, type DataTableColumn } from '../../components/DataTable'
 import { useFormat } from '../../i18n/useFormat'
 import { ActivityFilterField } from './ActivityFilterField'
@@ -105,6 +106,67 @@ function TagChips({ row }: { row: ActivityRow }) {
   )
 }
 
+interface RowActionsProps {
+  row: ActivityRow
+  onEdit: (row: ActivityRow) => void
+  onDuplicate: (row: ActivityRow) => void
+  onDelete: (row: ActivityRow) => void
+}
+
+/** Edit as a direct action; duplicate and the destructive delete (last) in a menu. */
+function RowActions({ row, onEdit, onDuplicate, onDelete }: RowActionsProps) {
+  const { t } = useTranslation()
+  const format = useFormat()
+  const date = format.date(row.date)
+  return (
+    <Flex gap="1" justify="flex-end">
+      <IconButton
+        variant="ghost"
+        size="sm"
+        color="fg.muted"
+        aria-label={t('activities.row.edit', { date })}
+        onClick={() => onEdit(row)}
+      >
+        <LuPencil />
+      </IconButton>
+      <Menu.Root positioning={{ placement: 'bottom-end' }}>
+        <Menu.Trigger asChild>
+          <IconButton
+            variant="ghost"
+            size="sm"
+            color="fg.muted"
+            aria-label={t('activities.row.more', { date })}
+          >
+            <LuEllipsis />
+          </IconButton>
+        </Menu.Trigger>
+        <Portal>
+          <Menu.Positioner>
+            {/* Portals leave the app's brand palette, so the menu sets it again. */}
+            <Menu.Content colorPalette="brand">
+              {/* onClick, not onSelect: Enter on a highlighted item clicks it too. */}
+              <Menu.Item value="duplicate" onClick={() => onDuplicate(row)}>
+                <LuCopy aria-hidden />
+                {t('activities.duplicate.action')}
+              </Menu.Item>
+              <Menu.Separator />
+              <Menu.Item
+                value="delete"
+                color="fg.error"
+                _highlighted={{ bg: 'bg.error' }}
+                onClick={() => onDelete(row)}
+              >
+                <LuTrash2 aria-hidden />
+                {t('activities.delete.action')}
+              </Menu.Item>
+            </Menu.Content>
+          </Menu.Positioner>
+        </Portal>
+      </Menu.Root>
+    </Flex>
+  )
+}
+
 /** Shows the full text as a tooltip, because truncated cells hide the end. */
 const titled = (text: string) => (text ? <span title={text}>{text}</span> : '—')
 
@@ -132,6 +194,11 @@ interface ActivitiesTableProps {
   busy: boolean
   /** Shown in the table body when nothing matches; the header and its filters stay. */
   emptyMessage?: ReactNode
+  onEdit: (row: ActivityRow) => void
+  onDuplicate: (row: ActivityRow) => void
+  onDelete: (row: ActivityRow) => void
+  /** The count line, which takes the focus after a delete. */
+  countRef?: Ref<HTMLParagraphElement>
 }
 
 export function ActivitiesTable({
@@ -151,6 +218,10 @@ export function ActivitiesTable({
   totalCount,
   busy,
   emptyMessage,
+  onEdit,
+  onDuplicate,
+  onDelete,
+  countRef,
 }: ActivitiesTableProps) {
   const { t } = useTranslation()
   const format = useFormat()
@@ -372,6 +443,12 @@ export function ActivitiesTable({
       busy={busy}
       emptyMessage={emptyMessage}
       count={t('activities.resultCount', { count: totalCount })}
+      countRef={countRef}
+      actionsLabel={t('activities.row.actionsColumn')}
+      onRowClick={onEdit}
+      rowActions={(row) => (
+        <RowActions row={row} onEdit={onEdit} onDuplicate={onDuplicate} onDelete={onDelete} />
+      )}
       pagination={{
         hasNextPage,
         isLoadingNext,

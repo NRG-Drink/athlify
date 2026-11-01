@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next'
 import { nowInputValue, parseDecimal, toInputValue } from '../../lib/formValues'
-import type { ActivityType, Mood, Wind } from './activityFilters'
+import { activityTypes, type ActivityType, type Mood, type Wind } from './activityFilters'
 
 /** Text values of the activity form; empty strings stand for "not set". */
 export interface ActivityFormValues {
@@ -105,12 +105,12 @@ const text = (value: number | null | undefined) => (value == null ? '' : String(
 
 /** An empty form; type and bicycle come from the latest activity when there is one. */
 export function newActivityValues(
-  defaults: { type?: ActivityType; vehicleId?: string | null },
+  defaults: { type?: string | null; vehicleId?: string | null },
   now = new Date(),
 ): ActivityFormValues {
   return {
     date: nowInputValue(now),
-    type: defaults.type ?? 'ROAD',
+    type: activityTypes.find((type) => type === defaults.type) ?? 'ROAD',
     duration: '',
     distance: '',
     elevationGain: '',

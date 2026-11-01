@@ -1,5 +1,5 @@
 import { Button, Flex, Table, Text, VisuallyHidden, chakra } from '@chakra-ui/react'
-import type { KeyboardEvent, ReactElement, ReactNode } from 'react'
+import type { KeyboardEvent, ReactElement, ReactNode, Ref } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LuArrowDown, LuArrowUp, LuArrowUpDown } from 'react-icons/lu'
 import type { ListSort } from '../lib/sort'
@@ -78,6 +78,8 @@ export interface DataTableProps<T extends object> {
   busy?: boolean
   /** Number of matching rows across all pages, for example "42 Messungen"; shown above the table. */
   count?: string
+  /** The count line; it can take the focus, for example after the focused row was deleted. */
+  countRef?: Ref<HTMLParagraphElement>
   pagination?: DataTablePagination
 }
 
@@ -138,6 +140,7 @@ export function DataTable<T extends object>({
   emptyMessage,
   busy,
   count,
+  countRef,
   pagination,
 }: DataTableProps<T>) {
   const { t } = useTranslation()
@@ -157,7 +160,14 @@ export function DataTable<T extends object>({
   return (
     <Flex direction="column" gap="3">
       {count && (
-        <Text fontSize="sm" color="fg.muted" aria-live="polite">
+        <Text
+          ref={countRef}
+          tabIndex={countRef ? -1 : undefined}
+          fontSize="sm"
+          color="fg.muted"
+          aria-live="polite"
+          _focusVisible={{ outline: 'none' }}
+        >
           {count}
         </Text>
       )}
