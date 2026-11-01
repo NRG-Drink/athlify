@@ -1,4 +1,4 @@
-import { Button, chakra, CloseButton, Dialog, Portal } from '@chakra-ui/react'
+import { Button, chakra, Dialog, Portal } from '@chakra-ui/react'
 import type { FormEventHandler, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -15,7 +15,11 @@ export interface FormDialogProps {
   children: ReactNode
 }
 
-/** Dialog shell for create/edit forms: title, submit/cancel footer, busy handling. A bottom sheet on phones. */
+/**
+ * Dialog shell for create/edit forms: title, submit/cancel footer, busy handling. A bottom sheet on
+ * phones. "Abbrechen", Escape and a click beside the dialog discard the input without asking;
+ * there is no close button.
+ */
 export function FormDialog({
   open,
   onOpenChange,
@@ -74,9 +78,6 @@ export function FormDialog({
                 </Button>
               </Dialog.Footer>
             </chakra.form>
-            <Dialog.CloseTrigger asChild>
-              <CloseButton size="sm" aria-label={t('form.cancel')} disabled={busy} />
-            </Dialog.CloseTrigger>
           </Dialog.Content>
         </Dialog.Positioner>
       </Portal>

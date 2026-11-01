@@ -206,7 +206,9 @@ In short:
   is not portalled, so it stays in the dialog's focus trap. An existing
   name is ticked instead of created twice.
 - `FormDialog` scrolls its body inside the dialog; the footer with
-  "Speichern" and "Abbrechen" always stays visible.
+  "Speichern" and "Abbrechen" always stays visible. It has no close (X)
+  button: "Abbrechen", Escape or a click beside the dialog discard the
+  input without a confirmation question.
 
 ## Components to reuse
 

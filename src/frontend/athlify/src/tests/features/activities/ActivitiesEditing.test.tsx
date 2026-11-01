@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { ActivitiesPage } from '../../../features/activities/ActivitiesPage'
 import { renderWithRelay } from '../../utils/relay'
@@ -247,6 +247,27 @@ describe('ActivitiesPage editing', () => {
       expect(await within(table()).findByText('50.0')).toBeInTheDocument()
       expect(await screen.findByText('Aktivität aktualisiert.')).toBeInTheDocument()
       expect(calls(MORE)).toHaveLength(0)
+    })
+
+    it('has only "Abbrechen" to leave, and a click beside the dialog discards without asking', async () => {
+      const { user, calls } = page(okQuery)
+      await user.click(
+        await screen.findByRole('row', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
+      )
+      const dialog = await screen.findByRole('dialog', { name: 'Aktivität bearbeiten' })
+      expect(within(dialog).getAllByRole('button', { name: 'Abbrechen' })).toHaveLength(1)
+      await user.type(within(dialog).getByLabelText(/^Distanz/), '9')
+
+      // The modal sets `pointer-events: none` around the content, which user-event refuses to click
+      // through; Zag closes on the pointerdown outside the content.
+      const beside = document.querySelector('[data-scope="dialog"][data-part="positioner"]')
+      fireEvent.pointerDown(beside as HTMLElement)
+      fireEvent.pointerUp(beside as HTMLElement)
+      fireEvent.click(beside as HTMLElement)
+
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+      expect(calls(UPDATE)).toHaveLength(0)
     })
 
     it('opens the editor by clicking a row, with the details open when they hold a value', async () => {
@@ -503,6 +524,7 @@ describe('ActivitiesPage editing', () => {
       return dialog
     }
 
+    // Many interactions in one flow; under a full parallel run it can pass the default 5 s.
     it('sets effort with a slider, mood and wind with emoji buttons and tags as chips', async () => {
       const { user, calls } = page((operation) => {
         if (operation === CREATE_TAG)
@@ -559,7 +581,7 @@ describe('ActivitiesPage editing', () => {
           tagIds: ['tag-1', 'tag-2'],
         },
       })
-    })
+    }, 15_000)
 
     it('clears the effort at the far left and a choice when it is pressed again', async () => {
       const { user, calls } = page((operation) =>
