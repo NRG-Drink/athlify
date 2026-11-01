@@ -12,7 +12,6 @@ public class EndpointRefresh
             var (rotatedRefreshToken, user) = await tokenService.RotateRefreshTokenOrThrow(httpContext);
             var accessToken = tokenService.GenerateAccessToken(user);
 
-            var cookieOptions = cookieService.GetRefreshTokenCookieOptions(rotatedRefreshToken.ExpiresAt.DateTime);
             cookieService.SetRefreshTokenCookie(httpContext, rotatedRefreshToken);
 
             return Results.Ok(accessToken);
