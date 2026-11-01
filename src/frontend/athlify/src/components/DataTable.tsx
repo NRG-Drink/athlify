@@ -1,25 +1,27 @@
-import { Flex, Table, Text, VisuallyHidden, chakra } from '@chakra-ui/react'
-import {
-  createColumnHelper,
-  createSortedRowModel,
-  rowSortingFeature,
-  tableFeatures,
-  useTable,
-} from '@tanstack/react-table'
-import { useMemo, type KeyboardEvent, type ReactNode } from 'react'
+import { Button, Flex, Table, Text, VisuallyHidden, chakra } from '@chakra-ui/react'
+import type { KeyboardEvent, ReactElement, ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { LuArrowDown, LuArrowUp, LuArrowUpDown } from 'react-icons/lu'
+import type { ListSort } from '../lib/sort'
 import { ColumnFilter, type DataTableColumnFilter } from './ColumnFilter'
+import { Tooltip } from './ui/tooltip'
 
 export interface DataTableColumn<T extends object> {
   id: string
   header: string
-  /** Value used for sorting. */
+  /** Value shown when `cell` is not given. */
   accessor: (row: T) => number | string
   /** Display of the cell; defaults to the accessor value. */
   cell?: (row: T) => ReactNode
   align?: 'start' | 'end'
   /** Unit shown after the header label, for example `kg`. */
   unit?: string
+  /**
+   * Explanation of an abbreviated or technical header, for example what TSS means. The label gets a
+   * dotted underline and the text shows as a tooltip on hover and keyboard focus. Leave it out for
+   * self-explaining headers.
+   */
+  description?: string
   /** Hides the column below this breakpoint (phones keep only the essential columns). */
   hideBelow?: Breakpoint
   /** Secondary data: shown in a muted colour. */
@@ -33,6 +35,21 @@ export interface DataTableColumn<T extends object> {
   maxWidth?: string
   /** Filter popover next to the sort button of the header. */
   filter?: DataTableColumnFilter
+  /** Whether the header sorts the column; defaults to true. A first click sorts descending. */
+  sortable?: boolean
+}
+
+/** "Load more" below the rows of a paginated list, with an inline error and retry. */
+export interface DataTablePagination {
+  hasNextPage: boolean
+  isLoadingNext: boolean
+  /** The last "load more" failed; shows `errorLabel` and a retry instead of the button. */
+  error: boolean
+  onLoadMore: () => void
+  /** For example "Weitere Messungen laden". */
+  loadMoreLabel: string
+  /** For example "Weitere Messungen konnten nicht geladen werden." */
+  errorLabel: string
 }
 
 type Breakpoint = 'sm' | 'md' | 'lg' | '2xl'
@@ -41,7 +58,12 @@ export interface DataTableProps<T extends object> {
   data: readonly T[]
   columns: DataTableColumn<T>[]
   getRowId: (row: T) => string
-  initialSort: { id: string; desc: boolean }
+  /**
+   * The order of `data`, which the server already applied (a paged list cannot be sorted on the
+   * client). The rows are rendered as they are; a header click reports the next order instead.
+   */
+  sort: ListSort
+  onSortChange: (sort: ListSort) => void
   /** Visually hidden table title for assistive technology. */
   caption: string
   /** Header text (visually hidden) of the row-actions column. */
@@ -54,47 +76,78 @@ export interface DataTableProps<T extends object> {
   emptyMessage?: ReactNode
   /** The data is being refreshed: the rows stay, dimmed, and the table is marked busy. */
   busy?: boolean
+  /** Number of matching rows across all pages, for example "42 Messungen"; shown above the table. */
+  count?: string
+  pagination?: DataTablePagination
 }
 
-const features = tableFeatures({
-  rowSortingFeature,
-  sortedRowModel: createSortedRowModel(),
-})
+/**
+ * Every header cell, including the row-actions column, stays on top while the rows scroll under it,
+ * so the header always spans the full width of the table.
+ */
+const stickyHeader = { position: 'sticky', top: '0', zIndex: 1, bg: 'bg' } as const
 
 const hidden = (hideBelow?: Breakpoint) =>
   hideBelow ? { base: 'none', [hideBelow]: 'table-cell' } : undefined
+
+/** A panel like the chart tooltip, not Chakra's inverted default: hairline border, body text. */
+const hintStyle = {
+  maxW: '20rem',
+  px: '3',
+  py: '2',
+  bg: 'bg.panel',
+  color: 'fg',
+  borderWidth: '1px',
+  borderColor: 'border',
+  borderRadius: 'l2',
+  fontSize: 'sm',
+  fontWeight: 'normal',
+  lineHeight: '1.4',
+  whiteSpace: 'normal',
+  textAlign: 'start',
+  textTransform: 'none',
+  _dark: { shadow: 'none' },
+} as const
+
+/** Shows a header's explanation on hover and keyboard focus; renders the header alone without one. */
+function HeaderHint({ description, children }: { description?: string; children: ReactElement }) {
+  if (!description) return children
+  return (
+    <Tooltip
+      content={description}
+      openDelay={300}
+      closeDelay={0}
+      positioning={{ placement: 'top' }}
+      contentProps={hintStyle}
+    >
+      {children}
+    </Tooltip>
+  )
+}
 
 export function DataTable<T extends object>({
   data,
   columns,
   getRowId,
-  initialSort,
+  sort,
+  onSortChange,
   caption,
   actionsLabel,
   rowActions,
   onRowClick,
   emptyMessage,
   busy,
+  count,
+  pagination,
 }: DataTableProps<T>) {
-  const rows = useMemo(() => [...data], [data])
-  const byId = useMemo(() => new Map(columns.map((column) => [column.id, column])), [columns])
-
-  const tableColumns = useMemo(() => {
-    const helper = createColumnHelper<typeof features, T>()
-    return helper.columns(
-      columns.map((column) =>
-        helper.accessor(column.accessor, { id: column.id, header: column.header }),
-      ),
-    )
-  }, [columns])
-
-  const table = useTable({
-    features,
-    columns: tableColumns,
-    data: rows,
-    initialState: { sorting: [initialSort] },
-    getRowId,
-  })
+  const { t } = useTranslation()
+  /** Current direction and click handler of a header; `toggle` is undefined when it cannot sort. */
+  const sortStateOf = (column: DataTableColumn<T>) => {
+    if (column.sortable === false) return { sorted: false as const, toggle: undefined }
+    const sorted = sort.column === column.id ? (sort.desc ? 'desc' : 'asc') : false
+    // Every sortable column is a date or a number, where the largest or newest is what you look for.
+    return { sorted, toggle: () => onSortChange({ column: column.id, desc: sorted !== 'desc' }) }
+  }
 
   const onRowKeyDown = (event: KeyboardEvent<HTMLTableRowElement>, row: T) => {
     // Only the row itself: Enter on a button inside the row must keep its own meaning.
@@ -102,38 +155,64 @@ export function DataTable<T extends object>({
   }
 
   return (
-    // Bounded height: the horizontal scrollbar then sits at the bottom of the visible area instead
-    // of the end of a long list, and the header stays in view while scrolling vertically.
-    <Table.ScrollArea
-      maxH="calc(100dvh - 14rem)"
-      minH="16rem"
-      opacity={busy ? 0.6 : undefined}
-      transition="opacity 0.15s"
-    >
-      <Table.Root size="md" css={{ tableLayout: 'auto' }} aria-busy={busy || undefined}>
-        <Table.Caption srOnly>{caption}</Table.Caption>
-        <Table.Header>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <Table.Row key={headerGroup.id}>
-              {headerGroup.headers.map((header, index) => {
-                const column = byId.get(header.column.id)
-                if (!column) return null
-                const sorted = header.column.getIsSorted()
+    <Flex direction="column" gap="3">
+      {count && (
+        <Text fontSize="sm" color="fg.muted" aria-live="polite">
+          {count}
+        </Text>
+      )}
+      {/* Bounded height: the horizontal scrollbar then sits at the bottom of the visible area
+          instead of the end of a long list, and the header stays in view while scrolling. */}
+      <Table.ScrollArea
+        maxH="calc(100dvh - 14rem)"
+        minH="16rem"
+        opacity={busy ? 0.6 : undefined}
+        transition="opacity 0.15s"
+      >
+        <Table.Root size="md" css={{ tableLayout: 'auto' }} aria-busy={busy || undefined}>
+          <Table.Caption srOnly>{caption}</Table.Caption>
+          <Table.Header>
+            <Table.Row>
+              {columns.map((column, index) => {
+                const { sorted, toggle } = sortStateOf(column)
                 const end = column.align === 'end'
+                const label = (
+                  <span>
+                    <chakra.span
+                      textDecorationLine={column.description ? 'underline' : undefined}
+                      textDecorationStyle="dotted"
+                      textDecorationColor="fg.muted"
+                      textUnderlineOffset="0.2em"
+                    >
+                      {column.header}
+                    </chakra.span>
+                    {column.unit && (
+                      <Text as="span" fontWeight="normal" color="fg.muted">
+                        {' '}
+                        {column.unit}
+                      </Text>
+                    )}
+                  </span>
+                )
                 return (
                   <Table.ColumnHeader
-                    key={header.id}
+                    key={column.id}
                     textAlign={end ? 'end' : 'start'}
                     display={hidden(column.hideBelow)}
                     w={column.width}
                     whiteSpace="nowrap"
-                    position="sticky"
-                    top="0"
+                    {...stickyHeader}
+                    // The first column also sticks to the left, above the other header cells.
                     left={index === 0 ? '0' : undefined}
-                    zIndex={index === 0 ? 2 : 1}
-                    bg="bg"
+                    zIndex={index === 0 ? 2 : stickyHeader.zIndex}
                     aria-sort={
-                      sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : 'none'
+                      !toggle
+                        ? undefined
+                        : sorted === 'asc'
+                          ? 'ascending'
+                          : sorted === 'desc'
+                            ? 'descending'
+                            : 'none'
                     }
                     css={{
                       '& [data-filter-idle]': { opacity: 0 },
@@ -149,104 +228,126 @@ export function DataTable<T extends object>({
                       gap="1"
                       flexDirection={end ? 'row-reverse' : 'row'}
                     >
-                      <chakra.button
-                        type="button"
-                        onClick={header.column.getToggleSortingHandler()}
-                        display="inline-flex"
-                        alignItems="center"
-                        gap="1"
-                        flexDirection={end ? 'row-reverse' : 'row'}
-                        font="inherit"
-                        color="inherit"
-                        cursor="pointer"
-                        borderRadius="l1"
-                        focusVisibleRing="outside"
-                        css={{
-                          '& [data-sort-idle]': { opacity: 0 },
-                          '&:hover [data-sort-idle], &:focus-visible [data-sort-idle]': {
-                            opacity: 0.6,
-                          },
-                        }}
-                      >
-                        <span>
-                          {column.header}
-                          {column.unit && (
-                            <Text as="span" fontWeight="normal" color="fg.muted">
-                              {' '}
-                              {column.unit}
-                            </Text>
-                          )}
-                        </span>
-                        {sorted === 'asc' && <LuArrowUp aria-hidden />}
-                        {sorted === 'desc' && <LuArrowDown aria-hidden />}
-                        {!sorted && <LuArrowUpDown aria-hidden data-sort-idle />}
-                      </chakra.button>
+                      <HeaderHint description={column.description}>
+                        {toggle ? (
+                          <chakra.button
+                            type="button"
+                            onClick={toggle}
+                            display="inline-flex"
+                            alignItems="center"
+                            gap="1"
+                            flexDirection={end ? 'row-reverse' : 'row'}
+                            font="inherit"
+                            color="inherit"
+                            cursor="pointer"
+                            borderRadius="l1"
+                            focusVisibleRing="outside"
+                            css={{
+                              '& [data-sort-idle]': { opacity: 0 },
+                              '&:hover [data-sort-idle], &:focus-visible [data-sort-idle]': {
+                                opacity: 0.6,
+                              },
+                            }}
+                          >
+                            {label}
+                            {sorted === 'asc' && <LuArrowUp aria-hidden />}
+                            {sorted === 'desc' && <LuArrowDown aria-hidden />}
+                            {!sorted && <LuArrowUpDown aria-hidden data-sort-idle />}
+                          </chakra.button>
+                        ) : (
+                          // Without a sort button the label itself takes the focus, so the
+                          // explanation is reachable by keyboard too.
+                          <chakra.span
+                            tabIndex={column.description ? 0 : undefined}
+                            borderRadius="l1"
+                            focusVisibleRing="outside"
+                          >
+                            {label}
+                          </chakra.span>
+                        )}
+                      </HeaderHint>
                       {column.filter && <ColumnFilter {...column.filter} />}
                     </Flex>
                   </Table.ColumnHeader>
                 )
               })}
               {rowActions && (
-                <Table.ColumnHeader w="1">
+                <Table.ColumnHeader w="1" {...stickyHeader}>
                   <VisuallyHidden>{actionsLabel}</VisuallyHidden>
                 </Table.ColumnHeader>
               )}
             </Table.Row>
-          ))}
-        </Table.Header>
-        <Table.Body>
-          {rows.length === 0 && emptyMessage && (
-            <Table.Row>
-              <Table.Cell colSpan={columns.length + (rowActions ? 1 : 0)}>
-                {emptyMessage}
-              </Table.Cell>
-            </Table.Row>
-          )}
-          {table.getRowModel().rows.map((row) => (
-            <Table.Row
-              key={row.id}
-              tabIndex={onRowClick ? 0 : undefined}
-              cursor={onRowClick ? 'pointer' : undefined}
-              onClick={onRowClick ? () => onRowClick(row.original) : undefined}
-              onKeyDown={onRowClick ? (event) => onRowKeyDown(event, row.original) : undefined}
-              focusVisibleRing="inside"
-              css={{ '&:hover > td': { bg: 'var(--chakra-colors-bg-subtle)' } }}
-            >
-              {row.getAllCells().map((cell, index) => {
-                const column = byId.get(cell.column.id)
-                if (!column) return null
-                const end = column.align === 'end'
-                return (
-                  <Table.Cell
-                    key={cell.id}
-                    textAlign={end ? 'end' : 'start'}
-                    display={hidden(column.hideBelow)}
-                    fontVariantNumeric={end ? 'tabular-nums' : undefined}
-                    whiteSpace={column.truncate ? undefined : 'nowrap'}
-                    minW={column.minWidth}
-                    maxW={column.truncate ? (column.maxWidth ?? '0') : undefined}
-                    color={column.muted ? 'fg.muted' : undefined}
-                    overflow={column.truncate ? 'hidden' : undefined}
-                    textOverflow={column.truncate ? 'ellipsis' : undefined}
-                    position={index === 0 ? 'sticky' : undefined}
-                    left={index === 0 ? '0' : undefined}
-                    bg={index === 0 ? 'bg' : undefined}
-                  >
-                    {column.cell
-                      ? column.cell(row.original)
-                      : String(column.accessor(row.original))}
-                  </Table.Cell>
-                )
-              })}
-              {rowActions && (
-                <Table.Cell w="1" py="1" onClick={(event) => event.stopPropagation()}>
-                  {rowActions(row.original)}
+          </Table.Header>
+          <Table.Body>
+            {data.length === 0 && emptyMessage && (
+              <Table.Row>
+                <Table.Cell colSpan={columns.length + (rowActions ? 1 : 0)}>
+                  {emptyMessage}
                 </Table.Cell>
-              )}
-            </Table.Row>
-          ))}
-        </Table.Body>
-      </Table.Root>
-    </Table.ScrollArea>
+              </Table.Row>
+            )}
+            {data.map((original) => (
+              <Table.Row
+                key={getRowId(original)}
+                tabIndex={onRowClick ? 0 : undefined}
+                cursor={onRowClick ? 'pointer' : undefined}
+                onClick={onRowClick ? () => onRowClick(original) : undefined}
+                onKeyDown={onRowClick ? (event) => onRowKeyDown(event, original) : undefined}
+                focusVisibleRing="inside"
+                css={{ '&:hover > td': { bg: 'var(--chakra-colors-bg-subtle)' } }}
+              >
+                {columns.map((column, index) => {
+                  const end = column.align === 'end'
+                  return (
+                    <Table.Cell
+                      key={column.id}
+                      textAlign={end ? 'end' : 'start'}
+                      display={hidden(column.hideBelow)}
+                      fontVariantNumeric={end ? 'tabular-nums' : undefined}
+                      whiteSpace={column.truncate ? undefined : 'nowrap'}
+                      minW={column.minWidth}
+                      maxW={column.truncate ? (column.maxWidth ?? '0') : undefined}
+                      color={column.muted ? 'fg.muted' : undefined}
+                      overflow={column.truncate ? 'hidden' : undefined}
+                      textOverflow={column.truncate ? 'ellipsis' : undefined}
+                      position={index === 0 ? 'sticky' : undefined}
+                      left={index === 0 ? '0' : undefined}
+                      bg={index === 0 ? 'bg' : undefined}
+                    >
+                      {column.cell ? column.cell(original) : String(column.accessor(original))}
+                    </Table.Cell>
+                  )
+                })}
+                {rowActions && (
+                  <Table.Cell w="1" py="1" onClick={(event) => event.stopPropagation()}>
+                    {rowActions(original)}
+                  </Table.Cell>
+                )}
+              </Table.Row>
+            ))}
+          </Table.Body>
+        </Table.Root>
+      </Table.ScrollArea>
+      {pagination?.error && (
+        <Flex align="center" justify="space-between" gap="3" wrap="wrap">
+          <Text role="alert" color="fg.error">
+            {pagination.errorLabel}
+          </Text>
+          <Button size="sm" variant="outline" onClick={pagination.onLoadMore}>
+            {t('page.retry')}
+          </Button>
+        </Flex>
+      )}
+      {pagination?.hasNextPage && !pagination.error && (
+        <Button
+          alignSelf="center"
+          variant="outline"
+          loading={pagination.isLoadingNext}
+          onClick={pagination.onLoadMore}
+        >
+          {pagination.loadMoreLabel}
+        </Button>
+      )}
+    </Flex>
   )
 }

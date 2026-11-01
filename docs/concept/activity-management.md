@@ -22,7 +22,12 @@ the calendar view and Strava synchronization are not implemented yet.
   and is listed as a removable chip above the table. On small screens, where the
   bicycle, wind and tag columns are hidden, their filters appear above the table
   as buttons and open as a bottom sheet. A filter with no matches keeps the table
-  header and its filters and offers a reset.
+  header and its filters and offers a reset. The list is sorted by the server
+  over all matching activities, not only the loaded page: newest first by
+  default, and the chosen order is kept in the URL (`?sort=distance`,
+  `?sort=-distance`). Type, description, bicycle, mood, wind, gadgets and tags
+  are not sortable, because their stored values would not sort in their
+  natural order. The number of matching activities is shown above the table.
 - Detail view as an edit form.
 - Calendar view with weekly summary inspired by TrainingPeaks.
 - Full CRUD for manual and synchronized activities.

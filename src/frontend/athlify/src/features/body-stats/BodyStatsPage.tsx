@@ -1,15 +1,17 @@
-import { Button, Flex, Heading, Skeleton, Stack } from '@chakra-ui/react'
+import { Button, Flex, Heading, Stack } from '@chakra-ui/react'
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import { graphql, useLazyLoadQuery, usePaginationFragment } from 'react-relay'
 import { useTranslation } from 'react-i18next'
 import { LuActivity, LuPlus } from 'react-icons/lu'
 import { useSearchParams } from 'react-router-dom'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
+import { DataTableSkeleton } from '../../components/DataTableSkeleton'
 import { Page, PageEmptyState } from '../../components/Page'
 import { QueryBoundary } from '../../components/QueryBoundary'
 import { useFormat } from '../../i18n/useFormat'
 import { useFetchKey } from '../../relay/useFetchKey'
 import { useLoadMore } from '../../relay/useLoadMore'
+import { useParamsRefresh } from '../../relay/useParamsRefresh'
 import { latest } from '../../lib/metrics'
 import {
   defaultDateRange,
@@ -33,6 +35,8 @@ import { bodyStatsMetrics, parseMetric, type BodyStatsMetricKey } from './bodySt
 import { useBodyStatsSeries } from './bodyStatsSeries'
 import { BodyStatsSkeleton } from './BodyStatsSkeleton'
 import { BodyStatsTable, type BodyStatsRow } from './BodyStatsTable'
+import { applySort, type ListSort } from '../../lib/sort'
+import { defaultBodyStatsSort, useBodyStatsHistorySort } from './bodyStatsSort'
 import { useBodyStatsMutations } from './useBodyStatsMutations'
 
 const ANALYTICS_PAGE_SIZE = 200
@@ -62,16 +66,22 @@ const analyticsFragment = graphql`
 `
 
 const historyQuery = graphql`
-  query BodyStatsPageHistoryQuery {
-    ...BodyStatsPage_history
+  query BodyStatsPageHistoryQuery($order: [BodyStatsSortInput!]) {
+    ...BodyStatsPage_history @arguments(order: $order)
   }
 `
 
 const historyFragment = graphql`
   fragment BodyStatsPage_history on Query
   @refetchable(queryName: "BodyStatsPageHistoryMoreQuery")
-  @argumentDefinitions(first: { type: "Int", defaultValue: 50 }, after: { type: "String" }) {
-    bodyStats(first: $first, after: $after) @connection(key: "BodyStatsPage_history__bodyStats") {
+  @argumentDefinitions(
+    first: { type: "Int", defaultValue: 50 }
+    after: { type: "String" }
+    order: { type: "[BodyStatsSortInput!]" }
+  ) {
+    bodyStats(first: $first, after: $after, order: $order)
+      @connection(key: "BodyStatsPage_history__bodyStats") {
+      totalCount
       edges {
         node {
           ...BodyStatsTable_entries
@@ -237,18 +247,29 @@ interface HistoryProps {
 
 function BodyStatsHistory({ fetchKey, onCreate, onEdit, onDelete }: HistoryProps) {
   const { t } = useTranslation()
+  const { sort, order } = useBodyStatsHistorySort()
+  const { searchParams, replaceParams, refreshing } = useParamsRefresh()
+  const variables = useMemo(() => ({ order }), [order])
   const { data, hasNext, isLoadingNext, loadNext } = usePaginationFragment<
     BodyStatsPageHistoryMoreQuery,
     BodyStatsPage_history$key
   >(
     historyFragment,
-    useLazyLoadQuery<BodyStatsPageHistoryQuery>(
-      historyQuery,
-      {},
-      { fetchKey, fetchPolicy: 'store-or-network' },
-    ),
+    useLazyLoadQuery<BodyStatsPageHistoryQuery>(historyQuery, variables, {
+      fetchKey,
+      fetchPolicy: 'store-or-network',
+    }),
   )
-  const { loadMore, loadMoreError } = useLoadMore(loadNext, isLoadingNext, HISTORY_PAGE_SIZE)
+  const { loadMore, loadMoreError, setLoadMoreError } = useLoadMore(
+    loadNext,
+    isLoadingNext,
+    HISTORY_PAGE_SIZE,
+  )
+
+  const changeSort = (next: ListSort) => {
+    setLoadMoreError(false)
+    replaceParams(applySort(searchParams, next, defaultBodyStatsSort))
+  }
   const rows = useMemo(
     () => (data.bodyStats?.edges ?? []).map((edge) => edge.node),
     [data.bodyStats],
@@ -273,17 +294,11 @@ function BodyStatsHistory({ fetchKey, onCreate, onEdit, onDelete }: HistoryProps
         onLoadMore={loadMore}
         onEdit={onEdit}
         onDelete={onDelete}
+        sort={sort}
+        onSortChange={changeSort}
+        totalCount={data.bodyStats?.totalCount ?? 0}
+        busy={refreshing}
       />
-    </Stack>
-  )
-}
-
-function BodyStatsHistorySkeleton() {
-  return (
-    <Stack gap="2" role="status" aria-busy="true">
-      {Array.from({ length: 4 }, (_, i) => (
-        <Skeleton key={i} h="10" />
-      ))}
     </Stack>
   )
 }
@@ -327,7 +342,7 @@ function BodyStatsContent({ fetchKey, dialog, onDialogChange, onRetry }: Content
       {analyticsStatus !== 'empty' && (
         <QueryBoundary
           onRetry={onRetry}
-          fallback={<BodyStatsHistorySkeleton />}
+          fallback={<DataTableSkeleton rows={4} />}
           errorMessage={t('bodyStats.loadFailed')}
         >
           <BodyStatsHistory

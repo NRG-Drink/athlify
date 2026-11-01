@@ -140,6 +140,36 @@ describe('ActivitiesPage', () => {
     expect(within(table).queryByText(/42\.5 km/)).not.toBeInTheDocument()
   })
 
+  it('explains abbreviated headers in a tooltip', async () => {
+    const { user } = renderWithRelay(<ActivitiesPage />, () => response(), {
+      path: '/activities',
+      routePath: '/activities',
+    })
+
+    const table = await screen.findByRole('table')
+    const header = within(table).getByText('Dauer').closest('th') as HTMLElement
+    await user.hover(within(header).getByRole('button'))
+    expect(
+      await screen.findByText(
+        'Fahrzeit in Stunden und Minuten, z. B. 1:30 für anderthalb Stunden.',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('still sorts when a header with an explanation is clicked', async () => {
+    const { user, router } = renderWithRelay(<ActivitiesPage />, () => response(), {
+      path: '/activities',
+      routePath: '/activities',
+    })
+
+    const table = await screen.findByRole('table')
+    const header = within(table).getByText('Dauer').closest('th') as HTMLElement
+    await user.click(within(header).getByRole('button'))
+
+    expect(router.state.location.search).toBe('?sort=-time')
+    await waitFor(() => expect(header).toHaveAttribute('aria-sort', 'descending'))
+  })
+
   it('renders description, heart rate, effort, mood, wind, gadgets and tags', async () => {
     renderWithRelay(<ActivitiesPage />, () => response([richActivity, activity]), {
       path: '/activities',
@@ -176,19 +206,85 @@ describe('ActivitiesPage', () => {
     expect(within(table).getByText('+3')).toBeInTheDocument()
   })
 
-  it('sorts by effort, highest first, and puts rows without a value last', async () => {
-    const { user } = renderWithRelay(<ActivitiesPage />, () => response([activity, richActivity]), {
+  it('sends the newest-first order with an id tie-breaker by default', async () => {
+    const { calls } = renderWithRelay(<ActivitiesPage />, () => response(), {
+      path: '/activities',
+      routePath: '/activities',
+    })
+
+    await screen.findByRole('table')
+    expect(calls('ActivitiesPageQuery')[0]).toMatchObject({
+      order: [{ date: 'DESC' }, { id: 'DESC' }],
+    })
+  })
+
+  it('sorts on the server: a header click sends the order and writes it to the URL', async () => {
+    const { user, router, calls } = renderWithRelay(
+      <ActivitiesPage />,
+      () => response([activity, richActivity]),
+      { path: '/activities', routePath: '/activities' },
+    )
+
+    const table = await screen.findByRole('table')
+    const header = within(table).getByText('Distanz').closest('th') as HTMLElement
+    await user.click(within(header).getByRole('button'))
+
+    expect(router.state.location.search).toBe('?sort=-distance')
+    await waitFor(() =>
+      expect(calls('ActivitiesPageQuery').at(-1)).toMatchObject({
+        order: [{ distance: 'DESC' }, { id: 'DESC' }],
+      }),
+    )
+    await waitFor(() => expect(header).toHaveAttribute('aria-sort', 'descending'))
+
+    await user.click(within(header).getByRole('button'))
+    expect(router.state.location.search).toBe('?sort=distance')
+    await waitFor(() => expect(header).toHaveAttribute('aria-sort', 'ascending'))
+  })
+
+  it('reads the order from the URL and keeps the rows in the order the server sent', async () => {
+    const { calls } = renderWithRelay(
+      <ActivitiesPage />,
+      // Deliberately not sorted by heart rate: the client must not resort what it got.
+      () => response([activity, richActivity]),
+      { path: '/activities?sort=-heartRate', routePath: '/activities' },
+    )
+
+    const table = await screen.findByRole('table')
+    expect(calls('ActivitiesPageQuery')[0]).toMatchObject({
+      order: [{ heartRateAverage: 'DESC' }, { id: 'DESC' }],
+    })
+    const rows = within(table).getAllByRole('row', { hidden: true }).slice(1)
+    expect(within(rows[1]).getByText('Feierabendrunde am See')).toBeInTheDocument()
+  })
+
+  it('shows how many activities match across all pages', async () => {
+    renderWithRelay(
+      <ActivitiesPage />,
+      () => {
+        const result = response([activity, richActivity])
+        return {
+          data: { ...result.data, activities: { ...result.data.activities, totalCount: 42 } },
+        }
+      },
+      { path: '/activities', routePath: '/activities' },
+    )
+
+    expect(await screen.findByText('42 Aktivitäten')).toBeInTheDocument()
+  })
+
+  it('does not offer sorting for columns the server cannot sort naturally', async () => {
+    renderWithRelay(<ActivitiesPage />, () => response([richActivity]), {
       path: '/activities',
       routePath: '/activities',
     })
 
     const table = await screen.findByRole('table')
-    const header = within(table).getByText('Anstrengung').closest('th') as HTMLElement
-    await user.click(within(header).getByRole('button', { hidden: true }))
-    expect(header).toHaveAttribute('aria-sort', 'descending')
-    const rows = within(table).getAllByRole('row', { hidden: true }).slice(1)
-    expect(within(rows[0]).getByText('7')).toBeInTheDocument()
-    expect(within(rows[1]).queryByText('7')).not.toBeInTheDocument()
+    for (const label of ['Stimmung', 'Gadgets']) {
+      const header = within(table).getByText(label).closest('th') as HTMLElement
+      expect(header).not.toHaveAttribute('aria-sort')
+      expect(within(header).queryByRole('button', { hidden: true })).not.toBeInTheDocument()
+    }
   })
 
   describe('column filters', () => {
@@ -224,20 +320,19 @@ describe('ActivitiesPage', () => {
       ).not.toBeInTheDocument()
     })
 
-    it('keeps sorting and filtering on separate buttons', async () => {
-      const { user, router } = renderWithRelay(<ActivitiesPage />, () => response(), {
+    it('offers only the filter, not sorting, on the type header', async () => {
+      renderWithRelay(<ActivitiesPage />, () => response(), {
         path: '/activities',
         routePath: '/activities',
       })
 
       await screen.findByRole('table')
       const header = headerOf('Typ')
-      await user.click(within(header).getByRole('button', { name: 'Typ' }))
-      expect(header).toHaveAttribute('aria-sort', 'ascending')
-      expect(router.state.location.search).toBe('')
-      await user.click(within(header).getByRole('button', { name: 'Nach Aktivitätstyp filtern' }))
-      expect(await screen.findByRole('group', { name: 'Aktivitätstyp' })).toBeInTheDocument()
-      expect(header).toHaveAttribute('aria-sort', 'ascending')
+      expect(header).not.toHaveAttribute('aria-sort')
+      expect(within(header).getAllByRole('button', { hidden: true })).toHaveLength(1)
+      expect(
+        within(header).getByRole('button', { name: 'Nach Aktivitätstyp filtern', hidden: true }),
+      ).toBeInTheDocument()
     })
 
     it('ticks a type from the header, keeps the checklist open and returns the focus on "Fertig"', async () => {
@@ -469,20 +564,6 @@ describe('ActivitiesPage', () => {
       expect(calls('ActivitiesPageQuery')[0]).toMatchObject({
         where: { wind: { in: ['STRONG'] } },
       })
-    })
-
-    it('tabs from the sort button to the filter button', async () => {
-      const { user } = renderWithRelay(<ActivitiesPage />, () => response(), {
-        path: '/activities',
-        routePath: '/activities',
-      })
-
-      await screen.findByRole('table')
-      await user.click(within(headerOf('Typ')).getByRole('button', { name: 'Typ' }))
-      await user.tab()
-      expect(
-        within(headerOf('Typ')).getByRole('button', { name: 'Nach Aktivitätstyp filtern' }),
-      ).toHaveFocus()
     })
   })
 })

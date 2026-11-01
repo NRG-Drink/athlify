@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Athlify.Api.Domain.Common;
 using static Athlify.Api.Tests.DomainGraphQl;
 using static Athlify.Api.Tests.GraphQl;
@@ -203,8 +204,50 @@ public class ActivityTests : WebApiTestBase
         await Assert.That(second.GetProperty("pageInfo").GetProperty("hasNextPage").GetBoolean()).IsFalse();
     }
 
+    // The Activities page sorts on the server with the id as the last key, so equal values that span a
+    // page boundary are neither skipped nor repeated, and the order holds for the whole list, not one page.
+    [Test]
+    public async Task ListSortsByDistanceAcrossPagesWithoutSkippingOrRepeating()
+    {
+        var client = await CreateUserClientAsync();
+        var longest = Id(await CreateActivityAsync(client, ActivityInput(distance: 120)));
+        foreach (var _ in Enumerable.Range(0, 3))
+            await CreateActivityAsync(client, ActivityInput(distance: 40));
+        var shortest = Id(await CreateActivityAsync(client, ActivityInput(distance: 10)));
+
+        const string page = """
+            query($after: String) {
+              activities(first: 2, after: $after, order: [{ distance: DESC }, { id: DESC }]) {
+                totalCount
+                nodes { id distance }
+                pageInfo { hasNextPage endCursor }
+              }
+            }
+            """;
+        var nodes = new List<JsonElement>();
+        string? cursor = null;
+        do
+        {
+            var activities = (await DataAsync(client, page, new { after = cursor })).GetProperty("activities");
+            await Assert.That(activities.GetProperty("totalCount").GetInt32()).IsEqualTo(5);
+            nodes.AddRange(activities.GetProperty("nodes").EnumerateArray());
+            var pageInfo = activities.GetProperty("pageInfo");
+            cursor = pageInfo.GetProperty("hasNextPage").GetBoolean()
+                ? pageInfo.GetProperty("endCursor").GetString()
+                : null;
+        } while (cursor is not null);
+
+        var ids = Ids(nodes);
+        var distances = nodes.Select(node => node.GetProperty("distance").GetDouble()).ToList();
+        await Assert.That(ids.Distinct().Count()).IsEqualTo(5);
+        await Assert.That(ids[0]).IsEqualTo(longest);
+        await Assert.That(ids[^1]).IsEqualTo(shortest);
+        await Assert.That(distances.SequenceEqual(distances.OrderByDescending(d => d))).IsTrue();
+    }
+
     // The cost limit is checked statically from the query shape, so one activity is enough. This is the
-    // query of the frontend's Activities page (a page of 50 with a period filter, vehicle, gadgets and tags).
+    // query of the frontend's Activities page (a page of 50 with a period filter, an order, the count, vehicle,
+    // gadgets and tags, plus the filter options).
     [Test]
     public async Task ActivitiesPageQueryStaysWithinTheCostLimit()
     {
@@ -212,8 +255,9 @@ public class ActivityTests : WebApiTestBase
         await CreateActivityAsync(client, ActivityInput());
 
         const string pageQuery = """
-            query($first: Int = 50, $where: ActivityFilterInput) {
-              activities(first: $first, where: $where) {
+            query($first: Int = 50, $where: ActivityFilterInput, $order: [ActivitySortInput!]) {
+              activities(first: $first, where: $where, order: $order) {
+                totalCount
                 edges {
                   node {
                     id date type description time distance averageSpeed elevationGain tss
@@ -226,11 +270,14 @@ public class ActivityTests : WebApiTestBase
                 }
                 pageInfo { hasNextPage endCursor }
               }
+              vehicles(first: 200) { nodes { id brand model nickname } pageInfo { hasNextPage } }
+              tags(first: 200) { nodes { id name } pageInfo { hasNextPage } }
             }
             """;
         var where = new { date = new { gte = DateTime.UtcNow.AddDays(-90).ToString("O") } };
+        var order = new object[] { new { date = "DESC" }, new { id = "DESC" } };
 
-        var data = await DataAsync(client, pageQuery, new { first = 50, where });
+        var data = await DataAsync(client, pageQuery, new { first = 50, where, order });
 
         await Assert.That(data.GetProperty("activities").GetProperty("edges").GetArrayLength()).IsEqualTo(1);
     }
