@@ -387,7 +387,10 @@ describe('ActivitiesPage editing', () => {
     })
 
     it('says so when the active filters hide the new activity', async () => {
-      const { user, calls, router } = page(creating, '/activities?type=GRAVEL')
+      // The server applies the filters: the reloaded list neither shows the new one nor counts it.
+      const hiding = (operation: string) =>
+        operation === MORE ? { data: list([base, second]) } : creating(operation)
+      const { user, calls, router } = page(hiding, '/activities?type=GRAVEL')
       await user.click(await screen.findByRole('button', { name: 'Aktivität erfassen' }))
       const dialog = await screen.findByRole('dialog')
       await user.selectOptions(within(dialog).getByLabelText(/^Typ/), 'INDOOR')

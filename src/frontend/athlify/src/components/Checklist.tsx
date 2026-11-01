@@ -7,7 +7,7 @@ export interface ChecklistOption {
   label: string
 }
 
-export interface ChecklistProps {
+interface ChecklistProps {
   /** Accessible name of the group of checkboxes. */
   label: string
   options: readonly ChecklistOption[]

@@ -21,6 +21,7 @@ import { FormDialog } from '../../components/FormDialog'
 import { useFormat } from '../../i18n/useFormat'
 import {
   detailFields,
+  heartRateFields,
   efforts,
   hasDetails,
   MAX_DESCRIPTION_LENGTH,
@@ -31,13 +32,13 @@ import {
   type ActivityFormValues,
 } from './activityForm'
 import { activityTypes, moods, winds, type FilterOption } from './activityFilters'
-import { formatOptionalNumber } from './activityFormatting'
+import { enumLabel, enumOptions, formatOptionalNumber } from './activityFormatting'
 
+/** The choices of the form; they include the bicycle, gadgets and tags of the activity being edited. */
 export interface ActivityFormOptions {
   vehicles: readonly FilterOption[]
   gadgets: readonly FilterOption[]
   tags: readonly FilterOption[]
-  hasMoreVehicles: boolean
   hasMoreGadgets: boolean
   hasMoreTags: boolean
 }
@@ -52,7 +53,7 @@ export interface ActivityCalculatedValues {
 export interface ActivityFormDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /** Changes the title only; the values decide what is shown. */
+  /** Sets the title; when editing, "More details" opens if it holds values. */
   mode: 'create' | 'duplicate' | 'edit'
   /** Values the form shows each time it opens. */
   initialValues: ActivityFormValues
@@ -63,37 +64,42 @@ export interface ActivityFormDialogProps {
   onSave: (input: ActivityFormInput) => void
 }
 
+/** Longer checklists get a search field. */
+const SEARCHABLE_FROM = 8
+
 const titleKey = {
   create: 'activities.add.title',
   duplicate: 'activities.duplicate.title',
   edit: 'activities.edit.title',
 } as const
 
-/**
- * The options of a select; an id that is not among them (for example a bicycle beyond the first 200)
- * stays selectable under its id, so saving never drops it silently.
- */
-function withCurrent(options: readonly FilterOption[], current: readonly string[]) {
-  const missing = current.filter((id) => id && !options.some((option) => option.id === id))
-  return [...options, ...missing.map((id) => ({ id, label: id }))]
-}
-
-interface SelectProps {
+interface SelectProps<T extends string> {
   label: string
-  value: string
-  onChange: (value: string) => void
+  value: T | ''
+  onChange: (value: T | '') => void
   /** Label of the empty choice; without it a value is required. */
   emptyLabel?: string
-  options: readonly FilterOption[]
+  options: readonly { id: T; label: string }[]
   error?: string
 }
 
-function SelectField({ label, value, onChange, emptyLabel, options, error }: SelectProps) {
+function SelectField<T extends string>({
+  label,
+  value,
+  onChange,
+  emptyLabel,
+  options,
+  error,
+}: SelectProps<T>) {
   return (
     <Field.Root invalid={!!error} required={emptyLabel === undefined}>
       <Field.Label>{label}</Field.Label>
       <NativeSelect.Root>
-        <NativeSelect.Field value={value} onChange={(event) => onChange(event.target.value)}>
+        {/* The options are exactly the values of T, and '' only when emptyLabel offers it. */}
+        <NativeSelect.Field
+          value={value}
+          onChange={(event) => onChange(event.target.value as T | '')}
+        >
           {emptyLabel !== undefined && <option value="">{emptyLabel}</option>}
           {options.map((option) => (
             <option key={option.id} value={option.id}>
@@ -191,10 +197,6 @@ export function ActivityFormDialog({
     else if (detailFields.some((field) => found[field])) setDetailsOpen(true)
   }
 
-  const typeOptions = activityTypes.map((type) => ({
-    id: type,
-    label: t(`activities.types.${type}`),
-  }))
   const unit = (key: string) => t(`activities.units.${key}`)
   const notSet = t('activities.form.notSet')
 
@@ -223,8 +225,8 @@ export function ActivityFormDialog({
             <SelectField
               label={t('activities.columns.type')}
               value={values.type}
-              onChange={(value) => set('type', value as ActivityFormValues['type'])}
-              options={typeOptions}
+              onChange={(value) => value && set('type', value)}
+              options={enumOptions(t, 'types', activityTypes)}
             />
           </SimpleGrid>
           <SimpleGrid columns={2} gap="4">
@@ -259,7 +261,7 @@ export function ActivityFormDialog({
               value={values.vehicleId}
               onChange={(value) => set('vehicleId', value)}
               emptyLabel={t('activities.form.noVehicle')}
-              options={withCurrent(options.vehicles, [values.vehicleId])}
+              options={options.vehicles}
             />
           </SimpleGrid>
           <Field.Root invalid={!!errors.description}>
@@ -276,6 +278,7 @@ export function ActivityFormDialog({
         </Stack>
 
         <Collapsible.Root
+          lazyMount
           open={detailsOpen}
           onOpenChange={(details) => setDetailsOpen(details.open)}
         >
@@ -300,7 +303,7 @@ export function ActivityFormDialog({
                   {t('activities.form.heartRate')}
                 </Fieldset.Legend>
                 <SimpleGrid columns={3} gap="4">
-                  {(['heartRateMin', 'heartRateAverage', 'heartRateMax'] as const).map((field) => (
+                  {heartRateFields.map((field) => (
                     <NumberField
                       key={field}
                       label={t(`activities.form.${field}`)}
@@ -325,55 +328,43 @@ export function ActivityFormDialog({
                 <SelectField
                   label={t('activities.columns.mood')}
                   value={values.mood}
-                  onChange={(value) => set('mood', value as ActivityFormValues['mood'])}
+                  onChange={(value) => set('mood', value)}
                   emptyLabel={notSet}
-                  options={moods.map((mood) => ({
-                    id: mood,
-                    label: t(`activities.moods.${mood}`),
-                  }))}
+                  options={enumOptions(t, 'moods', moods)}
                 />
                 <SelectField
                   label={t('activities.columns.wind')}
                   value={values.wind}
-                  onChange={(value) => set('wind', value as ActivityFormValues['wind'])}
+                  onChange={(value) => set('wind', value)}
                   emptyLabel={notSet}
-                  options={winds.map((wind) => ({
-                    id: wind,
-                    label: t(`activities.winds.${wind}`),
-                  }))}
+                  options={enumOptions(t, 'winds', winds)}
                 />
               </SimpleGrid>
-              <Stack gap="2">
-                <Text fontWeight="medium" fontSize="sm">
-                  {t('activities.columns.gadgets')}
-                </Text>
-                <Checklist
-                  label={t('activities.columns.gadgets')}
-                  options={withCurrent(options.gadgets, values.gadgetIds)}
-                  value={values.gadgetIds}
-                  onChange={(ids) => set('gadgetIds', ids)}
-                  searchable={options.gadgets.length > 8}
-                  hasMore={options.hasMoreGadgets}
-                />
-              </Stack>
-              <Stack gap="2">
-                <Text fontWeight="medium" fontSize="sm">
-                  {t('activities.columns.tags')}
-                </Text>
-                <Checklist
-                  label={t('activities.columns.tags')}
-                  options={withCurrent(options.tags, values.tagIds)}
-                  value={values.tagIds}
-                  onChange={(ids) => set('tagIds', ids)}
-                  searchable={options.tags.length > 8}
-                  hasMore={options.hasMoreTags}
-                />
-              </Stack>
+              {(
+                [
+                  ['gadgetIds', 'gadgets', options.gadgets, options.hasMoreGadgets],
+                  ['tagIds', 'tags', options.tags, options.hasMoreTags],
+                ] as const
+              ).map(([field, column, choices, hasMore]) => (
+                <Stack key={field} gap="2">
+                  <Text fontWeight="medium" fontSize="sm">
+                    {t(`activities.columns.${column}`)}
+                  </Text>
+                  <Checklist
+                    label={t(`activities.columns.${column}`)}
+                    options={choices}
+                    value={values[field]}
+                    onChange={(ids) => set(field, ids)}
+                    searchable={choices.length > SEARCHABLE_FROM}
+                    hasMore={hasMore}
+                  />
+                </Stack>
+              ))}
             </Stack>
           </Collapsible.Content>
         </Collapsible.Root>
 
-        {shown.mode === 'edit' && shown.calculated && (
+        {shown.calculated && (
           <Stack gap="2">
             <Text textStyle="kicker" color="fg.muted">
               {t('activities.form.calculated')}
@@ -400,11 +391,7 @@ export function ActivityFormDialog({
               <Text as="dt" color="fg.muted">
                 {t('activities.form.source')}*
               </Text>
-              <Text as="dd">
-                {t(`activities.sources.${shown.calculated.source}`, {
-                  defaultValue: shown.calculated.source,
-                })}
-              </Text>
+              <Text as="dd">{enumLabel(t, 'sources', shown.calculated.source)}</Text>
             </Grid>
             <Text fontSize="sm" color="fg.muted">
               {t('activities.form.calculatedHint')}

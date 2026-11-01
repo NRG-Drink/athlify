@@ -1,6 +1,15 @@
 import type { TFunction } from 'i18next'
 import { nowInputValue, parseDecimal, toInputValue } from '../../lib/formValues'
-import { activityTypes, type ActivityType, type Mood, type Wind } from './activityFilters'
+import {
+  activityTypes,
+  asEnum,
+  moods,
+  winds,
+  type ActivityType,
+  type Mood,
+  type Wind,
+} from './activityFilters'
+import { formatDuration } from './activityFormatting'
 
 /** Text values of the activity form; empty strings stand for "not set". */
 export interface ActivityFormValues {
@@ -27,11 +36,11 @@ export interface ActivityFormValues {
 
 export type ActivityFormErrors = Partial<Record<keyof ActivityFormValues, string>>
 
+export const heartRateFields = ['heartRateMin', 'heartRateAverage', 'heartRateMax'] as const
+
 /** The fields folded under "More details". */
 export const detailFields = [
-  'heartRateMin',
-  'heartRateAverage',
-  'heartRateMax',
+  ...heartRateFields,
   'effort',
   'mood',
   'wind',
@@ -78,8 +87,8 @@ export interface ActivityFormSource {
 }
 
 export const MAX_DESCRIPTION_LENGTH = 2000
-export const MIN_HEART_RATE = 20
-export const MAX_HEART_RATE = 250
+const MIN_HEART_RATE = 20
+const MAX_HEART_RATE = 250
 export const efforts = Array.from({ length: 10 }, (_, index) => String(index + 1))
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -88,18 +97,14 @@ const DAY_MS = 24 * 60 * 60 * 1000
 export function parseDuration(raw: string): number | null {
   const match = /^(\d+)[:.](\d{2})(?:[:.](\d{2}))?$/.exec(raw.trim())
   if (!match) return null
-  const [hours, minutes, seconds = 0] = match.slice(1).map((part) => Number(part ?? 0))
+  const [hours, minutes, seconds] = match.slice(1).map((part) => Number(part ?? 0))
   if (minutes >= 60 || seconds >= 60) return null
   return hours * 3600 + minutes * 60 + seconds
 }
 
 /** `h:mm:ss`, the format the form shows: 3725 s is "1:02:05". */
-export function formatDurationInput(seconds: number): string {
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  const rest = seconds % 60
-  return `${hours}:${String(minutes).padStart(2, '0')}:${String(rest).padStart(2, '0')}`
-}
+export const formatDurationInput = (seconds: number) =>
+  formatDuration(seconds, { withSeconds: true })
 
 const text = (value: number | null | undefined) => (value == null ? '' : String(value))
 
@@ -110,7 +115,7 @@ export function newActivityValues(
 ): ActivityFormValues {
   return {
     date: nowInputValue(now),
-    type: activityTypes.find((type) => type === defaults.type) ?? 'ROAD',
+    type: asEnum(activityTypes, defaults.type) ?? 'ROAD',
     duration: '',
     distance: '',
     elevationGain: '',
@@ -134,7 +139,7 @@ export function activityToValues(
 ): ActivityFormValues {
   return {
     date: asCopy ? nowInputValue(now) : toInputValue(activity.date),
-    type: activity.type as ActivityType,
+    type: asEnum(activityTypes, activity.type) ?? 'ROAD',
     duration: formatDurationInput(activity.time),
     distance: String(activity.distance),
     elevationGain: text(activity.elevationGain),
@@ -144,8 +149,8 @@ export function activityToValues(
     heartRateAverage: text(activity.heartRateAverage),
     heartRateMax: text(activity.heartRateMax),
     effort: text(activity.effort),
-    mood: (activity.mood ?? '') as Mood | '',
-    wind: (activity.wind ?? '') as Wind | '',
+    mood: asEnum(moods, activity.mood) ?? '',
+    wind: asEnum(winds, activity.wind) ?? '',
     gadgetIds: activity.gadgets.map((gadget) => gadget.id),
     tagIds: activity.tags.map((tag) => tag.id),
   }
@@ -198,10 +203,8 @@ export function validate(
     heartRateAverage: parseInteger(values.heartRateAverage),
     heartRateMax: parseInteger(values.heartRateMax),
   }
-  for (const [field, value] of Object.entries(heartRates) as [
-    keyof typeof heartRates,
-    number | undefined,
-  ][]) {
+  for (const field of heartRateFields) {
+    const value = heartRates[field]
     if (value === undefined) continue
     if (Number.isNaN(value)) errors[field] = t('form.errors.integer')
     else if (value < MIN_HEART_RATE || value > MAX_HEART_RATE)

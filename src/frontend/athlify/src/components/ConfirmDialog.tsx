@@ -10,7 +10,10 @@ export interface ConfirmDialogProps {
   confirmLabel: string
   busy: boolean
   onConfirm: () => void
-  /** Where the focus goes when the dialog closes, for example when its trigger was removed. */
+  /**
+   * Where the focus goes when the dialog closes, for example when the element that opened it was
+   * deleted; `null` returns it to that element as usual.
+   */
   finalFocusEl?: () => HTMLElement | null
 }
 

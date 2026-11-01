@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next'
+import type { ChecklistOption } from '../../components/Checklist'
 
 export const activityTypes = ['ROAD', 'MOUNTAIN', 'GRAVEL', 'INDOOR'] as const
 export type ActivityType = (typeof activityTypes)[number]
@@ -23,7 +24,10 @@ function readValues(params: URLSearchParams, key: string): string[] {
 }
 
 /** The value as one of the allowed enum values, or undefined. */
-function asEnum<T extends string>(allowed: readonly T[], value: string): T | undefined {
+export function asEnum<T extends string>(
+  allowed: readonly T[],
+  value: string | null | undefined,
+): T | undefined {
   return allowed.find((item) => item === value)
 }
 
@@ -57,29 +61,6 @@ export function activityFiltersToWhere(filters: ActivityFilters) {
   if (filters.tagIds) where.tags = { some: { id: { in: filters.tagIds } } }
   if (filters.winds) where.wind = { in: filters.winds }
   return Object.keys(where).length > 0 ? where : undefined
-}
-
-/**
- * Whether an activity with these values is shown under the filters, by the same rules as the server:
- * any ticked value within a filter, every active filter.
- */
-export function matchesActivityFilters(
-  filters: ActivityFilters,
-  activity: {
-    type: string
-    vehicleId: string | null
-    tagIds: readonly string[]
-    wind: string | null
-  },
-): boolean {
-  const within = (ticked: readonly string[] | undefined, values: readonly (string | null)[]) =>
-    !ticked || values.some((value) => value !== null && ticked.includes(value))
-  return (
-    within(filters.types, [activity.type]) &&
-    within(filters.vehicleIds, [activity.vehicleId]) &&
-    within(filters.tagIds, activity.tagIds) &&
-    within(filters.winds, [activity.wind])
-  )
 }
 
 /** Each filter key, in column order, with the field of ActivityFilters that holds its values. The key is also the URL parameter. */
@@ -145,10 +126,7 @@ export function clearActivityFilter(
 /** Breakpoints below which a column is hidden; the filter summary offers its filter there instead. */
 export const filterColumnBreakpoint = { vehicle: 'md', tag: '2xl', wind: '2xl' } as const
 
-export interface FilterOption {
-  id: string
-  label: string
-}
+export type FilterOption = ChecklistOption
 
 function labelsFor(ids: readonly string[] | undefined, options: readonly FilterOption[]) {
   return (ids ?? []).flatMap((id) => {

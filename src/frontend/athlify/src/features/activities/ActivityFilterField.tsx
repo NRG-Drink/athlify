@@ -10,6 +10,7 @@ import {
   type ActivityFilters,
   type FilterOption,
 } from './activityFilters'
+import { enumOptions } from './activityFormatting'
 
 interface ActivityFilterFieldProps {
   field: ActivityFilterKey
@@ -43,16 +44,10 @@ export function ActivityFilterField({
   // What differs per filter: its options, the ticked values and whether the list can be searched.
   const config: Record<ActivityFilterKey, { options: readonly FilterOption[]; hasMore: boolean }> =
     {
-      type: {
-        options: activityTypes.map((type) => ({ id: type, label: t(`activities.types.${type}`) })),
-        hasMore: false,
-      },
+      type: { options: enumOptions(t, 'types', activityTypes), hasMore: false },
       vehicle: { options: vehicles, hasMore: hasMoreVehicles },
       tag: { options: tags, hasMore: hasMoreTags },
-      wind: {
-        options: winds.map((wind) => ({ id: wind, label: t(`activities.winds.${wind}`) })),
-        hasMore: false,
-      },
+      wind: { options: enumOptions(t, 'winds', winds), hasMore: false },
     }
   const { options, hasMore } = config[field]
 

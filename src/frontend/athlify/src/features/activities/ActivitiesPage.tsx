@@ -1,5 +1,5 @@
 import { Button, Stack } from '@chakra-ui/react'
-import { useCallback, useMemo, useRef, useState, useTransition } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { graphql, useLazyLoadQuery, usePaginationFragment } from 'react-relay'
 import { useTranslation } from 'react-i18next'
 import { LuBike, LuPlus, LuRotateCcw } from 'react-icons/lu'
@@ -12,11 +12,7 @@ import { QueryBoundary } from '../../components/QueryBoundary'
 import { useFetchKey } from '../../relay/useFetchKey'
 import { useLoadMore } from '../../relay/useLoadMore'
 import { useParamsRefresh } from '../../relay/useParamsRefresh'
-import {
-  activeActivityFilterKeys,
-  matchesActivityFilters,
-  type ActivityFilters,
-} from './activityFilters'
+import { activeActivityFilterKeys, type ActivityFilters } from './activityFilters'
 import { activityToValues, newActivityValues, type ActivityFormInput } from './activityForm'
 import { ActivityFormDialog } from './ActivityFormDialog'
 import {
@@ -29,7 +25,7 @@ import {
 import { ActivitiesFilterSummary } from './ActivitiesFilterSummary'
 import { ActivitiesTable, type ActivityRow } from './ActivitiesTable'
 import { useActivityMutations } from './useActivityMutations'
-import { vehicleLabel } from './activityFormatting'
+import { enumLabel, vehicleLabel } from './activityFormatting'
 import type { ActivitiesPage_list$key } from './__generated__/ActivitiesPage_list.graphql'
 import type { ActivitiesPageQuery } from './__generated__/ActivitiesPageQuery.graphql'
 import type { ActivitiesPageMoreQuery } from './__generated__/ActivitiesPageMoreQuery.graphql'
@@ -108,11 +104,29 @@ const listFragment = graphql`
         type
         vehicle {
           id
+          brand
+          model
+          nickname
         }
       }
     }
   }
 `
+
+type Option = { id: string; label: string }
+type Equipment = { id: string; brand: string; model: string; nickname?: string | null }
+
+const equipmentOptions = (items: readonly Equipment[] | null | undefined): Option[] =>
+  items?.map((item) => ({ id: item.id, label: vehicleLabel(item) })) ?? []
+
+/**
+ * The loaded choices plus those of the activity in the form. A bicycle, gadget or tag beyond the
+ * first 200 choices then still shows its name and is kept when saving.
+ */
+function withChoices(options: readonly Option[], current: readonly Option[]) {
+  const missing = current.filter((item) => !options.some((option) => option.id === item.id))
+  return missing.length > 0 ? [...options, ...missing] : options
+}
 
 /** Which form is open; duplicate and edit start from a row. */
 type Dialog =
@@ -145,38 +159,25 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
   const [isRefetching, startRefetch] = useTransition()
   const [deleting, setDeleting] = useState<ActivityRow | null>(null)
   const countRef = useRef<HTMLParagraphElement>(null)
+  // Set when the confirmed delete went through: the row and its menu are gone, so the focus moves
+  // to the count line instead of returning to the menu button.
+  const deleted = useRef(false)
+  // `totalCount` before a create; the refetch after it tells whether the filters show the new one.
+  const countBeforeCreate = useRef<number | null>(null)
   const mutations = useActivityMutations(data.activities.__id)
 
   const activities = useMemo(
     () => data.activities?.edges?.map((edge) => edge.node) ?? [],
     [data.activities],
   )
-  const options = (nodes: readonly { id: string; label: string }[] | undefined) => nodes ?? []
-  const vehicles = useMemo(
-    () =>
-      options(
-        queryData.vehicles?.nodes?.map((vehicle) => ({
-          id: vehicle.id,
-          label: vehicleLabel(vehicle),
-        })),
-      ),
-    [queryData.vehicles],
-  )
-  const gadgets = useMemo(
-    () =>
-      options(
-        queryData.gadgets?.nodes?.map((gadget) => ({
-          id: gadget.id,
-          label: vehicleLabel(gadget),
-        })),
-      ),
-    [queryData.gadgets],
-  )
+  const vehicles = useMemo(() => equipmentOptions(queryData.vehicles?.nodes), [queryData.vehicles])
+  const gadgets = useMemo(() => equipmentOptions(queryData.gadgets?.nodes), [queryData.gadgets])
   const tags = useMemo(
-    () => options(queryData.tags?.nodes?.map((tag) => ({ id: tag.id, label: tag.name }))),
+    () => queryData.tags?.nodes?.map((tag) => ({ id: tag.id, label: tag.name })) ?? [],
     [queryData.tags],
   )
   const hasMoreVehicles = queryData.vehicles?.pageInfo.hasNextPage ?? false
+  const hasMoreGadgets = queryData.gadgets?.pageInfo.hasNextPage ?? false
   const hasMoreTags = queryData.tags?.pageInfo.hasNextPage ?? false
   const latest = data.latest?.nodes?.[0]
 
@@ -202,21 +203,42 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
     [changeQuery, query],
   )
 
-  const resetFilters = () => changeFilters({})
+  const resetFilters = useCallback(() => changeFilters({}), [changeFilters])
   const closeDialog = () => onDialogChange({ kind: 'closed' })
+  const edit = useCallback(
+    (row: ActivityRow) => onDialogChange({ kind: 'edit', row }),
+    [onDialogChange],
+  )
+  const duplicate = useCallback(
+    (row: ActivityRow) => onDialogChange({ kind: 'duplicate', row }),
+    [onDialogChange],
+  )
+  const confirmDelete = useCallback((row: ActivityRow) => {
+    deleted.current = false
+    setDeleting(row)
+  }, [])
+
+  const totalCount = data.activities?.totalCount ?? 0
+
+  // After the refetch that follows a create: the count only grows when the filters show the new one.
+  useEffect(() => {
+    if (isRefetching || countBeforeCreate.current === null) return
+    const shown = totalCount > countBeforeCreate.current
+    countBeforeCreate.current = null
+    toaster.create({
+      type: 'success',
+      title: t(shown ? 'activities.add.success' : 'activities.add.hiddenByFilters'),
+    })
+  }, [isRefetching, totalCount, t])
 
   /**
    * Only the server knows where a new activity belongs in the sorted, filtered list and what the
    * count is now, so the list is loaded again, as far as it was loaded. The transition keeps the
    * current rows (dimmed) until the new ones are there.
    */
-  const created = (input: ActivityFormInput) => {
+  const created = () => {
     closeDialog()
-    const hidden = !matchesActivityFilters(filters, input)
-    toaster.create({
-      type: 'success',
-      title: t(hidden ? 'activities.add.hiddenByFilters' : 'activities.add.success'),
-    })
+    countBeforeCreate.current = totalCount
     startRefetch(() => {
       refetch(
         { first: Math.max(PAGE_SIZE, activities.length + 1) },
@@ -227,7 +249,7 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
 
   const save = (input: ActivityFormInput) => {
     if (dialog.kind === 'edit') mutations.update(dialog.row.id, input, { onSuccess: closeDialog })
-    else mutations.create(input, { onSuccess: () => created(input) })
+    else mutations.create(input, { onSuccess: created })
   }
 
   const initialValues = useMemo(() => {
@@ -241,13 +263,42 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
     }
   }, [dialog, latest])
 
-  const deleteDescription = (row: ActivityRow) => {
-    const text = t('activities.delete.description', {
+  const deleteDescription = (row: ActivityRow) =>
+    t('activities.delete.description', {
+      context: row.merge ? 'merged' : undefined,
       date: format.date(row.date),
-      name: row.description || t(`activities.types.${row.type}`),
+      name: row.description || enumLabel(t, 'types', row.type),
     })
-    return row.merge ? `${text} ${t('activities.delete.mergeWarning')}` : text
-  }
+
+  // The bicycle, gadgets and tags of the activity in the form, with their names.
+  const formChoices = useMemo(() => {
+    const row = dialog.kind === 'closed' || dialog.kind === 'create' ? undefined : dialog.row
+    const vehicle = row ? row.vehicle : latest?.vehicle
+    return {
+      vehicles: withChoices(vehicles, equipmentOptions(vehicle ? [vehicle] : [])),
+      gadgets: withChoices(gadgets, equipmentOptions(row?.gadgets)),
+      tags: withChoices(tags, row?.tags.map((tag) => ({ id: tag.id, label: tag.name })) ?? []),
+      hasMoreGadgets,
+      hasMoreTags,
+    }
+  }, [dialog, latest, vehicles, gadgets, tags, hasMoreGadgets, hasMoreTags])
+
+  const emptyMessage = useMemo(
+    () => (
+      <PageEmptyState
+        icon={LuBike}
+        title={t('activities.empty.filteredTitle')}
+        message={t('activities.empty.filteredMessage')}
+        action={
+          <Button onClick={resetFilters}>
+            <LuRotateCcw aria-hidden />
+            {t('activities.filters.reset')}
+          </Button>
+        }
+      />
+    ),
+    [t, resetFilters],
+  )
 
   const filtered = activeActivityFilterKeys(filters).length > 0
 
@@ -267,14 +318,7 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
               }
             : undefined
         }
-        options={{
-          vehicles,
-          gadgets,
-          tags,
-          hasMoreVehicles,
-          hasMoreGadgets: queryData.gadgets?.pageInfo.hasNextPage ?? false,
-          hasMoreTags,
-        }}
+        options={formChoices}
         busy={mutations.isSaving}
         onSave={save}
       />
@@ -286,10 +330,16 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
         confirmLabel={t('activities.delete.confirm')}
         busy={mutations.isDeleting}
         onConfirm={() =>
-          deleting && mutations.remove(deleting.id, { onSettled: () => setDeleting(null) })
+          deleting &&
+          mutations.remove(deleting.id, {
+            onSettled: (removed) => {
+              deleted.current = removed
+              setDeleting(null)
+            },
+          })
         }
-        // The row and its menu are gone after a delete; the count line says what changed.
-        finalFocusEl={() => countRef.current}
+        // Without a delete (cancel, error) the focus returns to the menu button.
+        finalFocusEl={() => (deleted.current ? countRef.current : null)}
       />
     </>
   )
@@ -339,25 +389,13 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
         onFiltersChange={changeFilters}
         sort={sort}
         onSortChange={changeSort}
-        totalCount={data.activities?.totalCount ?? 0}
+        totalCount={totalCount}
         busy={refreshing || isRefetching}
-        onEdit={(row) => onDialogChange({ kind: 'edit', row })}
-        onDuplicate={(row) => onDialogChange({ kind: 'duplicate', row })}
-        onDelete={setDeleting}
+        onEdit={edit}
+        onDuplicate={duplicate}
+        onDelete={confirmDelete}
         countRef={countRef}
-        emptyMessage={
-          <PageEmptyState
-            icon={LuBike}
-            title={t('activities.empty.filteredTitle')}
-            message={t('activities.empty.filteredMessage')}
-            action={
-              <Button onClick={resetFilters}>
-                <LuRotateCcw aria-hidden />
-                {t('activities.filters.reset')}
-              </Button>
-            }
-          />
-        }
+        emptyMessage={emptyMessage}
       />
       {dialogs}
     </Stack>

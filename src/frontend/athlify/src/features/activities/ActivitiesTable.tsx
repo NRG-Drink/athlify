@@ -1,5 +1,5 @@
 import { Flex, IconButton, Menu, Portal, Tag, Text } from '@chakra-ui/react'
-import { useMemo, type ReactNode, type Ref } from 'react'
+import { memo, useMemo, type ReactNode, type Ref } from 'react'
 import { graphql, useFragment } from 'react-relay'
 import { useTranslation } from 'react-i18next'
 import { LuCopy, LuEllipsis, LuPencil, LuTrash2 } from 'react-icons/lu'
@@ -144,7 +144,8 @@ function RowActions({ row, onEdit, onDuplicate, onDelete }: RowActionsProps) {
           <Menu.Positioner>
             {/* Portals leave the app's brand palette, so the menu sets it again. */}
             <Menu.Content colorPalette="brand">
-              {/* onClick, not onSelect: Enter on a highlighted item clicks it too. */}
+              {/* onClick, not onSelect: in the page tests onSelect never fired (see frontend
+                  LEARNINGS); Enter on a highlighted item clicks it, so the keyboard works too. */}
               <Menu.Item value="duplicate" onClick={() => onDuplicate(row)}>
                 <LuCopy aria-hidden />
                 {t('activities.duplicate.action')}
@@ -201,7 +202,8 @@ interface ActivitiesTableProps {
   countRef?: Ref<HTMLParagraphElement>
 }
 
-export function ActivitiesTable({
+/** Memoized: the page re-renders for its dialogs, which does not change the rows. */
+export const ActivitiesTable = memo(function ActivitiesTable({
   entries,
   hasNextPage,
   isLoadingNext,
@@ -459,4 +461,4 @@ export function ActivitiesTable({
       }}
     />
   )
-}
+})

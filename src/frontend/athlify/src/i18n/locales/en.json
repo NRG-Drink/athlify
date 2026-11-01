@@ -183,7 +183,7 @@
         "action": "Delete",
         "title": "Delete activity?",
         "description": "The activity from {{date}} ({{name}}) is removed from all lists and analyses.",
-        "mergeWarning": "It is part of a merge. If fewer than two activities remain in it, the merge is dissolved.",
+        "description_merged": "The activity from {{date}} ({{name}}) is removed from all lists and analyses. It is part of a merge. If fewer than two activities remain in it, the merge is dissolved.",
         "confirm": "Delete",
         "success": "Activity deleted.",
         "errors": {

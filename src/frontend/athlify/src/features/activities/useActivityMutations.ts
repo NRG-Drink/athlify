@@ -43,19 +43,14 @@ function removeFromList(store: RecordSourceSelectorProxy, connectionId: string, 
   if (typeof count === 'number') connection.setValue(Math.max(0, count - 1), 'totalCount')
 }
 
-interface CreateCallbacks {
-  /** Called with the new id after the server confirmed it; the list then refetches. */
-  onSuccess: (id: string) => void
-}
-
 interface Callbacks {
-  /** Called after the server confirmed the change, so the dialog can close. */
+  /** Called after the server confirmed the change, so the dialog can close (and, after a create, the list refetch). */
   onSuccess: () => void
 }
 
 interface DeleteCallbacks {
-  /** Called when the request finished, successful or not, so the confirm dialog can close. */
-  onSettled: () => void
+  /** Called when the request finished, so the confirm dialog can close; `removed` is false after an error. */
+  onSettled: (removed: boolean) => void
 }
 
 /**
@@ -74,7 +69,7 @@ export function useActivityMutations(connectionId: string) {
     toaster.create({ type: 'error', title: t(key) })
   }
 
-  const create = (input: ActivityFormInput, { onSuccess }: CreateCallbacks) =>
+  const create = (input: ActivityFormInput, { onSuccess }: Callbacks) =>
     commitCreate({
       variables: { input },
       onCompleted: (response, errors) => {
@@ -82,7 +77,7 @@ export function useActivityMutations(connectionId: string) {
           fail('activities.add.errors.saveFailed')
           return
         }
-        onSuccess(response.createActivity.id)
+        onSuccess()
       },
       onError: () => fail('activities.add.errors.saveFailed'),
     })
@@ -114,11 +109,11 @@ export function useActivityMutations(connectionId: string) {
       onCompleted: (_response, errors) => {
         if (errors?.length) fail('activities.delete.errors.failed')
         else toaster.create({ type: 'success', title: t('activities.delete.success') })
-        onSettled()
+        onSettled(!errors?.length)
       },
       onError: () => {
         fail('activities.delete.errors.failed')
-        onSettled()
+        onSettled(false)
       },
     })
 

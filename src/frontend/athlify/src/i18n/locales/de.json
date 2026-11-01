@@ -183,7 +183,7 @@
         "action": "Löschen",
         "title": "Aktivität löschen?",
         "description": "Die Aktivität vom {{date}} ({{name}}) verschwindet aus allen Listen und Auswertungen.",
-        "mergeWarning": "Sie gehört zu einem Merge. Bleiben darin weniger als zwei Aktivitäten, wird der Merge aufgelöst.",
+        "description_merged": "Die Aktivität vom {{date}} ({{name}}) verschwindet aus allen Listen und Auswertungen. Sie gehört zu einem Merge. Bleiben darin weniger als zwei Aktivitäten, wird der Merge aufgelöst.",
         "confirm": "Löschen",
         "success": "Aktivität gelöscht.",
         "errors": {
