@@ -155,6 +155,27 @@ In short:
 - Every page offers the skip link "Zum Inhalt springen". Dialogs open from
   the bottom on mobile and in the centre from sm.
 
+## Row actions and forms
+
+- **Row actions.** At most one direct icon action per row (the most common,
+  usually edit: `LuPencil`), plus a "⋯" `Menu` (`LuEllipsis`) for the rest.
+  Both are ghost `sm` icon buttons in `fg.muted`, with an `aria-label` that
+  names the row ("Aktivität vom 16. Okt. 2026 bearbeiten"). A destructive item
+  comes last in the menu, after a separator, in `fg.error` with a `bg.error`
+  highlight. A row click opens the direct action. Menu items act on
+  `onClick`, which Enter on a highlighted item triggers as well.
+- **Forms.** `*` means "calculated or system value" (user story US-03), so a
+  form that shows such values does not show Chakra's required indicator;
+  required fields set `required` (so `aria-required` is set) and explain
+  themselves through the error text. Calculated and system values sit in a
+  read-only block below the fields, headed by a `kicker` "Berechnet", marked
+  with `*` and explained by the note "* Wird automatisch berechnet."; a
+  missing value shows "—".
+- Fields that most records leave empty are folded under "Weitere Details"
+  (closed for new records, open when editing a record that has values there;
+  an error inside opens it). Pairs of short number fields stay side by side
+  on phones. Optional selects start at "—", never at a pre-chosen value.
+
 ## Components to reuse
 
 Before designing something new, check whether one of these already covers it
@@ -167,9 +188,11 @@ Before designing something new, check whether one of these already covers it
 | `MetricChart` | One Recharts series over time, coloured through theme CSS variables. |
 | `PeriodPicker` | Attached toggle group for 30 T / 90 T / 1 J / Alle. |
 | `DataTable` | Every list table, sorted by the server (controlled `sort`; a first click sorts descending). It also renders the count above the rows (`count`, 0.875rem `fg.muted`) and "load more" with its inline error (`pagination`), so tables never build these themselves; `DataTableSkeleton` is their loading state. The header spans the full width: every header cell, the row-actions column included, is sticky on `bg`, so rows never show through it while scrolling. A column with a `description` explains itself in a tooltip (see below). A column can declare a `filter`: its trigger shows the ticked count (`brand.subtle` badge with `brand.fg`) and opens a `FilterPopover`. |
-| `FilterChecklist` | Multi-select of a filter: a group of checkboxes (`fg.muted` outline, `brand.solid` when ticked), an optional search for long lists, "N ausgewählt" and "Auswahl löschen". Lives in the `FilterPopover` (popover from `sm`, bottom sheet below), which ends with "Fertig". |
+| `Checklist` | Multi-select as a group of checkboxes (`fg.muted` outline, `brand.solid` when ticked), an optional search for long lists, "N ausgewählt" and "Auswahl löschen". In a filter it lives in the `FilterPopover` (popover from `sm`, bottom sheet below), which ends with "Fertig"; in a form it sits inline (gadgets and tags of an activity). |
 | `Tooltip` (`components/ui/tooltip`) | Explains an abbreviated or technical term, never more. In tables a column sets `description`: the header label gets a dotted `fg.muted` underline and the text appears on hover and keyboard focus after 300 ms, on `bg.panel` with a hairline `border`, `l2`, 0.875rem, at most `20rem` wide. Only where a term needs it (TSS, Ø, units, estimated values); self-explaining headers such as Datum, Distanz or Gewicht get none. It is never the only place for data and never shows truncated text. Touch has no hover, so essential information must also be visible elsewhere. |
-| `FormDialog`, `ConfirmDialog` | Add/edit dialog and destructive confirmation. |
+| `FormDialog`, `ConfirmDialog` | Add/edit dialog (`size="lg"` for long forms) and destructive confirmation. `ConfirmDialog` takes `finalFocusEl` when the element that opened it disappears with the delete. |
+| Chakra `Menu` | The "⋯" row menu (see row actions below). `Menu.Content` sets `colorPalette="brand"`, because it renders in a portal. |
+| Chakra `Collapsible` | Folds rarely used form fields under "Weitere Details". |
 | `PrimaryNav`, `MobileNav`, `UserMenu`, `AppHeader` | Shell navigation with the indicator bar. |
 | `BrandMark` | The logo mark with the `volt` gradient. |
 

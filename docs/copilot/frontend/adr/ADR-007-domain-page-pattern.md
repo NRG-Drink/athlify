@@ -95,3 +95,5 @@ Relay confirmed as the GraphQL client.
   `Page`), `src/lib/` (`metrics`, `period`, `ticks`), `src/relay/`
   (`environment`), `src/i18n/useFormat.ts`.
 - The identifier convention is [ADR-006](../../adr/ADR-006-relay-global-ids.md).
+- Rule 4 is amended for lists that the server sorts and filters (Activities)
+  by [ADR-012](ADR-012-store-updates-for-server-sorted-lists.md).
