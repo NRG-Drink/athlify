@@ -44,6 +44,17 @@ const pageQuery = graphql`
         hasNextPage
       }
     }
+    gadgets(first: 200) {
+      nodes {
+        id
+        brand
+        model
+        nickname
+      }
+      pageInfo {
+        hasNextPage
+      }
+    }
     tags(first: 200) {
       nodes {
         id
@@ -67,6 +78,7 @@ const listFragment = graphql`
   ) {
     activities(first: $first, after: $after, where: $where, order: $order)
       @connection(key: "ActivitiesPage_activities") {
+      __id
       totalCount
       edges {
         node {
@@ -77,6 +89,16 @@ const listFragment = graphql`
       pageInfo {
         hasNextPage
         endCursor
+      }
+    }
+    # The most recent activity regardless of filters: a new one starts with its type and bicycle.
+    latest: activities(first: 1, order: [{ date: DESC }, { id: DESC }]) {
+      nodes {
+        id
+        type
+        vehicle {
+          id
+        }
       }
     }
   }

@@ -47,6 +47,10 @@ const tableFragment = graphql`
     mood
     effort
     wind
+    source
+    merge {
+      id
+    }
     vehicle {
       id
       brand
