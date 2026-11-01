@@ -1,18 +1,14 @@
 import type { TFunction } from 'i18next'
 import type { Formatter } from '../../i18n/useFormat'
-import { moods, winds } from './activityFilters'
+import { moods, winds, type Mood, type Wind } from './activityFilters'
 
 const twoDigits = (value: number) => String(value).padStart(2, '0')
 
-/**
- * Hours and minutes, matching the "Std." unit of the column: 2400 s is "0:40", 5400 s is "1:30".
- * With seconds for the form: 3725 s is "1:02:05".
- */
-export function formatDuration(seconds: number, { withSeconds = false } = {}) {
+/** Hours and minutes, matching the "Std." unit of the column: 2400 s is "0:40", 5400 s is "1:30". */
+export function formatDuration(seconds: number) {
   const hours = Math.floor(seconds / 3600)
   const minutes = Math.floor((seconds % 3600) / 60)
-  const short = `${hours}:${twoDigits(minutes)}`
-  return withSeconds ? `${short}:${twoDigits(seconds % 60)}` : short
+  return `${hours}:${twoDigits(minutes)}`
 }
 
 /** The unit is shown in the column header, so the cell holds the number only. */
@@ -59,6 +55,24 @@ export function enumOptions<T extends string>(
   values: readonly T[],
 ) {
   return values.map((value) => ({ id: value, label: enumLabel(t, group, value) }))
+}
+
+/** Shown next to the label in the form's mood choice; they carry the value, not decoration. */
+export const moodEmoji: Record<Mood, string> = {
+  VERY_BAD: '😫',
+  BAD: '🙁',
+  NEUTRAL: '😐',
+  GOOD: '🙂',
+  VERY_GOOD: '😄',
+}
+
+/** Shown next to the label in the form's wind choice, rising with the wind's strength. */
+export const windEmoji: Record<Wind, string> = {
+  CALM: '🌿',
+  LIGHT: '🍃',
+  MODERATE: '💨',
+  STRONG: '🌬️',
+  STORMY: '🌪️',
 }
 
 const TAG_PALETTES = ['blue', 'green', 'orange', 'purple', 'pink', 'teal', 'cyan', 'red', 'yellow']

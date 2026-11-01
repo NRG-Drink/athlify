@@ -8,6 +8,7 @@ const MORE = 'ActivitiesPageMoreQuery'
 const CREATE = 'useActivityMutationsCreateMutation'
 const UPDATE = 'useActivityMutationsUpdateMutation'
 const DELETE = 'useActivityMutationsDeleteMutation'
+const CREATE_TAG = 'useCreateTagMutation'
 
 type Activity = Record<string, unknown> & { id: string }
 
@@ -218,7 +219,7 @@ describe('ActivitiesPage editing', () => {
         await screen.findByRole('button', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
       )
       const dialog = await screen.findByRole('dialog', { name: 'Aktivität bearbeiten' })
-      expect(within(dialog).getByLabelText(/^Dauer/)).toHaveValue('1:30:00')
+      expect(within(dialog).getByLabelText(/^Dauer/)).toHaveValue('1:30')
       const distance = within(dialog).getByLabelText(/^Distanz/)
       expect(distance).toHaveValue('42.5')
 
@@ -465,7 +466,7 @@ describe('ActivitiesPage editing', () => {
 
       const dialog = await screen.findByRole('dialog', { name: 'Aktivität duplizieren' })
       expect(within(dialog).getByLabelText(/^Typ/)).toHaveValue('GRAVEL')
-      expect(within(dialog).getByLabelText(/^Dauer/)).toHaveValue('1:30:00')
+      expect(within(dialog).getByLabelText(/^Dauer/)).toHaveValue('1:30')
       const date = within(dialog).getByLabelText(/^Datum/) as HTMLInputElement
       expect(new Date(date.value).toDateString()).toBe(new Date().toDateString())
 
@@ -477,6 +478,91 @@ describe('ActivitiesPage editing', () => {
         vehicleId: 'vehicle-1',
       })
       expect(calls(UPDATE)).toHaveLength(0)
+    })
+  })
+
+  describe('detail fields', () => {
+    const openDetails = async (user: ReturnType<typeof page>['user']) => {
+      await user.click(
+        await screen.findByRole('button', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
+      )
+      const dialog = await screen.findByRole('dialog', { name: 'Aktivität bearbeiten' })
+      await user.click(within(dialog).getByRole('button', { name: 'Weitere Details' }))
+      return dialog
+    }
+
+    it('sets effort with a slider, mood and wind with emoji buttons and tags as chips', async () => {
+      const { user, calls } = page((operation) => {
+        if (operation === CREATE_TAG)
+          return { data: { createTag: { __typename: 'Tag', id: 'tag-2', name: 'Hügel' } } }
+        if (operation === UPDATE) return { data: { updateActivity: base } }
+        return okQuery(operation)
+      })
+      const dialog = await openDetails(user)
+
+      // Without an effort the slider rests at the far left.
+      const slider = within(dialog).getByRole('slider', { name: 'Anstrengung' })
+      expect(slider).toHaveAttribute('aria-valuenow', '0')
+      expect(slider).toHaveAttribute('aria-valuetext', 'Keine Angabe')
+      slider.focus()
+      await user.keyboard('{End}{ArrowLeft}{ArrowLeft}{ArrowLeft}{ArrowLeft}')
+      expect(within(dialog).getByText('6/10')).toBeInTheDocument()
+
+      const good = within(dialog).getByRole('button', { name: 'Gut' })
+      await user.click(good)
+      expect(good).toHaveAttribute('aria-pressed', 'true')
+      await user.click(within(dialog).getByRole('button', { name: 'Stark' }))
+
+      await user.click(within(dialog).getByRole('button', { name: 'Intervall' }))
+      await user.type(within(dialog).getByRole('textbox', { name: 'Neuer Tag' }), 'Hügel{Enter}')
+      expect(await screen.findByText('Tag «Hügel» erstellt.')).toBeInTheDocument()
+      expect(calls(CREATE_TAG)).toEqual([{ input: { name: 'Hügel' } }])
+      expect(within(dialog).getByRole('button', { name: 'Hügel' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      )
+      expect(within(dialog).getByRole('textbox', { name: 'Neuer Tag' })).toHaveValue('')
+      // Enter created the tag, it did not save the activity.
+      expect(calls(UPDATE)).toHaveLength(0)
+
+      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
+      await waitFor(() => expect(calls(UPDATE)).toHaveLength(1))
+      expect(calls(UPDATE)[0]).toMatchObject({
+        input: { effort: 6, mood: 'GOOD', wind: 'STRONG', tagIds: ['tag-1', 'tag-2'] },
+      })
+    })
+
+    it('clears the effort at the far left and a choice when it is pressed again', async () => {
+      const { user, calls } = page((operation) =>
+        operation === UPDATE ? { data: { updateActivity: base } } : okQuery(operation),
+      )
+      const dialog = await openDetails(user)
+      const slider = within(dialog).getByRole('slider', { name: 'Anstrengung' })
+      slider.focus()
+      await user.keyboard('{ArrowRight}{ArrowRight}{Home}')
+      expect(slider).toHaveAttribute('aria-valuetext', 'Keine Angabe')
+
+      const calm = within(dialog).getByRole('button', { name: 'Windstill' })
+      await user.click(calm)
+      await user.click(calm)
+      expect(calm).toHaveAttribute('aria-pressed', 'false')
+
+      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
+      await waitFor(() => expect(calls(UPDATE)).toHaveLength(1))
+      expect(calls(UPDATE)[0]).toMatchObject({ input: { effort: null, wind: null } })
+    })
+
+    it('ticks an existing tag instead of creating it again', async () => {
+      const { user, calls } = page(okQuery)
+      const dialog = await openDetails(user)
+      await user.type(within(dialog).getByRole('textbox', { name: 'Neuer Tag' }), 'intervall')
+      await user.click(within(dialog).getByRole('button', { name: 'Erstellen' }))
+
+      expect(within(dialog).getByRole('button', { name: 'Intervall' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      )
+      expect(calls(CREATE_TAG)).toHaveLength(0)
     })
   })
 })

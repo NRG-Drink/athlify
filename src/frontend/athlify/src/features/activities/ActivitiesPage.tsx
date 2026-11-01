@@ -25,6 +25,7 @@ import {
 import { ActivitiesFilterSummary } from './ActivitiesFilterSummary'
 import { ActivitiesTable, type ActivityRow } from './ActivitiesTable'
 import { useActivityMutations } from './useActivityMutations'
+import { useCreateTag } from './useCreateTag'
 import { enumLabel, vehicleLabel } from './activityFormatting'
 import type { ActivitiesPage_list$key } from './__generated__/ActivitiesPage_list.graphql'
 import type { ActivitiesPageQuery } from './__generated__/ActivitiesPageQuery.graphql'
@@ -165,6 +166,7 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
   // `totalCount` before a create; the refetch after it tells whether the filters show the new one.
   const countBeforeCreate = useRef<number | null>(null)
   const mutations = useActivityMutations(data.activities.__id)
+  const { createTag, isCreating: isCreatingTag } = useCreateTag()
 
   const activities = useMemo(
     () => data.activities?.edges?.map((edge) => edge.node) ?? [],
@@ -321,6 +323,8 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
         options={formChoices}
         busy={mutations.isSaving}
         onSave={save}
+        onCreateTag={createTag}
+        creatingTag={isCreatingTag}
       />
       <ConfirmDialog
         open={deleting !== null}

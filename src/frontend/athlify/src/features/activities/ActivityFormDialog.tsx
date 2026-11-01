@@ -22,7 +22,6 @@ import { useFormat } from '../../i18n/useFormat'
 import {
   detailFields,
   heartRateFields,
-  efforts,
   hasDetails,
   MAX_DESCRIPTION_LENGTH,
   toInput,
@@ -32,7 +31,14 @@ import {
   type ActivityFormValues,
 } from './activityForm'
 import { activityTypes, moods, winds, type FilterOption } from './activityFilters'
-import { enumLabel, enumOptions, formatOptionalNumber } from './activityFormatting'
+import {
+  enumLabel,
+  enumOptions,
+  formatOptionalNumber,
+  moodEmoji,
+  windEmoji,
+} from './activityFormatting'
+import { EffortSlider, EmojiChoice, TagChips } from './ActivityFormFields'
 
 /** The choices of the form; they include the bicycle, gadgets and tags of the activity being edited. */
 export interface ActivityFormOptions {
@@ -62,6 +68,9 @@ export interface ActivityFormDialogProps {
   options: ActivityFormOptions
   busy: boolean
   onSave: (input: ActivityFormInput) => void
+  /** Creates a tag and calls `onCreated` with its id. */
+  onCreateTag: (name: string, onCreated: (id: string) => void) => void
+  creatingTag: boolean
 }
 
 /** Longer checklists get a search field. */
@@ -149,7 +158,9 @@ function NumberField({
   return (
     <Field.Root required={required} invalid={!!error}>
       <Field.Label>{label}</Field.Label>
-      {unit ? <InputGroup endElement={unit}>{input}</InputGroup> : input}
+      {/* An addon, not an overlay: an overlay is one input height wide and covers the digits of
+          longer units such as "bpm". */}
+      {unit ? <InputGroup endAddon={unit}>{input}</InputGroup> : input}
       {helper && !error && <Field.HelperText>{helper}</Field.HelperText>}
       <Field.ErrorText>{error}</Field.ErrorText>
     </Field.Root>
@@ -165,6 +176,8 @@ export function ActivityFormDialog({
   options,
   busy,
   onSave,
+  onCreateTag,
+  creatingTag,
 }: ActivityFormDialogProps) {
   const { t } = useTranslation()
   const format = useFormat()
@@ -197,8 +210,22 @@ export function ActivityFormDialog({
     else if (detailFields.some((field) => found[field])) setDetailsOpen(true)
   }
 
+  /** An existing tag of that name is ticked instead of being created twice. */
+  const addTag = (name: string, clear: () => void) => {
+    const tick = (id: string) => {
+      setValues((current) =>
+        current.tagIds.includes(id) ? current : { ...current, tagIds: [...current.tagIds, id] },
+      )
+      clear()
+    }
+    const existing = options.tags.find(
+      (tag) => tag.label.localeCompare(name, undefined, { sensitivity: 'accent' }) === 0,
+    )
+    if (existing) tick(existing.id)
+    else onCreateTag(name, tick)
+  }
+
   const unit = (key: string) => t(`activities.units.${key}`)
-  const notSet = t('activities.form.notSet')
 
   return (
     <FormDialog
@@ -316,50 +343,52 @@ export function ActivityFormDialog({
                   ))}
                 </SimpleGrid>
               </Fieldset.Root>
-              <SimpleGrid columns={{ base: 1, sm: 3 }} gap="4">
-                <SelectField
-                  label={t('activities.columns.effort')}
-                  value={values.effort}
-                  onChange={(value) => set('effort', value)}
-                  emptyLabel={notSet}
-                  options={efforts.map((effort) => ({ id: effort, label: effort }))}
-                  error={errors.effort}
+              <EffortSlider
+                label={t('activities.columns.effort')}
+                value={values.effort}
+                onChange={(value) => set('effort', value)}
+                error={errors.effort}
+              />
+              <EmojiChoice
+                label={t('activities.columns.mood')}
+                value={values.mood}
+                onChange={(value) => set('mood', value)}
+                options={enumOptions(t, 'moods', moods).map((option) => ({
+                  ...option,
+                  emoji: moodEmoji[option.id],
+                }))}
+              />
+              <EmojiChoice
+                label={t('activities.columns.wind')}
+                value={values.wind}
+                onChange={(value) => set('wind', value)}
+                options={enumOptions(t, 'winds', winds).map((option) => ({
+                  ...option,
+                  emoji: windEmoji[option.id],
+                }))}
+              />
+              <Stack gap="2">
+                <Text fontWeight="medium" fontSize="sm">
+                  {t('activities.columns.gadgets')}
+                </Text>
+                <Checklist
+                  label={t('activities.columns.gadgets')}
+                  options={options.gadgets}
+                  value={values.gadgetIds}
+                  onChange={(ids) => set('gadgetIds', ids)}
+                  searchable={options.gadgets.length > SEARCHABLE_FROM}
+                  hasMore={options.hasMoreGadgets}
                 />
-                <SelectField
-                  label={t('activities.columns.mood')}
-                  value={values.mood}
-                  onChange={(value) => set('mood', value)}
-                  emptyLabel={notSet}
-                  options={enumOptions(t, 'moods', moods)}
-                />
-                <SelectField
-                  label={t('activities.columns.wind')}
-                  value={values.wind}
-                  onChange={(value) => set('wind', value)}
-                  emptyLabel={notSet}
-                  options={enumOptions(t, 'winds', winds)}
-                />
-              </SimpleGrid>
-              {(
-                [
-                  ['gadgetIds', 'gadgets', options.gadgets, options.hasMoreGadgets],
-                  ['tagIds', 'tags', options.tags, options.hasMoreTags],
-                ] as const
-              ).map(([field, column, choices, hasMore]) => (
-                <Stack key={field} gap="2">
-                  <Text fontWeight="medium" fontSize="sm">
-                    {t(`activities.columns.${column}`)}
-                  </Text>
-                  <Checklist
-                    label={t(`activities.columns.${column}`)}
-                    options={choices}
-                    value={values[field]}
-                    onChange={(ids) => set(field, ids)}
-                    searchable={choices.length > SEARCHABLE_FROM}
-                    hasMore={hasMore}
-                  />
-                </Stack>
-              ))}
+              </Stack>
+              <TagChips
+                label={t('activities.columns.tags')}
+                options={options.tags}
+                value={values.tagIds}
+                onChange={(ids) => set('tagIds', ids)}
+                hasMore={options.hasMoreTags}
+                onCreate={addTag}
+                creating={creatingTag}
+              />
             </Stack>
           </Collapsible.Content>
         </Collapsible.Root>

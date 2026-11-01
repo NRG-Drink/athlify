@@ -45,7 +45,10 @@ follows the operating system. Every rule below holds in both modes.
 - Period labels come in pairs. Short labels go on toggles ("30 T", "90 T",
   "1 J", "Alle"); long labels go in accessible names and notes ("Letzte 30
   Tage", "in 30 Tagen").
-- No emoji. Number formats follow the locale (`useFormat`); use a real
+- No emoji in text. The one exception is a value scale in a form where
+  the emoji carries the value (mood and wind of an activity); each emoji
+  then sits above its text label, which is the accessible name. Number
+  formats follow the locale (`useFormat`); use a real
   minus sign in deltas ("−0.7 kg").
 
 ## Colour
@@ -175,6 +178,19 @@ In short:
   (closed for new records, open when editing a record that has values there;
   an error inside opens it). Pairs of short number fields stay side by side
   on phones. Optional selects start at "—", never at a pre-chosen value.
+- Durations are entered as `h:mm` (`.` works too); the form shows no
+  seconds. When an edited record's minutes stay the same, its stored
+  seconds are kept.
+- A rating on a short numeric scale (effort 1–10) is a Chakra `Slider`
+  whose far left, 0, means "Keine Angabe". A few ordered values (mood,
+  wind) are a row of toggle buttons with an emoji above the label; the
+  chosen one is `brand` `subtle` with a `brand.solid` border, and pressing
+  it again clears the value. Tags are chips in their table colour
+  (`tagColorPalette`), switched on and off, with a "Neuer Tag" field below
+  that creates a tag on Enter or "Erstellen"; an existing name is ticked
+  instead of created twice.
+- `FormDialog` scrolls its body inside the dialog; the footer with
+  "Speichern" and "Abbrechen" always stays visible.
 
 ## Components to reuse
 
@@ -188,7 +204,7 @@ Before designing something new, check whether one of these already covers it
 | `MetricChart` | One Recharts series over time, coloured through theme CSS variables. |
 | `PeriodPicker` | Attached toggle group for 30 T / 90 T / 1 J / Alle. |
 | `DataTable` | Every list table, sorted by the server (controlled `sort`; a first click sorts descending). It also renders the count above the rows (`count`, 0.875rem `fg.muted`) and "load more" with its inline error (`pagination`), so tables never build these themselves; `DataTableSkeleton` is their loading state. The header spans the full width: every header cell, the row-actions column included, is sticky on `bg`, so rows never show through it while scrolling. A column with a `description` explains itself in a tooltip (see below). A column can declare a `filter`: its trigger shows the ticked count (`brand.subtle` badge with `brand.fg`) and opens a `FilterPopover`. |
-| `Checklist` | Multi-select as a group of checkboxes (`fg.muted` outline, `brand.solid` when ticked), an optional search for long lists, "N ausgewählt" and "Auswahl löschen". In a filter it lives in the `FilterPopover` (popover from `sm`, bottom sheet below), which ends with "Fertig"; in a form it sits inline (gadgets and tags of an activity). |
+| `Checklist` | Multi-select as a group of checkboxes (`fg.muted` outline, `brand.solid` when ticked), an optional search for long lists, "N ausgewählt" and "Auswahl löschen". In a filter it lives in the `FilterPopover` (popover from `sm`, bottom sheet below), which ends with "Fertig"; in a form it sits inline (the gadgets of an activity). |
 | `Tooltip` (`components/ui/tooltip`) | Explains an abbreviated or technical term, never more. In tables a column sets `description`: the header label gets a dotted `fg.muted` underline and the text appears on hover and keyboard focus after 300 ms, on `bg.panel` with a hairline `border`, `l2`, 0.875rem, at most `20rem` wide. Only where a term needs it (TSS, Ø, units, estimated values); self-explaining headers such as Datum, Distanz or Gewicht get none. It is never the only place for data and never shows truncated text. Touch has no hover, so essential information must also be visible elsewhere. |
 | `FormDialog`, `ConfirmDialog` | Add/edit dialog (`size="lg"` for long forms) and destructive confirmation. `ConfirmDialog` takes `finalFocusEl` when the element that opened it disappears with the delete. |
 | Chakra `Menu` | The "⋯" row menu (see row actions below). `Menu.Content` sets `colorPalette="brand"`, because it renders in a portal. |
@@ -206,7 +222,7 @@ Before designing something new, check whether one of these already covers it
   `BrandMark`): an "A" with a lightning-bolt counter in the `volt`
   gradient, at `boxSize="7"` beside the wordmark with `gap="2"`. Never
   recolour it, flatten it or reuse `volt` elsewhere.
-- No emoji, illustrations or stock imagery.
+- No emoji (except the value scales above), illustrations or stock imagery.
 
 ## Not this
 

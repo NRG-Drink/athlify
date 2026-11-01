@@ -2,7 +2,6 @@ import i18next from 'i18next'
 import { describe, expect, it } from 'vitest'
 import {
   activityToValues,
-  formatDurationInput,
   hasDetails,
   newActivityValues,
   parseDuration,
@@ -23,11 +22,10 @@ const valid = (overrides: Partial<ActivityFormValues> = {}): ActivityFormValues 
 })
 
 describe('parseDuration', () => {
-  it('reads h:mm and h:mm:ss with a colon or a point', () => {
-    expect(parseDuration('1:02:05')).toBe(3725)
+  it('reads h:mm with a colon or a point', () => {
     expect(parseDuration('1:30')).toBe(5400)
     expect(parseDuration('1.30')).toBe(5400)
-    expect(parseDuration(' 12.05.30 ')).toBe(43530)
+    expect(parseDuration(' 12.05 ')).toBe(43500)
     expect(parseDuration('0:00')).toBe(0)
   })
 
@@ -35,15 +33,9 @@ describe('parseDuration', () => {
     expect(parseDuration('')).toBeNull()
     expect(parseDuration('90')).toBeNull()
     expect(parseDuration('1:75')).toBeNull()
-    expect(parseDuration('1:30:60')).toBeNull()
+    expect(parseDuration('1:02:05')).toBeNull()
     expect(parseDuration('1:5')).toBeNull()
     expect(parseDuration('abc')).toBeNull()
-  })
-
-  it('formats seconds as h:mm:ss and reads them back', () => {
-    expect(formatDurationInput(3725)).toBe('1:02:05')
-    expect(formatDurationInput(5400)).toBe('1:30:00')
-    expect(parseDuration(formatDurationInput(43530))).toBe(43530)
   })
 })
 
@@ -71,7 +63,7 @@ describe('validate', () => {
 
   it('checks duration format and that it is above zero', () => {
     expect(validate(valid({ duration: '90' }), t, now).duration).toBe(
-      'Bitte im Format Std:Min oder Std:Min:Sek eingeben.',
+      'Bitte im Format Std:Min eingeben.',
     )
     expect(validate(valid({ duration: '0:00' }), t, now).duration).toBe(
       'Bitte einen Wert grösser als 0 eingeben.',
@@ -191,6 +183,14 @@ describe('toInput', () => {
       tagIds: ['tag-1', 'tag-2'],
     })
   })
+
+  it('keeps the stored seconds while the minutes are unchanged', () => {
+    // 3725 s is shown as 1:02.
+    expect(toInput(valid({ duration: '1:02', time: 3725 })).time).toBe(3725)
+    expect(toInput(valid({ duration: '1.02', time: 3725 })).time).toBe(3725)
+    expect(toInput(valid({ duration: '1:03', time: 3725 })).time).toBe(3780)
+    expect(toInput(valid({ duration: '1:02', time: null })).time).toBe(3720)
+  })
 })
 
 describe('form values', () => {
@@ -229,7 +229,8 @@ describe('form values', () => {
     expect(values).toMatchObject({
       date: '2026-10-01T18:15',
       type: 'GRAVEL',
-      duration: '1:02:05',
+      duration: '1:02',
+      time: 3725,
       distance: '98',
       elevationGain: '',
       vehicleId: 'vehicle-1',
