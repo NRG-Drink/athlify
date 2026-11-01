@@ -1,15 +1,17 @@
 import {
   Button,
+  Field,
   Fieldset,
   HStack,
   Input,
+  Popover,
   SimpleGrid,
   Slider,
   Stack,
   Text,
   Wrap,
 } from '@chakra-ui/react'
-import { memo, useState, type ReactNode } from 'react'
+import { memo, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LuCheck, LuPlus } from 'react-icons/lu'
 import { toggleId } from '../../lib/ids'
@@ -23,8 +25,6 @@ export function SectionLegend({ children }: { children: ReactNode }) {
     </Fieldset.Legend>
   )
 }
-
-const EFFORT_MARKS = Array.from({ length: MAX_EFFORT }, (_, index) => index + 1)
 
 interface EffortSliderProps {
   label: string
@@ -75,7 +75,6 @@ export const EffortSlider = memo(function EffortSlider({
           <Slider.Range />
         </Slider.Track>
         <Slider.Thumbs />
-        <Slider.Marks marks={EFFORT_MARKS} />
       </Slider.Control>
       <HStack justify="space-between" fontSize="xs" color="fg.muted">
         <Text>{t('activities.form.effortNone')}</Text>
@@ -173,7 +172,9 @@ interface ChipChoiceProps {
   hasMore: boolean
   /** Colour palette of a chosen chip; brand when not given. */
   colorOf?: (id: string) => string
-  /** Offers a field to create a new option; Enter in it creates the option, not the record. */
+  /** Shown instead of the chips when there are no options. */
+  emptyText?: string
+  /** Offers a small button at the end of the chips that opens a popup to create an option. */
   create?: ChipCreate
 }
 
@@ -185,6 +186,7 @@ export const ChipChoice = memo(function ChipChoice({
   onChange,
   hasMore,
   colorOf,
+  emptyText,
   create,
 }: ChipChoiceProps) {
   const { t } = useTranslation()
@@ -193,7 +195,12 @@ export const ChipChoice = memo(function ChipChoice({
     <Fieldset.Root>
       <SectionLegend>{label}</SectionLegend>
       <Stack gap="3">
-        {options.length > 0 && (
+        {options.length === 0 && emptyText && (
+          <Text fontSize="sm" color="fg.muted">
+            {emptyText}
+          </Text>
+        )}
+        {(options.length > 0 || create) && (
           <Wrap gap="2">
             {options.map((option) => {
               const on = value.includes(option.id)
@@ -212,6 +219,7 @@ export const ChipChoice = memo(function ChipChoice({
                 </Button>
               )
             })}
+            {create && <CreatePopover {...create} />}
           </Wrap>
         )}
         {hasMore && (
@@ -219,39 +227,78 @@ export const ChipChoice = memo(function ChipChoice({
             {t('checklist.moreOptions')}
           </Text>
         )}
-        {create && <CreateField {...create} />}
       </Stack>
     </Fieldset.Root>
   )
 })
 
-function CreateField({ onCreate, creating }: ChipCreate) {
+/**
+ * A small chip-like button that opens a popup with the new tag's name. The popup is not portalled, so
+ * it stays inside the dialog's focus trap; Enter in it creates the tag and never submits the form.
+ */
+function CreatePopover({ onCreate, creating }: ChipCreate) {
   const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
+  const input = useRef<HTMLInputElement>(null)
   const trimmed = name.trim()
   const create = () => {
-    if (trimmed && !creating) onCreate(trimmed, () => setName(''))
+    if (!trimmed || creating) return
+    onCreate(trimmed, () => {
+      setName('')
+      setOpen(false)
+    })
   }
 
   return (
-    <HStack gap="2">
-      <Input
-        size="sm"
-        maxLength={MAX_TAG_LENGTH}
-        aria-label={t('activities.form.newTag')}
-        placeholder={t('activities.form.newTag')}
-        value={name}
-        onChange={(event) => setName(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key !== 'Enter') return
-          event.preventDefault()
-          create()
-        }}
-      />
-      <Button size="sm" variant="outline" onClick={create} disabled={!trimmed} loading={creating}>
-        <LuPlus aria-hidden />
-        {t('activities.form.createTag')}
-      </Button>
-    </HStack>
+    <Popover.Root
+      open={open}
+      onOpenChange={(details) => {
+        setOpen(details.open)
+        if (!details.open) setName('')
+      }}
+      initialFocusEl={() => input.current}
+      positioning={{ placement: 'bottom-start' }}
+    >
+      <Popover.Trigger asChild>
+        <Button size="xs" rounded="full" variant="outline" borderStyle="dashed" color="fg.muted">
+          <LuPlus aria-hidden />
+          {t('activities.form.newTag')}
+        </Button>
+      </Popover.Trigger>
+      <Popover.Positioner>
+        <Popover.Content width="xs" maxWidth="calc(100vw - 2rem)" bg="bg.panel">
+          <Popover.Body p="4">
+            <Stack gap="3">
+              <Field.Root>
+                <Field.Label>{t('activities.form.tagName')}</Field.Label>
+                <Input
+                  ref={input}
+                  size="sm"
+                  maxLength={MAX_TAG_LENGTH}
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key !== 'Enter') return
+                    event.preventDefault()
+                    create()
+                  }}
+                />
+              </Field.Root>
+              <HStack justify="flex-end" gap="2">
+                <Popover.CloseTrigger asChild>
+                  <Button size="sm" variant="ghost">
+                    {t('form.cancel')}
+                  </Button>
+                </Popover.CloseTrigger>
+                <Button size="sm" onClick={create} disabled={!trimmed} loading={creating}>
+                  {t('activities.form.createTag')}
+                </Button>
+              </HStack>
+            </Stack>
+          </Popover.Body>
+        </Popover.Content>
+      </Popover.Positioner>
+    </Popover.Root>
   )
 }

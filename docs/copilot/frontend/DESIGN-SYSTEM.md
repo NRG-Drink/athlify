@@ -45,9 +45,11 @@ follows the operating system. Every rule below holds in both modes.
 - Period labels come in pairs. Short labels go on toggles ("30 T", "90 T",
   "1 J", "Alle"); long labels go in accessible names and notes ("Letzte 30
   Tage", "in 30 Tagen").
-- No emoji in text. The one exception is a value scale in a form where
-  the emoji carries the value (mood and wind of an activity); each emoji
-  then sits above its text label, which is the accessible name. Number
+- No emoji in text. The one exception is a value scale where the emoji
+  carries the value (mood and wind of an activity): in the form each emoji
+  sits above its text label; in a table cell the emoji stands alone with
+  the label as `aria-label` and `title`; filters and filter chips use the
+  text only. Number
   formats follow the locale (`useFormat`); use a real
   minus sign in deltas ("−0.7 kg").
 
@@ -160,12 +162,14 @@ In short:
 
 ## Row actions and forms
 
-- **Row actions.** At most one direct icon action per row (the most common,
-  usually edit: `LuPencil`), plus a "⋯" `Menu` (`LuEllipsis`) for the rest.
-  Both are ghost `sm` icon buttons in `fg.muted`, with an `aria-label` that
-  names the row ("Aktivität vom 16. Okt. 2026 bearbeiten"). A destructive item
-  comes last in the menu, after a separator, in `fg.error` with a `bg.error`
-  highlight. A row click opens the direct action. Menu items act on
+- **Row actions.** Editing is the row itself: a click, or Enter on the
+  focused row, opens the form, and `DataTable`'s `rowLabel` names the row
+  by that action ("Aktivität vom 16. Okt. 2026 bearbeiten"). There is no
+  separate edit button. The remaining actions are ghost `sm` icon buttons
+  in `fg.muted` with an `aria-label` that names the row: a single delete
+  button (Body-Stats), or a "⋯" `Menu` (`LuEllipsis`) when there are
+  several (Activities). A destructive item comes last in the menu, after a
+  separator, in `fg.error` with a `bg.error` highlight. Menu items act on
   `onClick`, which Enter on a highlighted item triggers as well.
 - **Forms.** `*` means "calculated or system value" (user story US-03), so a
   form that shows such values does not show Chakra's required indicator;
@@ -189,13 +193,16 @@ In short:
 - While "Weitere Details" is folded, its trigger shows how many of the
   fields inside hold a value ("· 3 Angaben").
 - A rating on a short numeric scale (effort 1–10) is a Chakra `Slider`
-  with a mark per step, whose far left, 0, means "Keine Angabe". A few ordered values (mood,
+  whose far left, 0, means "Keine Angabe". A few ordered values (mood,
   wind) are a row of toggle buttons with an emoji above the label; the
   chosen one is `brand` `subtle` with a `brand.solid` border, and pressing
   it again clears the value. Gadgets and tags are chips switched on and
   off (tags in their table colour, `tagColorPalette`; gadgets in `brand`).
-  Below the tags, a "Neuer Tag" field creates a tag on Enter or
-  "Erstellen"; an existing name is ticked instead of created twice.
+  Without options, a muted line says so ("Noch keine Gadgets erfasst.").
+  The last tag chip is a small dashed "+ Neuer Tag" button that opens a
+  popover with the name, "Abbrechen" and "Erstellen" (Enter creates); it
+  is not portalled, so it stays in the dialog's focus trap. An existing
+  name is ticked instead of created twice.
 - `FormDialog` scrolls its body inside the dialog; the footer with
   "Speichern" and "Abbrechen" always stays visible.
 

@@ -684,7 +684,7 @@ describe('BodyStatsPage', () => {
   describe('editing', () => {
     const openEditor = async (user: ReturnType<typeof page>['user']) => {
       await user.click(
-        await screen.findByRole('button', { name: 'Messung vom 2. Okt. 2026 bearbeiten' }),
+        await screen.findByRole('row', { name: 'Messung vom 2. Okt. 2026 bearbeiten' }),
       )
       return screen.findByRole('dialog', { name: 'Messung bearbeiten' })
     }
@@ -745,6 +745,23 @@ describe('BodyStatsPage', () => {
       await waitFor(() => expect(rowCount()).toBe(3))
     })
 
+    it('keeps the entry when the server rejects the change', async () => {
+      const { user } = page((operation) =>
+        operation === UPDATE
+          ? { data: { updateBodyStats: null }, errors: [{ message: 'Invalid' }] }
+          : okQuery(),
+      )
+      const dialog = await openEditor(user)
+
+      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
+
+      expect(
+        await screen.findByText('Speichern fehlgeschlagen. Bitte versuche es nochmals.'),
+      ).toBeInTheDocument()
+      expect(screen.getByRole('dialog')).toBeInTheDocument()
+      expect(rowCount()).toBe(4)
+    })
+
     it('sends the edited note, and a cleared note as no note', async () => {
       const { user, calls } = page((operation) =>
         operation === UPDATE ? { data: { updateBodyStats: newest } } : okQuery(),
@@ -803,6 +820,26 @@ describe('BodyStatsPage', () => {
       expect(rowCount()).toBe(4)
     })
 
+    it('keeps the entry when the server refuses the delete', async () => {
+      const { user } = page((operation) =>
+        operation === DELETE
+          ? { data: { deleteBodyStats: null }, errors: [{ message: 'Failed' }] }
+          : okQuery(),
+      )
+
+      const confirm = await openConfirm(user)
+      await user.click(within(confirm).getByRole('button', { name: 'Löschen' }))
+
+      expect(
+        await screen.findByText('Löschen fehlgeschlagen. Bitte versuche es nochmals.'),
+      ).toBeInTheDocument()
+      await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
+      expect(rowCount()).toBe(4)
+      expect(
+        screen.getByRole('button', { name: 'Messung vom 2. Okt. 2026 löschen' }),
+      ).toBeInTheDocument()
+    })
+
     it('deletes after confirmation without refetching the list', async () => {
       const { user, calls } = page((operation) =>
         operation === DELETE ? { data: { deleteBodyStats: 'bs-a' } } : okQuery(),
@@ -812,15 +849,7 @@ describe('BodyStatsPage', () => {
       await user.click(within(confirm).getByRole('button', { name: 'Löschen' }))
 
       await waitFor(() => expect(rowCount()).toBe(3))
-      expect(calls(DELETE)).toEqual([
-        {
-          id: 'bs-a',
-          connections: [
-            expect.stringContaining('BodyStatsPage_analytics__bodyStats'),
-            expect.stringContaining('BodyStatsPage_history__bodyStats'),
-          ],
-        },
-      ])
+      expect(calls(DELETE)).toEqual([{ id: 'bs-a' }])
       expect(await screen.findByText('Messung gelöscht.')).toBeInTheDocument()
       expect(calls(QUERY)).toHaveLength(1)
     })

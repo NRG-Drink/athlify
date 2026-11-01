@@ -2,7 +2,7 @@ import { Flex, IconButton, Menu, Portal, Tag, Text } from '@chakra-ui/react'
 import { memo, useMemo, type ReactNode, type Ref } from 'react'
 import { graphql, useFragment } from 'react-relay'
 import { useTranslation } from 'react-i18next'
-import { LuCopy, LuEllipsis, LuPencil, LuTrash2 } from 'react-icons/lu'
+import { LuCopy, LuEllipsis, LuTrash2 } from 'react-icons/lu'
 import { DataTable, type DataTableColumn } from '../../components/DataTable'
 import { useFormat } from '../../i18n/useFormat'
 import { ActivityFilterField } from './ActivityFilterField'
@@ -19,9 +19,11 @@ import {
   formatDuration,
   formatHeartRate,
   formatOptionalNumber,
+  moodEmoji,
   moodRank,
   tagColorPalette,
   vehicleLabel,
+  windEmoji,
   windRank,
 } from './activityFormatting'
 import { isSortColumn, type ListSort } from '../../lib/sort'
@@ -108,27 +110,17 @@ function TagChips({ row }: { row: ActivityRow }) {
 
 interface RowActionsProps {
   row: ActivityRow
-  onEdit: (row: ActivityRow) => void
   onDuplicate: (row: ActivityRow) => void
   onDelete: (row: ActivityRow) => void
 }
 
-/** Edit as a direct action; duplicate and the destructive delete (last) in a menu. */
-function RowActions({ row, onEdit, onDuplicate, onDelete }: RowActionsProps) {
+/** Duplicate and the destructive delete (last) in a menu; a click on the row itself edits. */
+function RowActions({ row, onDuplicate, onDelete }: RowActionsProps) {
   const { t } = useTranslation()
   const format = useFormat()
   const date = format.date(row.date)
   return (
     <Flex gap="1" justify="flex-end">
-      <IconButton
-        variant="ghost"
-        size="sm"
-        color="fg.muted"
-        aria-label={t('activities.row.edit', { date })}
-        onClick={() => onEdit(row)}
-      >
-        <LuPencil />
-      </IconButton>
       <Menu.Root positioning={{ placement: 'bottom-end' }}>
         <Menu.Trigger asChild>
           <IconButton
@@ -165,6 +157,19 @@ function RowActions({ row, onEdit, onDuplicate, onDelete }: RowActionsProps) {
         </Portal>
       </Menu.Root>
     </Flex>
+  )
+}
+
+/**
+ * A mood or wind as its emoji; the label is its accessible name and tooltip. A value without an emoji
+ * (newer than this client) shows its label, and a missing one "—".
+ */
+function EmojiValue({ emoji, label }: { emoji: string | undefined; label: string }) {
+  if (!emoji) return <>{label}</>
+  return (
+    <Text as="span" role="img" aria-label={label} title={label} fontSize="lg" lineHeight="1">
+      {emoji}
+    </Text>
   )
 }
 
@@ -387,7 +392,12 @@ export const ActivitiesTable = memo(function ActivitiesTable({
         header: t('activities.columns.mood'),
         description: t('activities.columnHints.mood'),
         accessor: (row) => moodRank(row.mood),
-        cell: (row) => enumLabel(t, 'moods', row.mood),
+        cell: (row) => (
+          <EmojiValue
+            emoji={moodEmoji[row.mood as keyof typeof moodEmoji]}
+            label={enumLabel(t, 'moods', row.mood)}
+          />
+        ),
         ...secondary,
         sortable: false,
       },
@@ -396,7 +406,12 @@ export const ActivitiesTable = memo(function ActivitiesTable({
         header: t('activities.columns.wind'),
         description: t('activities.columnHints.wind'),
         accessor: (row) => windRank(row.wind),
-        cell: (row) => enumLabel(t, 'winds', row.wind),
+        cell: (row) => (
+          <EmojiValue
+            emoji={windEmoji[row.wind as keyof typeof windEmoji]}
+            label={enumLabel(t, 'winds', row.wind)}
+          />
+        ),
         ...secondary,
         hideBelow: filterColumnBreakpoint.wind,
         filter: columnFilters.wind,
@@ -448,9 +463,8 @@ export const ActivitiesTable = memo(function ActivitiesTable({
       countRef={countRef}
       actionsLabel={t('activities.row.actionsColumn')}
       onRowClick={onEdit}
-      rowActions={(row) => (
-        <RowActions row={row} onEdit={onEdit} onDuplicate={onDuplicate} onDelete={onDelete} />
-      )}
+      rowLabel={(row) => t('activities.row.edit', { date: format.date(row.date) })}
+      rowActions={(row) => <RowActions row={row} onDuplicate={onDuplicate} onDelete={onDelete} />}
       pagination={{
         hasNextPage,
         isLoadingNext,

@@ -212,6 +212,8 @@
         "effortNone": "Keine Angabe",
         "effortHigh": "maximal",
         "newTag": "Neuer Tag",
+        "tagName": "Name des Tags",
+        "noGadgets": "Noch keine Gadgets erfasst.",
         "createTag": "Erstellen",
         "tagCreated": "Tag «{{name}}» erstellt.",
         "tagCreateFailed": "Der Tag konnte nicht erstellt werden. Gibt es ihn schon?",

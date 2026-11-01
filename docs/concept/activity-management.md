@@ -29,7 +29,7 @@ the merge UI and Strava synchronization are not implemented yet.
   `?sort=-distance`). Type, description, bicycle, mood, wind, gadgets and tags
   are not sortable, because their stored values would not sort in their
   natural order. The number of matching activities is shown above the table.
-- Detail view as an edit form, opened from the list: the pencil or a row click
+- Detail view as an edit form, opened from the list: a row click
   edits, a "⋯" menu duplicates (a new activity with the same values and the
   current date) or deletes (after a confirmation that warns when the activity
   is part of a merge). "Add activity" starts from the type and bicycle of the

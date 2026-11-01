@@ -100,11 +100,18 @@ const openMenu = async (user: ReturnType<typeof page>['user'], date: string) => 
 
 describe('ActivitiesPage editing', () => {
   describe('row actions', () => {
-    it('offers edit directly and duplicate and delete in a menu, delete last', async () => {
+    it('edits through the row itself and offers duplicate and delete in a menu, delete last', async () => {
       const { user } = page(okQuery)
+      const row = await screen.findByRole('row', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' })
+      // No separate edit button: the row is the edit action, also by keyboard.
+      expect(screen.queryByRole('button', { name: /bearbeiten$/ })).not.toBeInTheDocument()
+      row.focus()
+      await user.keyboard('{Enter}')
       expect(
-        await screen.findByRole('button', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
+        await screen.findByRole('dialog', { name: 'Aktivität bearbeiten' }),
       ).toBeInTheDocument()
+      await user.keyboard('{Escape}')
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
       await openMenu(user, '16. Okt. 2026')
       const items = await screen.findAllByRole('menuitem')
@@ -221,7 +228,7 @@ describe('ActivitiesPage editing', () => {
           : okQuery(operation),
       )
       await user.click(
-        await screen.findByRole('button', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
+        await screen.findByRole('row', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
       )
       const dialog = await screen.findByRole('dialog', { name: 'Aktivität bearbeiten' })
       expect(within(dialog).getByLabelText(/^Dauer/)).toHaveValue('1:30')
@@ -259,7 +266,7 @@ describe('ActivitiesPage editing', () => {
     it('shows calculated values read-only, marked with *, and "—" when missing', async () => {
       const { user } = page(okQuery)
       await user.click(
-        await screen.findByRole('button', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
+        await screen.findByRole('row', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
       )
       const dialog = await screen.findByRole('dialog')
 
@@ -274,7 +281,7 @@ describe('ActivitiesPage editing', () => {
     it('blocks saving with errors under the fields and sends nothing', async () => {
       const { user, calls } = page(okQuery)
       await user.click(
-        await screen.findByRole('button', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
+        await screen.findByRole('row', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
       )
       const dialog = await screen.findByRole('dialog')
       await user.clear(within(dialog).getByLabelText(/^Dauer/))
@@ -289,7 +296,7 @@ describe('ActivitiesPage editing', () => {
     it('opens the details when an error is inside them', async () => {
       const { user } = page(okQuery)
       await user.click(
-        await screen.findByRole('button', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
+        await screen.findByRole('row', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
       )
       const dialog = await screen.findByRole('dialog')
       const details = within(dialog).getByRole('button', { name: 'Weitere Details' })
@@ -310,7 +317,7 @@ describe('ActivitiesPage editing', () => {
         operation === UPDATE ? { data: { updateActivity: null } } : okQuery(operation),
       )
       await user.click(
-        await screen.findByRole('button', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
+        await screen.findByRole('row', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
       )
       await user.click(
         within(await screen.findByRole('dialog')).getByRole('button', { name: 'Speichern' }),
@@ -329,7 +336,7 @@ describe('ActivitiesPage editing', () => {
           : okQuery(operation),
       )
       await user.click(
-        await screen.findByRole('button', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
+        await screen.findByRole('row', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
       )
       await user.click(
         within(await screen.findByRole('dialog')).getByRole('button', { name: 'Speichern' }),
@@ -347,7 +354,7 @@ describe('ActivitiesPage editing', () => {
         operation === UPDATE ? Promise.reject(new Error('offline')) : okQuery(operation),
       )
       await user.click(
-        await screen.findByRole('button', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
+        await screen.findByRole('row', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
       )
       const dialog = await screen.findByRole('dialog')
       const distance = within(dialog).getByLabelText(/^Distanz/)
@@ -489,7 +496,7 @@ describe('ActivitiesPage editing', () => {
   describe('detail fields', () => {
     const openDetails = async (user: ReturnType<typeof page>['user']) => {
       await user.click(
-        await screen.findByRole('button', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
+        await screen.findByRole('row', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
       )
       const dialog = await screen.findByRole('dialog', { name: 'Aktivität bearbeiten' })
       await user.click(within(dialog).getByRole('button', { name: 'Weitere Details' }))
@@ -520,14 +527,21 @@ describe('ActivitiesPage editing', () => {
 
       await user.click(within(dialog).getByRole('button', { name: 'Wahoo Elemnt' }))
       await user.click(within(dialog).getByRole('button', { name: 'Intervall' }))
-      await user.type(within(dialog).getByRole('textbox', { name: 'Neuer Tag' }), 'Hügel{Enter}')
+      await user.click(within(dialog).getByRole('button', { name: 'Neuer Tag' }))
+      const name = await within(dialog).findByRole('textbox', { name: 'Name des Tags' })
+      await waitFor(() => expect(name).toHaveFocus())
+      await user.type(name, 'Hügel{Enter}')
       expect(await screen.findByText('Tag «Hügel» erstellt.')).toBeInTheDocument()
       expect(calls(CREATE_TAG)).toEqual([{ input: { name: 'Hügel' } }])
       expect(within(dialog).getByRole('button', { name: 'Hügel' })).toHaveAttribute(
         'aria-pressed',
         'true',
       )
-      expect(within(dialog).getByRole('textbox', { name: 'Neuer Tag' })).toHaveValue('')
+      await waitFor(() =>
+        expect(
+          within(dialog).queryByRole('textbox', { name: 'Name des Tags' }),
+        ).not.toBeInTheDocument(),
+      )
       // Enter created the tag, it did not save the activity.
       expect(calls(UPDATE)).toHaveLength(0)
 
@@ -567,7 +581,7 @@ describe('ActivitiesPage editing', () => {
     it('tells how many details are filled while they are folded', async () => {
       const { user } = page(okQuery)
       await user.click(
-        await screen.findByRole('button', { name: 'Aktivität vom 14. Okt. 2026 bearbeiten' }),
+        await screen.findByRole('row', { name: 'Aktivität vom 14. Okt. 2026 bearbeiten' }),
       )
       const dialog = await screen.findByRole('dialog', { name: 'Aktivität bearbeiten' })
       const trigger = within(dialog).getByRole('button', { name: 'Weitere Details' })
@@ -578,10 +592,27 @@ describe('ActivitiesPage editing', () => {
       expect(trigger).toHaveTextContent('Weitere Details· 1 Angabe')
     })
 
+    it('says so when there are no gadgets yet', async () => {
+      const { user } = page((operation) => {
+        const result = okQuery(operation)
+        return (
+          result && {
+            data: { ...result.data, gadgets: { nodes: [], pageInfo: { hasNextPage: false } } },
+          }
+        )
+      })
+      const dialog = await openDetails(user)
+      expect(within(dialog).getByText('Noch keine Gadgets erfasst.')).toBeInTheDocument()
+    })
+
     it('ticks an existing tag instead of creating it again', async () => {
       const { user, calls } = page(okQuery)
       const dialog = await openDetails(user)
-      await user.type(within(dialog).getByRole('textbox', { name: 'Neuer Tag' }), 'intervall')
+      await user.click(within(dialog).getByRole('button', { name: 'Neuer Tag' }))
+      await user.type(
+        await within(dialog).findByRole('textbox', { name: 'Name des Tags' }),
+        'intervall',
+      )
       await user.click(within(dialog).getByRole('button', { name: 'Erstellen' }))
 
       expect(within(dialog).getByRole('button', { name: 'Intervall' })).toHaveAttribute(

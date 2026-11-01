@@ -1,5 +1,5 @@
-import { graphql, useMutation } from 'react-relay'
-import { ConnectionHandler, ROOT_ID } from 'relay-runtime'
+import { graphql, useMutation, useRelayEnvironment } from 'react-relay'
+import { commitLocalUpdate, ConnectionHandler, ROOT_ID } from 'relay-runtime'
 import { useTranslation } from 'react-i18next'
 import { toaster } from '../../components/ui/toaster'
 import { useBodyStatsHistorySort } from './bodyStatsSort'
@@ -40,8 +40,8 @@ const updateMutation = graphql`
 `
 
 const deleteMutation = graphql`
-  mutation useBodyStatsMutationsDeleteMutation($id: ID!, $connections: [ID!]!) {
-    deleteBodyStats(id: $id) @deleteEdge(connections: $connections)
+  mutation useBodyStatsMutationsDeleteMutation($id: ID!) {
+    deleteBodyStats(id: $id)
   }
 `
 
@@ -70,12 +70,14 @@ interface DeleteCallbacks {
 }
 
 /**
- * Add, update and delete for Body-Stats. The Relay connection is updated from the mutation payload
- * (`@prependNode`, `@deleteEdge`), never by refetching the list, and the user gets a toast for every outcome.
+ * Add, update and delete for Body-Stats. The Relay connections are updated from the mutation result
+ * (`@prependNode`, and a local removal after a confirmed delete), never by refetching the list, and
+ * the user gets a toast for every outcome.
  */
 export function useBodyStatsMutations() {
   const { order: historyOrder } = useBodyStatsHistorySort()
   const { t } = useTranslation()
+  const environment = useRelayEnvironment()
   const [commitAdd, isAdding] = useMutation<useBodyStatsMutationsAddMutation>(addMutation)
   const [commitUpdate, isUpdating] =
     useMutation<useBodyStatsMutationsUpdateMutation>(updateMutation)
@@ -85,6 +87,17 @@ export function useBodyStatsMutations() {
   const fail = (key: string): void => {
     toaster.create({ type: 'error', title: t(key) })
   }
+
+  // Not in an `updater`: that also runs for a payload with errors, where `null` means "failed",
+  // not "gone", and the entry must stay.
+  const removeLocally = (id: string) =>
+    commitLocalUpdate(environment, (store) => {
+      for (const connectionId of connectionIds(historyOrder)) {
+        const connection = store.get(connectionId)
+        if (connection) ConnectionHandler.deleteNode(connection, id)
+      }
+      store.delete(id)
+    })
 
   const add = (input: BodyStatsInput, { onSuccess }: Callbacks) =>
     commitAdd({
@@ -103,21 +116,14 @@ export function useBodyStatsMutations() {
   const update = (id: string, input: BodyStatsInput, { onSuccess }: Callbacks) =>
     commitUpdate({
       variables: { id, input },
-      updater: (store, data) => {
-        // The entry vanished on the server: drop it here as well.
-        if (!data || data.updateBodyStats) return
-        for (const connectionId of connectionIds(historyOrder)) {
-          const connection = store.get(connectionId)
-          if (connection) ConnectionHandler.deleteNode(connection, id)
-        }
-        store.delete(id)
-      },
       onCompleted: (response, errors) => {
         if (errors?.length) {
           fail('bodyStats.add.errors.saveFailed')
           return
         }
         if (!response.updateBodyStats) {
+          // The entry vanished on the server: drop it here as well.
+          removeLocally(id)
           fail('bodyStats.edit.errors.notFound')
           onSuccess()
           return
@@ -130,11 +136,14 @@ export function useBodyStatsMutations() {
 
   const remove = (id: string, { onSettled }: DeleteCallbacks) =>
     commitDelete({
-      variables: { id, connections: connectionIds(historyOrder) },
-      updater: (store) => store.delete(id),
+      variables: { id },
       onCompleted: (_response, errors) => {
         if (errors?.length) fail('bodyStats.delete.errors.failed')
-        else toaster.create({ type: 'success', title: t('bodyStats.delete.success') })
+        else {
+          // Also when the server no longer knows it (`null`): either way it is gone.
+          removeLocally(id)
+          toaster.create({ type: 'success', title: t('bodyStats.delete.success') })
+        }
         onSettled()
       },
       onError: () => {

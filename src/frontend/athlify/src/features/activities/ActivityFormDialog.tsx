@@ -399,6 +399,7 @@ export function ActivityFormDialog({
                 value={values.gadgetIds}
                 onChange={setGadgets}
                 hasMore={options.hasMoreGadgets}
+                emptyText={t('activities.form.noGadgets')}
               />
               <ChipChoice
                 label={t('activities.columns.tags')}

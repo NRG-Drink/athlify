@@ -72,6 +72,11 @@ export interface DataTableProps<T extends object> {
   rowActions?: (row: T) => ReactNode
   /** Opens the row's default action (click, or Enter on the focused row). */
   onRowClick?: (row: T) => void
+  /**
+   * Accessible name of a clickable row, naming its action ("Messung vom 2. Okt. 2026 bearbeiten"),
+   * so the row itself replaces a separate edit button.
+   */
+  rowLabel?: (row: T) => string
   /** Shown in a full-width row instead of the body when `data` is empty; the header stays. */
   emptyMessage?: ReactNode
   /** The data is being refreshed: the rows stay, dimmed, and the table is marked busy. */
@@ -137,6 +142,7 @@ export function DataTable<T extends object>({
   actionsLabel,
   rowActions,
   onRowClick,
+  rowLabel,
   emptyMessage,
   busy,
   count,
@@ -300,6 +306,7 @@ export function DataTable<T extends object>({
               <Table.Row
                 key={getRowId(original)}
                 tabIndex={onRowClick ? 0 : undefined}
+                aria-label={onRowClick ? rowLabel?.(original) : undefined}
                 cursor={onRowClick ? 'pointer' : undefined}
                 onClick={onRowClick ? () => onRowClick(original) : undefined}
                 onKeyDown={onRowClick ? (event) => onRowKeyDown(event, original) : undefined}

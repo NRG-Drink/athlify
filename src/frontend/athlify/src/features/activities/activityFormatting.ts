@@ -70,8 +70,8 @@ export const moodEmoji: Record<Mood, string> = {
 export const windEmoji: Record<Wind, string> = {
   CALM: '🌿',
   LIGHT: '🍃',
-  MODERATE: '💨',
-  STRONG: '🌬️',
+  MODERATE: '🌬️',
+  STRONG: '💨',
   STORMY: '🌪️',
 }
 

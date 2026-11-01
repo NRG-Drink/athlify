@@ -183,8 +183,11 @@ describe('ActivitiesPage', () => {
     )
     expect(within(table).getByText('142')).toHaveAttribute('title', '120–170')
     expect(within(table).getByText('7')).toBeInTheDocument()
-    expect(within(table).getByText('Gut')).toBeInTheDocument()
-    expect(within(table).getByText('Leicht')).toBeInTheDocument()
+    // Mood and wind as emoji, named by their label. The columns are hidden below 2xl, which jsdom
+    // reports as `display: none`, so the role query cannot see them.
+    expect(within(table).getByTitle('Gut')).toHaveTextContent('🙂')
+    expect(within(table).getByTitle('Gut')).toHaveAttribute('aria-label', 'Gut')
+    expect(within(table).getByTitle('Leicht')).toHaveTextContent('🍃')
     expect(within(table).getByText('Garmin Edge')).toBeInTheDocument()
     expect(within(table).getByText('Training')).toBeInTheDocument()
   })
