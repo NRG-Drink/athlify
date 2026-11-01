@@ -1,5 +1,5 @@
-import { graphql, useMutation } from 'react-relay'
-import { ConnectionHandler, type RecordSourceSelectorProxy } from 'relay-runtime'
+import { graphql, useMutation, useRelayEnvironment } from 'react-relay'
+import { commitLocalUpdate, ConnectionHandler, type RecordSourceSelectorProxy } from 'relay-runtime'
 import { useTranslation } from 'react-i18next'
 import { toaster } from '../../components/ui/toaster'
 import type { ActivityFormInput } from './activityForm'
@@ -61,6 +61,7 @@ interface DeleteCallbacks {
  */
 export function useActivityMutations(connectionId: string) {
   const { t } = useTranslation()
+  const environment = useRelayEnvironment()
   const [commitCreate, isCreating] = useMutation<useActivityMutationsCreateMutation>(createMutation)
   const [commitUpdate, isUpdating] = useMutation<useActivityMutationsUpdateMutation>(updateMutation)
   const [commitDelete, isDeleting] = useMutation<useActivityMutationsDeleteMutation>(deleteMutation)
@@ -68,6 +69,11 @@ export function useActivityMutations(connectionId: string) {
   const fail = (key: string): void => {
     toaster.create({ type: 'error', title: t(key) })
   }
+
+  // Not in an `updater`: that also runs for a payload with errors, where `null` means "failed",
+  // not "gone", and the row must stay.
+  const removeLocally = (id: string) =>
+    commitLocalUpdate(environment, (store) => removeFromList(store, connectionId, id))
 
   const create = (input: ActivityFormInput, { onSuccess }: Callbacks) =>
     commitCreate({
@@ -85,17 +91,16 @@ export function useActivityMutations(connectionId: string) {
   const update = (id: string, input: ActivityFormInput, { onSuccess }: Callbacks) =>
     commitUpdate({
       variables: { id, input },
-      updater: (store, data) => {
-        // The activity vanished on the server: drop it here as well.
-        if (data && !data.updateActivity) removeFromList(store, connectionId, id)
-      },
       onCompleted: (response, errors) => {
         if (errors?.length) {
           fail('activities.add.errors.saveFailed')
           return
         }
-        if (!response.updateActivity) fail('activities.edit.errors.notFound')
-        else toaster.create({ type: 'success', title: t('activities.edit.success') })
+        if (!response.updateActivity) {
+          // The activity vanished on the server: drop it here as well.
+          removeLocally(id)
+          fail('activities.edit.errors.notFound')
+        } else toaster.create({ type: 'success', title: t('activities.edit.success') })
         onSuccess()
       },
       onError: () => fail('activities.add.errors.saveFailed'),
@@ -104,11 +109,13 @@ export function useActivityMutations(connectionId: string) {
   const remove = (id: string, { onSettled }: DeleteCallbacks) =>
     commitDelete({
       variables: { id },
-      // Also when the server no longer knows it (`null`): either way it is gone.
-      updater: (store) => removeFromList(store, connectionId, id),
       onCompleted: (_response, errors) => {
         if (errors?.length) fail('activities.delete.errors.failed')
-        else toaster.create({ type: 'success', title: t('activities.delete.success') })
+        else {
+          // Also when the server no longer knows it (`null`): either way it is gone.
+          removeLocally(id)
+          toaster.create({ type: 'success', title: t('activities.delete.success') })
+        }
         onSettled(!errors?.length)
       },
       onError: () => {

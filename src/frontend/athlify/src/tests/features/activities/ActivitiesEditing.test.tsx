@@ -82,8 +82,9 @@ const page = (handler: Handler, path = '/activities') =>
 
 const okQuery = (operation: string) => (operation === QUERY ? query([base, second]) : undefined)
 
-const table = () => screen.getByRole('table')
-const rowCount = () => within(table()).getAllByRole('row').length - 1
+// `hidden`: an open modal hides the table from the accessibility tree.
+const table = () => screen.getByRole('table', { hidden: true })
+const rowCount = () => within(table()).getAllByRole('row', { hidden: true }).length - 1
 
 const openMenu = async (user: ReturnType<typeof page>['user'], date: string) => {
   await user.click(
@@ -144,6 +145,22 @@ describe('ActivitiesPage editing', () => {
       await waitFor(() => expect(screen.getByText('1 Aktivität')).toHaveFocus())
       expect(calls(MORE)).toHaveLength(0)
       expect(calls(QUERY)).toHaveLength(1)
+    })
+
+    it('keeps the row when the server refuses the delete', async () => {
+      const { user } = page((operation) =>
+        operation === DELETE
+          ? { data: { deleteActivity: null }, errors: [{ message: 'Failed' }] }
+          : okQuery(operation),
+      )
+      await openMenu(user, '16. Okt. 2026')
+      await user.click(await screen.findByRole('menuitem', { name: 'Löschen' }))
+      const confirm = await screen.findByRole('alertdialog')
+      await user.click(within(confirm).getByRole('button', { name: 'Löschen' }))
+
+      expect(await screen.findByText(/Löschen fehlgeschlagen/)).toBeInTheDocument()
+      expect(rowCount()).toBe(2)
+      expect(screen.getByText('2 Aktivitäten')).toBeInTheDocument()
     })
 
     it('keeps the activity when cancelled', async () => {
@@ -297,6 +314,26 @@ describe('ActivitiesPage editing', () => {
       await waitFor(() => expect(rowCount()).toBe(1))
       expect(screen.getByText('1 Aktivität')).toBeInTheDocument()
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    })
+
+    it('keeps the row when the server rejects the change', async () => {
+      const { user } = page((operation) =>
+        operation === UPDATE
+          ? { data: { updateActivity: null }, errors: [{ message: 'Invalid' }] }
+          : okQuery(operation),
+      )
+      await user.click(
+        await screen.findByRole('button', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
+      )
+      await user.click(
+        within(await screen.findByRole('dialog')).getByRole('button', { name: 'Speichern' }),
+      )
+
+      expect(
+        await screen.findByText('Speichern fehlgeschlagen. Bitte versuche es nochmals.'),
+      ).toBeInTheDocument()
+      expect(screen.getByRole('dialog')).toBeInTheDocument()
+      expect(rowCount()).toBe(2)
     })
 
     it('keeps the dialog and its values when saving fails', async () => {
