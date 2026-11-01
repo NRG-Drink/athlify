@@ -2,6 +2,7 @@ import { graphql, useMutation } from 'react-relay'
 import { ConnectionHandler, ROOT_ID } from 'relay-runtime'
 import { useTranslation } from 'react-i18next'
 import { toaster } from '../../components/ui/toaster'
+import { useBodyStatsHistorySort } from './bodyStatsSort'
 import type { useBodyStatsMutationsAddMutation } from './__generated__/useBodyStatsMutationsAddMutation.graphql'
 import type { useBodyStatsMutationsDeleteMutation } from './__generated__/useBodyStatsMutationsDeleteMutation.graphql'
 import type { useBodyStatsMutationsUpdateMutation } from './__generated__/useBodyStatsMutationsUpdateMutation.graphql'
@@ -50,9 +51,12 @@ export type BodyStatsInput = useBodyStatsMutationsAddMutation['variables']['inpu
 const BODY_STATS_ANALYTICS_CONNECTION_KEY = 'BodyStatsPage_analytics__bodyStats'
 const BODY_STATS_HISTORY_CONNECTION_KEY = 'BodyStatsPage_history__bodyStats'
 
-const connectionIds = () => [
+/** The history connection is stored per `order`, so its id needs the order the table shows. */
+const connectionIds = (historyOrder: ReturnType<typeof useBodyStatsHistorySort>['order']) => [
   ConnectionHandler.getConnectionID(ROOT_ID, BODY_STATS_ANALYTICS_CONNECTION_KEY),
-  ConnectionHandler.getConnectionID(ROOT_ID, BODY_STATS_HISTORY_CONNECTION_KEY),
+  ConnectionHandler.getConnectionID(ROOT_ID, BODY_STATS_HISTORY_CONNECTION_KEY, {
+    order: historyOrder,
+  }),
 ]
 
 interface Callbacks {
@@ -70,6 +74,7 @@ interface DeleteCallbacks {
  * (`@prependNode`, `@deleteEdge`), never by refetching the list, and the user gets a toast for every outcome.
  */
 export function useBodyStatsMutations() {
+  const { order: historyOrder } = useBodyStatsHistorySort()
   const { t } = useTranslation()
   const [commitAdd, isAdding] = useMutation<useBodyStatsMutationsAddMutation>(addMutation)
   const [commitUpdate, isUpdating] =
@@ -83,7 +88,7 @@ export function useBodyStatsMutations() {
 
   const add = (input: BodyStatsInput, { onSuccess }: Callbacks) =>
     commitAdd({
-      variables: { input, connections: connectionIds() },
+      variables: { input, connections: connectionIds(historyOrder) },
       onCompleted: (response, errors) => {
         if (errors?.length || !response.addBodyStats) {
           fail('bodyStats.add.errors.saveFailed')
@@ -101,7 +106,7 @@ export function useBodyStatsMutations() {
       updater: (store, data) => {
         // The entry vanished on the server: drop it here as well.
         if (!data || data.updateBodyStats) return
-        for (const connectionId of connectionIds()) {
+        for (const connectionId of connectionIds(historyOrder)) {
           const connection = store.get(connectionId)
           if (connection) ConnectionHandler.deleteNode(connection, id)
         }
@@ -125,7 +130,7 @@ export function useBodyStatsMutations() {
 
   const remove = (id: string, { onSettled }: DeleteCallbacks) =>
     commitDelete({
-      variables: { id, connections: connectionIds() },
+      variables: { id, connections: connectionIds(historyOrder) },
       updater: (store) => store.delete(id),
       onCompleted: (_response, errors) => {
         if (errors?.length) fail('bodyStats.delete.errors.failed')

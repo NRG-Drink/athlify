@@ -104,6 +104,17 @@
         "GRAVEL": "Gravel",
         "INDOOR": "Indoor"
       },
+      "columnHints": {
+        "duration": "Riding time in hours and minutes, for example 1:30 for an hour and a half.",
+        "elevationGain": "Total climbing of the ride in metres.",
+        "speed": "Average speed: distance divided by riding time. Athlify calculates it automatically.",
+        "tss": "Training Stress Score: how much a ride loaded you. 100 is about one hour at your threshold power.",
+        "heartRate": "Average heart rate in beats per minute. Hover over a value to see the lowest and highest heart rate.",
+        "effort": "How hard the ride felt, from 1 (very easy) to 10 (maximal).",
+        "mood": "How you felt during the ride, from “Very bad” to “Very good”.",
+        "wind": "Wind conditions during the ride, from “Calm” to “Stormy”.",
+        "gadgets": "Devices you had with you on the ride, for example a bike computer or heart rate strap."
+      },
       "columns": {
         "date": "Date",
         "type": "Type",
@@ -125,6 +136,8 @@
         "caption": "Activities"
       },
       "moreTags": "+{{count}}",
+      "resultCount_one": "{{count}} activity",
+      "resultCount_other": "{{count}} activities",
       "loadMore": "Load more activities",
       "loadMoreFailed": "More activities could not be loaded.",
       "loadFailed": "Activities could not be loaded.",
@@ -160,6 +173,12 @@
       "fields": {
         "date": "Date",
         "note": "Note"
+      },
+      "columnHints": {
+        "bodyFatPercentage": "Share of body fat in your weight. Body composition scales estimate it; compare the trend rather than single values.",
+        "musclePercentage": "Share of muscle mass in your weight, estimated by the body composition scale.",
+        "waterPercentage": "Share of body water in your weight. It varies with the time of day and how much you drank.",
+        "boneMass": "Estimated weight of your bones. It barely changes over months."
       },
       "columns": {
         "date": "Date"
@@ -237,6 +256,8 @@
         "action": "Add first measurement"
       },
       "loadFailed": "Body stats could not be loaded.",
+      "resultCount_one": "{{count}} measurement",
+      "resultCount_other": "{{count}} measurements",
       "loadMore": "Load more measurements",
       "loadMoreFailed": "More measurements could not be loaded."
     }

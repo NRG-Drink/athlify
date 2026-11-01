@@ -248,7 +248,9 @@ of periods. The selected chart metric can be displayed at daily, weekly,
 monthly or yearly local-calendar resolution, or with aggregation disabled to
 show every measurement; each bucket uses the latest real measurement and does
 not alter the raw values used by tiles or the history table. Below the chart,
-the history table lists all measurements and
+the history table lists all measurements, shows how many there are, sorts
+them on the server across all pages (newest first by default, the chosen
+order kept in the URL as `?sort=`) and
 offers edit and delete for each one; the note is shown only in the edit form,
 not in the table. The button for a new
 measurement sits next to the table heading. Body-Stats are private data and are available only

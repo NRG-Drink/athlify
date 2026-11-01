@@ -104,6 +104,17 @@
         "GRAVEL": "Gravel",
         "INDOOR": "Indoor"
       },
+      "columnHints": {
+        "duration": "Fahrzeit in Stunden und Minuten, z. B. 1:30 für anderthalb Stunden.",
+        "elevationGain": "Summe aller Anstiege der Fahrt in Metern.",
+        "speed": "Durchschnittsgeschwindigkeit: Distanz geteilt durch Fahrzeit. Athlify berechnet sie automatisch.",
+        "tss": "Training Stress Score: wie stark dich eine Fahrt belastet hat. 100 entspricht etwa einer Stunde an deiner Leistungsschwelle.",
+        "heartRate": "Durchschnittlicher Puls in Schlägen pro Minute. Fahre über einen Wert, um den tiefsten und höchsten Puls zu sehen.",
+        "effort": "Wie anstrengend sich die Fahrt angefühlt hat, von 1 (sehr leicht) bis 10 (maximal).",
+        "mood": "Wie du dich auf der Fahrt gefühlt hast, von «Sehr schlecht» bis «Sehr gut».",
+        "wind": "Windverhältnisse während der Fahrt, von «Windstill» bis «Stürmisch».",
+        "gadgets": "Geräte, die du auf der Fahrt dabei hattest, z. B. Velocomputer oder Pulsgurt."
+      },
       "columns": {
         "date": "Datum",
         "type": "Typ",
@@ -125,6 +136,8 @@
         "caption": "Aktivitäten"
       },
       "moreTags": "+{{count}}",
+      "resultCount_one": "{{count}} Aktivität",
+      "resultCount_other": "{{count}} Aktivitäten",
       "loadMore": "Weitere Aktivitäten laden",
       "loadMoreFailed": "Weitere Aktivitäten konnten nicht geladen werden.",
       "loadFailed": "Aktivitäten konnten nicht geladen werden.",
@@ -160,6 +173,12 @@
       "fields": {
         "date": "Datum",
         "note": "Notiz"
+      },
+      "columnHints": {
+        "bodyFatPercentage": "Anteil des Körperfetts an deinem Gewicht. Körperanalysewaagen schätzen ihn; vergleiche den Verlauf statt einzelner Werte.",
+        "musclePercentage": "Anteil der Muskelmasse an deinem Gewicht, geschätzt von der Körperanalysewaage.",
+        "waterPercentage": "Anteil des Körperwassers an deinem Gewicht. Er schwankt mit Tageszeit und Trinkmenge.",
+        "boneMass": "Geschätztes Gewicht deiner Knochen. Es ändert sich über Monate kaum."
       },
       "columns": {
         "date": "Datum"
@@ -237,6 +256,8 @@
         "action": "Erste Messung erfassen"
       },
       "loadFailed": "Body-Stats konnten nicht geladen werden.",
+      "resultCount_one": "{{count}} Messung",
+      "resultCount_other": "{{count}} Messungen",
       "loadMore": "Weitere Messungen laden",
       "loadMoreFailed": "Weitere Messungen konnten nicht geladen werden."
     }

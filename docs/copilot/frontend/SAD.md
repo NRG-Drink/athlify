@@ -184,7 +184,23 @@ reference is `src/features/body-stats/`.
   records. A range
   without data keeps the chart's height and explains that no measurements
   exist in the selected dates.
-- **Table:** `DataTable` sorts with the keyboard through header buttons. Row
+- **Table:** `DataTable` sorts with the keyboard through header buttons. It
+  never sorts on the client, because every list is paged: `sort` and
+  `onSortChange` are required, the rows are rendered in the order the server
+  sent them, and a header click reports the next order (descending first).
+  Activities and the Body-Stats history keep the order in the URL (`?sort=`,
+  `lib/sort.ts`) and change it through `useParamsRefresh`, which also dims the
+  old rows until the new ones arrive. A column with `sortable: false` has no
+  sort button and no `aria-sort`. Every
+  list table looks and behaves the same because `DataTable` owns the parts
+  around the rows too: `count` (the number of matching rows, muted, above the
+  table, announced politely) and `pagination` ("load more" plus the inline
+  error with retry). `DataTableSkeleton` is the loading placeholder of every
+  table. Every header cell, the row-actions column included, is sticky, so the
+  header spans the whole width. A column's `description` adds a tooltip
+  (hover and keyboard focus) to its header; a header that cannot sort becomes
+  focusable when it has one. The texts live under `columnHints` in the locale
+  files. Row
   actions (edit, delete) are always visible; clicking a row also opens the
   editor. Columns drop out below `sm`, `md` and `lg` so that a phone shows date,
   weight and the actions. A column may declare a `filter`: `DataTable` then

@@ -3,6 +3,7 @@ import i18n from 'i18next'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BodyStatsPage } from '../../../features/body-stats/BodyStatsPage'
 import { renderWithRelay } from '../../utils/relay'
+import { expectNoTooltip } from '../../utils/tooltip'
 
 const QUERY = 'BodyStatsPageQuery'
 const MORE = 'BodyStatsPageMoreQuery'
@@ -45,8 +46,34 @@ const longAgo = entry('bs-d', '2026-03-01T08:00:00Z', 74)
 // The server order is deliberately not chronological: the page must not depend on it.
 const seed = [oldest, newest, longAgo, middle]
 
-const page = (handler: Parameters<typeof renderWithRelay>[1], path = '/body-stats') =>
-  renderWithRelay(<BodyStatsPage />, handler, { path, routePath: '/body-stats' })
+type Handler = Parameters<typeof renderWithRelay>[1]
+
+/** `order` of the history query by default; the id keeps equal dates in a stable order. */
+const NEWEST_FIRST = [{ date: 'DESC' }, { id: 'DESC' }]
+
+const isHistory = (operation: string) => operation.startsWith('BodyStatsPageHistory')
+
+/**
+ * The history table shows the rows in the order the server sends them, so the mocked server sorts
+ * the history newest first, as the API does by default. The analytics query keeps the shuffled order.
+ */
+const newestFirst = (result: unknown) => {
+  const data = (result as { data?: { bodyStats?: { edges: { node: Entry }[] } } } | undefined)?.data
+  const edges = data?.bodyStats?.edges
+  if (!edges) return result
+  const sorted = [...edges].sort((left, right) => right.node.date.localeCompare(left.node.date))
+  return { ...result!, data: { ...data, bodyStats: { ...data.bodyStats, edges: sorted } } }
+}
+
+const page = (handler: Handler, path = '/body-stats') =>
+  renderWithRelay(
+    <BodyStatsPage />,
+    (operation, variables) => {
+      const result = handler(operation, variables)
+      return isHistory(operation) && !(result instanceof Promise) ? newestFirst(result) : result
+    },
+    { path, routePath: '/body-stats' },
+  )
 
 const connection = (entries: Entry[], hasNextPage = false) => ({
   edges: entries.map((node) => ({ cursor: node.id, node })),
@@ -180,10 +207,7 @@ describe('BodyStatsPage', () => {
     })
 
     it('restores aggregation from the URL and keeps KPI deltas raw', async () => {
-      page(
-        () => okQuery(),
-        '/body-stats?from=2026-01-01&to=2026-10-03&aggregation=month',
-      )
+      page(() => okQuery(), '/body-stats?from=2026-01-01&to=2026-10-03&aggregation=month')
 
       expect(await screen.findByRole('img', { name: /3 Messungen/ })).toBeInTheDocument()
       expect(tiles().getByRole('button', { name: /Gewicht/ })).toHaveTextContent('−3.5 kg')
@@ -218,9 +242,7 @@ describe('BodyStatsPage', () => {
           name: /1\. Jan\. 2026 bis 3\. Okt\. 2026: von 74\.0 kg auf 70\.5 kg, 4 Messungen/,
         }),
       ).toBeInTheDocument()
-      expect(tiles().getByRole('button', { name: /Gewicht/ })).toHaveTextContent(
-        '−3.5 kg',
-      )
+      expect(tiles().getByRole('button', { name: /Gewicht/ })).toHaveTextContent('−3.5 kg')
       expect(router.state.location.search).toContain('from=2026-01-01')
       expect(router.state.location.search).toContain('to=2026-10-03')
       expect(calls(QUERY)).toHaveLength(1)
@@ -306,9 +328,9 @@ describe('BodyStatsPage', () => {
       await act(() => i18n.changeLanguage('en'))
 
       expect(await tiles().findByRole('button', { name: /Weight/ })).toHaveTextContent('−0.7 kg')
-      expect(screen.getByRole('button', { name: /Change date range: Date range:/ })).toHaveTextContent(
-        'Date range: 5 Jul 2026 – 3 Oct 2026',
-      )
+      expect(
+        screen.getByRole('button', { name: /Change date range: Date range:/ }),
+      ).toHaveTextContent('Date range: 5 Jul 2026 – 3 Oct 2026')
       expect(within(table()).getByRole('button', { name: /Weight/ })).toBeInTheDocument()
       expect(within(bodyRows()[0]).getByText(/2 Oct 2026/)).toBeInTheDocument()
     })
@@ -389,14 +411,15 @@ describe('BodyStatsPage', () => {
     it('loads the next history page on request and appends it', async () => {
       const { calls, user } = page((operation) => {
         if (operation === HISTORY_MORE) return { data: { bodyStats: connection([longAgo]) } }
-        if (operation === HISTORY) return { data: { bodyStats: connection([newest, middle], true) } }
+        if (operation === HISTORY)
+          return { data: { bodyStats: connection([newest, middle], true) } }
         return okQuery()
       })
 
       await user.click(await screen.findByRole('button', LOAD_MORE))
 
       await waitFor(() => expect(rowCount()).toBe(3))
-      expect(calls(HISTORY_MORE)).toEqual([{ first: 50, after: 'bs-b' }])
+      expect(calls(HISTORY_MORE)).toEqual([{ first: 50, after: 'bs-b', order: NEWEST_FIRST }])
       expect(screen.queryByRole('button', LOAD_MORE)).not.toBeInTheDocument()
     })
 
@@ -410,7 +433,8 @@ describe('BodyStatsPage', () => {
             ? { data: null, errors: [{ message: 'boom' }] }
             : { data: { bodyStats: connection([longAgo]) } }
         }
-        if (operation === HISTORY) return { data: { bodyStats: connection([newest, middle], true) } }
+        if (operation === HISTORY)
+          return { data: { bodyStats: connection([newest, middle], true) } }
         return okQuery()
       })
 
@@ -423,8 +447,8 @@ describe('BodyStatsPage', () => {
 
       await waitFor(() => expect(rowCount()).toBe(3))
       expect(calls(HISTORY_MORE)).toEqual([
-        { first: 50, after: 'bs-b' },
-        { first: 50, after: 'bs-b' },
+        { first: 50, after: 'bs-b', order: NEWEST_FIRST },
+        { first: 50, after: 'bs-b', order: NEWEST_FIRST },
       ])
     })
 
@@ -454,6 +478,71 @@ describe('BodyStatsPage', () => {
 
       await waitFor(() => expect(rowCount()).toBe(2))
       expect(calls(HISTORY)).toHaveLength(2)
+    })
+  })
+
+  describe('history sorting and count', () => {
+    it('shows how many measurements exist across all pages', async () => {
+      page((operation) =>
+        isHistory(operation)
+          ? { data: { bodyStats: { ...connection(seed), totalCount: 120 } } }
+          : okQuery(),
+      )
+
+      expect(await screen.findByText('120 Messungen')).toBeInTheDocument()
+    })
+
+    it('sorts on the server: a header click sends the order and writes it to the URL', async () => {
+      const { user, router, calls } = page(() => okQuery())
+      await screen.findByRole('table')
+      const header = within(table()).getByRole('columnheader', { name: /Gewicht/ })
+
+      await user.click(within(header).getByRole('button'))
+
+      expect(router.state.location.search).toBe('?sort=-weight')
+      await waitFor(() =>
+        expect(calls('BodyStatsPageHistoryQuery').at(-1)).toEqual({
+          order: [{ weight: 'DESC' }, { id: 'DESC' }],
+        }),
+      )
+      await waitFor(() => expect(header).toHaveAttribute('aria-sort', 'descending'))
+      // The chart is not reloaded by a sort of the table.
+      expect(calls(QUERY)).toHaveLength(1)
+    })
+
+    it('reads the order from the URL', async () => {
+      const { calls } = page(() => okQuery(), '/body-stats?sort=boneMass')
+      await screen.findByRole('table')
+
+      expect(calls('BodyStatsPageHistoryQuery')[0]).toEqual({
+        order: [{ boneMass: 'ASC' }, { id: 'DESC' }],
+      })
+    })
+  })
+
+  describe('header explanations', () => {
+    // The body composition columns are hidden below sm, which jsdom applies; find them by their text.
+    const headerButton = (label: string) =>
+      within(within(table()).getByText(label).closest('th') as HTMLElement).getByRole('button', {
+        hidden: true,
+      })
+
+    it('explains the estimated body composition values', async () => {
+      const { user } = page(() => okQuery())
+      await screen.findByRole('table')
+
+      await user.hover(headerButton('Körperfett'))
+      expect(
+        await screen.findByText(/Anteil des Körperfetts an deinem Gewicht\./),
+      ).toBeInTheDocument()
+    })
+
+    it('does not explain the weight', async () => {
+      const { user } = page(() => okQuery())
+      await screen.findByRole('table')
+
+      await user.hover(headerButton('Gewicht'))
+      await expectNoTooltip()
     })
   })
 
@@ -540,6 +629,19 @@ describe('BodyStatsPage', () => {
       expect(within(table()).getByText('72.5')).toBeInTheDocument()
       expect(await screen.findByText('Messung gespeichert.')).toBeInTheDocument()
       expect(calls(QUERY)).toHaveLength(1)
+    })
+
+    it('shows a new measurement while the history is sorted by weight', async () => {
+      const { user } = page(
+        (operation) => (operation === ADD ? { data: { addBodyStats: added } } : okQuery()),
+        '/body-stats?sort=weight',
+      )
+      await screen.findByRole('table')
+      await user.click(screen.getByRole('button', { name: 'Messung erfassen' }))
+      const dialog = await screen.findByRole('dialog')
+      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
+
+      await waitFor(() => expect(rowCount()).toBe(5))
     })
 
     it('keeps the dialog and its values when saving fails', async () => {

@@ -1,4 +1,4 @@
-import { Button, Flex, Tag, Text } from '@chakra-ui/react'
+import { Flex, Tag, Text } from '@chakra-ui/react'
 import { useMemo, type ReactNode } from 'react'
 import { graphql, useFragment } from 'react-relay'
 import { useTranslation } from 'react-i18next'
@@ -23,6 +23,8 @@ import {
   vehicleLabel,
   windRank,
 } from './activityFormatting'
+import { isSortColumn, type ListSort } from '../../lib/sort'
+import { activitySortColumns, type ActivitySort } from './activityQuery'
 import type {
   ActivitiesTable_entries$data,
   ActivitiesTable_entries$key,
@@ -117,6 +119,11 @@ interface ActivitiesTableProps {
   hasMoreVehicles: boolean
   hasMoreTags: boolean
   onFiltersChange: (value: ActivityFilters) => void
+  /** Server-side order; the rows arrive sorted. */
+  sort: ActivitySort
+  onSortChange: (sort: ActivitySort) => void
+  /** Number of activities matching the filters, across all pages. */
+  totalCount: number
   /** The data is being refreshed after a filter change. */
   busy: boolean
   /** Shown in the table body when nothing matches; the header and its filters stay. */
@@ -135,6 +142,9 @@ export function ActivitiesTable({
   hasMoreVehicles,
   hasMoreTags,
   onFiltersChange,
+  sort,
+  onSortChange,
+  totalCount,
   busy,
   emptyMessage,
 }: ActivitiesTableProps) {
@@ -192,12 +202,14 @@ export function ActivitiesTable({
         accessor: (row) => row.type,
         cell: (row) => t(`activities.types.${row.type}`),
         filter: columnFilters.type,
+        sortable: false,
       },
       {
         id: 'description',
         header: t('activities.columns.description'),
         accessor: (row) => row.description ?? '',
         cell: (row) => titled(row.description ?? ''),
+        sortable: false,
         hideBelow: 'md',
         truncate: true,
         minWidth: '12rem',
@@ -210,6 +222,7 @@ export function ActivitiesTable({
         cell: (row) => formatDuration(row.time),
         align: 'end',
         unit: t('activities.units.duration'),
+        description: t('activities.columnHints.duration'),
       },
       {
         id: 'distance',
@@ -232,6 +245,7 @@ export function ActivitiesTable({
             '—'
           ),
         hideBelow: filterColumnBreakpoint.vehicle,
+        sortable: false,
         truncate: true,
         filter: columnFilters.vehicle,
       },
@@ -242,6 +256,7 @@ export function ActivitiesTable({
         cell: (row) => formatOptionalNumber(format, row.elevationGain, 0),
         align: 'end',
         unit: t('activities.units.elevation'),
+        description: t('activities.columnHints.elevationGain'),
         hideBelow: 'lg',
       },
       {
@@ -251,11 +266,13 @@ export function ActivitiesTable({
         cell: (row) => formatOptionalNumber(format, row.averageSpeed, 1),
         align: 'end',
         unit: t('activities.units.speed'),
+        description: t('activities.columnHints.speed'),
         hideBelow: 'lg',
       },
       {
         id: 'tss',
         header: t('activities.columns.tss'),
+        description: t('activities.columnHints.tss'),
         accessor: (row) => row.tss ?? -1,
         cell: (row) => (row.tss == null ? '—' : format.number(row.tss, 0)),
         align: 'end',
@@ -275,6 +292,7 @@ export function ActivitiesTable({
         },
         align: 'end',
         unit: t('activities.units.heartRate'),
+        description: t('activities.columnHints.heartRate'),
         ...secondary,
       },
       {
@@ -284,30 +302,37 @@ export function ActivitiesTable({
         cell: (row) => row.effort ?? '—',
         align: 'end',
         unit: t('activities.units.effort'),
+        description: t('activities.columnHints.effort'),
         ...secondary,
       },
       {
         id: 'mood',
         header: t('activities.columns.mood'),
+        description: t('activities.columnHints.mood'),
         accessor: (row) => moodRank(row.mood),
         cell: (row) => enumLabel(t, 'moods', row.mood),
         ...secondary,
+        sortable: false,
       },
       {
         id: 'wind',
         header: t('activities.columns.wind'),
+        description: t('activities.columnHints.wind'),
         accessor: (row) => windRank(row.wind),
         cell: (row) => enumLabel(t, 'winds', row.wind),
         ...secondary,
         hideBelow: filterColumnBreakpoint.wind,
         filter: columnFilters.wind,
+        sortable: false,
       },
       {
         id: 'gadgets',
         header: t('activities.columns.gadgets'),
+        description: t('activities.columnHints.gadgets'),
         accessor: gadgetNames,
         cell: (row) => titled(gadgetNames(row)),
         ...secondary,
+        sortable: false,
         truncate: true,
         minWidth: '8rem',
         maxWidth: '14rem',
@@ -320,6 +345,7 @@ export function ActivitiesTable({
         ...secondary,
         hideBelow: filterColumnBreakpoint.tag,
         filter: columnFilters.tags,
+        sortable: false,
         minWidth: '8rem',
         maxWidth: '14rem',
       },
@@ -327,32 +353,29 @@ export function ActivitiesTable({
     [t, format, columnFilters],
   )
 
+  const changeSort = ({ column, desc }: ListSort) => {
+    if (isSortColumn(activitySortColumns, column)) onSortChange({ column, desc })
+  }
+
   return (
-    <Flex direction="column" gap="3">
-      <DataTable
-        data={rows}
-        columns={columns}
-        getRowId={(row) => row.id}
-        initialSort={{ id: 'date', desc: true }}
-        caption={t('activities.table.caption')}
-        busy={busy}
-        emptyMessage={emptyMessage}
-      />
-      {loadMoreError && (
-        <Flex align="center" justify="space-between" gap="3" wrap="wrap">
-          <Text role="alert" color="fg.error">
-            {t('activities.loadMoreFailed')}
-          </Text>
-          <Button size="sm" variant="outline" onClick={onLoadMore}>
-            {t('page.retry')}
-          </Button>
-        </Flex>
-      )}
-      {hasNextPage && !loadMoreError && (
-        <Button alignSelf="center" variant="outline" loading={isLoadingNext} onClick={onLoadMore}>
-          {t('activities.loadMore')}
-        </Button>
-      )}
-    </Flex>
+    <DataTable
+      data={rows}
+      columns={columns}
+      getRowId={(row) => row.id}
+      sort={sort}
+      onSortChange={changeSort}
+      caption={t('activities.table.caption')}
+      busy={busy}
+      emptyMessage={emptyMessage}
+      count={t('activities.resultCount', { count: totalCount })}
+      pagination={{
+        hasNextPage,
+        isLoadingNext,
+        error: loadMoreError,
+        onLoadMore,
+        loadMoreLabel: t('activities.loadMore'),
+        errorLabel: t('activities.loadMoreFailed'),
+      }}
+    />
   )
 }

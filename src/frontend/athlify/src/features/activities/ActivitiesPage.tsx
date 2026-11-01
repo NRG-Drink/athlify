@@ -1,21 +1,23 @@
 import { Button, Stack } from '@chakra-ui/react'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import { graphql, useLazyLoadQuery, usePaginationFragment } from 'react-relay'
 import { useTranslation } from 'react-i18next'
 import { LuBike, LuRotateCcw } from 'react-icons/lu'
-import { useLocation, useSearchParams } from 'react-router-dom'
 import { Page, PageEmptyState } from '../../components/Page'
+import { DataTableSkeleton } from '../../components/DataTableSkeleton'
 import { QueryBoundary } from '../../components/QueryBoundary'
 import { useFetchKey } from '../../relay/useFetchKey'
 import { useLoadMore } from '../../relay/useLoadMore'
+import { useParamsRefresh } from '../../relay/useParamsRefresh'
+import { activeActivityFilterKeys, type ActivityFilters } from './activityFilters'
 import {
-  activeActivityFilterKeys,
-  activityFiltersToWhere,
-  applyActivityFilters,
-  parseActivityFilters,
-} from './activityFilters'
+  activityQueryVariables,
+  applyActivityQuery,
+  parseActivityQuery,
+  type ActivityQuery,
+  type ActivitySort,
+} from './activityQuery'
 import { ActivitiesFilterSummary } from './ActivitiesFilterSummary'
-import { ActivitiesSkeleton } from './ActivitiesSkeleton'
 import { ActivitiesTable } from './ActivitiesTable'
 import { vehicleLabel } from './activityFormatting'
 import type { ActivitiesPage_list$key } from './__generated__/ActivitiesPage_list.graphql'
@@ -25,8 +27,12 @@ import type { ActivitiesPageMoreQuery } from './__generated__/ActivitiesPageMore
 const PAGE_SIZE = 50
 
 const pageQuery = graphql`
-  query ActivitiesPageQuery($first: Int = 50, $where: ActivityFilterInput) {
-    ...ActivitiesPage_list @arguments(first: $first, where: $where)
+  query ActivitiesPageQuery(
+    $first: Int = 50
+    $where: ActivityFilterInput
+    $order: [ActivitySortInput!]
+  ) {
+    ...ActivitiesPage_list @arguments(first: $first, where: $where, order: $order)
     vehicles(first: 200) {
       nodes {
         id
@@ -57,9 +63,11 @@ const listFragment = graphql`
     first: { type: "Int", defaultValue: 50 }
     after: { type: "String" }
     where: { type: "ActivityFilterInput" }
+    order: { type: "[ActivitySortInput!]" }
   ) {
-    activities(first: $first, after: $after, where: $where)
+    activities(first: $first, after: $after, where: $where, order: $order)
       @connection(key: "ActivitiesPage_activities") {
+      totalCount
       edges {
         node {
           id
@@ -80,12 +88,10 @@ interface ContentProps {
 
 function ActivitiesContent({ fetchKey }: ContentProps) {
   const { t } = useTranslation()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const filters = useMemo(() => parseActivityFilters(searchParams), [searchParams])
-  const variables = useMemo(
-    () => ({ first: PAGE_SIZE, where: activityFiltersToWhere(filters) }),
-    [filters],
-  )
+  const { searchParams, replaceParams, refreshing } = useParamsRefresh()
+  const query = useMemo(() => parseActivityQuery(searchParams), [searchParams])
+  const { filters, sort } = query
+  const variables = useMemo(() => ({ first: PAGE_SIZE, ...activityQueryVariables(query) }), [query])
   const queryData = useLazyLoadQuery<ActivitiesPageQuery>(pageQuery, variables, {
     fetchKey,
     fetchPolicy: 'network-only',
@@ -113,26 +119,26 @@ function ActivitiesContent({ fetchKey }: ContentProps) {
   const hasMoreVehicles = queryData.vehicles?.pageInfo.hasNextPage ?? false
   const hasMoreTags = queryData.tags?.pageInfo.hasNextPage ?? false
 
-  // The router applies the change in a transition, so the old table stays until the new data is
-  // there. `pendingKey` is the location the change started from: any later navigation, including
-  // one that did not come from a filter change, gives a new location key and ends the gap.
-  const location = useLocation()
-  const [pendingKey, setPendingKey] = useState<string>()
-  const refreshing = pendingKey !== undefined && pendingKey === location.key
   const { loadMore, loadMoreError, setLoadMoreError } = useLoadMore(
     loadNext,
     isLoadingNext,
     PAGE_SIZE,
   )
 
-  const changeFilters = useCallback(
-    (next: typeof filters) => {
-      const nextParams = applyActivityFilters(searchParams, next)
+  const changeQuery = useCallback(
+    (next: ActivityQuery) => {
       setLoadMoreError(false)
-      setPendingKey(location.key)
-      setSearchParams(nextParams, { replace: true })
+      replaceParams(applyActivityQuery(searchParams, next))
     },
-    [location.key, searchParams, setSearchParams, setLoadMoreError],
+    [searchParams, replaceParams, setLoadMoreError],
+  )
+  const changeFilters = useCallback(
+    (next: ActivityFilters) => changeQuery({ ...query, filters: next }),
+    [changeQuery, query],
+  )
+  const changeSort = useCallback(
+    (next: ActivitySort) => changeQuery({ ...query, sort: next }),
+    [changeQuery, query],
   )
 
   const resetFilters = () => changeFilters({})
@@ -176,6 +182,9 @@ function ActivitiesContent({ fetchKey }: ContentProps) {
         hasMoreVehicles={hasMoreVehicles}
         hasMoreTags={hasMoreTags}
         onFiltersChange={changeFilters}
+        sort={sort}
+        onSortChange={changeSort}
+        totalCount={data.activities?.totalCount ?? 0}
         busy={refreshing}
         emptyMessage={
           <PageEmptyState
@@ -203,7 +212,7 @@ export function ActivitiesPage() {
     <Page title={t('nav.activities')}>
       <QueryBoundary
         onRetry={retry}
-        fallback={<ActivitiesSkeleton />}
+        fallback={<DataTableSkeleton />}
         errorMessage={t('activities.loadFailed')}
       >
         <ActivitiesContent fetchKey={fetchKey} />
