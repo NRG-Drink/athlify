@@ -10,7 +10,7 @@ public interface ICurrentUser
 {
     /// <summary>Internal id of the signed-in user.</summary>
     /// <exception cref="GraphQLException">With code <c>NOT_AUTHENTICATED</c> when nobody is signed in.</exception>
-    int UserId { get; }
+    int? UserId { get; }
 }
 
 /// <summary>
@@ -19,11 +19,5 @@ public interface ICurrentUser
 /// </summary>
 public sealed class DevelopmentCurrentUser : ICurrentUser
 {
-    private int? _userId;
-
-    public int UserId
-    {
-        get => _userId ?? throw DomainErrors.NotAuthenticated();
-        set => _userId = value;
-    }
+    public int? UserId { get; set; }
 }
