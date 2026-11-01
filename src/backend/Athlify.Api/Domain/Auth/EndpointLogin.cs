@@ -36,7 +36,6 @@ public class EndpointLogin
             var ipAddress = cookieService.GetIpAddress(httpContext);
             var accessToken = tokenService.GenerateAccessToken(dbUser!);
             var refreshToken = await tokenService.GenerateRefreshTokenAsync(dbUser!, ipAddress);
-            var cookieOptions = cookieService.GetRefreshTokenCookieOptions(refreshToken.ExpiresAt.DateTime);
             cookieService.SetRefreshTokenCookie(httpContext, refreshToken);
 
             return Results.Ok(accessToken);
