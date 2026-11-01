@@ -288,8 +288,8 @@ export const ActivitiesTable = memo(function ActivitiesTable({
         id: 'date',
         header: t('activities.columns.date'),
         accessor: (row) => new Date(row.date).getTime(),
-        cell: (row) => <time dateTime={row.date}>{format.date(row.date)}</time>,
-        width: '8rem',
+        cell: (row) => <time dateTime={row.date}>{format.dateTime(row.date)}</time>,
+        width: '10rem',
       },
       {
         id: 'type',

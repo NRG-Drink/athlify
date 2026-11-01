@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { parseDateTime } from '../../lib/dates'
 import { nowInputValue, parseDecimal, toInputValue } from '../../lib/formValues'
 
 describe('parseDecimal', () => {
@@ -15,14 +16,14 @@ describe('parseDecimal', () => {
   })
 })
 
-describe('datetime-local values', () => {
+describe('date and time as form text', () => {
   it('formats a date in local time without seconds', () => {
     const now = new Date(2026, 9, 12, 7, 30, 45)
-    expect(nowInputValue(now)).toBe('2026-10-12T07:30')
+    expect(nowInputValue(now)).toBe('12.10.2026, 07:30')
   })
 
-  it('round-trips an ISO timestamp through the input value', () => {
+  it('round-trips an ISO timestamp through the form text', () => {
     const local = new Date(2026, 9, 12, 7, 30)
-    expect(new Date(toInputValue(local.toISOString())).getTime()).toBe(local.getTime())
+    expect(parseDateTime(toInputValue(local.toISOString()))?.getTime()).toBe(local.getTime())
   })
 })

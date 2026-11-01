@@ -27,13 +27,22 @@
     "form": {
       "cancel": "Abbrechen",
       "save": "Speichern",
+      "datePlaceholder": "TT.MM.JJJJ",
+      "dateTimePlaceholder": "TT.MM.JJJJ, HH:MM",
+      "date": "Datum",
+      "time": "Zeit",
+      "openCalendar": "Kalender öffnen",
+      "openTimePicker": "Uhrzeit wählen",
+      "hours": "Stunden",
+      "minutes": "Minuten",
       "errors": {
         "required": "Pflichtfeld.",
         "number": "Bitte eine Zahl eingeben.",
         "positive": "Bitte einen Wert grösser als 0 eingeben.",
         "percentage": "Bitte einen Wert zwischen 0 und 100 eingeben.",
         "nonNegative": "Bitte einen Wert ab 0 eingeben.",
-        "integer": "Bitte eine ganze Zahl eingeben."
+        "integer": "Bitte eine ganze Zahl eingeben.",
+        "dateTime": "Bitte im Format TT.MM.JJJJ, HH:MM eingeben."
       }
     },
     "period": {
@@ -291,7 +300,7 @@
         },
         "errors": {
           "missing": "Bitte gib beide Daten ein.",
-          "invalidDate": "Bitte gib gültige Daten ein.",
+          "invalidDate": "Bitte gib die Daten im Format TT.MM.JJJJ ein.",
           "fromAfterTo": "Das Startdatum muss vor dem Enddatum liegen."
         }
       },

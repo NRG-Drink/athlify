@@ -1,6 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { ActivitiesPage } from '../../../features/activities/ActivitiesPage'
+import { formatDate } from '../../../lib/dates'
 import { renderWithRelay } from '../../utils/relay'
 
 const QUERY = 'ActivitiesPageQuery'
@@ -102,7 +103,7 @@ describe('ActivitiesPage editing', () => {
   describe('row actions', () => {
     it('edits through the row itself and offers duplicate and delete in a menu, delete last', async () => {
       const { user } = page(okQuery)
-      const row = await screen.findByRole('row', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' })
+      const row = await screen.findByRole('row', { name: 'Aktivität vom 16.10.2026 bearbeiten' })
       // No separate edit button: the row is the edit action, also by keyboard.
       expect(screen.queryByRole('button', { name: /bearbeiten$/ })).not.toBeInTheDocument()
       row.focus()
@@ -113,7 +114,7 @@ describe('ActivitiesPage editing', () => {
       await user.keyboard('{Escape}')
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
-      await openMenu(user, '16. Okt. 2026')
+      await openMenu(user, '16.10.2026')
       const items = await screen.findAllByRole('menuitem')
       expect(items.map((item) => item.textContent)).toEqual(['Duplizieren', 'Löschen'])
       // The menu belongs to its button: opening it does not open the row's edit form.
@@ -123,7 +124,7 @@ describe('ActivitiesPage editing', () => {
     it('works with the keyboard alone', async () => {
       const { user } = page(okQuery)
       const trigger = await screen.findByRole('button', {
-        name: 'Weitere Aktionen für die Aktivität vom 16. Okt. 2026',
+        name: 'Weitere Aktionen für die Aktivität vom 16.10.2026',
       })
       trigger.focus()
       await user.keyboard('{Enter}')
@@ -141,12 +142,12 @@ describe('ActivitiesPage editing', () => {
       const { user, calls } = page((operation) =>
         operation === DELETE ? { data: { deleteActivity: 'activity-1' } } : okQuery(operation),
       )
-      await openMenu(user, '16. Okt. 2026')
+      await openMenu(user, '16.10.2026')
       await user.click(await screen.findByRole('menuitem', { name: 'Löschen' }))
 
       const confirm = await screen.findByRole('alertdialog', { name: 'Aktivität löschen?' })
       expect(confirm).toHaveTextContent(
-        'Die Aktivität vom 16. Okt. 2026 (Feierabendrunde) verschwindet aus allen Listen und Auswertungen.',
+        'Die Aktivität vom 16.10.2026 (Feierabendrunde) verschwindet aus allen Listen und Auswertungen.',
       )
       expect(confirm).not.toHaveTextContent('Merge')
       await user.click(within(confirm).getByRole('button', { name: 'Löschen' }))
@@ -166,7 +167,7 @@ describe('ActivitiesPage editing', () => {
           ? { data: { deleteActivity: null }, errors: [{ message: 'Failed' }] }
           : okQuery(operation),
       )
-      await openMenu(user, '16. Okt. 2026')
+      await openMenu(user, '16.10.2026')
       await user.click(await screen.findByRole('menuitem', { name: 'Löschen' }))
       const confirm = await screen.findByRole('alertdialog')
       await user.click(within(confirm).getByRole('button', { name: 'Löschen' }))
@@ -178,7 +179,7 @@ describe('ActivitiesPage editing', () => {
 
     it('keeps the activity when cancelled', async () => {
       const { user, calls } = page(okQuery)
-      await openMenu(user, '16. Okt. 2026')
+      await openMenu(user, '16.10.2026')
       await user.click(await screen.findByRole('menuitem', { name: 'Löschen' }))
       const confirm = await screen.findByRole('alertdialog')
 
@@ -191,11 +192,11 @@ describe('ActivitiesPage editing', () => {
 
     it('warns that a merge may be dissolved and names the type when there is no description', async () => {
       const { user } = page(okQuery)
-      await openMenu(user, '14. Okt. 2026')
+      await openMenu(user, '14.10.2026')
       await user.click(await screen.findByRole('menuitem', { name: 'Löschen' }))
 
       const confirm = await screen.findByRole('alertdialog')
-      expect(confirm).toHaveTextContent('Die Aktivität vom 14. Okt. 2026 (Gravel)')
+      expect(confirm).toHaveTextContent('Die Aktivität vom 14.10.2026 (Gravel)')
       expect(confirm).toHaveTextContent(
         'Sie gehört zu einem Merge. Bleiben darin weniger als zwei Aktivitäten, wird der Merge aufgelöst.',
       )
@@ -209,7 +210,7 @@ describe('ActivitiesPage editing', () => {
             ? query([base])
             : undefined,
       )
-      await openMenu(user, '16. Okt. 2026')
+      await openMenu(user, '16.10.2026')
       await user.click(await screen.findByRole('menuitem', { name: 'Löschen' }))
       await user.click(
         within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Löschen' }),
@@ -228,7 +229,7 @@ describe('ActivitiesPage editing', () => {
           : okQuery(operation),
       )
       await user.click(
-        await screen.findByRole('row', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
+        await screen.findByRole('row', { name: 'Aktivität vom 16.10.2026 bearbeiten' }),
       )
       const dialog = await screen.findByRole('dialog', { name: 'Aktivität bearbeiten' })
       expect(within(dialog).getByLabelText(/^Dauer/)).toHaveValue('1:30')
@@ -252,7 +253,7 @@ describe('ActivitiesPage editing', () => {
     it('has only "Abbrechen" to leave, and a click beside the dialog discards without asking', async () => {
       const { user, calls } = page(okQuery)
       await user.click(
-        await screen.findByRole('row', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
+        await screen.findByRole('row', { name: 'Aktivität vom 16.10.2026 bearbeiten' }),
       )
       const dialog = await screen.findByRole('dialog', { name: 'Aktivität bearbeiten' })
       expect(within(dialog).getAllByRole('button', { name: 'Abbrechen' })).toHaveLength(1)
@@ -273,7 +274,7 @@ describe('ActivitiesPage editing', () => {
     it('opens the editor by clicking a row, with the details open when they hold a value', async () => {
       const { user } = page(okQuery)
       await screen.findByRole('table')
-      await user.click(within(table()).getByText('14. Okt. 2026'))
+      await user.click(within(table()).getByText(/^14\.10\.2026/))
 
       const dialog = await screen.findByRole('dialog', { name: 'Aktivität bearbeiten' })
       expect(within(dialog).getByRole('button', { name: 'Weitere Details' })).toHaveAttribute(
@@ -287,7 +288,7 @@ describe('ActivitiesPage editing', () => {
     it('shows calculated values read-only, marked with *, and "—" when missing', async () => {
       const { user } = page(okQuery)
       await user.click(
-        await screen.findByRole('row', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
+        await screen.findByRole('row', { name: 'Aktivität vom 16.10.2026 bearbeiten' }),
       )
       const dialog = await screen.findByRole('dialog')
 
@@ -302,7 +303,7 @@ describe('ActivitiesPage editing', () => {
     it('blocks saving with errors under the fields and sends nothing', async () => {
       const { user, calls } = page(okQuery)
       await user.click(
-        await screen.findByRole('row', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
+        await screen.findByRole('row', { name: 'Aktivität vom 16.10.2026 bearbeiten' }),
       )
       const dialog = await screen.findByRole('dialog')
       await user.clear(within(dialog).getByLabelText(/^Dauer/))
@@ -317,13 +318,13 @@ describe('ActivitiesPage editing', () => {
     it('opens the details when an error is inside them', async () => {
       const { user } = page(okQuery)
       await user.click(
-        await screen.findByRole('row', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
+        await screen.findByRole('row', { name: 'Aktivität vom 16.10.2026 bearbeiten' }),
       )
       const dialog = await screen.findByRole('dialog')
       const details = within(dialog).getByRole('button', { name: 'Weitere Details' })
       expect(details).toHaveAttribute('aria-expanded', 'false')
       await user.click(details)
-      await user.type(within(dialog).getByLabelText(/^Min/), '300')
+      await user.type(within(dialog).getByLabelText('Min'), '300')
       await user.click(details)
       await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
 
@@ -338,7 +339,7 @@ describe('ActivitiesPage editing', () => {
         operation === UPDATE ? { data: { updateActivity: null } } : okQuery(operation),
       )
       await user.click(
-        await screen.findByRole('row', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
+        await screen.findByRole('row', { name: 'Aktivität vom 16.10.2026 bearbeiten' }),
       )
       await user.click(
         within(await screen.findByRole('dialog')).getByRole('button', { name: 'Speichern' }),
@@ -357,7 +358,7 @@ describe('ActivitiesPage editing', () => {
           : okQuery(operation),
       )
       await user.click(
-        await screen.findByRole('row', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
+        await screen.findByRole('row', { name: 'Aktivität vom 16.10.2026 bearbeiten' }),
       )
       await user.click(
         within(await screen.findByRole('dialog')).getByRole('button', { name: 'Speichern' }),
@@ -375,7 +376,7 @@ describe('ActivitiesPage editing', () => {
         operation === UPDATE ? Promise.reject(new Error('offline')) : okQuery(operation),
       )
       await user.click(
-        await screen.findByRole('row', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
+        await screen.findByRole('row', { name: 'Aktivität vom 16.10.2026 bearbeiten' }),
       )
       const dialog = await screen.findByRole('dialog')
       const distance = within(dialog).getByLabelText(/^Distanz/)
@@ -494,14 +495,16 @@ describe('ActivitiesPage editing', () => {
             ? { data: list([base, second]) }
             : okQuery(operation),
       )
-      await openMenu(user, '14. Okt. 2026')
+      await openMenu(user, '14.10.2026')
       await user.click(await screen.findByRole('menuitem', { name: 'Duplizieren' }))
 
       const dialog = await screen.findByRole('dialog', { name: 'Aktivität duplizieren' })
       expect(within(dialog).getByLabelText(/^Typ/)).toHaveValue('GRAVEL')
       expect(within(dialog).getByLabelText(/^Dauer/)).toHaveValue('1:30')
-      const date = within(dialog).getByLabelText(/^Datum/) as HTMLInputElement
-      expect(new Date(date.value).toDateString()).toBe(new Date().toDateString())
+      // The copy gets today's date; the date field shows DD.MM.YYYY.
+      expect(within(dialog).getByRole('textbox', { name: 'Datum' })).toHaveValue(
+        formatDate(new Date()),
+      )
 
       await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
       await waitFor(() => expect(calls(CREATE)).toHaveLength(1))
@@ -517,7 +520,7 @@ describe('ActivitiesPage editing', () => {
   describe('detail fields', () => {
     const openDetails = async (user: ReturnType<typeof page>['user']) => {
       await user.click(
-        await screen.findByRole('row', { name: 'Aktivität vom 16. Okt. 2026 bearbeiten' }),
+        await screen.findByRole('row', { name: 'Aktivität vom 16.10.2026 bearbeiten' }),
       )
       const dialog = await screen.findByRole('dialog', { name: 'Aktivität bearbeiten' })
       await user.click(within(dialog).getByRole('button', { name: 'Weitere Details' }))
@@ -606,7 +609,7 @@ describe('ActivitiesPage editing', () => {
     it('tells how many details are filled while they are folded', async () => {
       const { user } = page(okQuery)
       await user.click(
-        await screen.findByRole('row', { name: 'Aktivität vom 14. Okt. 2026 bearbeiten' }),
+        await screen.findByRole('row', { name: 'Aktivität vom 14.10.2026 bearbeiten' }),
       )
       const dialog = await screen.findByRole('dialog', { name: 'Aktivität bearbeiten' })
       const trigger = within(dialog).getByRole('button', { name: 'Weitere Details' })

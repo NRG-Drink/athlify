@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next'
+import { parseDateTime } from '../../lib/dates'
 import { nowInputValue, parseDecimal, toInputValue } from '../../lib/formValues'
 import {
   activityTypes,
@@ -13,7 +14,7 @@ import { formatDuration } from './activityFormatting'
 
 /** Text values of the activity form; empty strings stand for "not set". */
 export interface ActivityFormValues {
-  /** `datetime-local` format: YYYY-MM-DDTHH:mm. */
+  /** `DD.MM.YYYY, HH:MM`, local time. */
   date: string
   type: ActivityType
   /** `h:mm`; `.` works as separator as well. */
@@ -108,6 +109,12 @@ export function parseDuration(raw: string): number | null {
   return hours * 3600 + minutes * 60
 }
 
+/** The canonical duration text, used when the field is left: `1.20` becomes `1:20`. */
+export function normalizeDuration(raw: string): string {
+  const seconds = parseDuration(raw)
+  return seconds === null ? raw : formatDuration(seconds)
+}
+
 const text = (value: number | null | undefined) => (value == null ? '' : String(value))
 
 /** An empty form; type and bicycle come from the latest activity when there is one. */
@@ -182,8 +189,10 @@ export function validate(
 ): ActivityFormErrors {
   const errors: ActivityFormErrors = {}
 
-  if (!values.date) errors.date = t('form.errors.required')
-  else if (new Date(values.date).getTime() > now.getTime() + DAY_MS)
+  const date = parseDateTime(values.date)
+  if (values.date.trim() === '') errors.date = t('form.errors.required')
+  else if (!date) errors.date = t('form.errors.dateTime')
+  else if (date.getTime() > now.getTime() + DAY_MS)
     errors.date = t('activities.form.errors.futureDate')
 
   if (values.duration.trim() === '') errors.duration = t('form.errors.required')
@@ -254,7 +263,7 @@ const optionalNumber = (raw: string) => (raw.trim() === '' ? null : parseDecimal
 /** Mutation input; empty optional fields become null. Call only with values that passed `validate`. */
 export function toInput(values: ActivityFormValues): ActivityFormInput {
   return {
-    date: new Date(values.date).toISOString(),
+    date: (parseDateTime(values.date) ?? new Date(NaN)).toISOString(),
     type: values.type,
     time: seconds(values),
     distance: parseDecimal(values.distance),

@@ -215,7 +215,7 @@ describe('form values', () => {
 
   it('starts empty, with type and bicycle of the latest activity', () => {
     expect(newActivityValues({}, now)).toMatchObject({
-      date: '2026-10-12T07:30',
+      date: '12.10.2026, 07:30',
       type: 'ROAD',
       vehicleId: '',
     })
@@ -228,7 +228,7 @@ describe('form values', () => {
   it('reads an activity, and as a copy with the current date', () => {
     const values = activityToValues(activity)
     expect(values).toMatchObject({
-      date: '2026-10-01T18:15',
+      date: '01.10.2026, 18:15',
       type: 'GRAVEL',
       duration: '1:02',
       time: 3725,
@@ -242,7 +242,7 @@ describe('form values', () => {
     })
     expect(activityToValues(activity, { asCopy: true, now })).toEqual({
       ...values,
-      date: '2026-10-12T07:30',
+      date: '12.10.2026, 07:30',
     })
   })
 

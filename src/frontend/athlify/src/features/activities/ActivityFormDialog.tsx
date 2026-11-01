@@ -16,7 +16,9 @@ import {
 import { Fragment, useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LuChevronRight } from 'react-icons/lu'
+import { DateTimeField } from '../../components/DateTimeField'
 import { FormDialog } from '../../components/FormDialog'
+import { normalizeDecimal } from '../../lib/formValues'
 import { useFormat } from '../../i18n/useFormat'
 import {
   countDetails,
@@ -24,6 +26,7 @@ import {
   heartRateFields,
   hasDetails,
   MAX_DESCRIPTION_LENGTH,
+  normalizeDuration,
   toInput,
   validate,
   type ActivityFormErrors,
@@ -132,6 +135,8 @@ interface NumberProps {
   placeholder?: string
   /** `text` for the duration: phone number pads have no colon. */
   inputMode?: 'decimal' | 'numeric' | 'text'
+  /** Canonical text when the field is left; numbers by default. */
+  normalize?: (raw: string) => string
 }
 
 function NumberField({
@@ -143,6 +148,7 @@ function NumberField({
   error,
   placeholder,
   inputMode = 'decimal',
+  normalize = normalizeDecimal,
 }: NumberProps) {
   // type="text": a number input rejects the decimal comma of German keyboards.
   const input = (
@@ -153,6 +159,10 @@ function NumberField({
       placeholder={placeholder}
       value={value}
       onChange={(event) => onChange(event.target.value)}
+      onBlur={() => {
+        const normalized = normalize(value)
+        if (normalized !== value) onChange(normalized)
+      }}
     />
   )
   return (
@@ -267,15 +277,13 @@ export function ActivityFormDialog({
       <Stack gap="6">
         <Stack gap="4">
           <SimpleGrid columns={{ base: 1, sm: 2 }} gap="4">
-            <Field.Root required invalid={!!errors.date}>
-              <Field.Label>{t('activities.form.date')}</Field.Label>
-              <Input
-                type="datetime-local"
-                value={values.date}
-                onChange={(event) => set('date', event.target.value)}
-              />
-              <Field.ErrorText>{errors.date}</Field.ErrorText>
-            </Field.Root>
+            <DateTimeField
+              label={t('activities.form.date')}
+              value={values.date}
+              onChange={(value) => set('date', value)}
+              error={errors.date}
+              required
+            />
             <SelectField
               label={t('activities.columns.type')}
               value={values.type}
@@ -293,6 +301,7 @@ export function ActivityFormDialog({
               error={errors.duration}
               placeholder={t('activities.form.durationPlaceholder')}
               inputMode="text"
+              normalize={normalizeDuration}
             />
             <NumberField
               label={t('activities.columns.distance')}

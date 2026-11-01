@@ -27,13 +27,22 @@
     "form": {
       "cancel": "Cancel",
       "save": "Save",
+      "datePlaceholder": "DD.MM.YYYY",
+      "dateTimePlaceholder": "DD.MM.YYYY, HH:MM",
+      "date": "Date",
+      "time": "Time",
+      "openCalendar": "Open calendar",
+      "openTimePicker": "Pick a time",
+      "hours": "Hours",
+      "minutes": "Minutes",
       "errors": {
         "required": "Required.",
         "number": "Please enter a number.",
         "positive": "Please enter a value greater than 0.",
         "percentage": "Please enter a value between 0 and 100.",
         "nonNegative": "Please enter a value of 0 or more.",
-        "integer": "Please enter a whole number."
+        "integer": "Please enter a whole number.",
+        "dateTime": "Please use DD.MM.YYYY, HH:MM."
       }
     },
     "period": {
@@ -291,7 +300,7 @@
         },
         "errors": {
           "missing": "Enter both dates.",
-          "invalidDate": "Enter valid dates.",
+          "invalidDate": "Enter the dates as DD.MM.YYYY.",
           "fromAfterTo": "The start date must be before the end date."
         }
       },

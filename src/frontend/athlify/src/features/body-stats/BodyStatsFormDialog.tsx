@@ -1,6 +1,8 @@
 import { Field, Input, InputGroup, SimpleGrid, Stack, Textarea } from '@chakra-ui/react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { DateTimeField } from '../../components/DateTimeField'
+import { normalizeDecimal } from '../../lib/formValues'
 import { FormDialog } from '../../components/FormDialog'
 import {
   MAX_NOTE_LENGTH,
@@ -64,15 +66,13 @@ export function BodyStatsFormDialog({
       onSubmit={submit}
     >
       <Stack gap="4">
-        <Field.Root required invalid={!!errors.date}>
-          <Field.Label>{t('bodyStats.fields.date')}</Field.Label>
-          <Input
-            type="datetime-local"
-            value={values.date}
-            onChange={(e) => setValues({ ...values, date: e.target.value })}
-          />
-          <Field.ErrorText>{errors.date}</Field.ErrorText>
-        </Field.Root>
+        <DateTimeField
+          label={t('bodyStats.fields.date')}
+          value={values.date}
+          onChange={(date) => setValues({ ...values, date })}
+          error={errors.date}
+          required
+        />
 
         <SimpleGrid columns={{ base: 1, sm: 2 }} gap="4">
           {bodyStatsMetrics.map((metric) => (
@@ -86,6 +86,12 @@ export function BodyStatsFormDialog({
                   textAlign="end"
                   value={values[metric.key]}
                   onChange={(e) => setValues({ ...values, [metric.key]: e.target.value })}
+                  onBlur={() =>
+                    setValues((current) => ({
+                      ...current,
+                      [metric.key]: normalizeDecimal(current[metric.key]),
+                    }))
+                  }
                 />
               </InputGroup>
               <Field.ErrorText>{errors[metric.key]}</Field.ErrorText>

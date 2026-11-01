@@ -1,9 +1,10 @@
 import type { TFunction } from 'i18next'
+import { parseDateTime } from '../../lib/dates'
 import { nowInputValue, parseDecimal } from '../../lib/formValues'
 import { bodyStatsMetrics, type BodyStatsMetricKey } from './bodyStatsMetrics'
 
 export type BodyStatsFormValues = Record<BodyStatsMetricKey, string> & {
-  /** `datetime-local` format: YYYY-MM-DDTHH:mm. */
+  /** `DD.MM.YYYY, HH:MM`, local time. */
   date: string
   /** The one optional note (free text). */
   note: string
@@ -26,7 +27,8 @@ export function emptyValues(
 
 export function validate(values: BodyStatsFormValues, t: TFunction): BodyStatsFormErrors {
   const errors: BodyStatsFormErrors = {}
-  if (!values.date) errors.date = t('form.errors.required')
+  if (values.date.trim() === '') errors.date = t('form.errors.required')
+  else if (!parseDateTime(values.date)) errors.date = t('form.errors.dateTime')
 
   for (const metric of bodyStatsMetrics) {
     const raw = values[metric.key].trim()
@@ -44,7 +46,7 @@ export function validate(values: BodyStatsFormValues, t: TFunction): BodyStatsFo
 /** Mutation input; an empty note becomes null. Call only with values that passed `validate`. */
 export function toInput(values: BodyStatsFormValues) {
   return {
-    date: new Date(values.date).toISOString(),
+    date: (parseDateTime(values.date) ?? new Date(NaN)).toISOString(),
     weight: parseDecimal(values.weight),
     bodyFatPercentage: parseDecimal(values.bodyFatPercentage),
     musclePercentage: parseDecimal(values.musclePercentage),

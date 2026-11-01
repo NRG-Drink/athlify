@@ -51,7 +51,10 @@ follows the operating system. Every rule below holds in both modes.
   above the slider thumb in the form): in the form each emoji
   sits above its text label; in a table cell the emoji stands alone with
   the label as `aria-label` and `title`; filters and filter chips use the
-  text only. Number
+  text only.
+- Dates are `DD.MM.YYYY` and date-times `DD.MM.YYYY, HH:MM` (24 h) in
+  every language (`lib/dates.ts` through `useFormat`); only chart axes
+  name months ("Okt."). Number
   formats follow the locale (`useFormat`); use a real
   minus sign in deltas ("−0.7 kg").
 
@@ -184,6 +187,15 @@ In short:
   (closed for new records, open when editing a record that has values there;
   an error inside opens it). Pairs of short number fields stay side by side
   on phones. Optional selects start at "—", never at a pre-chosen value.
+- Dates are entered with `DateField` (a Chakra `DatePicker`, typed as
+  `TT.MM.JJJJ`, `1.2.25` is read as 01.02.2025) and times with
+  `TimeField` (`HH:MM`, typed or picked from hours and five-minute steps);
+  `DateTimeField` puts both under one label. Never use native `date`,
+  `time` or `datetime-local` inputs: they follow the browser's locale
+  (`11/01/2026, 11:31 PM`).
+- Every text field is normalised when it is left: numbers to their
+  canonical form (`42,50` → `42.5`), durations to `h:mm` (`1.20` →
+  `1:20`), times to `HH:MM`, dates to `DD.MM.YYYY`.
 - Durations are entered as `h:mm` (`.` works too), with `1:30` as the
   placeholder; the format is named only in the error text, so no helper
   line pushes the field out of its row. The form shows no seconds; when an
