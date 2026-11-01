@@ -6,7 +6,7 @@ import {
   clearActivityFilter,
   parseActivityFilters,
   summarizeValues,
-  toggleActivityFilter,
+  setActivityFilterValues,
 } from '../../../features/activities/activityFilters'
 import i18next from 'i18next'
 
@@ -52,13 +52,16 @@ describe('activity filters', () => {
     ).toBe('view=table&type=INDOOR&type=GRAVEL')
   })
 
-  it('toggles one value on and off and drops an empty list', () => {
-    const once = toggleActivityFilter({}, 'type', 'ROAD')
-    expect(once).toEqual({ types: ['ROAD'] })
-    const twice = toggleActivityFilter(toggleActivityFilter(once, 'type', 'GRAVEL'), 'type', 'ROAD')
-    expect(twice).toEqual({ types: ['GRAVEL'] })
-    expect(toggleActivityFilter(twice, 'type', 'GRAVEL')).toEqual({ types: undefined })
-    expect(toggleActivityFilter({}, 'type', 'bad')).toEqual({})
+  it('sets the values of one filter, drops unknown enum values and an empty list', () => {
+    expect(setActivityFilterValues({}, 'type', ['ROAD', 'GRAVEL'])).toEqual({
+      types: ['ROAD', 'GRAVEL'],
+    })
+    expect(setActivityFilterValues({}, 'type', ['ROAD', 'bad'])).toEqual({ types: ['ROAD'] })
+    expect(setActivityFilterValues({ types: ['ROAD'] }, 'type', [])).toEqual({ types: undefined })
+    expect(setActivityFilterValues({ winds: ['CALM'] }, 'tag', ['tag-1'])).toEqual({
+      winds: ['CALM'],
+      tagIds: ['tag-1'],
+    })
   })
 
   it('clears every value of one filter and keeps the others', () => {

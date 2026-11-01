@@ -85,13 +85,8 @@
         "vehicle": "Bicycle",
         "tag": "Tag",
         "wind": "Wind",
-        "selectedCount": "{{count}} selected",
-        "clear": "Clear selection",
-        "searchPlaceholder": "Search …",
-        "noMatches": "No matches.",
         "more": "+{{count}}",
         "done": "Done",
-        "moreOptions": "Only the first options are shown.",
         "reset": "Reset filters",
         "filterBy": "Filter by {{column}}",
         "filterByActive": "Filter by {{column}}, active: {{value}}",
@@ -260,6 +255,13 @@
       "resultCount_other": "{{count}} measurements",
       "loadMore": "Load more measurements",
       "loadMoreFailed": "More measurements could not be loaded."
+    },
+    "checklist": {
+      "search": "Search …",
+      "noMatches": "No matches.",
+      "selectedCount": "{{count}} selected",
+      "clear": "Clear selection",
+      "moreOptions": "Only the first options are shown."
     }
   }
 }

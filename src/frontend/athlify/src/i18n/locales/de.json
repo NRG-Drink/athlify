@@ -85,13 +85,8 @@
         "vehicle": "Velo",
         "tag": "Tag",
         "wind": "Wind",
-        "selectedCount": "{{count}} ausgewählt",
-        "clear": "Auswahl löschen",
-        "searchPlaceholder": "Suchen …",
-        "noMatches": "Keine Treffer.",
         "more": "+{{count}}",
         "done": "Fertig",
-        "moreOptions": "Es werden nur die ersten Optionen angezeigt.",
         "reset": "Filter zurücksetzen",
         "filterBy": "Nach {{column}} filtern",
         "filterByActive": "Nach {{column}} filtern, aktiv: {{value}}",
@@ -260,6 +255,13 @@
       "resultCount_other": "{{count}} Messungen",
       "loadMore": "Weitere Messungen laden",
       "loadMoreFailed": "Weitere Messungen konnten nicht geladen werden."
+    },
+    "checklist": {
+      "search": "Suchen …",
+      "noMatches": "Keine Treffer.",
+      "selectedCount": "{{count}} ausgewählt",
+      "clear": "Auswahl löschen",
+      "moreOptions": "Es werden nur die ersten Optionen angezeigt."
     }
   }
 }

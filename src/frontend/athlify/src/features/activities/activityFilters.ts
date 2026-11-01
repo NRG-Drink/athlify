@@ -87,33 +87,24 @@ export function filterValueCount(key: ActivityFilterKey, filters: ActivityFilter
   return filters[activityFilterFields[key]]?.length ?? 0
 }
 
-function toggleValue<T>(list: T[] | undefined, item: T): T[] | undefined {
-  const current = list ?? []
-  const next = current.includes(item)
-    ? current.filter((value) => value !== item)
-    : [...current, item]
-  return orUndefined(next)
-}
+const enumValues = <T extends string>(allowed: readonly T[], ids: readonly string[]) =>
+  ids.map((id) => asEnum(allowed, id)).filter((value): value is T => value !== undefined)
 
-/** Adds the value when it is not ticked yet, removes it when it is. Unknown enum values are ignored. */
-export function toggleActivityFilter(
+/** Sets the ticked values of one filter; an empty list turns it off. Unknown enum values are ignored. */
+export function setActivityFilterValues(
   filters: ActivityFilters,
   key: ActivityFilterKey,
-  id: string,
+  ids: readonly string[],
 ): ActivityFilters {
   switch (key) {
-    case 'type': {
-      const type = asEnum(activityTypes, id)
-      return type ? { ...filters, types: toggleValue(filters.types, type) } : filters
-    }
+    case 'type':
+      return { ...filters, types: orUndefined(enumValues(activityTypes, ids)) }
     case 'vehicle':
-      return { ...filters, vehicleIds: toggleValue(filters.vehicleIds, id) }
+      return { ...filters, vehicleIds: orUndefined([...ids]) }
     case 'tag':
-      return { ...filters, tagIds: toggleValue(filters.tagIds, id) }
-    case 'wind': {
-      const wind = asEnum(winds, id)
-      return wind ? { ...filters, winds: toggleValue(filters.winds, wind) } : filters
-    }
+      return { ...filters, tagIds: orUndefined([...ids]) }
+    case 'wind':
+      return { ...filters, winds: orUndefined(enumValues(winds, ids)) }
   }
 }
 
@@ -165,7 +156,7 @@ export function activeFilterValueLabels(
  * yet (or a value is no longer among the first options), the count stands in for them.
  */
 export function summarizeValues(labels: readonly string[], count: number, t: TFunction): string {
-  if (labels.length === 0) return t('activities.filters.selectedCount', { count })
+  if (labels.length === 0) return t('checklist.selectedCount', { count })
   if (labels.length <= 2) return labels.join(', ')
   return `${labels.slice(0, 2).join(', ')} ${t('activities.filters.more', { count: labels.length - 2 })}`
 }
