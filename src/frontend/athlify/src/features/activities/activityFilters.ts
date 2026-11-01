@@ -6,6 +6,9 @@ export type ActivityType = (typeof activityTypes)[number]
 export const winds = ['CALM', 'LIGHT', 'MODERATE', 'STRONG', 'STORMY'] as const
 export type Wind = (typeof winds)[number]
 
+export const moods = ['VERY_BAD', 'BAD', 'NEUTRAL', 'GOOD', 'VERY_GOOD'] as const
+export type Mood = (typeof moods)[number]
+
 /** Each filter holds the ticked values; an empty or missing list means the filter is off. */
 export interface ActivityFilters {
   types?: ActivityType[]

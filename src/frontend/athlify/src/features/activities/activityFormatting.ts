@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next'
 import type { Formatter } from '../../i18n/useFormat'
-import { winds } from './activityFilters'
+import { moods, winds } from './activityFilters'
 
 /** Hours and minutes, matching the "Std." unit of the column: 2400 s is "0:40", 5400 s is "1:30". */
 export function formatDuration(seconds: number) {
@@ -32,13 +32,11 @@ export function formatHeartRate(
   return min != null && max != null ? { text, title: `${min}–${max}` } : { text }
 }
 
-const MOODS = ['VERY_BAD', 'BAD', 'NEUTRAL', 'GOOD', 'VERY_GOOD']
-
 /** Rank in the natural order so that sorting by mood or wind is not alphabetical; -1 for null or unknown. */
 const rankIn = (order: readonly string[]) => (value: string | null | undefined) =>
   order.indexOf(value ?? '')
 
-export const moodRank = rankIn(MOODS)
+export const moodRank = rankIn(moods)
 export const windRank = rankIn(winds)
 
 /** Translated label of an enum value; an unknown (newer) value is shown as it is. */

@@ -31,7 +31,9 @@
         "required": "Required.",
         "number": "Please enter a number.",
         "positive": "Please enter a value greater than 0.",
-        "percentage": "Please enter a value between 0 and 100."
+        "percentage": "Please enter a value between 0 and 100.",
+        "nonNegative": "Please enter a value of 0 or more.",
+        "integer": "Please enter a whole number."
       }
     },
     "period": {
@@ -140,7 +142,8 @@
         "title": "No activities yet",
         "message": "Activities you enter or import will appear here.",
         "filteredTitle": "No matching activities",
-        "filteredMessage": "Adjust or reset the filters."
+        "filteredMessage": "Adjust or reset the filters.",
+        "action": "Add your first activity"
       },
       "moods": {
         "VERY_BAD": "Very bad",
@@ -155,6 +158,68 @@
         "MODERATE": "Moderate",
         "STRONG": "Strong",
         "STORMY": "Stormy"
+      },
+      "add": {
+        "open": "Add activity",
+        "title": "New activity",
+        "success": "Activity saved.",
+        "hiddenByFilters": "Activity saved. The active filters hide it.",
+        "errors": {
+          "saveFailed": "Saving failed. Please try again."
+        }
+      },
+      "duplicate": {
+        "action": "Duplicate",
+        "title": "Duplicate activity"
+      },
+      "edit": {
+        "title": "Edit activity",
+        "success": "Activity updated.",
+        "errors": {
+          "notFound": "This activity no longer exists."
+        }
+      },
+      "delete": {
+        "action": "Delete",
+        "title": "Delete activity?",
+        "description": "The activity from {{date}} ({{name}}) is removed from all lists and analyses.",
+        "mergeWarning": "It is part of a merge. If fewer than two activities remain in it, the merge is dissolved.",
+        "confirm": "Delete",
+        "success": "Activity deleted.",
+        "errors": {
+          "failed": "Deleting failed. Please try again."
+        }
+      },
+      "row": {
+        "actionsColumn": "Actions",
+        "edit": "Edit activity from {{date}}",
+        "more": "More actions for the activity from {{date}}"
+      },
+      "form": {
+        "date": "Date and start time",
+        "durationHint": "h:mm or h:mm:ss, e.g. 1:30",
+        "moreDetails": "More details",
+        "heartRate": "Heart rate",
+        "heartRateMin": "Min",
+        "heartRateAverage": "Avg",
+        "heartRateMax": "Max",
+        "noVehicle": "No bicycle",
+        "notSet": "—",
+        "calculated": "Calculated",
+        "calculatedHint": "* Calculated automatically.",
+        "source": "Source",
+        "errors": {
+          "duration": "Please use h:mm or h:mm:ss.",
+          "futureDate": "The date must not be in the future.",
+          "heartRateRange": "Please enter a value between 20 and 250.",
+          "heartRateOrder": "Min ≤ avg ≤ max – please check the values.",
+          "effortRange": "Please choose a value between 1 and 10.",
+          "descriptionLength": "At most {{max}} characters."
+        }
+      },
+      "sources": {
+        "MANUAL": "Manual",
+        "STRAVA": "Strava"
       }
     },
     "bodyStats": {

@@ -31,7 +31,9 @@
         "required": "Pflichtfeld.",
         "number": "Bitte eine Zahl eingeben.",
         "positive": "Bitte einen Wert grösser als 0 eingeben.",
-        "percentage": "Bitte einen Wert zwischen 0 und 100 eingeben."
+        "percentage": "Bitte einen Wert zwischen 0 und 100 eingeben.",
+        "nonNegative": "Bitte einen Wert ab 0 eingeben.",
+        "integer": "Bitte eine ganze Zahl eingeben."
       }
     },
     "period": {
@@ -140,7 +142,8 @@
         "title": "Noch keine Aktivitäten",
         "message": "Sobald du eine Aktivität erfasst oder importierst, erscheint sie hier.",
         "filteredTitle": "Keine passenden Aktivitäten",
-        "filteredMessage": "Passe die Filter an oder setze sie zurück."
+        "filteredMessage": "Passe die Filter an oder setze sie zurück.",
+        "action": "Erste Aktivität erfassen"
       },
       "moods": {
         "VERY_BAD": "Sehr schlecht",
@@ -155,6 +158,68 @@
         "MODERATE": "Mässig",
         "STRONG": "Stark",
         "STORMY": "Stürmisch"
+      },
+      "add": {
+        "open": "Aktivität erfassen",
+        "title": "Neue Aktivität",
+        "success": "Aktivität gespeichert.",
+        "hiddenByFilters": "Aktivität gespeichert. Die aktiven Filter blenden sie aus.",
+        "errors": {
+          "saveFailed": "Speichern fehlgeschlagen. Bitte versuche es nochmals."
+        }
+      },
+      "duplicate": {
+        "action": "Duplizieren",
+        "title": "Aktivität duplizieren"
+      },
+      "edit": {
+        "title": "Aktivität bearbeiten",
+        "success": "Aktivität aktualisiert.",
+        "errors": {
+          "notFound": "Diese Aktivität existiert nicht mehr."
+        }
+      },
+      "delete": {
+        "action": "Löschen",
+        "title": "Aktivität löschen?",
+        "description": "Die Aktivität vom {{date}} ({{name}}) verschwindet aus allen Listen und Auswertungen.",
+        "mergeWarning": "Sie gehört zu einem Merge. Bleiben darin weniger als zwei Aktivitäten, wird der Merge aufgelöst.",
+        "confirm": "Löschen",
+        "success": "Aktivität gelöscht.",
+        "errors": {
+          "failed": "Löschen fehlgeschlagen. Bitte versuche es nochmals."
+        }
+      },
+      "row": {
+        "actionsColumn": "Aktionen",
+        "edit": "Aktivität vom {{date}} bearbeiten",
+        "more": "Weitere Aktionen für die Aktivität vom {{date}}"
+      },
+      "form": {
+        "date": "Datum und Startzeit",
+        "durationHint": "Std:Min oder Std:Min:Sek, z. B. 1:30",
+        "moreDetails": "Weitere Details",
+        "heartRate": "Herzfrequenz",
+        "heartRateMin": "Min",
+        "heartRateAverage": "Ø",
+        "heartRateMax": "Max",
+        "noVehicle": "Kein Velo",
+        "notSet": "—",
+        "calculated": "Berechnet",
+        "calculatedHint": "* Wird automatisch berechnet.",
+        "source": "Quelle",
+        "errors": {
+          "duration": "Bitte im Format Std:Min oder Std:Min:Sek eingeben.",
+          "futureDate": "Das Datum darf nicht in der Zukunft liegen.",
+          "heartRateRange": "Bitte einen Wert zwischen 20 und 250 eingeben.",
+          "heartRateOrder": "Min ≤ Ø ≤ Max – bitte prüfe die Werte.",
+          "effortRange": "Bitte einen Wert zwischen 1 und 10 wählen.",
+          "descriptionLength": "Höchstens {{max}} Zeichen."
+        }
+      },
+      "sources": {
+        "MANUAL": "Manuell",
+        "STRAVA": "Strava"
       }
     },
     "bodyStats": {
