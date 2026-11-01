@@ -38,8 +38,8 @@ the merge UI and Strava synchronization are not implemented yet.
   (average speed, TSS, source) are shown read-only, marked with `*`. The
   duration is entered in hours and minutes; the seconds of an imported ride
   are kept while its minutes are unchanged. Effort is a slider (0 = not set),
-  mood and wind are picked from emoji buttons, and tags are chips; a new tag
-  can be created in the form without leaving it.
+  mood and wind are picked from emoji buttons, and gadgets and tags are chips;
+  a new tag can be created in the form without leaving it.
 - Calendar view with weekly summary inspired by TrainingPeaks.
 - Full CRUD for manual and synchronized activities.
 - Visible Strava sync button on the Activities page.

@@ -13,13 +13,13 @@ import {
   Text,
   Textarea,
 } from '@chakra-ui/react'
-import { useState, type ReactNode } from 'react'
+import { Fragment, useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LuChevronRight } from 'react-icons/lu'
-import { Checklist } from '../../components/Checklist'
 import { FormDialog } from '../../components/FormDialog'
 import { useFormat } from '../../i18n/useFormat'
 import {
+  countDetails,
   detailFields,
   heartRateFields,
   hasDetails,
@@ -32,13 +32,15 @@ import {
 } from './activityForm'
 import { activityTypes, moods, winds, type FilterOption } from './activityFilters'
 import {
+  emojiOptions,
   enumLabel,
   enumOptions,
   formatOptionalNumber,
   moodEmoji,
+  tagColorPalette,
   windEmoji,
 } from './activityFormatting'
-import { EffortSlider, EmojiChoice, TagChips } from './ActivityFormFields'
+import { ChipChoice, EffortSlider, EmojiChoice, SectionLegend } from './ActivityFormFields'
 
 /** The choices of the form; they include the bicycle, gadgets and tags of the activity being edited. */
 export interface ActivityFormOptions {
@@ -72,9 +74,6 @@ export interface ActivityFormDialogProps {
   onCreateTag: (name: string, onCreated: (id: string) => void) => void
   creatingTag: boolean
 }
-
-/** Longer checklists get a search field. */
-const SEARCHABLE_FROM = 8
 
 const titleKey = {
   create: 'activities.add.title',
@@ -130,7 +129,7 @@ interface NumberProps {
   unit?: string
   required?: boolean
   error?: string
-  helper?: ReactNode
+  placeholder?: string
   /** `text` for the duration: phone number pads have no colon. */
   inputMode?: 'decimal' | 'numeric' | 'text'
 }
@@ -142,7 +141,7 @@ function NumberField({
   unit,
   required,
   error,
-  helper,
+  placeholder,
   inputMode = 'decimal',
 }: NumberProps) {
   // type="text": a number input rejects the decimal comma of German keyboards.
@@ -151,6 +150,7 @@ function NumberField({
       type="text"
       inputMode={inputMode}
       textAlign="end"
+      placeholder={placeholder}
       value={value}
       onChange={(event) => onChange(event.target.value)}
     />
@@ -161,7 +161,6 @@ function NumberField({
       {/* An addon, not an overlay: an overlay is one input height wide and covers the digits of
           longer units such as "bpm". */}
       {unit ? <InputGroup endAddon={unit}>{input}</InputGroup> : input}
-      {helper && !error && <Field.HelperText>{helper}</Field.HelperText>}
       <Field.ErrorText>{error}</Field.ErrorText>
     </Field.Root>
   )
@@ -199,8 +198,19 @@ export function ActivityFormDialog({
     }
   }
 
-  const set = <K extends keyof ActivityFormValues>(key: K, value: ActivityFormValues[K]) =>
-    setValues((current) => ({ ...current, [key]: value }))
+  // Stable, so the memoized detail fields only render again when their own value changes.
+  const set = useCallback(
+    <K extends keyof ActivityFormValues>(key: K, value: ActivityFormValues[K]) =>
+      setValues((current) => ({ ...current, [key]: value })),
+    [],
+  )
+  const setEffort = useCallback((value: string) => set('effort', value), [set])
+  const setMood = useCallback((value: ActivityFormValues['mood']) => set('mood', value), [set])
+  const setWind = useCallback((value: ActivityFormValues['wind']) => set('wind', value), [set])
+  const setGadgets = useCallback((ids: string[]) => set('gadgetIds', ids), [set])
+  const setTags = useCallback((ids: string[]) => set('tagIds', ids), [set])
+  const moodOptions = useMemo(() => emojiOptions(t, 'moods', moods, moodEmoji), [t])
+  const windOptions = useMemo(() => emojiOptions(t, 'winds', winds, windEmoji), [t])
 
   const submit = () => {
     const found = validate(values, t)
@@ -211,21 +221,38 @@ export function ActivityFormDialog({
   }
 
   /** An existing tag of that name is ticked instead of being created twice. */
-  const addTag = (name: string, clear: () => void) => {
-    const tick = (id: string) => {
-      setValues((current) =>
-        current.tagIds.includes(id) ? current : { ...current, tagIds: [...current.tagIds, id] },
-      )
-      clear()
-    }
-    const existing = options.tags.find(
-      (tag) => tag.label.localeCompare(name, undefined, { sensitivity: 'accent' }) === 0,
-    )
-    if (existing) tick(existing.id)
-    else onCreateTag(name, tick)
-  }
+  const tagCreate = useMemo(
+    () => ({
+      creating: creatingTag,
+      onCreate: (name: string, clear: () => void) => {
+        const tick = (id: string) => {
+          setValues((current) =>
+            current.tagIds.includes(id) ? current : { ...current, tagIds: [...current.tagIds, id] },
+          )
+          clear()
+        }
+        const existing = options.tags.find(
+          (tag) => tag.label.localeCompare(name, undefined, { sensitivity: 'accent' }) === 0,
+        )
+        if (existing) tick(existing.id)
+        else onCreateTag(name, tick)
+      },
+    }),
+    [creatingTag, options.tags, onCreateTag],
+  )
 
   const unit = (key: string) => t(`activities.units.${key}`)
+  const filledDetails = countDetails(values)
+  const calculatedRows = (calculated: ActivityCalculatedValues) => [
+    [
+      t('activities.columns.speed'),
+      calculated.averageSpeed == null
+        ? '—'
+        : `${formatOptionalNumber(format, calculated.averageSpeed, 1)} ${unit('speed')}`,
+    ],
+    [t('activities.columns.tss'), formatOptionalNumber(format, calculated.tss, 0)],
+    [t('activities.form.source'), enumLabel(t, 'sources', calculated.source)],
+  ]
 
   return (
     <FormDialog
@@ -256,7 +283,7 @@ export function ActivityFormDialog({
               options={enumOptions(t, 'types', activityTypes)}
             />
           </SimpleGrid>
-          <SimpleGrid columns={2} gap="4">
+          <SimpleGrid columns={{ base: 2, sm: 3 }} gap="4">
             <NumberField
               label={t('activities.columns.duration')}
               value={values.duration}
@@ -264,7 +291,7 @@ export function ActivityFormDialog({
               unit={unit('duration')}
               required
               error={errors.duration}
-              helper={t('activities.form.durationHint')}
+              placeholder={t('activities.form.durationPlaceholder')}
               inputMode="text"
             />
             <NumberField
@@ -283,14 +310,14 @@ export function ActivityFormDialog({
               error={errors.elevationGain}
               inputMode="numeric"
             />
-            <SelectField
-              label={t('activities.columns.vehicle')}
-              value={values.vehicleId}
-              onChange={(value) => set('vehicleId', value)}
-              emptyLabel={t('activities.form.noVehicle')}
-              options={options.vehicles}
-            />
           </SimpleGrid>
+          <SelectField
+            label={t('activities.columns.vehicle')}
+            value={values.vehicleId}
+            onChange={(value) => set('vehicleId', value)}
+            emptyLabel={t('activities.form.noVehicle')}
+            options={options.vehicles}
+          />
           <Field.Root invalid={!!errors.description}>
             <Field.Label>{t('activities.columns.description')}</Field.Label>
             <Textarea
@@ -321,14 +348,20 @@ export function ActivityFormDialog({
                 <LuChevronRight aria-hidden />
               </Box>
               {t('activities.form.moreDetails')}
+              {/* While folded, the count tells that values are hidden here. */}
+              {!detailsOpen && filledDetails > 0 && (
+                <Text as="span" color="fg.muted" fontWeight="normal">
+                  · {t('activities.form.detailsCount', { count: filledDetails })}
+                </Text>
+              )}
             </Button>
           </Collapsible.Trigger>
           <Collapsible.Content>
             <Stack gap="4" pt="4">
               <Fieldset.Root>
-                <Fieldset.Legend fontSize="sm" fontWeight="medium" color="fg">
-                  {t('activities.form.heartRate')}
-                </Fieldset.Legend>
+                <SectionLegend>
+                  {t('activities.form.heartRate', { unit: unit('heartRate') })}
+                </SectionLegend>
                 <SimpleGrid columns={3} gap="4">
                   {heartRateFields.map((field) => (
                     <NumberField
@@ -336,7 +369,6 @@ export function ActivityFormDialog({
                       label={t(`activities.form.${field}`)}
                       value={values[field]}
                       onChange={(value) => set(field, value)}
-                      unit={unit('heartRate')}
                       error={errors[field]}
                       inputMode="numeric"
                     />
@@ -346,48 +378,36 @@ export function ActivityFormDialog({
               <EffortSlider
                 label={t('activities.columns.effort')}
                 value={values.effort}
-                onChange={(value) => set('effort', value)}
+                onChange={setEffort}
                 error={errors.effort}
               />
               <EmojiChoice
                 label={t('activities.columns.mood')}
                 value={values.mood}
-                onChange={(value) => set('mood', value)}
-                options={enumOptions(t, 'moods', moods).map((option) => ({
-                  ...option,
-                  emoji: moodEmoji[option.id],
-                }))}
+                onChange={setMood}
+                options={moodOptions}
               />
               <EmojiChoice
                 label={t('activities.columns.wind')}
                 value={values.wind}
-                onChange={(value) => set('wind', value)}
-                options={enumOptions(t, 'winds', winds).map((option) => ({
-                  ...option,
-                  emoji: windEmoji[option.id],
-                }))}
+                onChange={setWind}
+                options={windOptions}
               />
-              <Stack gap="2">
-                <Text fontWeight="medium" fontSize="sm">
-                  {t('activities.columns.gadgets')}
-                </Text>
-                <Checklist
-                  label={t('activities.columns.gadgets')}
-                  options={options.gadgets}
-                  value={values.gadgetIds}
-                  onChange={(ids) => set('gadgetIds', ids)}
-                  searchable={options.gadgets.length > SEARCHABLE_FROM}
-                  hasMore={options.hasMoreGadgets}
-                />
-              </Stack>
-              <TagChips
+              <ChipChoice
+                label={t('activities.columns.gadgets')}
+                options={options.gadgets}
+                value={values.gadgetIds}
+                onChange={setGadgets}
+                hasMore={options.hasMoreGadgets}
+              />
+              <ChipChoice
                 label={t('activities.columns.tags')}
                 options={options.tags}
                 value={values.tagIds}
-                onChange={(ids) => set('tagIds', ids)}
+                onChange={setTags}
                 hasMore={options.hasMoreTags}
-                onCreate={addTag}
-                creating={creatingTag}
+                colorOf={tagColorPalette}
+                create={tagCreate}
               />
             </Stack>
           </Collapsible.Content>
@@ -406,21 +426,14 @@ export function ActivityFormDialog({
               fontSize="sm"
               fontVariantNumeric="tabular-nums"
             >
-              <Text as="dt" color="fg.muted">
-                {t('activities.columns.speed')}*
-              </Text>
-              <Text as="dd">
-                {formatOptionalNumber(format, shown.calculated.averageSpeed, 1)}
-                {shown.calculated.averageSpeed != null && ` ${unit('speed')}`}
-              </Text>
-              <Text as="dt" color="fg.muted">
-                {t('activities.columns.tss')}*
-              </Text>
-              <Text as="dd">{formatOptionalNumber(format, shown.calculated.tss, 0)}</Text>
-              <Text as="dt" color="fg.muted">
-                {t('activities.form.source')}*
-              </Text>
-              <Text as="dd">{enumLabel(t, 'sources', shown.calculated.source)}</Text>
+              {calculatedRows(shown.calculated).map(([label, value]) => (
+                <Fragment key={label}>
+                  <Text as="dt" color="fg.muted">
+                    {label}*
+                  </Text>
+                  <Text as="dd">{value}</Text>
+                </Fragment>
+              ))}
             </Grid>
             <Text fontSize="sm" color="fg.muted">
               {t('activities.form.calculatedHint')}

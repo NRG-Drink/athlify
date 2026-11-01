@@ -2,6 +2,7 @@ import i18next from 'i18next'
 import { describe, expect, it } from 'vitest'
 import {
   activityToValues,
+  countDetails,
   hasDetails,
   newActivityValues,
   parseDuration,
@@ -249,5 +250,7 @@ describe('form values', () => {
     expect(hasDetails(newActivityValues({}, now))).toBe(false)
     expect(hasDetails(activityToValues(activity))).toBe(true)
     expect(hasDetails(valid({ tagIds: ['tag-1'] }))).toBe(true)
+    // heartRateAverage, wind and a gadget
+    expect(countDetails(activityToValues(activity))).toBe(3)
   })
 })

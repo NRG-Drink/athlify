@@ -9,11 +9,22 @@ import {
   Text,
   Wrap,
 } from '@chakra-ui/react'
-import { useState } from 'react'
+import { memo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LuCheck, LuPlus } from 'react-icons/lu'
+import { toggleId } from '../../lib/ids'
 import { MAX_EFFORT } from './activityForm'
-import { tagColorPalette } from './activityFormatting'
+
+/** Heading of a group of fields in the activity form. */
+export function SectionLegend({ children }: { children: ReactNode }) {
+  return (
+    <Fieldset.Legend fontSize="sm" fontWeight="medium" color="fg">
+      {children}
+    </Fieldset.Legend>
+  )
+}
+
+const EFFORT_MARKS = Array.from({ length: MAX_EFFORT }, (_, index) => index + 1)
 
 interface EffortSliderProps {
   label: string
@@ -27,7 +38,12 @@ interface EffortSliderProps {
  * Effort from 1 to 10. A slider cannot be empty, so its far left, 0, stands for "not set": that is
  * where a new activity starts, and sliding back there removes the value.
  */
-export function EffortSlider({ label, value, onChange, error }: EffortSliderProps) {
+export const EffortSlider = memo(function EffortSlider({
+  label,
+  value,
+  onChange,
+  error,
+}: EffortSliderProps) {
   const { t } = useTranslation()
   const effort = value === '' ? 0 : Number(value)
   const text = (current: number) =>
@@ -59,6 +75,7 @@ export function EffortSlider({ label, value, onChange, error }: EffortSliderProp
           <Slider.Range />
         </Slider.Track>
         <Slider.Thumbs />
+        <Slider.Marks marks={EFFORT_MARKS} />
       </Slider.Control>
       <HStack justify="space-between" fontSize="xs" color="fg.muted">
         <Text>{t('activities.form.effortNone')}</Text>
@@ -73,13 +90,19 @@ export function EffortSlider({ label, value, onChange, error }: EffortSliderProp
       )}
     </Slider.Root>
   )
+})
+
+export interface EmojiOption<T extends string> {
+  id: T
+  label: string
+  emoji: string
 }
 
 interface EmojiChoiceProps<T extends string> {
   label: string
   value: T | ''
   onChange: (value: T | '') => void
-  options: readonly { id: T; label: string; emoji: string }[]
+  options: readonly EmojiOption<T>[]
 }
 
 /**
@@ -87,7 +110,7 @@ interface EmojiChoiceProps<T extends string> {
  * the value at a glance; the label keeps it readable and is the accessible name. Pressing the chosen
  * button again clears the value, as every option is optional.
  */
-export function EmojiChoice<T extends string>({
+function EmojiChoiceBase<T extends string>({
   label,
   value,
   onChange,
@@ -95,9 +118,7 @@ export function EmojiChoice<T extends string>({
 }: EmojiChoiceProps<T>) {
   return (
     <Fieldset.Root>
-      <Fieldset.Legend fontSize="sm" fontWeight="medium" color="fg">
-        {label}
-      </Fieldset.Legend>
+      <SectionLegend>{label}</SectionLegend>
       <SimpleGrid columns={options.length} gap="1">
         {options.map((option) => {
           const chosen = option.id === value
@@ -131,48 +152,46 @@ export function EmojiChoice<T extends string>({
   )
 }
 
+// `memo` drops the type parameter, so the cast restores it.
+export const EmojiChoice = memo(EmojiChoiceBase) as typeof EmojiChoiceBase
+
 /** The backend's limit for a tag name. */
 const MAX_TAG_LENGTH = 50
 
-interface TagChipsProps {
-  label: string
-  options: readonly { id: string; label: string }[]
-  value: string[]
-  onChange: (ids: string[]) => void
-  /** More tags exist than were loaded. */
-  hasMore: boolean
-  /** Creates a tag from the typed name; `clear` empties the field once the tag is there. */
+export interface ChipCreate {
+  /** Creates an entry from the typed name; `clear` empties the field once it is there. */
   onCreate: (name: string, clear: () => void) => void
   creating: boolean
 }
 
-/**
- * Tags as chips that are switched on and off, in the colours the table uses, and a field to create a
- * new one without leaving the form. Enter in that field creates the tag, not the activity.
- */
-export function TagChips({
+interface ChipChoiceProps {
+  label: string
+  options: readonly { id: string; label: string }[]
+  value: string[]
+  onChange: (ids: string[]) => void
+  /** More options exist than were loaded. */
+  hasMore: boolean
+  /** Colour palette of a chosen chip; brand when not given. */
+  colorOf?: (id: string) => string
+  /** Offers a field to create a new option; Enter in it creates the option, not the record. */
+  create?: ChipCreate
+}
+
+/** A multi-select as chips that are switched on and off, optionally with a field to create one. */
+export const ChipChoice = memo(function ChipChoice({
   label,
   options,
   value,
   onChange,
   hasMore,
-  onCreate,
-  creating,
-}: TagChipsProps) {
+  colorOf,
+  create,
+}: ChipChoiceProps) {
   const { t } = useTranslation()
-  const [name, setName] = useState('')
-  const trimmed = name.trim()
-  const create = () => {
-    if (trimmed && !creating) onCreate(trimmed, () => setName(''))
-  }
-  const toggle = (id: string) =>
-    onChange(value.includes(id) ? value.filter((other) => other !== id) : [...value, id])
 
   return (
     <Fieldset.Root>
-      <Fieldset.Legend fontSize="sm" fontWeight="medium" color="fg">
-        {label}
-      </Fieldset.Legend>
+      <SectionLegend>{label}</SectionLegend>
       <Stack gap="3">
         {options.length > 0 && (
           <Wrap gap="2">
@@ -184,9 +203,9 @@ export function TagChips({
                   size="xs"
                   rounded="full"
                   variant={on ? 'subtle' : 'outline'}
-                  colorPalette={on ? tagColorPalette(option.id) : 'gray'}
+                  colorPalette={on ? (colorOf?.(option.id) ?? 'brand') : 'gray'}
                   aria-pressed={on}
-                  onClick={() => toggle(option.id)}
+                  onClick={() => onChange(toggleId(value, option.id))}
                 >
                   {on && <LuCheck aria-hidden />}
                   {option.label}
@@ -200,32 +219,39 @@ export function TagChips({
             {t('checklist.moreOptions')}
           </Text>
         )}
-        <HStack gap="2">
-          <Input
-            size="sm"
-            maxLength={MAX_TAG_LENGTH}
-            aria-label={t('activities.form.newTag')}
-            placeholder={t('activities.form.newTag')}
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key !== 'Enter') return
-              event.preventDefault()
-              create()
-            }}
-          />
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={create}
-            disabled={!trimmed}
-            loading={creating}
-          >
-            <LuPlus aria-hidden />
-            {t('activities.form.createTag')}
-          </Button>
-        </HStack>
+        {create && <CreateField {...create} />}
       </Stack>
     </Fieldset.Root>
+  )
+})
+
+function CreateField({ onCreate, creating }: ChipCreate) {
+  const { t } = useTranslation()
+  const [name, setName] = useState('')
+  const trimmed = name.trim()
+  const create = () => {
+    if (trimmed && !creating) onCreate(trimmed, () => setName(''))
+  }
+
+  return (
+    <HStack gap="2">
+      <Input
+        size="sm"
+        maxLength={MAX_TAG_LENGTH}
+        aria-label={t('activities.form.newTag')}
+        placeholder={t('activities.form.newTag')}
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key !== 'Enter') return
+          event.preventDefault()
+          create()
+        }}
+      />
+      <Button size="sm" variant="outline" onClick={create} disabled={!trimmed} loading={creating}>
+        <LuPlus aria-hidden />
+        {t('activities.form.createTag')}
+      </Button>
+    </HStack>
   )
 }

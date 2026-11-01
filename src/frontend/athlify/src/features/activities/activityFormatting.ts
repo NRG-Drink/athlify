@@ -75,6 +75,16 @@ export const windEmoji: Record<Wind, string> = {
   STORMY: '🌪️',
 }
 
+/** `enumOptions` with the emoji of each value, for the form's emoji choices. */
+export function emojiOptions<T extends string>(
+  t: TFunction,
+  group: EnumGroup,
+  values: readonly T[],
+  emoji: Record<T, string>,
+) {
+  return enumOptions(t, group, values).map((option) => ({ ...option, emoji: emoji[option.id] }))
+}
+
 const TAG_PALETTES = ['blue', 'green', 'orange', 'purple', 'pink', 'teal', 'cyan', 'red', 'yellow']
 
 /** The same tag always gets the same colour: derived from its id, not from its position. */

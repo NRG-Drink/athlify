@@ -160,10 +160,12 @@ export function activityToValues(
   }
 }
 
-/** Whether any of the folded detail fields holds a value. */
-export function hasDetails(values: ActivityFormValues): boolean {
-  return detailFields.some((field) => values[field].length > 0)
+/** How many of the folded detail fields hold a value. */
+export function countDetails(values: ActivityFormValues): number {
+  return detailFields.filter((field) => values[field].length > 0).length
 }
+
+export const hasDetails = (values: ActivityFormValues) => countDetails(values) > 0
 
 /** Whole number, `undefined` when empty, `NaN` when the text is not a whole number. */
 function parseInteger(raw: string): number | undefined {

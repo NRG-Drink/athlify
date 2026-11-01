@@ -68,7 +68,12 @@ const query = (nodes: Activity[]) => ({
   data: {
     ...list(nodes),
     vehicles: { nodes: [canyon], pageInfo: { hasNextPage: false } },
-    gadgets: { nodes: [], pageInfo: { hasNextPage: false } },
+    gadgets: {
+      nodes: [
+        { __typename: 'Gadget', id: 'gadget-1', brand: 'Wahoo', model: 'Elemnt', nickname: null },
+      ],
+      pageInfo: { hasNextPage: false },
+    },
     tags: {
       nodes: [{ __typename: 'Tag', id: 'tag-1', name: 'Intervall' }],
       pageInfo: { hasNextPage: false },
@@ -513,6 +518,7 @@ describe('ActivitiesPage editing', () => {
       expect(good).toHaveAttribute('aria-pressed', 'true')
       await user.click(within(dialog).getByRole('button', { name: 'Stark' }))
 
+      await user.click(within(dialog).getByRole('button', { name: 'Wahoo Elemnt' }))
       await user.click(within(dialog).getByRole('button', { name: 'Intervall' }))
       await user.type(within(dialog).getByRole('textbox', { name: 'Neuer Tag' }), 'Hügel{Enter}')
       expect(await screen.findByText('Tag «Hügel» erstellt.')).toBeInTheDocument()
@@ -528,7 +534,13 @@ describe('ActivitiesPage editing', () => {
       await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
       await waitFor(() => expect(calls(UPDATE)).toHaveLength(1))
       expect(calls(UPDATE)[0]).toMatchObject({
-        input: { effort: 6, mood: 'GOOD', wind: 'STRONG', tagIds: ['tag-1', 'tag-2'] },
+        input: {
+          effort: 6,
+          mood: 'GOOD',
+          wind: 'STRONG',
+          gadgetIds: ['gadget-1'],
+          tagIds: ['tag-1', 'tag-2'],
+        },
       })
     })
 
@@ -550,6 +562,20 @@ describe('ActivitiesPage editing', () => {
       await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
       await waitFor(() => expect(calls(UPDATE)).toHaveLength(1))
       expect(calls(UPDATE)[0]).toMatchObject({ input: { effort: null, wind: null } })
+    })
+
+    it('tells how many details are filled while they are folded', async () => {
+      const { user } = page(okQuery)
+      await user.click(
+        await screen.findByRole('button', { name: 'Aktivität vom 14. Okt. 2026 bearbeiten' }),
+      )
+      const dialog = await screen.findByRole('dialog', { name: 'Aktivität bearbeiten' })
+      const trigger = within(dialog).getByRole('button', { name: 'Weitere Details' })
+      expect(trigger).toHaveAttribute('aria-expanded', 'true')
+
+      await user.click(trigger)
+      expect(trigger).toHaveAttribute('aria-expanded', 'false')
+      expect(trigger).toHaveTextContent('Weitere Details· 1 Angabe')
     })
 
     it('ticks an existing tag instead of creating it again', async () => {

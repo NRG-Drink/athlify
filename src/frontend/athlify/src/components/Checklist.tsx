@@ -1,6 +1,7 @@
 import { Button, Checkbox, Flex, Input, Stack, Text } from '@chakra-ui/react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toggleId } from '../lib/ids'
 
 export interface ChecklistOption {
   id: string
@@ -35,8 +36,6 @@ export function Checklist({
   const visible = searchable
     ? options.filter((option) => option.label.toLocaleLowerCase().includes(needle))
     : options
-  const toggle = (id: string) =>
-    onChange(value.includes(id) ? value.filter((item) => item !== id) : [...value, id])
 
   return (
     <Stack gap="3">
@@ -62,7 +61,7 @@ export function Checklist({
             size="sm"
             colorPalette="brand"
             checked={value.includes(option.id)}
-            onCheckedChange={() => toggle(option.id)}
+            onCheckedChange={() => onChange(toggleId(value, option.id))}
             minH="10"
             px="2"
             alignItems="center"

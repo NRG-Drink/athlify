@@ -178,17 +178,24 @@ In short:
   (closed for new records, open when editing a record that has values there;
   an error inside opens it). Pairs of short number fields stay side by side
   on phones. Optional selects start at "—", never at a pre-chosen value.
-- Durations are entered as `h:mm` (`.` works too); the form shows no
-  seconds. When an edited record's minutes stay the same, its stored
-  seconds are kept.
+- Durations are entered as `h:mm` (`.` works too), with `1:30` as the
+  placeholder; the format is named only in the error text, so no helper
+  line pushes the field out of its row. The form shows no seconds; when an
+  edited record's minutes stay the same, its stored seconds are kept.
+- Number fields carry their unit as an addon beside the input. A group of
+  fields with the same unit (heart rate min/Ø/max) names it once in the
+  legend ("Herzfrequenz (bpm)") instead, so three fields fit side by side
+  on phones.
+- While "Weitere Details" is folded, its trigger shows how many of the
+  fields inside hold a value ("· 3 Angaben").
 - A rating on a short numeric scale (effort 1–10) is a Chakra `Slider`
-  whose far left, 0, means "Keine Angabe". A few ordered values (mood,
+  with a mark per step, whose far left, 0, means "Keine Angabe". A few ordered values (mood,
   wind) are a row of toggle buttons with an emoji above the label; the
   chosen one is `brand` `subtle` with a `brand.solid` border, and pressing
-  it again clears the value. Tags are chips in their table colour
-  (`tagColorPalette`), switched on and off, with a "Neuer Tag" field below
-  that creates a tag on Enter or "Erstellen"; an existing name is ticked
-  instead of created twice.
+  it again clears the value. Gadgets and tags are chips switched on and
+  off (tags in their table colour, `tagColorPalette`; gadgets in `brand`).
+  Below the tags, a "Neuer Tag" field creates a tag on Enter or
+  "Erstellen"; an existing name is ticked instead of created twice.
 - `FormDialog` scrolls its body inside the dialog; the footer with
   "Speichern" and "Abbrechen" always stays visible.
 
@@ -204,7 +211,7 @@ Before designing something new, check whether one of these already covers it
 | `MetricChart` | One Recharts series over time, coloured through theme CSS variables. |
 | `PeriodPicker` | Attached toggle group for 30 T / 90 T / 1 J / Alle. |
 | `DataTable` | Every list table, sorted by the server (controlled `sort`; a first click sorts descending). It also renders the count above the rows (`count`, 0.875rem `fg.muted`) and "load more" with its inline error (`pagination`), so tables never build these themselves; `DataTableSkeleton` is their loading state. The header spans the full width: every header cell, the row-actions column included, is sticky on `bg`, so rows never show through it while scrolling. A column with a `description` explains itself in a tooltip (see below). A column can declare a `filter`: its trigger shows the ticked count (`brand.subtle` badge with `brand.fg`) and opens a `FilterPopover`. |
-| `Checklist` | Multi-select as a group of checkboxes (`fg.muted` outline, `brand.solid` when ticked), an optional search for long lists, "N ausgewählt" and "Auswahl löschen". In a filter it lives in the `FilterPopover` (popover from `sm`, bottom sheet below), which ends with "Fertig"; in a form it sits inline (the gadgets of an activity). |
+| `Checklist` | Multi-select as a group of checkboxes (`fg.muted` outline, `brand.solid` when ticked), an optional search for long lists, "N ausgewählt" and "Auswahl löschen". In a filter it lives in the `FilterPopover` (popover from `sm`, bottom sheet below), which ends with "Fertig"; forms use chips instead (see "Row actions and forms"). |
 | `Tooltip` (`components/ui/tooltip`) | Explains an abbreviated or technical term, never more. In tables a column sets `description`: the header label gets a dotted `fg.muted` underline and the text appears on hover and keyboard focus after 300 ms, on `bg.panel` with a hairline `border`, `l2`, 0.875rem, at most `20rem` wide. Only where a term needs it (TSS, Ø, units, estimated values); self-explaining headers such as Datum, Distanz or Gewicht get none. It is never the only place for data and never shows truncated text. Touch has no hover, so essential information must also be visible elsewhere. |
 | `FormDialog`, `ConfirmDialog` | Add/edit dialog (`size="lg"` for long forms) and destructive confirmation. `ConfirmDialog` takes `finalFocusEl` when the element that opened it disappears with the delete. |
 | Chakra `Menu` | The "⋯" row menu (see row actions below). `Menu.Content` sets `colorPalette="brand"`, because it renders in a portal. |
