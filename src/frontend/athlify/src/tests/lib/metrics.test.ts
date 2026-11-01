@@ -40,10 +40,10 @@ describe('aggregateByResolution', () => {
     const result = aggregateByResolution(input, 'day')
 
     expect(result.map((item) => [item.date.toISOString(), item.value])).toEqual([
-      ['2026-01-01T08:00:00.000Z', 73],
-      ['2026-01-02T20:00:00.000Z', 71.5],
-      ['2026-01-15T08:00:00.000Z', 71],
-      ['2026-02-01T08:00:00.000Z', 70],
+      [new Date('2026-01-01T08:00').toISOString(), 73],
+      [new Date('2026-01-02T20:00').toISOString(), 71.5],
+      [new Date('2026-01-15T08:00').toISOString(), 71],
+      [new Date('2026-02-01T08:00').toISOString(), 70],
     ])
     expect(input[0]).toBe(points[0])
   })
