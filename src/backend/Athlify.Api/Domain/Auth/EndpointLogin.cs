@@ -15,6 +15,11 @@ public class EndpointLogin
         [Service] IHashService hashService,
         [Service] AthlifyDbContext db)
     {
+        if (string.IsNullOrWhiteSpace(input.Username) || string.IsNullOrWhiteSpace(input.Password))
+        {
+            return Results.Unauthorized();
+        }
+
         try
         {
             var dbUser = await db.Users
