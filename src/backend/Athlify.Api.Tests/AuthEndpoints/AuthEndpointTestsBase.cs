@@ -26,7 +26,7 @@ public abstract class AuthEndpointsTestsBase<T>(ITestFixture<T> fixture) where T
         return logoutResponse;
     }
 
-    protected async Task<HttpResponseMessage> LoginAsync(string username, string password)
+    protected async Task<HttpResponseMessage> LoginAsync(string? username, string? password)
     {
         var loginRequest = new { Username = username, Password = password };
         var jsonContent = new StringContent(JsonSerializer.Serialize(loginRequest), Encoding.UTF8, "application/json");
