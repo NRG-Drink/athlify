@@ -15,6 +15,7 @@ import {
   type FilterOption,
 } from './activityFilters'
 import {
+  effortLevel,
   enumLabel,
   formatDuration,
   formatHeartRate,
@@ -169,6 +170,18 @@ function EmojiValue({ emoji, label }: { emoji: string | undefined; label: string
   return (
     <Text as="span" role="img" aria-label={label} title={label} fontSize="lg" lineHeight="1">
       {emoji}
+    </Text>
+  )
+}
+
+/** The effort with the emoji of its group before the number; the group's name is the tooltip. */
+function EffortValue({ effort }: { effort: number | null | undefined }) {
+  const { t } = useTranslation()
+  const level = effortLevel(t, effort)
+  if (effort == null || !level) return <>—</>
+  return (
+    <Text as="span" title={level.label} whiteSpace="nowrap">
+      <span aria-hidden>{level.emoji}</span> {effort}
     </Text>
   )
 }
@@ -381,7 +394,7 @@ export const ActivitiesTable = memo(function ActivitiesTable({
         id: 'effort',
         header: t('activities.columns.effort'),
         accessor: (row) => row.effort ?? -1,
-        cell: (row) => row.effort ?? '—',
+        cell: (row) => <EffortValue effort={row.effort} />,
         align: 'end',
         unit: t('activities.units.effort'),
         description: t('activities.columnHints.effort'),

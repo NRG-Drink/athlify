@@ -159,6 +159,12 @@
         "STRONG": "Strong",
         "STORMY": "Stormy"
       },
+      "effortLevels": {
+        "easy": "Easy",
+        "moderate": "Moderate",
+        "hard": "Hard",
+        "max": "Maximal"
+      },
       "add": {
         "open": "Add activity",
         "title": "New activity",

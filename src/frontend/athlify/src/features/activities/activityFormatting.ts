@@ -75,6 +75,23 @@ export const windEmoji: Record<Wind, string> = {
   STORMY: '🌪️',
 }
 
+/** The effort scale in four groups, so a list shows a handful of emoji instead of ten values. */
+const effortLevels = [
+  { max: 3, key: 'easy', emoji: '😌' },
+  { max: 6, key: 'moderate', emoji: '😅' },
+  { max: 8, key: 'hard', emoji: '🥵' },
+  { max: 10, key: 'max', emoji: '🔥' },
+] as const
+
+/** Group of an effort from 1 to 10 with its emoji and translated label; undefined when not set. */
+export function effortLevel(t: TFunction, effort: number | null | undefined) {
+  if (effort == null || effort < 1) return undefined
+  const level =
+    effortLevels.find((candidate) => effort <= candidate.max) ??
+    effortLevels[effortLevels.length - 1]
+  return { emoji: level.emoji, label: t(`activities.effortLevels.${level.key}`) }
+}
+
 /** `enumOptions` with the emoji of each value, for the form's emoji choices. */
 export function emojiOptions<T extends string>(
   t: TFunction,

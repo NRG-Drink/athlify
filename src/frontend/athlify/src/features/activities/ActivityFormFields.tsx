@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   Field,
   Fieldset,
@@ -16,6 +17,7 @@ import { useTranslation } from 'react-i18next'
 import { LuCheck, LuPlus } from 'react-icons/lu'
 import { toggleId } from '../../lib/ids'
 import { MAX_EFFORT } from './activityForm'
+import { effortLevel } from './activityFormatting'
 
 /** Heading of a group of fields in the activity form. */
 export function SectionLegend({ children }: { children: ReactNode }) {
@@ -46,8 +48,11 @@ export const EffortSlider = memo(function EffortSlider({
 }: EffortSliderProps) {
   const { t } = useTranslation()
   const effort = value === '' ? 0 : Number(value)
-  const text = (current: number) =>
-    current === 0 ? t('activities.form.effortNone') : `${current}/${MAX_EFFORT}`
+  const level = effortLevel(t, effort)
+  const text = (current: number) => {
+    const group = effortLevel(t, current)
+    return group ? `${current}/${MAX_EFFORT} · ${group.label}` : t('activities.form.effortNone')
+  }
 
   return (
     <Slider.Root
@@ -74,7 +79,25 @@ export const EffortSlider = memo(function EffortSlider({
         <Slider.Track>
           <Slider.Range />
         </Slider.Track>
-        <Slider.Thumbs />
+        <Slider.Thumb index={0}>
+          {/* The emoji of the effort's group pops out above the thumb. */}
+          {level && (
+            <Box
+              position="absolute"
+              bottom="100%"
+              left="50%"
+              transform="translateX(-50%)"
+              mb="1"
+              fontSize="xl"
+              lineHeight="1"
+              pointerEvents="none"
+              aria-hidden
+            >
+              {level.emoji}
+            </Box>
+          )}
+          <Slider.HiddenInput />
+        </Slider.Thumb>
       </Slider.Control>
       <HStack justify="space-between" fontSize="xs" color="fg.muted">
         <Text>{t('activities.form.effortNone')}</Text>

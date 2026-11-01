@@ -518,7 +518,10 @@ describe('ActivitiesPage editing', () => {
       expect(slider).toHaveAttribute('aria-valuetext', 'Keine Angabe')
       slider.focus()
       await user.keyboard('{End}{ArrowLeft}{ArrowLeft}{ArrowLeft}{ArrowLeft}')
-      expect(within(dialog).getByText('6/10')).toBeInTheDocument()
+      expect(within(dialog).getByText('6/10 · Mittel')).toBeInTheDocument()
+      expect(slider).toHaveAttribute('aria-valuetext', '6/10 · Mittel')
+      // The group's emoji pops out above the thumb.
+      expect(slider).toHaveTextContent('😅')
 
       const good = within(dialog).getByRole('button', { name: 'Gut' })
       await user.click(good)

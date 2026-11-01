@@ -159,6 +159,12 @@
         "STRONG": "Stark",
         "STORMY": "Stürmisch"
       },
+      "effortLevels": {
+        "easy": "Leicht",
+        "moderate": "Mittel",
+        "hard": "Hart",
+        "max": "Maximal"
+      },
       "add": {
         "open": "Aktivität erfassen",
         "title": "Neue Aktivität",

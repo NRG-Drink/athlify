@@ -182,7 +182,8 @@ describe('ActivitiesPage', () => {
       'Feierabendrunde am See',
     )
     expect(within(table).getByText('142')).toHaveAttribute('title', '120–170')
-    expect(within(table).getByText('7')).toBeInTheDocument()
+    // Effort 7 belongs to the "Hart" group, shown as its emoji before the number.
+    expect(within(table).getByTitle('Hart')).toHaveTextContent('🥵 7')
     // Mood and wind as emoji, named by their label. The columns are hidden below 2xl, which jsdom
     // reports as `display: none`, so the role query cannot see them.
     expect(within(table).getByTitle('Gut')).toHaveTextContent('🙂')

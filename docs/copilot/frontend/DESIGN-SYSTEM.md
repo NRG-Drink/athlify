@@ -46,7 +46,9 @@ follows the operating system. Every rule below holds in both modes.
   "1 J", "Alle"); long labels go in accessible names and notes ("Letzte 30
   Tage", "in 30 Tagen").
 - No emoji in text. The one exception is a value scale where the emoji
-  carries the value (mood and wind of an activity): in the form each emoji
+  carries the value (mood, wind and the effort group of an activity —
+  1–3 😌, 4–6 😅, 7–8 🥵, 9–10 🔥, shown before the number in the table and
+  above the slider thumb in the form): in the form each emoji
   sits above its text label; in a table cell the emoji stands alone with
   the label as `aria-label` and `title`; filters and filter chips use the
   text only. Number
