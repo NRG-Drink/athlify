@@ -169,8 +169,10 @@ In short:
 
 - **Row actions.** Editing is the row itself: a click, or Enter on the
   focused row, opens the form, and `DataTable`'s `rowLabel` names the row
-  by that action ("Aktivität vom 16. Okt. 2026 bearbeiten"). There is no
-  separate edit button. The remaining actions are ghost `sm` icon buttons
+  by that action ("Aktivität vom 16.10.2026 bearbeiten"). There is no
+  separate edit button. A focused row (also after a dialog returns focus
+  to it) gets `bg.muted` cells and the `brand.solid` indicator bar on its
+  first cell, never a focus ring, which breaks apart on table rows. The remaining actions are ghost `sm` icon buttons
   in `fg.muted` with an `aria-label` that names the row: a single delete
   button (Body-Stats), or a "⋯" `Menu` (`LuEllipsis`) when there are
   several (Activities). A destructive item comes last in the menu, after a

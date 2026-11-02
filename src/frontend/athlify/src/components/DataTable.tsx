@@ -310,8 +310,16 @@ export function DataTable<T extends object>({
                 cursor={onRowClick ? 'pointer' : undefined}
                 onClick={onRowClick ? () => onRowClick(original) : undefined}
                 onKeyDown={onRowClick ? (event) => onRowKeyDown(event, original) : undefined}
-                focusVisibleRing="inside"
-                css={{ '&:hover > td': { bg: 'var(--chakra-colors-bg-subtle)' } }}
+                // A ring on a <tr> breaks apart at the cells (and at the sticky first column), so a
+                // focused row is marked on its cells: muted background and the brand indicator bar.
+                outline="none"
+                css={{
+                  '&:hover > td': { bg: 'var(--chakra-colors-bg-subtle)' },
+                  '&:focus-visible > td': { bg: 'var(--chakra-colors-bg-muted)' },
+                  '&:focus-visible > td:first-of-type': {
+                    boxShadow: 'inset 3px 0 0 var(--chakra-colors-brand-solid)',
+                  },
+                }}
               >
                 {columns.map((column, index) => {
                   const end = column.align === 'end'
