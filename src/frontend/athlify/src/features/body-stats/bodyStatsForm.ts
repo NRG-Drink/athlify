@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next'
-import { parseDateTime } from '../../lib/dates'
-import { nowInputValue, parseDecimal } from '../../lib/formValues'
+import { formatDateTime, parseDateTime } from '../../lib/dates'
+import { parseDecimal } from '../../lib/formValues'
 import { bodyStatsMetrics, type BodyStatsMetricKey } from './bodyStatsMetrics'
 
 export type BodyStatsFormValues = Record<BodyStatsMetricKey, string> & {
@@ -17,7 +17,7 @@ export const MAX_NOTE_LENGTH = 2000
 export function emptyValues(
   prefill?: Partial<Record<BodyStatsMetricKey, number>>,
 ): BodyStatsFormValues {
-  const values = { date: nowInputValue(), note: '' } as unknown as BodyStatsFormValues
+  const values = { date: formatDateTime(new Date()), note: '' } as unknown as BodyStatsFormValues
   for (const { key } of bodyStatsMetrics) {
     const value = prefill?.[key]
     values[key] = value === undefined ? '' : String(value)

@@ -1,7 +1,7 @@
 import { graphql, useMutation, useRelayEnvironment } from 'react-relay'
-import { commitLocalUpdate, ConnectionHandler, type RecordSourceSelectorProxy } from 'relay-runtime'
 import { useTranslation } from 'react-i18next'
 import { toaster } from '../../components/ui/toaster'
+import { removeFromConnections } from '../../relay/removeFromConnections'
 import type { ActivityFormInput } from './activityForm'
 import type { useActivityMutationsCreateMutation } from './__generated__/useActivityMutationsCreateMutation.graphql'
 import type { useActivityMutationsDeleteMutation } from './__generated__/useActivityMutationsDeleteMutation.graphql'
@@ -32,17 +32,6 @@ const deleteMutation = graphql`
   }
 `
 
-/** Takes the activity out of the loaded list and lowers the count, if it is there. */
-function removeFromList(store: RecordSourceSelectorProxy, connectionId: string, id: string) {
-  const connection = store.get(connectionId)
-  if (!connection) return
-  const edges = connection.getLinkedRecords('edges') ?? []
-  if (!edges.some((edge) => edge?.getLinkedRecord('node')?.getDataID() === id)) return
-  ConnectionHandler.deleteNode(connection, id)
-  const count = connection.getValue('totalCount')
-  if (typeof count === 'number') connection.setValue(Math.max(0, count - 1), 'totalCount')
-}
-
 interface Callbacks {
   /** Called after the server confirmed the change, so the dialog can close (and, after a create, the list refetch). */
   onSuccess: () => void
@@ -70,10 +59,7 @@ export function useActivityMutations(connectionId: string) {
     toaster.create({ type: 'error', title: t(key) })
   }
 
-  // Not in an `updater`: that also runs for a payload with errors, where `null` means "failed",
-  // not "gone", and the row must stay.
-  const removeLocally = (id: string) =>
-    commitLocalUpdate(environment, (store) => removeFromList(store, connectionId, id))
+  const removeLocally = (id: string) => removeFromConnections(environment, [connectionId], id)
 
   const create = (input: ActivityFormInput, { onSuccess }: Callbacks) =>
     commitCreate({

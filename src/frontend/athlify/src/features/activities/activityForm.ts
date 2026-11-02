@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next'
-import { parseDateTime } from '../../lib/dates'
-import { nowInputValue, parseDecimal, toInputValue } from '../../lib/formValues'
+import { formatDateTime, parseDateTime } from '../../lib/dates'
+import { parseDecimal } from '../../lib/formValues'
 import {
   activityTypes,
   asEnum,
@@ -11,6 +11,7 @@ import {
   type Wind,
 } from './activityFilters'
 import { formatDuration } from './activityFormatting'
+import type { useActivityMutationsCreateMutation } from './__generated__/useActivityMutationsCreateMutation.graphql'
 
 /** Text values of the activity form; empty strings stand for "not set". */
 export interface ActivityFormValues {
@@ -54,24 +55,8 @@ export const detailFields = [
   'tagIds',
 ] as const satisfies readonly (keyof ActivityFormValues)[]
 
-/** Mutation input for creating or updating an activity. */
-export interface ActivityFormInput {
-  date: string
-  type: ActivityType
-  time: number
-  distance: number
-  elevationGain: number | null
-  description: string | null
-  heartRateMin: number | null
-  heartRateMax: number | null
-  heartRateAverage: number | null
-  mood: Mood | null
-  effort: number | null
-  wind: Wind | null
-  vehicleId: string | null
-  gadgetIds: string[]
-  tagIds: string[]
-}
+/** Mutation input for creating or updating an activity, as the schema defines it. */
+export type ActivityFormInput = useActivityMutationsCreateMutation['variables']['input']
 
 /** What the form reads from an existing activity. */
 export interface ActivityFormSource {
@@ -95,7 +80,7 @@ export interface ActivityFormSource {
 export const MAX_DESCRIPTION_LENGTH = 2000
 const MIN_HEART_RATE = 20
 const MAX_HEART_RATE = 250
-export const MIN_EFFORT = 1
+const MIN_EFFORT = 1
 export const MAX_EFFORT = 10
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -123,7 +108,7 @@ export function newActivityValues(
   now = new Date(),
 ): ActivityFormValues {
   return {
-    date: nowInputValue(now),
+    date: formatDateTime(now),
     type: asEnum(activityTypes, defaults.type) ?? 'ROAD',
     duration: '',
     time: null,
@@ -148,7 +133,7 @@ export function activityToValues(
   { asCopy = false, now = new Date() }: { asCopy?: boolean; now?: Date } = {},
 ): ActivityFormValues {
   return {
-    date: asCopy ? nowInputValue(now) : toInputValue(activity.date),
+    date: formatDateTime(asCopy ? now : new Date(activity.date)),
     type: asEnum(activityTypes, activity.type) ?? 'ROAD',
     duration: formatDuration(activity.time),
     time: activity.time,
@@ -171,8 +156,6 @@ export function activityToValues(
 export function countDetails(values: ActivityFormValues): number {
   return detailFields.filter((field) => values[field].length > 0).length
 }
-
-export const hasDetails = (values: ActivityFormValues) => countDetails(values) > 0
 
 /** Whole number, `undefined` when empty, `NaN` when the text is not a whole number. */
 function parseInteger(raw: string): number | undefined {

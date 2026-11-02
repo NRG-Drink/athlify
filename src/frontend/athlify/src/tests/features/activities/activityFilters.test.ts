@@ -3,7 +3,6 @@ import {
   activeFilterValueLabels,
   activityFiltersToWhere,
   applyActivityFilters,
-  clearActivityFilter,
   parseActivityFilters,
   summarizeValues,
   setActivityFilterValues,
@@ -65,7 +64,7 @@ describe('activity filters', () => {
   })
 
   it('clears every value of one filter and keeps the others', () => {
-    expect(clearActivityFilter({ types: ['ROAD'], winds: ['CALM'] }, 'type')).toEqual({
+    expect(setActivityFilterValues({ types: ['ROAD'], winds: ['CALM'] }, 'type', [])).toEqual({
       types: undefined,
       winds: ['CALM'],
     })

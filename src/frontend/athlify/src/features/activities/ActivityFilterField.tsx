@@ -41,7 +41,7 @@ export function ActivityFilterField({
     setSource(value)
     setTicked(value)
   }
-  // What differs per filter: its options, the ticked values and whether the list can be searched.
+  // What differs per filter: its options and whether more exist than were loaded.
   const config: Record<ActivityFilterKey, { options: readonly FilterOption[]; hasMore: boolean }> =
     {
       type: { options: enumOptions(t, 'types', activityTypes), hasMore: false },

@@ -16,6 +16,7 @@ import { memo, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LuCheck, LuPlus } from 'react-icons/lu'
 import { toggleId } from '../../lib/ids'
+import { type FilterOption } from './activityFilters'
 import { MAX_EFFORT } from './activityForm'
 import { effortLevel } from './activityFormatting'
 
@@ -188,7 +189,7 @@ export interface ChipCreate {
 
 interface ChipChoiceProps {
   label: string
-  options: readonly { id: string; label: string }[]
+  options: readonly FilterOption[]
   value: string[]
   onChange: (ids: string[]) => void
   /** More options exist than were loaded. */

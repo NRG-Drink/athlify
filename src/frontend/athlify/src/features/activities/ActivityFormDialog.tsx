@@ -5,8 +5,6 @@ import {
   Field,
   Fieldset,
   Grid,
-  Input,
-  InputGroup,
   NativeSelect,
   SimpleGrid,
   Stack,
@@ -18,13 +16,12 @@ import { useTranslation } from 'react-i18next'
 import { LuChevronRight } from 'react-icons/lu'
 import { DateTimeField } from '../../components/DateTimeField'
 import { FormDialog } from '../../components/FormDialog'
-import { normalizeDecimal } from '../../lib/formValues'
+import { NumberField } from '../../components/NumberField'
 import { useFormat } from '../../i18n/useFormat'
 import {
   countDetails,
   detailFields,
   heartRateFields,
-  hasDetails,
   MAX_DESCRIPTION_LENGTH,
   normalizeDuration,
   toInput,
@@ -90,7 +87,7 @@ interface SelectProps<T extends string> {
   onChange: (value: T | '') => void
   /** Label of the empty choice; without it a value is required. */
   emptyLabel?: string
-  options: readonly { id: T; label: string }[]
+  options: readonly (FilterOption & { id: T })[]
   error?: string
 }
 
@@ -125,57 +122,6 @@ function SelectField<T extends string>({
   )
 }
 
-interface NumberProps {
-  label: string
-  value: string
-  onChange: (value: string) => void
-  unit?: string
-  required?: boolean
-  error?: string
-  placeholder?: string
-  /** `text` for the duration: phone number pads have no colon. */
-  inputMode?: 'decimal' | 'numeric' | 'text'
-  /** Canonical text when the field is left; numbers by default. */
-  normalize?: (raw: string) => string
-}
-
-function NumberField({
-  label,
-  value,
-  onChange,
-  unit,
-  required,
-  error,
-  placeholder,
-  inputMode = 'decimal',
-  normalize = normalizeDecimal,
-}: NumberProps) {
-  // type="text": a number input rejects the decimal comma of German keyboards.
-  const input = (
-    <Input
-      type="text"
-      inputMode={inputMode}
-      textAlign="end"
-      placeholder={placeholder}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      onBlur={() => {
-        const normalized = normalize(value)
-        if (normalized !== value) onChange(normalized)
-      }}
-    />
-  )
-  return (
-    <Field.Root required={required} invalid={!!error}>
-      <Field.Label>{label}</Field.Label>
-      {/* An addon, not an overlay: an overlay is one input height wide and covers the digits of
-          longer units such as "bpm". */}
-      {unit ? <InputGroup endAddon={unit}>{input}</InputGroup> : input}
-      <Field.ErrorText>{error}</Field.ErrorText>
-    </Field.Root>
-  )
-}
-
 export function ActivityFormDialog({
   open,
   onOpenChange,
@@ -204,7 +150,7 @@ export function ActivityFormDialog({
       setShown({ mode, calculated })
       setValues(initialValues)
       setErrors({})
-      setDetailsOpen(mode === 'edit' && hasDetails(initialValues))
+      setDetailsOpen(mode === 'edit' && countDetails(initialValues) > 0)
     }
   }
 

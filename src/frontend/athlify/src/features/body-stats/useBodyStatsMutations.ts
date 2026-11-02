@@ -1,7 +1,8 @@
 import { graphql, useMutation, useRelayEnvironment } from 'react-relay'
-import { commitLocalUpdate, ConnectionHandler, ROOT_ID } from 'relay-runtime'
+import { ConnectionHandler, ROOT_ID } from 'relay-runtime'
 import { useTranslation } from 'react-i18next'
 import { toaster } from '../../components/ui/toaster'
+import { removeFromConnections } from '../../relay/removeFromConnections'
 import { useBodyStatsHistorySort } from './bodyStatsSort'
 import type { useBodyStatsMutationsAddMutation } from './__generated__/useBodyStatsMutationsAddMutation.graphql'
 import type { useBodyStatsMutationsDeleteMutation } from './__generated__/useBodyStatsMutationsDeleteMutation.graphql'
@@ -88,16 +89,8 @@ export function useBodyStatsMutations() {
     toaster.create({ type: 'error', title: t(key) })
   }
 
-  // Not in an `updater`: that also runs for a payload with errors, where `null` means "failed",
-  // not "gone", and the entry must stay.
   const removeLocally = (id: string) =>
-    commitLocalUpdate(environment, (store) => {
-      for (const connectionId of connectionIds(historyOrder)) {
-        const connection = store.get(connectionId)
-        if (connection) ConnectionHandler.deleteNode(connection, id)
-      }
-      store.delete(id)
-    })
+    removeFromConnections(environment, connectionIds(historyOrder), id)
 
   const add = (input: BodyStatsInput, { onSuccess }: Callbacks) =>
     commitAdd({

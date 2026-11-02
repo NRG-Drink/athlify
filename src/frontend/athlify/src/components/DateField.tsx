@@ -1,6 +1,7 @@
 import { DatePicker, IconButton, parseDate as toCalendarDate, Portal } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { LuCalendarDays } from 'react-icons/lu'
+import { localeFor } from '../i18n/useFormat'
 import { formatDate, parseDate } from '../lib/dates'
 
 interface DateFieldProps {
@@ -57,7 +58,7 @@ export function DateField({ value, onChange, label, invalid, portalled = true }:
         const parsed = parseDate(text)
         return parsed ? toCalendarDate(parsed) : undefined
       }}
-      locale={i18n.language.startsWith('de') ? 'de-CH' : 'en-GB'}
+      locale={localeFor(i18n.language)}
       startOfWeek={1}
       // The calendar's three tables only exist while it is open.
       lazyMount

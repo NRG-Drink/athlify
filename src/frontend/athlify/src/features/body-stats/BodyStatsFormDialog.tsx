@@ -1,9 +1,9 @@
-import { Field, Input, InputGroup, SimpleGrid, Stack, Textarea } from '@chakra-ui/react'
+import { Field, SimpleGrid, Stack, Textarea } from '@chakra-ui/react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DateTimeField } from '../../components/DateTimeField'
-import { normalizeDecimal } from '../../lib/formValues'
 import { FormDialog } from '../../components/FormDialog'
+import { NumberField } from '../../components/NumberField'
 import {
   MAX_NOTE_LENGTH,
   toInput,
@@ -76,26 +76,15 @@ export function BodyStatsFormDialog({
 
         <SimpleGrid columns={{ base: 1, sm: 2 }} gap="4">
           {bodyStatsMetrics.map((metric) => (
-            <Field.Root key={metric.key} required invalid={!!errors[metric.key]}>
-              <Field.Label>{t(metric.labelKey)}</Field.Label>
-              <InputGroup endElement={metric.unit}>
-                {/* type="text": a number input rejects the decimal comma of German keyboards. */}
-                <Input
-                  type="text"
-                  inputMode="decimal"
-                  textAlign="end"
-                  value={values[metric.key]}
-                  onChange={(e) => setValues({ ...values, [metric.key]: e.target.value })}
-                  onBlur={() =>
-                    setValues((current) => ({
-                      ...current,
-                      [metric.key]: normalizeDecimal(current[metric.key]),
-                    }))
-                  }
-                />
-              </InputGroup>
-              <Field.ErrorText>{errors[metric.key]}</Field.ErrorText>
-            </Field.Root>
+            <NumberField
+              key={metric.key}
+              label={t(metric.labelKey)}
+              value={values[metric.key]}
+              onChange={(value) => setValues((current) => ({ ...current, [metric.key]: value }))}
+              unit={metric.unit}
+              required
+              error={errors[metric.key]}
+            />
           ))}
         </SimpleGrid>
 

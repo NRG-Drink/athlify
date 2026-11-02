@@ -1,11 +1,11 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { formatDate, formatDateTime } from '../lib/dates'
+import { formatDate, formatDateTime, formatDayMonth } from '../lib/dates'
 import type { MetricUnit } from '../lib/metrics'
 
 // German uses the Swiss conventions of the product ("Velos", decimal point); the team decided on
 // the decimal point. This is the single place to switch to de-DE (decimal comma).
-const localeFor = (language: string) => (language.startsWith('de') ? 'de-CH' : 'en-GB')
+export const localeFor = (language: string) => (language.startsWith('de') ? 'de-CH' : 'en-GB')
 
 const NO_VALUE = '—'
 const MINUS = '−'
@@ -61,9 +61,7 @@ export function createFormatter(language: string): Formatter {
     dateTime: (value) => formatDateTime(toDate(value)),
     // Days as `02.10.`, the date format without the year; months and years by name.
     axisDate: (value, span) =>
-      span === 'days'
-        ? formatDate(new Date(value)).slice(0, 6)
-        : axisFormats[span].format(new Date(value)),
+      span === 'days' ? formatDayMonth(new Date(value)) : axisFormats[span].format(new Date(value)),
   }
 }
 

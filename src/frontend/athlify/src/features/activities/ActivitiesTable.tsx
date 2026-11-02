@@ -1,6 +1,7 @@
 import { Flex, IconButton, Menu, Portal, Tag, Text } from '@chakra-ui/react'
 import { memo, useMemo, type ReactNode, type Ref } from 'react'
 import { graphql, useFragment } from 'react-relay'
+import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { LuCopy, LuEllipsis, LuTrash2 } from 'react-icons/lu'
 import { DataTable, type DataTableColumn } from '../../components/DataTable'
@@ -20,11 +21,11 @@ import {
   formatDuration,
   formatHeartRate,
   formatOptionalNumber,
-  moodEmoji,
+  moodEmojiOf,
   moodRank,
   tagColorPalette,
   vehicleLabel,
-  windEmoji,
+  windEmojiOf,
   windRank,
 } from './activityFormatting'
 import { isSortColumn, type ListSort } from '../../lib/sort'
@@ -111,53 +112,49 @@ function TagChips({ row }: { row: ActivityRow }) {
 
 interface RowActionsProps {
   row: ActivityRow
+  /** Accessible name of the menu button; it names the row. */
+  label: string
+  labels: { duplicate: string; delete: string }
   onDuplicate: (row: ActivityRow) => void
   onDelete: (row: ActivityRow) => void
 }
 
-/** Duplicate and the destructive delete (last) in a menu; a click on the row itself edits. */
-function RowActions({ row, onDuplicate, onDelete }: RowActionsProps) {
-  const { t } = useTranslation()
-  const format = useFormat()
-  const date = format.date(row.date)
+/**
+ * Duplicate and the destructive delete (last) in a menu; a click on the row itself edits. It gets
+ * its texts as props, so a row adds no hooks of its own.
+ */
+function RowActions({ row, label, labels, onDuplicate, onDelete }: RowActionsProps) {
   return (
-    <Flex gap="1" justify="flex-end">
-      <Menu.Root positioning={{ placement: 'bottom-end' }}>
-        <Menu.Trigger asChild>
-          <IconButton
-            variant="ghost"
-            size="sm"
-            color="fg.muted"
-            aria-label={t('activities.row.more', { date })}
-          >
-            <LuEllipsis />
-          </IconButton>
-        </Menu.Trigger>
-        <Portal>
-          <Menu.Positioner>
-            {/* Portals leave the app's brand palette, so the menu sets it again. */}
-            <Menu.Content colorPalette="brand">
-              {/* onClick, not onSelect: in the page tests onSelect never fired (see frontend
-                  LEARNINGS); Enter on a highlighted item clicks it, so the keyboard works too. */}
-              <Menu.Item value="duplicate" onClick={() => onDuplicate(row)}>
-                <LuCopy aria-hidden />
-                {t('activities.duplicate.action')}
-              </Menu.Item>
-              <Menu.Separator />
-              <Menu.Item
-                value="delete"
-                color="fg.error"
-                _highlighted={{ bg: 'bg.error' }}
-                onClick={() => onDelete(row)}
-              >
-                <LuTrash2 aria-hidden />
-                {t('activities.delete.action')}
-              </Menu.Item>
-            </Menu.Content>
-          </Menu.Positioner>
-        </Portal>
-      </Menu.Root>
-    </Flex>
+    <Menu.Root positioning={{ placement: 'bottom-end' }}>
+      <Menu.Trigger asChild>
+        <IconButton variant="ghost" size="sm" color="fg.muted" aria-label={label}>
+          <LuEllipsis />
+        </IconButton>
+      </Menu.Trigger>
+      <Portal>
+        <Menu.Positioner>
+          {/* Portals leave the app's brand palette, so the menu sets it again. */}
+          <Menu.Content colorPalette="brand">
+            {/* onClick, not onSelect: in the page tests onSelect never fired (see frontend
+                LEARNINGS); Enter on a highlighted item clicks it, so the keyboard works too. */}
+            <Menu.Item value="duplicate" onClick={() => onDuplicate(row)}>
+              <LuCopy aria-hidden />
+              {labels.duplicate}
+            </Menu.Item>
+            <Menu.Separator />
+            <Menu.Item
+              value="delete"
+              color="fg.error"
+              _highlighted={{ bg: 'bg.error' }}
+              onClick={() => onDelete(row)}
+            >
+              <LuTrash2 aria-hidden />
+              {labels.delete}
+            </Menu.Item>
+          </Menu.Content>
+        </Menu.Positioner>
+      </Portal>
+    </Menu.Root>
   )
 }
 
@@ -175,10 +172,9 @@ function EmojiValue({ emoji, label }: { emoji: string | undefined; label: string
 }
 
 /** The effort with the emoji of its group before the number; the group's name is the tooltip. */
-function EffortValue({ effort }: { effort: number | null | undefined }) {
-  const { t } = useTranslation()
+function effortCell(t: TFunction, effort: number | null | undefined) {
   const level = effortLevel(t, effort)
-  if (effort == null || !level) return <>—</>
+  if (!level) return '—'
   return (
     <Text as="span" title={level.label} whiteSpace="nowrap">
       <span aria-hidden>{level.emoji}</span> {effort}
@@ -245,6 +241,10 @@ export const ActivitiesTable = memo(function ActivitiesTable({
 }: ActivitiesTableProps) {
   const { t } = useTranslation()
   const format = useFormat()
+  const actionLabels = useMemo(
+    () => ({ duplicate: t('activities.duplicate.action'), delete: t('activities.delete.action') }),
+    [t],
+  )
   const rows = useFragment(tableFragment, entries)
 
   const columnFilters = useMemo(() => {
@@ -394,7 +394,7 @@ export const ActivitiesTable = memo(function ActivitiesTable({
         id: 'effort',
         header: t('activities.columns.effort'),
         accessor: (row) => row.effort ?? -1,
-        cell: (row) => <EffortValue effort={row.effort} />,
+        cell: (row) => effortCell(t, row.effort),
         align: 'end',
         unit: t('activities.units.effort'),
         description: t('activities.columnHints.effort'),
@@ -406,10 +406,7 @@ export const ActivitiesTable = memo(function ActivitiesTable({
         description: t('activities.columnHints.mood'),
         accessor: (row) => moodRank(row.mood),
         cell: (row) => (
-          <EmojiValue
-            emoji={moodEmoji[row.mood as keyof typeof moodEmoji]}
-            label={enumLabel(t, 'moods', row.mood)}
-          />
+          <EmojiValue emoji={moodEmojiOf(row.mood)} label={enumLabel(t, 'moods', row.mood)} />
         ),
         ...secondary,
         sortable: false,
@@ -420,10 +417,7 @@ export const ActivitiesTable = memo(function ActivitiesTable({
         description: t('activities.columnHints.wind'),
         accessor: (row) => windRank(row.wind),
         cell: (row) => (
-          <EmojiValue
-            emoji={windEmoji[row.wind as keyof typeof windEmoji]}
-            label={enumLabel(t, 'winds', row.wind)}
-          />
+          <EmojiValue emoji={windEmojiOf(row.wind)} label={enumLabel(t, 'winds', row.wind)} />
         ),
         ...secondary,
         hideBelow: filterColumnBreakpoint.wind,
@@ -477,7 +471,15 @@ export const ActivitiesTable = memo(function ActivitiesTable({
       actionsLabel={t('activities.row.actionsColumn')}
       onRowClick={onEdit}
       rowLabel={(row) => t('activities.row.edit', { date: format.date(row.date) })}
-      rowActions={(row) => <RowActions row={row} onDuplicate={onDuplicate} onDelete={onDelete} />}
+      rowActions={(row) => (
+        <RowActions
+          row={row}
+          label={t('activities.row.more', { date: format.date(row.date) })}
+          labels={actionLabels}
+          onDuplicate={onDuplicate}
+          onDelete={onDelete}
+        />
+      )}
       pagination={{
         hasNextPage,
         isLoadingNext,

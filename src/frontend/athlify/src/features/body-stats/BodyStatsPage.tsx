@@ -28,7 +28,7 @@ import type { BodyStatsPage_history$key } from './__generated__/BodyStatsPage_hi
 import type { BodyStatsPageHistoryMoreQuery } from './__generated__/BodyStatsPageHistoryMoreQuery.graphql'
 import type { BodyStatsPageHistoryQuery } from './__generated__/BodyStatsPageHistoryQuery.graphql'
 import { BodyStatsChart } from './BodyStatsChart'
-import { toInputValue } from '../../lib/formValues'
+import { formatDateTime } from '../../lib/dates'
 import { emptyValues, type BodyStatsFormValues } from './bodyStatsForm'
 import { BodyStatsFormDialog } from './BodyStatsFormDialog'
 import { BodyStatsKpis } from './BodyStatsKpis'
@@ -100,7 +100,7 @@ type AnalyticsStatus = 'pending' | 'ready' | 'empty'
 
 function rowToValues(row: BodyStatsRow): BodyStatsFormValues {
   return {
-    date: toInputValue(row.date),
+    date: formatDateTime(new Date(row.date)),
     weight: String(row.weight),
     bodyFatPercentage: String(row.bodyFatPercentage),
     musclePercentage: String(row.musclePercentage),

@@ -3,14 +3,13 @@ import { describe, expect, it } from 'vitest'
 import {
   activityToValues,
   countDetails,
-  hasDetails,
   newActivityValues,
   parseDuration,
   toInput,
   validate,
   type ActivityFormValues,
 } from '../../../features/activities/activityForm'
-import { nowInputValue } from '../../../lib/formValues'
+import { formatDateTime } from '../../../lib/dates'
 
 const t = i18next.getFixedT('de')
 const now = new Date(2026, 9, 12, 7, 30)
@@ -54,8 +53,8 @@ describe('validate', () => {
   })
 
   it('rejects a date more than a day ahead', () => {
-    const tomorrow = nowInputValue(new Date(now.getTime() + 23 * 3600 * 1000))
-    const later = nowInputValue(new Date(now.getTime() + 25 * 3600 * 1000))
+    const tomorrow = formatDateTime(new Date(now.getTime() + 23 * 3600 * 1000))
+    const later = formatDateTime(new Date(now.getTime() + 25 * 3600 * 1000))
     expect(validate(valid({ date: tomorrow }), t, now).date).toBeUndefined()
     expect(validate(valid({ date: later }), t, now).date).toBe(
       'Das Datum darf nicht in der Zukunft liegen.',
@@ -247,9 +246,8 @@ describe('form values', () => {
   })
 
   it('knows whether a detail field holds a value', () => {
-    expect(hasDetails(newActivityValues({}, now))).toBe(false)
-    expect(hasDetails(activityToValues(activity))).toBe(true)
-    expect(hasDetails(valid({ tagIds: ['tag-1'] }))).toBe(true)
+    expect(countDetails(newActivityValues({}, now))).toBe(0)
+    expect(countDetails(valid({ tagIds: ['tag-1'] }))).toBe(1)
     // heartRateAverage, wind and a gadget
     expect(countDetails(activityToValues(activity))).toBe(3)
   })

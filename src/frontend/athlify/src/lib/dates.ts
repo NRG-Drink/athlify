@@ -4,11 +4,17 @@
  * native date inputs would follow the browser's locale instead (for example `11/01/2026, 11:31 PM`).
  */
 
-const two = (value: number) => String(value).padStart(2, '0')
+/** Zero-padded to two digits: `7` is `07`. */
+export const two = (value: number) => String(value).padStart(2, '0')
 
 /** `01.11.2026` */
 export function formatDate(date: Date): string {
   return `${two(date.getDate())}.${two(date.getMonth() + 1)}.${date.getFullYear()}`
+}
+
+/** `01.11.`, the date without the year, for chart axes. */
+export function formatDayMonth(date: Date): string {
+  return `${two(date.getDate())}.${two(date.getMonth() + 1)}.`
 }
 
 /** `01.11.2026, 23:31` */

@@ -34,11 +34,11 @@ const toDraft = (selection: DateRangeSelection) => ({
   aggregation: selection.aggregation,
 })
 
-/** An ISO key from the field's text; empty stays empty, unreadable text becomes an invalid key. */
-const toKey = (text: string) => {
+/** The ISO key of the field's text; empty stays empty (`missing`), null when it is not a date. */
+const toKey = (text: string): string | null => {
   if (text.trim() === '') return ''
   const date = parseDate(text)
-  return date ? localDateKey(date) : 'invalid'
+  return date ? localDateKey(date) : null
 }
 
 export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
@@ -60,7 +60,12 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const result = validateDateRange(toKey(draft.range.from), toKey(draft.range.to))
+    const from = toKey(draft.range.from)
+    const to = toKey(draft.range.to)
+    const result =
+      from === null || to === null
+        ? { valid: false as const, error: 'invalidDate' as const }
+        : validateDateRange(from, to)
     if (!result.valid) {
       setError(t(`bodyStats.range.errors.${result.error}`))
       return

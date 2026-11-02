@@ -1,14 +1,13 @@
+import { two } from '../../lib/dates'
 import type { TFunction } from 'i18next'
 import type { Formatter } from '../../i18n/useFormat'
-import { moods, winds, type Mood, type Wind } from './activityFilters'
-
-const twoDigits = (value: number) => String(value).padStart(2, '0')
+import { asEnum, moods, winds, type Mood, type Wind } from './activityFilters'
 
 /** Hours and minutes, matching the "Std." unit of the column: 2400 s is "0:40", 5400 s is "1:30". */
 export function formatDuration(seconds: number) {
   const hours = Math.floor(seconds / 3600)
   const minutes = Math.floor((seconds % 3600) / 60)
-  return `${hours}:${twoDigits(minutes)}`
+  return `${hours}:${two(minutes)}`
 }
 
 /** The unit is shown in the column header, so the cell holds the number only. */
@@ -57,7 +56,7 @@ export function enumOptions<T extends string>(
   return values.map((value) => ({ id: value, label: enumLabel(t, group, value) }))
 }
 
-/** Shown next to the label in the form's mood choice; they carry the value, not decoration. */
+/** Emoji of each mood, in the form's choice and the table; they carry the value, not decoration. */
 export const moodEmoji: Record<Mood, string> = {
   VERY_BAD: '😫',
   BAD: '🙁',
@@ -66,7 +65,7 @@ export const moodEmoji: Record<Mood, string> = {
   VERY_GOOD: '😄',
 }
 
-/** Shown next to the label in the form's wind choice, rising with the wind's strength. */
+/** Emoji of each wind, in the form's choice and the table, rising with the wind's strength. */
 export const windEmoji: Record<Wind, string> = {
   CALM: '🌿',
   LIGHT: '🍃',
@@ -90,6 +89,18 @@ export function effortLevel(t: TFunction, effort: number | null | undefined) {
     effortLevels.find((candidate) => effort <= candidate.max) ??
     effortLevels[effortLevels.length - 1]
   return { emoji: level.emoji, label: t(`activities.effortLevels.${level.key}`) }
+}
+
+/** The emoji of a mood from the API; undefined for none or a value newer than this client. */
+export const moodEmojiOf = (value: string | null | undefined) => {
+  const mood = asEnum(moods, value)
+  return mood && moodEmoji[mood]
+}
+
+/** The emoji of a wind from the API; undefined for none or a value newer than this client. */
+export const windEmojiOf = (value: string | null | undefined) => {
+  const wind = asEnum(winds, value)
+  return wind && windEmoji[wind]
 }
 
 /** `enumOptions` with the emoji of each value, for the form's emoji choices. */

@@ -31,20 +31,18 @@ export function asEnum<T extends string>(
   return allowed.find((item) => item === value)
 }
 
-function readEnum<T extends string>(params: URLSearchParams, key: string, allowed: readonly T[]) {
-  return readValues(params, key)
-    .map((value) => asEnum(allowed, value))
-    .filter((value): value is T => value !== undefined)
-}
+/** The ids that are allowed enum values, in their order; unknown ones are dropped. */
+const enumValues = <T extends string>(allowed: readonly T[], ids: readonly string[]) =>
+  ids.map((id) => asEnum(allowed, id)).filter((value): value is T => value !== undefined)
 
 const orUndefined = <T>(list: T[]) => (list.length > 0 ? list : undefined)
 
 export function parseActivityFilters(params: URLSearchParams): ActivityFilters {
   return {
-    types: orUndefined(readEnum(params, 'type', activityTypes)),
+    types: orUndefined(enumValues(activityTypes, readValues(params, 'type'))),
     vehicleIds: orUndefined(readValues(params, 'vehicle')),
     tagIds: orUndefined(readValues(params, 'tag')),
-    winds: orUndefined(readEnum(params, 'wind', winds)),
+    winds: orUndefined(enumValues(winds, readValues(params, 'wind'))),
   }
 }
 
@@ -94,9 +92,6 @@ export function filterValueCount(key: ActivityFilterKey, filters: ActivityFilter
   return filters[activityFilterFields[key]]?.length ?? 0
 }
 
-const enumValues = <T extends string>(allowed: readonly T[], ids: readonly string[]) =>
-  ids.map((id) => asEnum(allowed, id)).filter((value): value is T => value !== undefined)
-
 /** Sets the ticked values of one filter; an empty list turns it off. Unknown enum values are ignored. */
 export function setActivityFilterValues(
   filters: ActivityFilters,
@@ -113,14 +108,6 @@ export function setActivityFilterValues(
     case 'wind':
       return { ...filters, winds: orUndefined(enumValues(winds, ids)) }
   }
-}
-
-/** Removes every ticked value of one filter. */
-export function clearActivityFilter(
-  filters: ActivityFilters,
-  key: ActivityFilterKey,
-): ActivityFilters {
-  return { ...filters, [activityFilterFields[key]]: undefined }
 }
 
 /** Breakpoints below which a column is hidden; the filter summary offers its filter there instead. */

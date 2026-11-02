@@ -92,6 +92,19 @@ export interface DataTableProps<T extends object> {
  * Every header cell, including the row-actions column, stays on top while the rows scroll under it,
  * so the header always spans the full width of the table.
  */
+/**
+ * Hover and focus of a body row, shared by every row. A ring on a <tr> breaks apart at the cells (and
+ * at the sticky first column), so a focused row is marked on its cells: muted background and the
+ * brand indicator bar.
+ */
+const rowCss = {
+  '&:hover > td': { bg: 'var(--chakra-colors-bg-subtle)' },
+  '&:focus-visible > td': { bg: 'var(--chakra-colors-bg-muted)' },
+  '&:focus-visible > td:first-of-type': {
+    boxShadow: 'inset 3px 0 0 var(--chakra-colors-brand-solid)',
+  },
+} as const
+
 const stickyHeader = { position: 'sticky', top: '0', zIndex: 1, bg: 'bg' } as const
 
 const hidden = (hideBelow?: Breakpoint) =>
@@ -310,16 +323,8 @@ export function DataTable<T extends object>({
                 cursor={onRowClick ? 'pointer' : undefined}
                 onClick={onRowClick ? () => onRowClick(original) : undefined}
                 onKeyDown={onRowClick ? (event) => onRowKeyDown(event, original) : undefined}
-                // A ring on a <tr> breaks apart at the cells (and at the sticky first column), so a
-                // focused row is marked on its cells: muted background and the brand indicator bar.
                 outline="none"
-                css={{
-                  '&:hover > td': { bg: 'var(--chakra-colors-bg-subtle)' },
-                  '&:focus-visible > td': { bg: 'var(--chakra-colors-bg-muted)' },
-                  '&:focus-visible > td:first-of-type': {
-                    boxShadow: 'inset 3px 0 0 var(--chakra-colors-brand-solid)',
-                  },
-                }}
+                css={rowCss}
               >
                 {columns.map((column, index) => {
                   const end = column.align === 'end'

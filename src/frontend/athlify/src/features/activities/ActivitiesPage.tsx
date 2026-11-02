@@ -12,7 +12,11 @@ import { QueryBoundary } from '../../components/QueryBoundary'
 import { useFetchKey } from '../../relay/useFetchKey'
 import { useLoadMore } from '../../relay/useLoadMore'
 import { useParamsRefresh } from '../../relay/useParamsRefresh'
-import { activeActivityFilterKeys, type ActivityFilters } from './activityFilters'
+import {
+  activeActivityFilterKeys,
+  type ActivityFilters,
+  type FilterOption,
+} from './activityFilters'
 import { activityToValues, newActivityValues, type ActivityFormInput } from './activityForm'
 import { ActivityFormDialog } from './ActivityFormDialog'
 import {
@@ -63,6 +67,7 @@ const pageQuery = graphql`
       }
     }
     tags(first: 200) {
+      __id
       nodes {
         id
         name
@@ -114,17 +119,20 @@ const listFragment = graphql`
   }
 `
 
-type Option = { id: string; label: string }
 type Equipment = { id: string; brand: string; model: string; nickname?: string | null }
 
-const equipmentOptions = (items: readonly Equipment[] | null | undefined): Option[] =>
+const equipmentOptions = (items: readonly Equipment[] | null | undefined): FilterOption[] =>
   items?.map((item) => ({ id: item.id, label: vehicleLabel(item) })) ?? []
+
+const tagOptions = (
+  items: readonly { id: string; name: string }[] | null | undefined,
+): FilterOption[] => items?.map((tag) => ({ id: tag.id, label: tag.name })) ?? []
 
 /**
  * The loaded choices plus those of the activity in the form. A bicycle, gadget or tag beyond the
  * first 200 choices then still shows its name and is kept when saving.
  */
-function withChoices(options: readonly Option[], current: readonly Option[]) {
+function withChoices(options: readonly FilterOption[], current: readonly FilterOption[]) {
   const missing = current.filter((item) => !options.some((option) => option.id === item.id))
   return missing.length > 0 ? [...options, ...missing] : options
 }
@@ -166,7 +174,7 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
   // `totalCount` before a create; the refetch after it tells whether the filters show the new one.
   const countBeforeCreate = useRef<number | null>(null)
   const mutations = useActivityMutations(data.activities.__id)
-  const { createTag, isCreating: isCreatingTag } = useCreateTag()
+  const { createTag, isCreating: isCreatingTag } = useCreateTag(queryData.tags?.__id)
 
   const activities = useMemo(
     () => data.activities?.edges?.map((edge) => edge.node) ?? [],
@@ -174,10 +182,7 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
   )
   const vehicles = useMemo(() => equipmentOptions(queryData.vehicles?.nodes), [queryData.vehicles])
   const gadgets = useMemo(() => equipmentOptions(queryData.gadgets?.nodes), [queryData.gadgets])
-  const tags = useMemo(
-    () => queryData.tags?.nodes?.map((tag) => ({ id: tag.id, label: tag.name })) ?? [],
-    [queryData.tags],
-  )
+  const tags = useMemo(() => tagOptions(queryData.tags?.nodes), [queryData.tags])
   const hasMoreVehicles = queryData.vehicles?.pageInfo.hasNextPage ?? false
   const hasMoreGadgets = queryData.gadgets?.pageInfo.hasNextPage ?? false
   const hasMoreTags = queryData.tags?.pageInfo.hasNextPage ?? false
@@ -279,7 +284,7 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
     return {
       vehicles: withChoices(vehicles, equipmentOptions(vehicle ? [vehicle] : [])),
       gadgets: withChoices(gadgets, equipmentOptions(row?.gadgets)),
-      tags: withChoices(tags, row?.tags.map((tag) => ({ id: tag.id, label: tag.name })) ?? []),
+      tags: withChoices(tags, tagOptions(row?.tags)),
       hasMoreGadgets,
       hasMoreTags,
     }

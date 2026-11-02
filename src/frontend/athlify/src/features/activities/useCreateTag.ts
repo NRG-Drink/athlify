@@ -4,9 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { toaster } from '../../components/ui/toaster'
 import type { useCreateTagMutation } from './__generated__/useCreateTagMutation.graphql'
 
-/** The page loads the first 200 tags; a new one joins that list, so the form and the filters offer it. */
-const TAGS_ARGS = { first: 200 }
-
 const createTagMutation = graphql`
   mutation useCreateTagMutation($input: TagInput!) {
     createTag(tag: $input) {
@@ -16,10 +13,17 @@ const createTagMutation = graphql`
   }
 `
 
-/** Creates a tag from the activity form and adds it, in alphabetical order, to the loaded tags. */
-export function useCreateTag() {
+/**
+ * Creates a tag from the activity form and adds it, in alphabetical order, to the tags the page
+ * loaded (`tagsId` is that list's `__id`), so the form and the filters offer it at once.
+ */
+export function useCreateTag(tagsId: string | undefined) {
   const { t } = useTranslation()
   const [commit, isCreating] = useMutation<useCreateTagMutation>(createTagMutation)
+
+  const fail = useCallback(() => {
+    toaster.create({ type: 'error', title: t('activities.form.tagCreateFailed') })
+  }, [t])
 
   // Stable, so the form's memoized tag chips do not render again with every parent render.
   const createTag = useCallback(
@@ -28,7 +32,7 @@ export function useCreateTag() {
         variables: { input: { name } },
         updater: (store, data) => {
           const created = data?.createTag && store.get(data.createTag.id)
-          const tags = store.getRoot().getLinkedRecord('tags', TAGS_ARGS)
+          const tags = tagsId ? store.get(tagsId) : undefined
           if (!created || !tags) return
           const nodes = (tags.getLinkedRecords('nodes') ?? []).filter((node) => node != null)
           const next = [...nodes, created].sort((a, b) =>
@@ -38,7 +42,7 @@ export function useCreateTag() {
         },
         onCompleted: (response, errors) => {
           if (errors?.length || !response.createTag) {
-            toaster.create({ type: 'error', title: t('activities.form.tagCreateFailed') })
+            fail()
             return
           }
           toaster.create({
@@ -47,11 +51,9 @@ export function useCreateTag() {
           })
           onCreated(response.createTag.id)
         },
-        onError: () => {
-          toaster.create({ type: 'error', title: t('activities.form.tagCreateFailed') })
-        },
+        onError: fail,
       }),
-    [commit, t],
+    [commit, t, tagsId, fail],
   )
 
   return { createTag, isCreating }

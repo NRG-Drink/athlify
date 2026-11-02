@@ -11,7 +11,7 @@ import {
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LuClock } from 'react-icons/lu'
-import { formatTime, parseTime } from '../lib/dates'
+import { formatTime, parseTime, two } from '../lib/dates'
 
 interface TimeFieldProps {
   /** `HH:MM`, empty when no time is set. */
@@ -24,7 +24,6 @@ interface TimeFieldProps {
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour)
 const MINUTES = Array.from({ length: 12 }, (_, step) => step * 5)
-const two = (value: number) => String(value).padStart(2, '0')
 
 /**
  * A time of day as `HH:MM` (24 h). It can be typed (`1930`, `19.30` and `7` are normalised when the
@@ -42,6 +41,9 @@ export function TimeField({ value, onChange, label, invalid }: TimeFieldProps) {
       open={open}
       onOpenChange={(details) => setOpen(details.open)}
       positioning={{ placement: 'bottom-end' }}
+      // The 36 buttons only exist while the picker is open.
+      lazyMount
+      unmountOnExit
     >
       <InputGroup
         endElement={

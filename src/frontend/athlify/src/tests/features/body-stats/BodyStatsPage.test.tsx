@@ -843,13 +843,18 @@ describe('BodyStatsPage', () => {
 
     it('deletes after confirmation without refetching the list', async () => {
       const { user, calls } = page((operation) =>
-        operation === DELETE ? { data: { deleteBodyStats: 'bs-a' } } : okQuery(),
+        operation === DELETE
+          ? { data: { deleteBodyStats: 'bs-a' } }
+          : { data: { bodyStats: { ...connection(seed), totalCount: 4 } } },
       )
+      expect(await screen.findByText('4 Messungen')).toBeInTheDocument()
 
       const confirm = await openConfirm(user)
       await user.click(within(confirm).getByRole('button', { name: 'Löschen' }))
 
       await waitFor(() => expect(rowCount()).toBe(3))
+      // The count above the table drops with the row.
+      expect(screen.getByText('3 Messungen')).toBeInTheDocument()
       expect(calls(DELETE)).toEqual([{ id: 'bs-a' }])
       expect(await screen.findByText('Messung gelöscht.')).toBeInTheDocument()
       expect(calls(QUERY)).toHaveLength(1)
