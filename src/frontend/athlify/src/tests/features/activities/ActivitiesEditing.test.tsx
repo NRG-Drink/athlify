@@ -433,6 +433,22 @@ describe('ActivitiesPage editing', () => {
       expect(within(dialog).queryByText('Berechnet')).not.toBeInTheDocument()
     })
 
+    it('keeps an invalid typed date and reports it instead of replacing it', async () => {
+      const { user, calls } = page(creating)
+      await user.click(await screen.findByRole('button', { name: 'Aktivität erfassen' }))
+      const dialog = await screen.findByRole('dialog')
+      const date = within(dialog).getByRole('textbox', { name: 'Datum' })
+      await user.clear(date)
+      await user.type(date, '32.13.2026')
+      await fillRequired(user, dialog)
+
+      expect(date).toHaveValue('32.13.2026')
+      expect(
+        within(dialog).getByText('Bitte im Format TT.MM.JJJJ, HH:MM eingeben.'),
+      ).toBeInTheDocument()
+      expect(calls(CREATE)).toHaveLength(0)
+    })
+
     it('saves, then reloads the list as far as it was loaded, keeping filter and order', async () => {
       const { user, calls } = page(creating, '/activities?sort=-distance')
       await user.click(await screen.findByRole('button', { name: 'Aktivität erfassen' }))

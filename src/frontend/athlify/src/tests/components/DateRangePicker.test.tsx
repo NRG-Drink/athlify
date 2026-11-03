@@ -51,6 +51,21 @@ describe('DateRangePicker', () => {
     )
   })
 
+  it('keeps an invalid typed date and reports it', async () => {
+    const user = userEvent.setup()
+    const { onChange } = renderPicker()
+
+    await user.click(screen.getByRole('button', { name: /Zeitraum ändern: Zeitraum:/ }))
+    const from = screen.getByRole('textbox', { name: 'Von' })
+    await user.clear(from)
+    await user.type(from, '1.1.')
+    await user.click(screen.getByRole('button', { name: 'Anwenden' }))
+
+    expect(onChange).not.toHaveBeenCalled()
+    expect(from).toHaveValue('1.1.')
+    expect(screen.getByText('Bitte gib die Daten im Format TT.MM.JJJJ ein.')).toBeInTheDocument()
+  })
+
   it('commits both valid bounds together', async () => {
     const user = userEvent.setup()
     const { onChange } = renderPicker()

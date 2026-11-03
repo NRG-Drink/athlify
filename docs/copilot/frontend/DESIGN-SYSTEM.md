@@ -190,7 +190,8 @@ In short:
   an error inside opens it). Pairs of short number fields stay side by side
   on phones. Optional selects start at "—", never at a pre-chosen value.
 - Dates are entered with `DateField` (a Chakra `DatePicker`, typed as
-  `TT.MM.JJJJ`, `1.2.25` is read as 01.02.2025) and times with
+  `TT.MM.JJJJ`, `1.2.25` is read as 01.02.2025; text that is not a date
+  stays as typed and the form's validation reports it) and times with
   `TimeField` (`HH:MM`, typed or picked from hours and five-minute steps);
   `DateTimeField` puts both under one label. Never use native `date`,
   `time` or `datetime-local` inputs: they follow the browser's locale

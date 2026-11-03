@@ -1,11 +1,18 @@
-import { DatePicker, IconButton, parseDate as toCalendarDate, Portal } from '@chakra-ui/react'
+import {
+  DatePicker,
+  IconButton,
+  Input,
+  InputGroup,
+  parseDate as toCalendarDate,
+  Portal,
+} from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { LuCalendarDays } from 'react-icons/lu'
 import { localeFor } from '../i18n/useFormat'
 import { formatDate, parseDate } from '../lib/dates'
 
 interface DateFieldProps {
-  /** `DD.MM.YYYY`, empty when no date is chosen. */
+  /** `DD.MM.YYYY`, empty when no date is chosen, or the typed text while it is not a date. */
   value: string
   onChange: (value: string) => void
   /** Accessible name of the text field. */
@@ -20,9 +27,10 @@ type DateParts = { year: number; month: number; day: number }
 const toDate = (value: DateParts) => new Date(value.year, value.month - 1, value.day)
 
 /**
- * A date as `DD.MM.YYYY` with a calendar. Typed text is read on blur or Enter (`1.2.25` becomes
- * `01.02.2025`); the calendar follows the UI language for month and weekday names and starts the
- * week on Monday.
+ * A date as `DD.MM.YYYY` with a calendar. The text field is a plain controlled input: typed text
+ * reaches the form as it is, valid text is normalised when the field is left (`1.2.25` becomes
+ * `01.02.2025`) and invalid text stays, so the form's validation reports it. The calendar only
+ * writes a picked day; it follows the UI language and starts the week on Monday.
  */
 export function DateField({ value, onChange, label, invalid, portalled = true }: DateFieldProps) {
   const { t, i18n } = useTranslation()
@@ -51,12 +59,7 @@ export function DateField({ value, onChange, label, invalid, portalled = true }:
       value={date ? [toCalendarDate(date)] : []}
       onValueChange={(details) => {
         const [next] = details.value
-        onChange(next ? formatDate(toDate(next)) : '')
-      }}
-      format={(next) => formatDate(toDate(next))}
-      parse={(text) => {
-        const parsed = parseDate(text)
-        return parsed ? toCalendarDate(parsed) : undefined
+        if (next) onChange(formatDate(toDate(next)))
       }}
       locale={localeFor(i18n.language)}
       startOfWeek={1}
@@ -66,26 +69,29 @@ export function DateField({ value, onChange, label, invalid, portalled = true }:
       invalid={invalid}
       positioning={{ placement: 'bottom-start' }}
     >
+      {/* The picker's own input would replace unreadable text with another date on blur. */}
       <DatePicker.Control>
-        <DatePicker.Input
-          aria-label={label}
-          placeholder={t('form.datePlaceholder')}
-          // The picker reads typed text a moment after blur; a click on "Speichern" would submit
-          // the old value. Taking it here, synchronously, keeps the form in step with the field.
-          onBlur={(event) => {
-            const text = event.currentTarget.value
-            const typed = parseDate(text)
-            if (typed) onChange(formatDate(typed))
-            else if (text.trim() === '') onChange('')
-          }}
-        />
-        <DatePicker.IndicatorGroup>
-          <DatePicker.Trigger asChild>
-            <IconButton variant="ghost" size="xs" aria-label={t('form.openCalendar')}>
-              <LuCalendarDays />
-            </IconButton>
-          </DatePicker.Trigger>
-        </DatePicker.IndicatorGroup>
+        <InputGroup
+          endElement={
+            <DatePicker.Trigger asChild>
+              <IconButton variant="ghost" size="xs" aria-label={t('form.openCalendar')} me="-2">
+                <LuCalendarDays />
+              </IconButton>
+            </DatePicker.Trigger>
+          }
+        >
+          <Input
+            aria-label={label}
+            aria-invalid={invalid || undefined}
+            placeholder={t('form.datePlaceholder')}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            onBlur={() => {
+              if (date) onChange(formatDate(date))
+              else onChange(value.trim())
+            }}
+          />
+        </InputGroup>
       </DatePicker.Control>
       {portalled ? <Portal>{content}</Portal> : content}
     </DatePicker.Root>
