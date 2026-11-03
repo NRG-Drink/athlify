@@ -5,8 +5,9 @@ Technical detail documentation for the functional concept in
 
 The backend implements activity management (create, edit, soft delete,
 filters and merges) through the GraphQL API; see
-[`api-design.md`](api-design.md#activities-and-merges). The Activities page,
-the calendar view and Strava synchronization are not implemented yet.
+[`api-design.md`](api-design.md#activities-and-merges). The Activities page
+lists, adds, edits, duplicates and soft-deletes activities; the calendar view,
+the merge UI and Strava synchronization are not implemented yet.
 
 ## Views and functions
 
@@ -28,7 +29,17 @@ the calendar view and Strava synchronization are not implemented yet.
   `?sort=-distance`). Type, description, bicycle, mood, wind, gadgets and tags
   are not sortable, because their stored values would not sort in their
   natural order. The number of matching activities is shown above the table.
-- Detail view as an edit form.
+- Detail view as an edit form, opened from the list: a row click
+  edits, a "⋯" menu duplicates (a new activity with the same values and the
+  current date) or deletes (after a confirmation that warns when the activity
+  is part of a merge). "Add activity" starts from the type and bicycle of the
+  most recent activity. Rarely used fields (heart rate, effort, mood, wind,
+  gadgets, tags) are folded under "More details"; calculated and system values
+  (average speed, TSS, source) are shown read-only, marked with `*`. The
+  duration is entered in hours and minutes; the seconds of an imported ride
+  are kept while its minutes are unchanged. Effort is a slider (0 = not set),
+  mood and wind are picked from emoji buttons, and gadgets and tags are chips;
+  a new tag can be created in the form without leaving it.
 - Calendar view with weekly summary inspired by TrainingPeaks.
 - Full CRUD for manual and synchronized activities.
 - Visible Strava sync button on the Activities page.

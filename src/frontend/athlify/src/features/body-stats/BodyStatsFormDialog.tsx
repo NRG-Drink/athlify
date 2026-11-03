@@ -1,7 +1,9 @@
-import { Field, Input, InputGroup, SimpleGrid, Stack, Textarea } from '@chakra-ui/react'
+import { Field, SimpleGrid, Stack, Textarea } from '@chakra-ui/react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { DateTimeField } from '../../components/DateTimeField'
 import { FormDialog } from '../../components/FormDialog'
+import { NumberField } from '../../components/NumberField'
 import {
   MAX_NOTE_LENGTH,
   toInput,
@@ -64,32 +66,25 @@ export function BodyStatsFormDialog({
       onSubmit={submit}
     >
       <Stack gap="4">
-        <Field.Root required invalid={!!errors.date}>
-          <Field.Label>{t('bodyStats.fields.date')}</Field.Label>
-          <Input
-            type="datetime-local"
-            value={values.date}
-            onChange={(e) => setValues({ ...values, date: e.target.value })}
-          />
-          <Field.ErrorText>{errors.date}</Field.ErrorText>
-        </Field.Root>
+        <DateTimeField
+          label={t('bodyStats.fields.date')}
+          value={values.date}
+          onChange={(date) => setValues({ ...values, date })}
+          error={errors.date}
+          required
+        />
 
         <SimpleGrid columns={{ base: 1, sm: 2 }} gap="4">
           {bodyStatsMetrics.map((metric) => (
-            <Field.Root key={metric.key} required invalid={!!errors[metric.key]}>
-              <Field.Label>{t(metric.labelKey)}</Field.Label>
-              <InputGroup endElement={metric.unit}>
-                {/* type="text": a number input rejects the decimal comma of German keyboards. */}
-                <Input
-                  type="text"
-                  inputMode="decimal"
-                  textAlign="end"
-                  value={values[metric.key]}
-                  onChange={(e) => setValues({ ...values, [metric.key]: e.target.value })}
-                />
-              </InputGroup>
-              <Field.ErrorText>{errors[metric.key]}</Field.ErrorText>
-            </Field.Root>
+            <NumberField
+              key={metric.key}
+              label={t(metric.labelKey)}
+              value={values[metric.key]}
+              onChange={(value) => setValues((current) => ({ ...current, [metric.key]: value }))}
+              unit={metric.unit}
+              required
+              error={errors[metric.key]}
+            />
           ))}
         </SimpleGrid>
 

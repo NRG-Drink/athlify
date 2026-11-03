@@ -1,5 +1,5 @@
 import { Button, Flex, Table, Text, VisuallyHidden, chakra } from '@chakra-ui/react'
-import type { KeyboardEvent, ReactElement, ReactNode } from 'react'
+import type { KeyboardEvent, ReactElement, ReactNode, Ref } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LuArrowDown, LuArrowUp, LuArrowUpDown } from 'react-icons/lu'
 import type { ListSort } from '../lib/sort'
@@ -72,12 +72,19 @@ export interface DataTableProps<T extends object> {
   rowActions?: (row: T) => ReactNode
   /** Opens the row's default action (click, or Enter on the focused row). */
   onRowClick?: (row: T) => void
+  /**
+   * Accessible name of a clickable row, naming its action ("Messung vom 2. Okt. 2026 bearbeiten"),
+   * so the row itself replaces a separate edit button.
+   */
+  rowLabel?: (row: T) => string
   /** Shown in a full-width row instead of the body when `data` is empty; the header stays. */
   emptyMessage?: ReactNode
   /** The data is being refreshed: the rows stay, dimmed, and the table is marked busy. */
   busy?: boolean
   /** Number of matching rows across all pages, for example "42 Messungen"; shown above the table. */
   count?: string
+  /** The count line; it can take the focus, for example after the focused row was deleted. */
+  countRef?: Ref<HTMLParagraphElement>
   pagination?: DataTablePagination
 }
 
@@ -85,6 +92,19 @@ export interface DataTableProps<T extends object> {
  * Every header cell, including the row-actions column, stays on top while the rows scroll under it,
  * so the header always spans the full width of the table.
  */
+/**
+ * Hover and focus of a body row, shared by every row. A ring on a <tr> breaks apart at the cells (and
+ * at the sticky first column), so a focused row is marked on its cells: muted background and the
+ * brand indicator bar.
+ */
+const rowCss = {
+  '&:hover > td': { bg: 'var(--chakra-colors-bg-subtle)' },
+  '&:focus-visible > td': { bg: 'var(--chakra-colors-bg-muted)' },
+  '&:focus-visible > td:first-of-type': {
+    boxShadow: 'inset 3px 0 0 var(--chakra-colors-brand-solid)',
+  },
+} as const
+
 const stickyHeader = { position: 'sticky', top: '0', zIndex: 1, bg: 'bg' } as const
 
 const hidden = (hideBelow?: Breakpoint) =>
@@ -135,9 +155,11 @@ export function DataTable<T extends object>({
   actionsLabel,
   rowActions,
   onRowClick,
+  rowLabel,
   emptyMessage,
   busy,
   count,
+  countRef,
   pagination,
 }: DataTableProps<T>) {
   const { t } = useTranslation()
@@ -157,7 +179,14 @@ export function DataTable<T extends object>({
   return (
     <Flex direction="column" gap="3">
       {count && (
-        <Text fontSize="sm" color="fg.muted" aria-live="polite">
+        <Text
+          ref={countRef}
+          tabIndex={countRef ? -1 : undefined}
+          fontSize="sm"
+          color="fg.muted"
+          aria-live="polite"
+          _focusVisible={{ outline: 'none' }}
+        >
           {count}
         </Text>
       )}
@@ -290,11 +319,12 @@ export function DataTable<T extends object>({
               <Table.Row
                 key={getRowId(original)}
                 tabIndex={onRowClick ? 0 : undefined}
+                aria-label={onRowClick ? rowLabel?.(original) : undefined}
                 cursor={onRowClick ? 'pointer' : undefined}
                 onClick={onRowClick ? () => onRowClick(original) : undefined}
                 onKeyDown={onRowClick ? (event) => onRowKeyDown(event, original) : undefined}
-                focusVisibleRing="inside"
-                css={{ '&:hover > td': { bg: 'var(--chakra-colors-bg-subtle)' } }}
+                outline="none"
+                css={rowCss}
               >
                 {columns.map((column, index) => {
                   const end = column.align === 'end'

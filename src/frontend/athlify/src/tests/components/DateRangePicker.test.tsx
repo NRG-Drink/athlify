@@ -24,11 +24,11 @@ describe('DateRangePicker', () => {
     renderPicker()
 
     expect(screen.getByRole('button', { name: /Zeitraum ändern: Zeitraum:/ })).toHaveTextContent(
-      'Zeitraum: 5. Juli 2026 – 3. Okt. 2026 · 1 T',
+      'Zeitraum: 05.07.2026 – 03.10.2026 · 1 T',
     )
     await user.click(screen.getByRole('button', { name: /Zeitraum ändern: Zeitraum:/ }))
-    expect(screen.getByLabelText('Von')).toHaveValue('2026-07-05')
-    expect(screen.getByLabelText('Bis')).toHaveValue('2026-10-03')
+    expect(screen.getByRole('textbox', { name: 'Von' })).toHaveValue('05.07.2026')
+    expect(screen.getByRole('textbox', { name: 'Bis' })).toHaveValue('03.10.2026')
     expect(screen.getByLabelText('Auflösung')).toHaveValue('day')
     expect(screen.getByRole('option', { name: 'Keine' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Anwenden' })).toBeInTheDocument()
@@ -39,14 +39,31 @@ describe('DateRangePicker', () => {
     const { onChange } = renderPicker()
 
     await user.click(screen.getByRole('button', { name: /Zeitraum ändern: Zeitraum:/ }))
-    await user.clear(screen.getByLabelText('Von'))
-    await user.type(screen.getByLabelText('Von'), '2026-11-01')
+    await user.clear(screen.getByRole('textbox', { name: 'Von' }))
+    await user.type(screen.getByRole('textbox', { name: 'Von' }), '01.11.2026')
     await user.click(screen.getByRole('button', { name: 'Anwenden' }))
 
     expect(onChange).not.toHaveBeenCalled()
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      'Das Startdatum muss vor dem Enddatum liegen.',
+    // The calendar has its own (empty) live region, so the error is found by its text.
+    expect(screen.getByText('Das Startdatum muss vor dem Enddatum liegen.')).toHaveAttribute(
+      'role',
+      'alert',
     )
+  })
+
+  it('keeps an invalid typed date and reports it', async () => {
+    const user = userEvent.setup()
+    const { onChange } = renderPicker()
+
+    await user.click(screen.getByRole('button', { name: /Zeitraum ändern: Zeitraum:/ }))
+    const from = screen.getByRole('textbox', { name: 'Von' })
+    await user.clear(from)
+    await user.type(from, '1.1.')
+    await user.click(screen.getByRole('button', { name: 'Anwenden' }))
+
+    expect(onChange).not.toHaveBeenCalled()
+    expect(from).toHaveValue('1.1.')
+    expect(screen.getByText('Bitte gib die Daten im Format TT.MM.JJJJ ein.')).toBeInTheDocument()
   })
 
   it('commits both valid bounds together', async () => {
@@ -54,8 +71,8 @@ describe('DateRangePicker', () => {
     const { onChange } = renderPicker()
 
     await user.click(screen.getByRole('button', { name: /Zeitraum ändern: Zeitraum:/ }))
-    await user.clear(screen.getByLabelText('Von'))
-    await user.type(screen.getByLabelText('Von'), '2026-01-01')
+    await user.clear(screen.getByRole('textbox', { name: 'Von' }))
+    await user.type(screen.getByRole('textbox', { name: 'Von' }), '1.1.26')
     await user.click(screen.getByRole('button', { name: 'Anwenden' }))
 
     expect(onChange).toHaveBeenCalledWith({

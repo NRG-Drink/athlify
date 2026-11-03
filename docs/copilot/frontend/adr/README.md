@@ -19,6 +19,7 @@ considered before creating a frontend-specific ADR.
 | [ADR-004](ADR-004-react-router-data-mode.md) | React Router data mode with a nested app-layout route | Proposed |
 | [ADR-005](ADR-005-theme-tokens.md) | "Night Ride" theme as Chakra semantic tokens | Proposed |
 | [ADR-007](ADR-007-domain-page-pattern.md) | Domain pages as feature folders with Relay fragments | Proposed |
+| [ADR-012](ADR-012-store-updates-for-server-sorted-lists.md) | Store updates for server-sorted, filtered lists (amends ADR-007 rule 4) | Proposed |
 
 The API style is a shared decision; see
 [shared ADR-001](../../adr/ADR-001-graphql-api-contract.md), and the

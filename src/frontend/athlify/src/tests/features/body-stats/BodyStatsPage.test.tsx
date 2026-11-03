@@ -114,7 +114,7 @@ describe('BodyStatsPage', () => {
       expect(weight).toHaveAttribute('aria-pressed', 'true')
       expect(weight).toHaveTextContent('70.5')
       expect(weight).toHaveTextContent('−0.7 kg')
-      expect(weight).not.toHaveTextContent('5. Juli 2026')
+      expect(weight).not.toHaveTextContent('05.07.2026')
       expect(tiles().getByRole('button', { name: /Körperfett/ })).toHaveAttribute(
         'aria-pressed',
         'false',
@@ -229,17 +229,17 @@ describe('BodyStatsPage', () => {
       await screen.findByRole('img', { name: /3 Messungen/ })
 
       await user.click(screen.getByRole('button', { name: /Zeitraum ändern: Zeitraum:/ }))
-      const from = screen.getByLabelText('Von')
-      const to = screen.getByLabelText('Bis')
+      const from = screen.getByRole('textbox', { name: 'Von' })
+      const to = screen.getByRole('textbox', { name: 'Bis' })
       await user.clear(from)
-      await user.type(from, '2026-01-01')
+      await user.type(from, '01.01.2026')
       await user.clear(to)
-      await user.type(to, '2026-10-03')
+      await user.type(to, '03.10.2026')
       await user.click(screen.getByRole('button', { name: 'Anwenden' }))
 
       expect(
         await screen.findByRole('img', {
-          name: /1\. Jan\. 2026 bis 3\. Okt\. 2026: von 74\.0 kg auf 70\.5 kg, 4 Messungen/,
+          name: /01\.01\.2026 bis 03\.10\.2026: von 74\.0 kg auf 70\.5 kg, 4 Messungen/,
         }),
       ).toBeInTheDocument()
       expect(tiles().getByRole('button', { name: /Gewicht/ })).toHaveTextContent('−3.5 kg')
@@ -330,9 +330,10 @@ describe('BodyStatsPage', () => {
       expect(await tiles().findByRole('button', { name: /Weight/ })).toHaveTextContent('−0.7 kg')
       expect(
         screen.getByRole('button', { name: /Change date range: Date range:/ }),
-      ).toHaveTextContent('Date range: 5 Jul 2026 – 3 Oct 2026')
+      ).toHaveTextContent('Date range: 05.07.2026 – 03.10.2026')
       expect(within(table()).getByRole('button', { name: /Weight/ })).toBeInTheDocument()
-      expect(within(bodyRows()[0]).getByText(/2 Oct 2026/)).toBeInTheDocument()
+      // Dates keep DD.MM.YYYY in every language.
+      expect(within(bodyRows()[0]).getByText(/^02\.10\.2026, \d{2}:\d{2}$/)).toBeInTheDocument()
     })
   })
 
@@ -684,7 +685,7 @@ describe('BodyStatsPage', () => {
   describe('editing', () => {
     const openEditor = async (user: ReturnType<typeof page>['user']) => {
       await user.click(
-        await screen.findByRole('button', { name: 'Messung vom 2. Okt. 2026 bearbeiten' }),
+        await screen.findByRole('row', { name: 'Messung vom 02.10.2026 bearbeiten' }),
       )
       return screen.findByRole('dialog', { name: 'Messung bearbeiten' })
     }
@@ -725,7 +726,7 @@ describe('BodyStatsPage', () => {
     it('opens the editor by clicking a row', async () => {
       const { user } = page(() => okQuery())
       await screen.findByRole('table')
-      const dateTime = within(bodyRows()[0]).getByText(/2\. Okt\. 2026/)
+      const dateTime = within(bodyRows()[0]).getByText(/02\.10\.2026/)
 
       expect(dateTime).toHaveTextContent(/\d{2}:\d{2}/)
       await user.click(dateTime)
@@ -743,6 +744,23 @@ describe('BodyStatsPage', () => {
 
       expect(await screen.findByText('Diese Messung existiert nicht mehr.')).toBeInTheDocument()
       await waitFor(() => expect(rowCount()).toBe(3))
+    })
+
+    it('keeps the entry when the server rejects the change', async () => {
+      const { user } = page((operation) =>
+        operation === UPDATE
+          ? { data: { updateBodyStats: null }, errors: [{ message: 'Invalid' }] }
+          : okQuery(),
+      )
+      const dialog = await openEditor(user)
+
+      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
+
+      expect(
+        await screen.findByText('Speichern fehlgeschlagen. Bitte versuche es nochmals.'),
+      ).toBeInTheDocument()
+      expect(screen.getByRole('dialog')).toBeInTheDocument()
+      expect(rowCount()).toBe(4)
     })
 
     it('sends the edited note, and a cleared note as no note', async () => {
@@ -786,7 +804,7 @@ describe('BodyStatsPage', () => {
   describe('deleting', () => {
     const openConfirm = async (user: ReturnType<typeof page>['user']) => {
       await user.click(
-        await screen.findByRole('button', { name: 'Messung vom 2. Okt. 2026 löschen' }),
+        await screen.findByRole('button', { name: 'Messung vom 02.10.2026 löschen' }),
       )
       return screen.findByRole('alertdialog', { name: 'Messung löschen?' })
     }
@@ -795,7 +813,7 @@ describe('BodyStatsPage', () => {
       const { user, calls } = page(() => okQuery())
 
       const confirm = await openConfirm(user)
-      expect(confirm).toHaveTextContent('Die Messung vom 2. Okt. 2026 (70.5 kg)')
+      expect(confirm).toHaveTextContent('Die Messung vom 02.10.2026 (70.5 kg)')
       await user.click(within(confirm).getByRole('button', { name: 'Abbrechen' }))
 
       await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
@@ -803,24 +821,41 @@ describe('BodyStatsPage', () => {
       expect(rowCount()).toBe(4)
     })
 
-    it('deletes after confirmation without refetching the list', async () => {
-      const { user, calls } = page((operation) =>
-        operation === DELETE ? { data: { deleteBodyStats: 'bs-a' } } : okQuery(),
+    it('keeps the entry when the server refuses the delete', async () => {
+      const { user } = page((operation) =>
+        operation === DELETE
+          ? { data: { deleteBodyStats: null }, errors: [{ message: 'Failed' }] }
+          : okQuery(),
       )
 
       const confirm = await openConfirm(user)
       await user.click(within(confirm).getByRole('button', { name: 'Löschen' }))
 
+      expect(
+        await screen.findByText('Löschen fehlgeschlagen. Bitte versuche es nochmals.'),
+      ).toBeInTheDocument()
+      await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
+      expect(rowCount()).toBe(4)
+      expect(
+        screen.getByRole('button', { name: 'Messung vom 02.10.2026 löschen' }),
+      ).toBeInTheDocument()
+    })
+
+    it('deletes after confirmation without refetching the list', async () => {
+      const { user, calls } = page((operation) =>
+        operation === DELETE
+          ? { data: { deleteBodyStats: 'bs-a' } }
+          : { data: { bodyStats: { ...connection(seed), totalCount: 4 } } },
+      )
+      expect(await screen.findByText('4 Messungen')).toBeInTheDocument()
+
+      const confirm = await openConfirm(user)
+      await user.click(within(confirm).getByRole('button', { name: 'Löschen' }))
+
       await waitFor(() => expect(rowCount()).toBe(3))
-      expect(calls(DELETE)).toEqual([
-        {
-          id: 'bs-a',
-          connections: [
-            expect.stringContaining('BodyStatsPage_analytics__bodyStats'),
-            expect.stringContaining('BodyStatsPage_history__bodyStats'),
-          ],
-        },
-      ])
+      // The count above the table drops with the row.
+      expect(screen.getByText('3 Messungen')).toBeInTheDocument()
+      expect(calls(DELETE)).toEqual([{ id: 'bs-a' }])
       expect(await screen.findByText('Messung gelöscht.')).toBeInTheDocument()
       expect(calls(QUERY)).toHaveLength(1)
     })

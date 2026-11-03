@@ -1,4 +1,4 @@
-import { Button, CloseButton, Dialog, Portal } from '@chakra-ui/react'
+import { Button, chakra, Dialog, Portal } from '@chakra-ui/react'
 import type { FormEventHandler, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -10,10 +10,16 @@ export interface FormDialogProps {
   /** A save is in flight: the dialog cannot be submitted again or dismissed. */
   busy: boolean
   onSubmit: () => void
+  /** Width from `sm` up; long forms take `lg`. */
+  size?: 'md' | 'lg'
   children: ReactNode
 }
 
-/** Dialog shell for create/edit forms: title, submit/cancel footer, busy handling. A bottom sheet on phones. */
+/**
+ * Dialog shell for create/edit forms: title, submit/cancel footer, busy handling. A bottom sheet on
+ * phones. "Abbrechen", Escape and a click beside the dialog discard the input without asking;
+ * there is no close button.
+ */
 export function FormDialog({
   open,
   onOpenChange,
@@ -21,6 +27,7 @@ export function FormDialog({
   submitLabel,
   busy,
   onSubmit,
+  size = 'md',
   children,
 }: FormDialogProps) {
   const { t } = useTranslation()
@@ -39,13 +46,23 @@ export function FormDialog({
       placement={{ base: 'bottom', sm: 'center' }}
       motionPreset="slide-in-bottom"
       scrollBehavior="inside"
+      size={size}
     >
       <Portal>
         <Dialog.Backdrop />
         <Dialog.Positioner>
           {/* Portals leave the app's brand palette, so the dialog sets it again. */}
           <Dialog.Content colorPalette="brand">
-            <form onSubmit={submit} noValidate>
+            {/* A flex column like the content itself: only then does the body scroll inside the
+                dialog's height and the footer with Save and Cancel stays visible. */}
+            <chakra.form
+              onSubmit={submit}
+              noValidate
+              display="flex"
+              flexDirection="column"
+              flex="1"
+              minH="0"
+            >
               <Dialog.Header>
                 <Dialog.Title>{title}</Dialog.Title>
               </Dialog.Header>
@@ -60,10 +77,7 @@ export function FormDialog({
                   {submitLabel}
                 </Button>
               </Dialog.Footer>
-            </form>
-            <Dialog.CloseTrigger asChild>
-              <CloseButton size="sm" aria-label={t('form.cancel')} disabled={busy} />
-            </Dialog.CloseTrigger>
+            </chakra.form>
           </Dialog.Content>
         </Dialog.Positioner>
       </Portal>

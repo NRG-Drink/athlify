@@ -64,6 +64,12 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
   store after changes instead of refetching. See
   [`ADR-007`](copilot/frontend/adr/ADR-007-domain-page-pattern.md).
 
+**Duplicate** — Creating a new activity from an existing one: the form opens
+  with all values of the original and the current date and time, and saving
+  creates a separate activity. The original is not changed. Used for repeated
+  rides such as the same trainer session. See
+  [`activity-management.md`](concept/activity-management.md).
+
 **Effort** — How hard an activity felt to the user, from 1 to 10. See
   [ADR-010](copilot/adr/ADR-010-activity-and-event-value-domains.md).
 

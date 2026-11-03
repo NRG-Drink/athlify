@@ -1,21 +1,14 @@
-import {
-  Button,
-  Field,
-  Grid,
-  Input,
-  Popover,
-  Portal,
-  Stack,
-  Text,
-  NativeSelect,
-} from '@chakra-ui/react'
+import { Button, Field, Grid, Popover, Portal, Stack, Text, NativeSelect } from '@chakra-ui/react'
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LuCalendarDays } from 'react-icons/lu'
 import { useFormat } from '../i18n/useFormat'
+import { formatDate, parseDate } from '../lib/dates'
+import { DateField } from './DateField'
 import {
   aggregations,
   dateFromKey,
+  localDateKey,
   parseAggregation,
   validateDateRange,
   type Aggregation,
@@ -30,15 +23,29 @@ export interface DateRangeSelection {
 export interface DateRangePickerProps {
   value: DateRangeSelection
   onChange: (selection: DateRangeSelection) => void
-  min?: string
-  max?: string
 }
 
-export function DateRangePicker({ value, onChange, min, max }: DateRangePickerProps) {
+/** The range as the text of the two fields (`DD.MM.YYYY`); the URL and the API keep ISO keys. */
+const toDraft = (selection: DateRangeSelection) => ({
+  range: {
+    from: formatDate(dateFromKey(selection.range.from)),
+    to: formatDate(dateFromKey(selection.range.to)),
+  },
+  aggregation: selection.aggregation,
+})
+
+/** The ISO key of the field's text; empty stays empty (`missing`), null when it is not a date. */
+const toKey = (text: string): string | null => {
+  if (text.trim() === '') return ''
+  const date = parseDate(text)
+  return date ? localDateKey(date) : null
+}
+
+export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
   const { t } = useTranslation()
   const format = useFormat()
   const [open, setOpen] = useState(false)
-  const [draft, setDraft] = useState(value)
+  const [draft, setDraft] = useState(() => toDraft(value))
   const [error, setError] = useState<string | undefined>()
   const [shownValue, setShownValue] = useState(value)
   if (
@@ -47,13 +54,18 @@ export function DateRangePicker({ value, onChange, min, max }: DateRangePickerPr
     shownValue.aggregation !== value.aggregation
   ) {
     setShownValue(value)
-    setDraft(value)
+    setDraft(toDraft(value))
     setError(undefined)
   }
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const result = validateDateRange(draft.range.from, draft.range.to)
+    const from = toKey(draft.range.from)
+    const to = toKey(draft.range.to)
+    const result =
+      from === null || to === null
+        ? { valid: false as const, error: 'invalidDate' as const }
+        : validateDateRange(from, to)
     if (!result.valid) {
       setError(t(`bodyStats.range.errors.${result.error}`))
       return
@@ -69,7 +81,7 @@ export function DateRangePicker({ value, onChange, min, max }: DateRangePickerPr
       onOpenChange={(details) => {
         setOpen(details.open)
         if (details.open) {
-          setDraft(value)
+          setDraft(toDraft(value))
           setError(undefined)
         }
       }}
@@ -115,28 +127,20 @@ export function DateRangePicker({ value, onChange, min, max }: DateRangePickerPr
                   <Grid columns={{ base: 1, sm: 2 }} gap="3">
                     <Field.Root required invalid={!!error}>
                       <Field.Label>{t('bodyStats.range.from')}</Field.Label>
-                      <Input
-                        type="date"
+                      <DateField
+                        label={t('bodyStats.range.from')}
                         value={draft.range.from}
-                        min={min}
-                        max={max}
-                        aria-describedby={error ? 'body-stats-range-error' : undefined}
-                        onChange={(event) =>
-                          setDraft({ ...draft, range: { ...draft.range, from: event.target.value } })
-                        }
+                        invalid={!!error}
+                        onChange={(from) => setDraft({ ...draft, range: { ...draft.range, from } })}
                       />
                     </Field.Root>
                     <Field.Root required invalid={!!error}>
                       <Field.Label>{t('bodyStats.range.to')}</Field.Label>
-                      <Input
-                        type="date"
+                      <DateField
+                        label={t('bodyStats.range.to')}
                         value={draft.range.to}
-                        min={min}
-                        max={max}
-                        aria-describedby={error ? 'body-stats-range-error' : undefined}
-                        onChange={(event) =>
-                          setDraft({ ...draft, range: { ...draft.range, to: event.target.value } })
-                        }
+                        invalid={!!error}
+                        onChange={(to) => setDraft({ ...draft, range: { ...draft.range, to } })}
                       />
                     </Field.Root>
                   </Grid>
@@ -175,7 +179,7 @@ export function DateRangePicker({ value, onChange, min, max }: DateRangePickerPr
                         type="button"
                         variant="ghost"
                         onClick={() => {
-                          setDraft(value)
+                          setDraft(toDraft(value))
                           setError(undefined)
                         }}
                       >

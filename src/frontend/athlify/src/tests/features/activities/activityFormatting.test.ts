@@ -1,6 +1,7 @@
 import type { TFunction } from 'i18next'
 import { describe, expect, it } from 'vitest'
 import {
+  effortLevel,
   enumLabel,
   formatHeartRate,
   moodRank,
@@ -42,5 +43,24 @@ describe('formatting helpers', () => {
   it('falls back to the raw enum value and a dash', () => {
     expect(enumLabel(t, 'moods', 'EUPHORIC')).toBe('EUPHORIC')
     expect(enumLabel(t, 'winds', null)).toBe('—')
+  })
+})
+
+describe('effortLevel', () => {
+  it('groups the ten steps into four emoji, and has none without an effort', () => {
+    const emoji = (effort: number | null) => effortLevel(t, effort)?.emoji
+    expect([1, 3, 4, 6, 7, 8, 9, 10].map(emoji)).toEqual([
+      '😌',
+      '😌',
+      '😅',
+      '😅',
+      '🥵',
+      '🥵',
+      '🔥',
+      '🔥',
+    ])
+    expect(effortLevel(t, 7)?.label).toBe('activities.effortLevels.hard')
+    expect(emoji(null)).toBeUndefined()
+    expect(emoji(0)).toBeUndefined()
   })
 })

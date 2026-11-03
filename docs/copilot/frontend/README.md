@@ -61,9 +61,11 @@ the "Night Ride" theme in `src/theme/`
 ([ADR-007](adr/ADR-007-domain-page-pattern.md)): summary tiles, a chart of the
 selected measurement over a selectable date range, and a history table with add,
 edit and delete against the backend API. New entries are prefilled from the
-entry with the newest date. The Activities page is a read-only list backed by
+entry with the newest date. The Activities page is a list backed by
 the `activities` connection, with period, type, bicycle and tag filters stored
-in the URL and cursor-based "load more" pagination. Dashboard, Garage and
+in the URL and cursor-based "load more" pagination; activities are added,
+edited, duplicated and deleted in a form dialog
+([ADR-012](adr/ADR-012-store-updates-for-server-sorted-lists.md)). Dashboard, Garage and
 Events remain placeholders, although their backend API exists. The backend is
 under `../../../src/backend/`. See
 [`SAD.md`](SAD.md) for the folder layout and open decisions. Do not present

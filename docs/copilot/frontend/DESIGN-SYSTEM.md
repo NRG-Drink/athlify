@@ -45,7 +45,17 @@ follows the operating system. Every rule below holds in both modes.
 - Period labels come in pairs. Short labels go on toggles ("30 T", "90 T",
   "1 J", "Alle"); long labels go in accessible names and notes ("Letzte 30
   Tage", "in 30 Tagen").
-- No emoji. Number formats follow the locale (`useFormat`); use a real
+- No emoji in text. The one exception is a value scale where the emoji
+  carries the value (mood, wind and the effort group of an activity —
+  1–3 😌, 4–6 😅, 7–8 🥵, 9–10 🔥, shown before the number in the table and
+  above the slider thumb in the form): in the form each emoji
+  sits above its text label; in a table cell the emoji stands alone with
+  the label as `aria-label` and `title`; filters and filter chips use the
+  text only.
+- Dates are `DD.MM.YYYY` and date-times `DD.MM.YYYY, HH:MM` (24 h) in
+  every language (`lib/dates.ts` through `useFormat`); only chart axes
+  name months ("Okt."). Number
+  formats follow the locale (`useFormat`); use a real
   minus sign in deltas ("−0.7 kg").
 
 ## Colour
@@ -155,6 +165,66 @@ In short:
 - Every page offers the skip link "Zum Inhalt springen". Dialogs open from
   the bottom on mobile and in the centre from sm.
 
+## Row actions and forms
+
+- **Row actions.** Editing is the row itself: a click, or Enter on the
+  focused row, opens the form, and `DataTable`'s `rowLabel` names the row
+  by that action ("Aktivität vom 16.10.2026 bearbeiten"). There is no
+  separate edit button. A focused row (also after a dialog returns focus
+  to it) gets `bg.muted` cells and the `brand.solid` indicator bar on its
+  first cell, never a focus ring, which breaks apart on table rows. The remaining actions are ghost `sm` icon buttons
+  in `fg.muted` with an `aria-label` that names the row: a single delete
+  button (Body-Stats), or a "⋯" `Menu` (`LuEllipsis`) when there are
+  several (Activities). A destructive item comes last in the menu, after a
+  separator, in `fg.error` with a `bg.error` highlight. Menu items act on
+  `onClick`, which Enter on a highlighted item triggers as well.
+- **Forms.** `*` means "calculated or system value" (user story US-03), so a
+  form that shows such values does not show Chakra's required indicator;
+  required fields set `required` (so `aria-required` is set) and explain
+  themselves through the error text. Calculated and system values sit in a
+  read-only block below the fields, headed by a `kicker` "Berechnet", marked
+  with `*` and explained by the note "* Wird automatisch berechnet."; a
+  missing value shows "—".
+- Fields that most records leave empty are folded under "Weitere Details"
+  (closed for new records, open when editing a record that has values there;
+  an error inside opens it). Pairs of short number fields stay side by side
+  on phones. Optional selects start at "—", never at a pre-chosen value.
+- Dates are entered with `DateField` (a Chakra `DatePicker`, typed as
+  `TT.MM.JJJJ`, `1.2.25` is read as 01.02.2025; text that is not a date
+  stays as typed and the form's validation reports it) and times with
+  `TimeField` (`HH:MM`, typed or picked from hours and five-minute steps);
+  `DateTimeField` puts both under one label. Never use native `date`,
+  `time` or `datetime-local` inputs: they follow the browser's locale
+  (`11/01/2026, 11:31 PM`).
+- Every text field is normalised when it is left: numbers to their
+  canonical form (`42,50` → `42.5`), durations to `h:mm` (`1.20` →
+  `1:20`), times to `HH:MM`, dates to `DD.MM.YYYY`.
+- Durations are entered as `h:mm` (`.` works too), with `1:30` as the
+  placeholder; the format is named only in the error text, so no helper
+  line pushes the field out of its row. The form shows no seconds; when an
+  edited record's minutes stay the same, its stored seconds are kept.
+- Number fields carry their unit as an addon beside the input. A group of
+  fields with the same unit (heart rate min/Ø/max) names it once in the
+  legend ("Herzfrequenz (bpm)") instead, so three fields fit side by side
+  on phones.
+- While "Weitere Details" is folded, its trigger shows how many of the
+  fields inside hold a value ("· 3 Angaben").
+- A rating on a short numeric scale (effort 1–10) is a Chakra `Slider`
+  whose far left, 0, means "Keine Angabe". A few ordered values (mood,
+  wind) are a row of toggle buttons with an emoji above the label; the
+  chosen one is `brand` `subtle` with a `brand.solid` border, and pressing
+  it again clears the value. Gadgets and tags are chips switched on and
+  off (tags in their table colour, `tagColorPalette`; gadgets in `brand`).
+  Without options, a muted line says so ("Noch keine Gadgets erfasst.").
+  The last tag chip is a small dashed "+ Neuer Tag" button that opens a
+  popover with the name, "Abbrechen" and "Erstellen" (Enter creates); it
+  is not portalled, so it stays in the dialog's focus trap. An existing
+  name is ticked instead of created twice.
+- `FormDialog` scrolls its body inside the dialog; the footer with
+  "Speichern" and "Abbrechen" always stays visible. It has no close (X)
+  button: "Abbrechen", Escape or a click beside the dialog discard the
+  input without a confirmation question.
+
 ## Components to reuse
 
 Before designing something new, check whether one of these already covers it
@@ -167,9 +237,13 @@ Before designing something new, check whether one of these already covers it
 | `MetricChart` | One Recharts series over time, coloured through theme CSS variables. |
 | `PeriodPicker` | Attached toggle group for 30 T / 90 T / 1 J / Alle. |
 | `DataTable` | Every list table, sorted by the server (controlled `sort`; a first click sorts descending). It also renders the count above the rows (`count`, 0.875rem `fg.muted`) and "load more" with its inline error (`pagination`), so tables never build these themselves; `DataTableSkeleton` is their loading state. The header spans the full width: every header cell, the row-actions column included, is sticky on `bg`, so rows never show through it while scrolling. A column with a `description` explains itself in a tooltip (see below). A column can declare a `filter`: its trigger shows the ticked count (`brand.subtle` badge with `brand.fg`) and opens a `FilterPopover`. |
-| `FilterChecklist` | Multi-select of a filter: a group of checkboxes (`fg.muted` outline, `brand.solid` when ticked), an optional search for long lists, "N ausgewählt" and "Auswahl löschen". Lives in the `FilterPopover` (popover from `sm`, bottom sheet below), which ends with "Fertig". |
+| `Checklist` | Multi-select as a group of checkboxes (`fg.muted` outline, `brand.solid` when ticked), an optional search for long lists, "N ausgewählt" and "Auswahl löschen". In a filter it lives in the `FilterPopover` (popover from `sm`, bottom sheet below), which ends with "Fertig"; forms use chips instead (see "Row actions and forms"). |
 | `Tooltip` (`components/ui/tooltip`) | Explains an abbreviated or technical term, never more. In tables a column sets `description`: the header label gets a dotted `fg.muted` underline and the text appears on hover and keyboard focus after 300 ms, on `bg.panel` with a hairline `border`, `l2`, 0.875rem, at most `20rem` wide. Only where a term needs it (TSS, Ø, units, estimated values); self-explaining headers such as Datum, Distanz or Gewicht get none. It is never the only place for data and never shows truncated text. Touch has no hover, so essential information must also be visible elsewhere. |
-| `FormDialog`, `ConfirmDialog` | Add/edit dialog and destructive confirmation. |
+| `FormDialog`, `ConfirmDialog` | Add/edit dialog (`size="lg"` for long forms) and destructive confirmation. `ConfirmDialog` takes `finalFocusEl` when the element that opened it disappears with the delete. |
+| `NumberField` | A number typed as text (decimal comma works), unit as an addon, normalised on blur; every form uses it. |
+| `DateField`, `TimeField`, `DateTimeField` | Date with calendar (`DD.MM.YYYY`), time with hour/minute picker (`HH:MM`), and both under one label; never native date inputs. |
+| Chakra `Menu` | The "⋯" row menu (see row actions below). `Menu.Content` sets `colorPalette="brand"`, because it renders in a portal. |
+| Chakra `Collapsible` | Folds rarely used form fields under "Weitere Details". |
 | `PrimaryNav`, `MobileNav`, `UserMenu`, `AppHeader` | Shell navigation with the indicator bar. |
 | `BrandMark` | The logo mark with the `volt` gradient. |
 
@@ -183,7 +257,7 @@ Before designing something new, check whether one of these already covers it
   `BrandMark`): an "A" with a lightning-bolt counter in the `volt`
   gradient, at `boxSize="7"` beside the wordmark with `gap="2"`. Never
   recolour it, flatten it or reuse `volt` elsewhere.
-- No emoji, illustrations or stock imagery.
+- No emoji (except the value scales above), illustrations or stock imagery.
 
 ## Not this
 

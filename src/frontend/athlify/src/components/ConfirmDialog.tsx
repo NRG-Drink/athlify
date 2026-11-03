@@ -10,6 +10,11 @@ export interface ConfirmDialogProps {
   confirmLabel: string
   busy: boolean
   onConfirm: () => void
+  /**
+   * Where the focus goes when the dialog closes, for example when the element that opened it was
+   * deleted; `null` returns it to that element as usual.
+   */
+  finalFocusEl?: () => HTMLElement | null
 }
 
 /** Confirmation of a destructive action. Cancel has the initial focus, so Enter never deletes by accident. */
@@ -21,6 +26,7 @@ export function ConfirmDialog({
   confirmLabel,
   busy,
   onConfirm,
+  finalFocusEl,
 }: ConfirmDialogProps) {
   const { t } = useTranslation()
   const cancelRef = useRef<HTMLButtonElement>(null)
@@ -43,6 +49,7 @@ export function ConfirmDialog({
       placement={{ base: 'bottom', sm: 'center' }}
       motionPreset="slide-in-bottom"
       initialFocusEl={() => cancelRef.current}
+      finalFocusEl={finalFocusEl}
     >
       <Portal>
         <Dialog.Backdrop />

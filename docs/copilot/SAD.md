@@ -11,7 +11,8 @@ API, persistent personal data and a Strava integration. The current repository
 contains an ASP.NET Core, Hot Chocolate GraphQL and PostgreSQL (EF Core, Npgsql)
 backend (`src/backend/`) with the owner-scoped domain model, and a
 React/TypeScript frontend (`src/frontend/athlify/`); the Body-Stats page and
-the first read-only Activities slice already call the API. Authentication,
+the Activities list with add, edit, duplicate and delete already call the
+API. Authentication,
 Strava synchronization and the Dashboard analyses are planned. Planned
 architecture must not be presented as implemented behavior.
 

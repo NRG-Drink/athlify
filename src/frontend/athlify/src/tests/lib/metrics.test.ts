@@ -83,9 +83,9 @@ describe('filterByRange', () => {
   ]
 
   it('includes both local calendar boundaries', () => {
-    expect(filterByRange(points, { from: '2026-09-03', to: '2026-10-03' }).map((p) => p.value)).toEqual(
-      [2, 3],
-    )
+    expect(
+      filterByRange(points, { from: '2026-09-03', to: '2026-10-03' }).map((p) => p.value),
+    ).toEqual([2, 3])
   })
 })
 
