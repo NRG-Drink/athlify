@@ -15,13 +15,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.6.2" />
-		<PackageReference Include="GreenDonut.Data.EntityFramework" Version="16.6.9" />
-		<PackageReference Include="HotChocolate.AspNetCore" Version="16.6.9" />
-		<PackageReference Include="HotChocolate.AspNetCore.CommandLine" Version="16.6.9" />
-		<PackageReference Include="HotChocolate.AspNetCore.Authorization" Version="16.7.0" />
-		<PackageReference Include="HotChocolate.Data" Version="16.6.9" />
-		<PackageReference Include="HotChocolate.Types.Analyzers" Version="16.6.9">
+		<PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.6.4" />
+		<PackageReference Include="GreenDonut.Data.EntityFramework" Version="16.7.3" />
+		<PackageReference Include="HotChocolate.AspNetCore" Version="16.7.3" />
+		<PackageReference Include="HotChocolate.AspNetCore.CommandLine" Version="16.7.3" />
+		<PackageReference Include="HotChocolate.AspNetCore.Authorization" Version="16.7.3" />
+		<PackageReference Include="HotChocolate.Data" Version="16.7.3" />
+		<PackageReference Include="HotChocolate.Types.Analyzers" Version="16.7.3">
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
@@ -29,8 +29,8 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.13" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.13" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.14" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.14" />
 	</ItemGroup>
 
 	<ItemGroup>

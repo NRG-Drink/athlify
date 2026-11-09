@@ -9,9 +9,9 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.14" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
-		<PackageReference Include="TUnit" Version="1.76.0" />
-		<PackageReference Include="TUnit.AspNetCore" Version="1.76.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.14" />
+		<PackageReference Include="TUnit" Version="1.81.16" />
+		<PackageReference Include="TUnit.AspNetCore" Version="1.81.16" />
 	</ItemGroup>
 
 	<ItemGroup>
