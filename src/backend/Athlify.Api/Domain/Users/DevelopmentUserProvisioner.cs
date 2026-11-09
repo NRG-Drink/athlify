@@ -35,7 +35,7 @@ public static class DevelopmentUserProvisioner
             Email = options.Email,
             FirstName = options.FirstName,
             LastName = options.LastName,
-            Role = Role.Administrator,
+            Role = UserRole.Admin,
         };
         db.Users.Add(user);
         await db.SaveChangesAsync(cancellationToken);
