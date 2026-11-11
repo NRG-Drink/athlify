@@ -2,7 +2,7 @@ import { Flex, IconButton } from '@chakra-ui/react'
 import { useMemo } from 'react'
 import { graphql, useFragment } from 'react-relay'
 import { useTranslation } from 'react-i18next'
-import { LuPencil, LuTrash2 } from 'react-icons/lu'
+import { LuTrash2 } from 'react-icons/lu'
 import { DataTable, type DataTableColumn } from '../../components/DataTable'
 import { useFormat } from '../../i18n/useFormat'
 import type {
@@ -117,6 +117,7 @@ export function BodyStatsTable({
       caption={t('bodyStats.history')}
       actionsLabel={t('bodyStats.row.actionsColumn')}
       onRowClick={onEdit}
+      rowLabel={(row) => t('bodyStats.row.edit', { date: format.date(row.date) })}
       busy={busy}
       count={t('bodyStats.resultCount', { count: totalCount })}
       pagination={{
@@ -129,15 +130,6 @@ export function BodyStatsTable({
       }}
       rowActions={(row) => (
         <Flex gap="1" justify="flex-end">
-          <IconButton
-            variant="ghost"
-            size="sm"
-            color="fg.muted"
-            aria-label={t('bodyStats.row.edit', { date: format.date(row.date) })}
-            onClick={() => onEdit(row)}
-          >
-            <LuPencil />
-          </IconButton>
           <IconButton
             variant="ghost"
             size="sm"

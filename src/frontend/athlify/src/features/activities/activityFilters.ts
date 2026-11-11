@@ -1,10 +1,14 @@
 import type { TFunction } from 'i18next'
+import type { ChecklistOption } from '../../components/Checklist'
 
 export const activityTypes = ['ROAD', 'MOUNTAIN', 'GRAVEL', 'INDOOR'] as const
 export type ActivityType = (typeof activityTypes)[number]
 
 export const winds = ['CALM', 'LIGHT', 'MODERATE', 'STRONG', 'STORMY'] as const
 export type Wind = (typeof winds)[number]
+
+export const moods = ['VERY_BAD', 'BAD', 'NEUTRAL', 'GOOD', 'VERY_GOOD'] as const
+export type Mood = (typeof moods)[number]
 
 /** Each filter holds the ticked values; an empty or missing list means the filter is off. */
 export interface ActivityFilters {
@@ -20,24 +24,25 @@ function readValues(params: URLSearchParams, key: string): string[] {
 }
 
 /** The value as one of the allowed enum values, or undefined. */
-function asEnum<T extends string>(allowed: readonly T[], value: string): T | undefined {
+export function asEnum<T extends string>(
+  allowed: readonly T[],
+  value: string | null | undefined,
+): T | undefined {
   return allowed.find((item) => item === value)
 }
 
-function readEnum<T extends string>(params: URLSearchParams, key: string, allowed: readonly T[]) {
-  return readValues(params, key)
-    .map((value) => asEnum(allowed, value))
-    .filter((value): value is T => value !== undefined)
-}
+/** The ids that are allowed enum values, in their order; unknown ones are dropped. */
+const enumValues = <T extends string>(allowed: readonly T[], ids: readonly string[]) =>
+  ids.map((id) => asEnum(allowed, id)).filter((value): value is T => value !== undefined)
 
 const orUndefined = <T>(list: T[]) => (list.length > 0 ? list : undefined)
 
 export function parseActivityFilters(params: URLSearchParams): ActivityFilters {
   return {
-    types: orUndefined(readEnum(params, 'type', activityTypes)),
+    types: orUndefined(enumValues(activityTypes, readValues(params, 'type'))),
     vehicleIds: orUndefined(readValues(params, 'vehicle')),
     tagIds: orUndefined(readValues(params, 'tag')),
-    winds: orUndefined(readEnum(params, 'wind', winds)),
+    winds: orUndefined(enumValues(winds, readValues(params, 'wind'))),
   }
 }
 
@@ -87,51 +92,28 @@ export function filterValueCount(key: ActivityFilterKey, filters: ActivityFilter
   return filters[activityFilterFields[key]]?.length ?? 0
 }
 
-function toggleValue<T>(list: T[] | undefined, item: T): T[] | undefined {
-  const current = list ?? []
-  const next = current.includes(item)
-    ? current.filter((value) => value !== item)
-    : [...current, item]
-  return orUndefined(next)
-}
-
-/** Adds the value when it is not ticked yet, removes it when it is. Unknown enum values are ignored. */
-export function toggleActivityFilter(
+/** Sets the ticked values of one filter; an empty list turns it off. Unknown enum values are ignored. */
+export function setActivityFilterValues(
   filters: ActivityFilters,
   key: ActivityFilterKey,
-  id: string,
+  ids: readonly string[],
 ): ActivityFilters {
   switch (key) {
-    case 'type': {
-      const type = asEnum(activityTypes, id)
-      return type ? { ...filters, types: toggleValue(filters.types, type) } : filters
-    }
+    case 'type':
+      return { ...filters, types: orUndefined(enumValues(activityTypes, ids)) }
     case 'vehicle':
-      return { ...filters, vehicleIds: toggleValue(filters.vehicleIds, id) }
+      return { ...filters, vehicleIds: orUndefined([...ids]) }
     case 'tag':
-      return { ...filters, tagIds: toggleValue(filters.tagIds, id) }
-    case 'wind': {
-      const wind = asEnum(winds, id)
-      return wind ? { ...filters, winds: toggleValue(filters.winds, wind) } : filters
-    }
+      return { ...filters, tagIds: orUndefined([...ids]) }
+    case 'wind':
+      return { ...filters, winds: orUndefined(enumValues(winds, ids)) }
   }
-}
-
-/** Removes every ticked value of one filter. */
-export function clearActivityFilter(
-  filters: ActivityFilters,
-  key: ActivityFilterKey,
-): ActivityFilters {
-  return { ...filters, [activityFilterFields[key]]: undefined }
 }
 
 /** Breakpoints below which a column is hidden; the filter summary offers its filter there instead. */
 export const filterColumnBreakpoint = { vehicle: 'md', tag: '2xl', wind: '2xl' } as const
 
-export interface FilterOption {
-  id: string
-  label: string
-}
+export type FilterOption = ChecklistOption
 
 function labelsFor(ids: readonly string[] | undefined, options: readonly FilterOption[]) {
   return (ids ?? []).flatMap((id) => {
@@ -165,7 +147,7 @@ export function activeFilterValueLabels(
  * yet (or a value is no longer among the first options), the count stands in for them.
  */
 export function summarizeValues(labels: readonly string[], count: number, t: TFunction): string {
-  if (labels.length === 0) return t('activities.filters.selectedCount', { count })
+  if (labels.length === 0) return t('checklist.selectedCount', { count })
   if (labels.length <= 2) return labels.join(', ')
   return `${labels.slice(0, 2).join(', ')} ${t('activities.filters.more', { count: labels.length - 2 })}`
 }

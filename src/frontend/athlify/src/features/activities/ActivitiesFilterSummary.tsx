@@ -6,9 +6,9 @@ import { ActivityFilterField } from './ActivityFilterField'
 import {
   activeActivityFilterKeys,
   activeFilterSummary,
-  clearActivityFilter,
   filterColumnBreakpoint,
   filterValueCount,
+  setActivityFilterValues,
   type ActivityFilterKey,
   type ActivityFilters,
   type FilterOption,
@@ -88,7 +88,7 @@ export function ActivitiesFilterSummary({
               <Tag.EndElement>
                 <Tag.CloseTrigger
                   aria-label={t('activities.filters.remove', { filter: labelOf(key) })}
-                  onClick={() => onChange(clearActivityFilter(value, key))}
+                  onClick={() => onChange(setActivityFilterValues(value, key, []))}
                 />
               </Tag.EndElement>
             </Tag.Root>

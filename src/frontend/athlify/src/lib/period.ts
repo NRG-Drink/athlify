@@ -38,7 +38,7 @@ export type DateRangeValidation =
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
-const localDateKey = (date: Date): string =>
+export const localDateKey = (date: Date): string =>
   `${date.getFullYear().toString().padStart(4, '0')}-${(date.getMonth() + 1)
     .toString()
     .padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`

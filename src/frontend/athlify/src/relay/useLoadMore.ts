@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 
 type LoadNext = (count: number, options: { onComplete: (error: Error | null) => void }) => unknown
 
@@ -9,7 +9,8 @@ type LoadNext = (count: number, options: { onComplete: (error: Error | null) => 
 export function useLoadMore(loadNext: LoadNext, isLoadingNext: boolean, pageSize: number) {
   const [loadMoreError, setLoadMoreError] = useState(false)
 
-  const loadMore = () => {
+  // Stable while nothing it reads changes, so a memoized table does not render again for it.
+  const loadMore = useCallback(() => {
     if (isLoadingNext) return
     setLoadMoreError(false)
     loadNext(pageSize, {
@@ -17,7 +18,7 @@ export function useLoadMore(loadNext: LoadNext, isLoadingNext: boolean, pageSize
         if (error) setLoadMoreError(true)
       },
     })
-  }
+  }, [loadNext, isLoadingNext, pageSize])
 
   return { loadMore, loadMoreError, setLoadMoreError }
 }

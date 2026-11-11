@@ -1,8 +1,10 @@
 import type { TFunction } from 'i18next'
+import { formatDateTime, parseDateTime } from '../../lib/dates'
+import { parseDecimal } from '../../lib/formValues'
 import { bodyStatsMetrics, type BodyStatsMetricKey } from './bodyStatsMetrics'
 
 export type BodyStatsFormValues = Record<BodyStatsMetricKey, string> & {
-  /** `datetime-local` format: YYYY-MM-DDTHH:mm. */
+  /** `DD.MM.YYYY, HH:MM`, local time. */
   date: string
   /** The one optional note (free text). */
   note: string
@@ -12,27 +14,10 @@ export type BodyStatsFormErrors = Partial<Record<BodyStatsMetricKey | 'date', st
 
 export const MAX_NOTE_LENGTH = 2000
 
-/** Current local date and time in the `datetime-local` input format. */
-function nowInputValue(now = new Date()): string {
-  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-  return local.toISOString().slice(0, 16)
-}
-
-/** An ISO timestamp as local `datetime-local` input value. */
-export function toInputValue(iso: string): string {
-  return nowInputValue(new Date(iso))
-}
-
-/** Parses user input with a decimal point or comma; `NaN` for anything that is not a number. */
-function parseDecimal(raw: string): number {
-  const text = raw.trim().replace(',', '.')
-  return text === '' ? NaN : Number(text)
-}
-
 export function emptyValues(
   prefill?: Partial<Record<BodyStatsMetricKey, number>>,
 ): BodyStatsFormValues {
-  const values = { date: nowInputValue(), note: '' } as unknown as BodyStatsFormValues
+  const values = { date: formatDateTime(new Date()), note: '' } as unknown as BodyStatsFormValues
   for (const { key } of bodyStatsMetrics) {
     const value = prefill?.[key]
     values[key] = value === undefined ? '' : String(value)
@@ -42,7 +27,8 @@ export function emptyValues(
 
 export function validate(values: BodyStatsFormValues, t: TFunction): BodyStatsFormErrors {
   const errors: BodyStatsFormErrors = {}
-  if (!values.date) errors.date = t('form.errors.required')
+  if (values.date.trim() === '') errors.date = t('form.errors.required')
+  else if (!parseDateTime(values.date)) errors.date = t('form.errors.dateTime')
 
   for (const metric of bodyStatsMetrics) {
     const raw = values[metric.key].trim()
@@ -60,7 +46,7 @@ export function validate(values: BodyStatsFormValues, t: TFunction): BodyStatsFo
 /** Mutation input; an empty note becomes null. Call only with values that passed `validate`. */
 export function toInput(values: BodyStatsFormValues) {
   return {
-    date: new Date(values.date).toISOString(),
+    date: (parseDateTime(values.date) ?? new Date(NaN)).toISOString(),
     weight: parseDecimal(values.weight),
     bodyFatPercentage: parseDecimal(values.bodyFatPercentage),
     musclePercentage: parseDecimal(values.musclePercentage),

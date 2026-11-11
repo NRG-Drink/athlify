@@ -1,7 +1,9 @@
-import { Flex, Tag, Text } from '@chakra-ui/react'
-import { useMemo, type ReactNode } from 'react'
+import { Flex, IconButton, Menu, Portal, Tag, Text } from '@chakra-ui/react'
+import { memo, useMemo, type ReactNode, type Ref } from 'react'
 import { graphql, useFragment } from 'react-relay'
+import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
+import { LuCopy, LuEllipsis, LuTrash2 } from 'react-icons/lu'
 import { DataTable, type DataTableColumn } from '../../components/DataTable'
 import { useFormat } from '../../i18n/useFormat'
 import { ActivityFilterField } from './ActivityFilterField'
@@ -14,13 +16,16 @@ import {
   type FilterOption,
 } from './activityFilters'
 import {
+  effortLevel,
   enumLabel,
   formatDuration,
   formatHeartRate,
   formatOptionalNumber,
+  moodEmojiOf,
   moodRank,
   tagColorPalette,
   vehicleLabel,
+  windEmojiOf,
   windRank,
 } from './activityFormatting'
 import { isSortColumn, type ListSort } from '../../lib/sort'
@@ -47,6 +52,10 @@ const tableFragment = graphql`
     mood
     effort
     wind
+    source
+    merge {
+      id
+    }
     vehicle {
       id
       brand
@@ -101,6 +110,78 @@ function TagChips({ row }: { row: ActivityRow }) {
   )
 }
 
+interface RowActionsProps {
+  row: ActivityRow
+  /** Accessible name of the menu button; it names the row. */
+  label: string
+  labels: { duplicate: string; delete: string }
+  onDuplicate: (row: ActivityRow) => void
+  onDelete: (row: ActivityRow) => void
+}
+
+/**
+ * Duplicate and the destructive delete (last) in a menu; a click on the row itself edits. It gets
+ * its texts as props, so a row adds no hooks of its own.
+ */
+function RowActions({ row, label, labels, onDuplicate, onDelete }: RowActionsProps) {
+  return (
+    <Menu.Root positioning={{ placement: 'bottom-end' }}>
+      <Menu.Trigger asChild>
+        <IconButton variant="ghost" size="sm" color="fg.muted" aria-label={label}>
+          <LuEllipsis />
+        </IconButton>
+      </Menu.Trigger>
+      <Portal>
+        <Menu.Positioner>
+          {/* Portals leave the app's brand palette, so the menu sets it again. */}
+          <Menu.Content colorPalette="brand">
+            {/* onClick, not onSelect: in the page tests onSelect never fired (see frontend
+                LEARNINGS); Enter on a highlighted item clicks it, so the keyboard works too. */}
+            <Menu.Item value="duplicate" onClick={() => onDuplicate(row)}>
+              <LuCopy aria-hidden />
+              {labels.duplicate}
+            </Menu.Item>
+            <Menu.Separator />
+            <Menu.Item
+              value="delete"
+              color="fg.error"
+              _highlighted={{ bg: 'bg.error' }}
+              onClick={() => onDelete(row)}
+            >
+              <LuTrash2 aria-hidden />
+              {labels.delete}
+            </Menu.Item>
+          </Menu.Content>
+        </Menu.Positioner>
+      </Portal>
+    </Menu.Root>
+  )
+}
+
+/**
+ * A mood or wind as its emoji; the label is its accessible name and tooltip. A value without an emoji
+ * (newer than this client) shows its label, and a missing one "—".
+ */
+function EmojiValue({ emoji, label }: { emoji: string | undefined; label: string }) {
+  if (!emoji) return <>{label}</>
+  return (
+    <Text as="span" role="img" aria-label={label} title={label} fontSize="lg" lineHeight="1">
+      {emoji}
+    </Text>
+  )
+}
+
+/** The effort with the emoji of its group before the number; the group's name is the tooltip. */
+function effortCell(t: TFunction, effort: number | null | undefined) {
+  const level = effortLevel(t, effort)
+  if (!level) return '—'
+  return (
+    <Text as="span" title={level.label} whiteSpace="nowrap">
+      <span aria-hidden>{level.emoji}</span> {effort}
+    </Text>
+  )
+}
+
 /** Shows the full text as a tooltip, because truncated cells hide the end. */
 const titled = (text: string) => (text ? <span title={text}>{text}</span> : '—')
 
@@ -128,9 +209,15 @@ interface ActivitiesTableProps {
   busy: boolean
   /** Shown in the table body when nothing matches; the header and its filters stay. */
   emptyMessage?: ReactNode
+  onEdit: (row: ActivityRow) => void
+  onDuplicate: (row: ActivityRow) => void
+  onDelete: (row: ActivityRow) => void
+  /** The count line, which takes the focus after a delete. */
+  countRef?: Ref<HTMLParagraphElement>
 }
 
-export function ActivitiesTable({
+/** Memoized: the page re-renders for its dialogs, which does not change the rows. */
+export const ActivitiesTable = memo(function ActivitiesTable({
   entries,
   hasNextPage,
   isLoadingNext,
@@ -147,9 +234,17 @@ export function ActivitiesTable({
   totalCount,
   busy,
   emptyMessage,
+  onEdit,
+  onDuplicate,
+  onDelete,
+  countRef,
 }: ActivitiesTableProps) {
   const { t } = useTranslation()
   const format = useFormat()
+  const actionLabels = useMemo(
+    () => ({ duplicate: t('activities.duplicate.action'), delete: t('activities.delete.action') }),
+    [t],
+  )
   const rows = useFragment(tableFragment, entries)
 
   const columnFilters = useMemo(() => {
@@ -193,8 +288,8 @@ export function ActivitiesTable({
         id: 'date',
         header: t('activities.columns.date'),
         accessor: (row) => new Date(row.date).getTime(),
-        cell: (row) => <time dateTime={row.date}>{format.date(row.date)}</time>,
-        width: '8rem',
+        cell: (row) => <time dateTime={row.date}>{format.dateTime(row.date)}</time>,
+        width: '10rem',
       },
       {
         id: 'type',
@@ -299,7 +394,7 @@ export function ActivitiesTable({
         id: 'effort',
         header: t('activities.columns.effort'),
         accessor: (row) => row.effort ?? -1,
-        cell: (row) => row.effort ?? '—',
+        cell: (row) => effortCell(t, row.effort),
         align: 'end',
         unit: t('activities.units.effort'),
         description: t('activities.columnHints.effort'),
@@ -310,7 +405,9 @@ export function ActivitiesTable({
         header: t('activities.columns.mood'),
         description: t('activities.columnHints.mood'),
         accessor: (row) => moodRank(row.mood),
-        cell: (row) => enumLabel(t, 'moods', row.mood),
+        cell: (row) => (
+          <EmojiValue emoji={moodEmojiOf(row.mood)} label={enumLabel(t, 'moods', row.mood)} />
+        ),
         ...secondary,
         sortable: false,
       },
@@ -319,7 +416,9 @@ export function ActivitiesTable({
         header: t('activities.columns.wind'),
         description: t('activities.columnHints.wind'),
         accessor: (row) => windRank(row.wind),
-        cell: (row) => enumLabel(t, 'winds', row.wind),
+        cell: (row) => (
+          <EmojiValue emoji={windEmojiOf(row.wind)} label={enumLabel(t, 'winds', row.wind)} />
+        ),
         ...secondary,
         hideBelow: filterColumnBreakpoint.wind,
         filter: columnFilters.wind,
@@ -368,6 +467,19 @@ export function ActivitiesTable({
       busy={busy}
       emptyMessage={emptyMessage}
       count={t('activities.resultCount', { count: totalCount })}
+      countRef={countRef}
+      actionsLabel={t('activities.row.actionsColumn')}
+      onRowClick={onEdit}
+      rowLabel={(row) => t('activities.row.edit', { date: format.date(row.date) })}
+      rowActions={(row) => (
+        <RowActions
+          row={row}
+          label={t('activities.row.more', { date: format.date(row.date) })}
+          labels={actionLabels}
+          onDuplicate={onDuplicate}
+          onDelete={onDelete}
+        />
+      )}
       pagination={{
         hasNextPage,
         isLoadingNext,
@@ -378,4 +490,4 @@ export function ActivitiesTable({
       }}
     />
   )
-}
+})

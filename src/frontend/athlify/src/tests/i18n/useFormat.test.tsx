@@ -24,17 +24,22 @@ describe('createFormatter', () => {
     expect(de.signed(0.04, 'kg', 1)).toBe(`0.0${NBSP}kg`)
   })
 
-  it('formats dates in the language of the formatter', () => {
-    const date = new Date(2026, 9, 2, 10, 31)
-    expect(de.date(date)).toMatch(/2\.? Okt\.? 2026/)
-    expect(createFormatter('en').date(date)).toMatch(/2 Oct 2026/)
+  it('formats dates as DD.MM.YYYY and HH:MM (24 h) in every language', () => {
+    const date = new Date(2026, 9, 2, 22, 31)
+    const en = createFormatter('en')
+    expect(de.date(date)).toBe('02.10.2026')
+    expect(en.date(date)).toBe('02.10.2026')
+    expect(de.dateTime(date)).toBe('02.10.2026, 22:31')
+    expect(en.dateTime(date)).toBe('02.10.2026, 22:31')
+    expect(de.axisDate(date.getTime(), 'days')).toBe('02.10.')
   })
 })
 
 describe('useFormat', () => {
   function Probe() {
     const format = useFormat()
-    return <p>{format.date(new Date(2026, 9, 2))}</p>
+    // Month names on chart axes still follow the language.
+    return <p>{format.axisDate(new Date(2026, 9, 2).getTime(), 'months')}</p>
   }
 
   it('formats again when the language changes', async () => {

@@ -53,9 +53,10 @@ The frontend is under `../../../src/frontend/athlify/`. It is a standalone
 npm package with its own `package.json` and `package-lock.json`. It is an app
 shell with two implemented domain slices: Body-Stats is the reference for
 domain pages (see [Domain page pattern](#domain-page-pattern)), and Activities
-is the first read-only list slice. The Activities page lists activities
-from the backend connection, applies URL-backed filters and loads additional
-pages on demand. Dashboard, Garage and Events remain placeholders.
+is the first list slice with editing. The Activities page lists activities
+from the backend connection, applies URL-backed filters, loads additional
+pages on demand and adds, edits, duplicates and deletes activities in a form
+dialog. Dashboard, Garage and Events remain placeholders.
 
 ```text
 src/frontend/athlify/src/
@@ -79,7 +80,7 @@ src/frontend/athlify/src/
 ```
 
 The App Layout and routing are implemented. Dashboard, Garage, Events and
-Settings render placeholder pages. The `/activities` view is a read-only
+Settings render placeholder pages. The `/activities` view is a
 domain page backed by the GraphQL API; its type, bicycle, wind and tag
 filters are checklists of ticked values, kept in the URL as repeated parameters, operated from the column headers and its list uses Relay cursor pagination (50 per page, "load more"). The
 `/body-stats` view is a domain page backed by the GraphQL API. State management
@@ -122,7 +123,7 @@ view are shown inside the layout through the route `errorElement`
 | --- | --- | --- |
 | `/` | redirects to `/dashboard` | – |
 | `/dashboard` | Dashboard (placeholder) | Primary Navigation |
-| `/activities` | Activities (read-only list with URL filters and pagination) | Primary Navigation |
+| `/activities` | Activities (list with URL filters and pagination; add, edit, duplicate, delete) | Primary Navigation |
 | `/garage` | Garage (placeholder) | Primary Navigation |
 | `/body-stats` | Body-Stats (domain page; `?metric=`, `?from=` and `?to=` select the view) | Primary Navigation |
 | `/events` | Events (placeholder) | Primary Navigation |

@@ -1,4 +1,4 @@
-import type { Aggregation, DateRange } from './period'
+import { localDateKey, type Aggregation, type DateRange } from './period'
 
 /** Describes one measured value; tiles, chart, table columns and form fields are all generated from these. */
 export interface MetricDefinition<K extends string = string> {
@@ -26,15 +26,9 @@ export function sortByDate(points: readonly MetricPoint[]): MetricPoint[] {
 }
 
 /** Points whose local calendar date falls within the inclusive range, oldest first. */
-export function filterByRange(
-  points: readonly MetricPoint[],
-  range: DateRange,
-): MetricPoint[] {
+export function filterByRange(points: readonly MetricPoint[], range: DateRange): MetricPoint[] {
   const dataPoints = points.filter((point) => {
-    const date = point.date
-    const key = `${date.getFullYear().toString().padStart(4, '0')}-${(date.getMonth() + 1)
-      .toString()
-      .padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
+    const key = localDateKey(point.date)
     return key >= range.from && key <= range.to
   })
   return sortByDate(dataPoints)
@@ -87,10 +81,7 @@ export function latest(points: readonly MetricPoint[]): MetricPoint | undefined 
 }
 
 /** Latest value minus the first value inside the range; undefined with fewer than two points. */
-export function rangeDelta(
-  points: readonly MetricPoint[],
-  range: DateRange,
-): number | undefined {
+export function rangeDelta(points: readonly MetricPoint[], range: DateRange): number | undefined {
   const inRange = filterByRange(points, range)
   if (inRange.length < 2) return undefined
   return inRange[inRange.length - 1].value - inRange[0].value

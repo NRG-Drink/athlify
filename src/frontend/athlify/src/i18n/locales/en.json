@@ -27,11 +27,21 @@
     "form": {
       "cancel": "Cancel",
       "save": "Save",
+      "datePlaceholder": "DD.MM.YYYY",
+      "date": "Date",
+      "time": "Time",
+      "openCalendar": "Open calendar",
+      "openTimePicker": "Pick a time",
+      "hours": "Hours",
+      "minutes": "Minutes",
       "errors": {
         "required": "Required.",
         "number": "Please enter a number.",
         "positive": "Please enter a value greater than 0.",
-        "percentage": "Please enter a value between 0 and 100."
+        "percentage": "Please enter a value between 0 and 100.",
+        "nonNegative": "Please enter a value of 0 or more.",
+        "integer": "Please enter a whole number.",
+        "dateTime": "Please use DD.MM.YYYY, HH:MM."
       }
     },
     "period": {
@@ -85,13 +95,8 @@
         "vehicle": "Bicycle",
         "tag": "Tag",
         "wind": "Wind",
-        "selectedCount": "{{count}} selected",
-        "clear": "Clear selection",
-        "searchPlaceholder": "Search …",
-        "noMatches": "No matches.",
         "more": "+{{count}}",
         "done": "Done",
-        "moreOptions": "Only the first options are shown.",
         "reset": "Reset filters",
         "filterBy": "Filter by {{column}}",
         "filterByActive": "Filter by {{column}}, active: {{value}}",
@@ -145,7 +150,8 @@
         "title": "No activities yet",
         "message": "Activities you enter or import will appear here.",
         "filteredTitle": "No matching activities",
-        "filteredMessage": "Adjust or reset the filters."
+        "filteredMessage": "Adjust or reset the filters.",
+        "action": "Add your first activity"
       },
       "moods": {
         "VERY_BAD": "Very bad",
@@ -160,6 +166,83 @@
         "MODERATE": "Moderate",
         "STRONG": "Strong",
         "STORMY": "Stormy"
+      },
+      "effortLevels": {
+        "easy": "Easy",
+        "moderate": "Moderate",
+        "hard": "Hard",
+        "max": "Maximal"
+      },
+      "add": {
+        "open": "Add activity",
+        "title": "New activity",
+        "success": "Activity saved.",
+        "hiddenByFilters": "Activity saved. The active filters hide it.",
+        "errors": {
+          "saveFailed": "Saving failed. Please try again."
+        }
+      },
+      "duplicate": {
+        "action": "Duplicate",
+        "title": "Duplicate activity"
+      },
+      "edit": {
+        "title": "Edit activity",
+        "success": "Activity updated.",
+        "errors": {
+          "notFound": "This activity no longer exists."
+        }
+      },
+      "delete": {
+        "action": "Delete",
+        "title": "Delete activity?",
+        "description": "The activity from {{date}} ({{name}}) is removed from all lists and analyses.",
+        "description_merged": "The activity from {{date}} ({{name}}) is removed from all lists and analyses. It is part of a merge. If fewer than two activities remain in it, the merge is dissolved.",
+        "confirm": "Delete",
+        "success": "Activity deleted.",
+        "errors": {
+          "failed": "Deleting failed. Please try again."
+        }
+      },
+      "row": {
+        "actionsColumn": "Actions",
+        "edit": "Edit activity from {{date}}",
+        "more": "More actions for the activity from {{date}}"
+      },
+      "form": {
+        "date": "Date and start time",
+        "durationPlaceholder": "1:30",
+        "moreDetails": "More details",
+        "detailsCount_one": "{{count}} value",
+        "detailsCount_other": "{{count}} values",
+        "heartRate": "Heart rate ({{unit}})",
+        "heartRateMin": "Min",
+        "heartRateAverage": "Avg",
+        "heartRateMax": "Max",
+        "noVehicle": "No bicycle",
+        "calculated": "Calculated",
+        "calculatedHint": "* Calculated automatically.",
+        "source": "Source",
+        "effortNone": "Not set",
+        "effortHigh": "maximal",
+        "newTag": "New tag",
+        "tagName": "Tag name",
+        "noGadgets": "No gadgets yet.",
+        "createTag": "Create",
+        "tagCreated": "Tag “{{name}}” created.",
+        "tagCreateFailed": "The tag could not be created. Does it already exist?",
+        "errors": {
+          "duration": "Please use h:mm.",
+          "futureDate": "The date must not be in the future.",
+          "heartRateRange": "Please enter a value between 20 and 250.",
+          "heartRateOrder": "Min ≤ avg ≤ max – please check the values.",
+          "effortRange": "Please choose a value between 1 and 10.",
+          "descriptionLength": "At most {{max}} characters."
+        }
+      },
+      "sources": {
+        "MANUAL": "Manual",
+        "STRAVA": "Strava"
       }
     },
     "bodyStats": {
@@ -216,7 +299,7 @@
         },
         "errors": {
           "missing": "Enter both dates.",
-          "invalidDate": "Enter valid dates.",
+          "invalidDate": "Enter the dates as DD.MM.YYYY.",
           "fromAfterTo": "The start date must be before the end date."
         }
       },
@@ -260,6 +343,13 @@
       "resultCount_other": "{{count}} measurements",
       "loadMore": "Load more measurements",
       "loadMoreFailed": "More measurements could not be loaded."
+    },
+    "checklist": {
+      "search": "Search …",
+      "noMatches": "No matches.",
+      "selectedCount": "{{count}} selected",
+      "clear": "Clear selection",
+      "moreOptions": "Only the first options are shown."
     }
   }
 }

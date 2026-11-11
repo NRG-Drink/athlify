@@ -1,10 +1,11 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { formatDate, formatDateTime, formatDayMonth } from '../lib/dates'
 import type { MetricUnit } from '../lib/metrics'
 
 // German uses the Swiss conventions of the product ("Velos", decimal point); the team decided on
 // the decimal point. This is the single place to switch to de-DE (decimal comma).
-const localeFor = (language: string) => (language.startsWith('de') ? 'de-CH' : 'en-GB')
+export const localeFor = (language: string) => (language.startsWith('de') ? 'de-CH' : 'en-GB')
 
 const NO_VALUE = '—'
 const MINUS = '−'
@@ -16,9 +17,11 @@ export interface Formatter {
   measure: (value: number | undefined, unit: MetricUnit, decimals: number) => string
   /** `+0.3 kg` / `−0.7 kg` with a real minus sign; zero has no sign. */
   signed: (value: number, unit: MetricUnit, decimals: number) => string
+  /** `01.11.2026` in every language (see `lib/dates.ts`). */
   date: (value: Date | string) => string
+  /** `01.11.2026, 23:31` (24 h) in every language. */
   dateTime: (value: Date | string) => string
-  /** Short axis label for a timestamp in milliseconds, for example `2. Okt.`. */
+  /** Short axis label for a timestamp in milliseconds, for example `02.10.` or `Okt.`. */
   axisDate: (value: number, span: 'days' | 'months' | 'years') => string
 }
 
@@ -38,20 +41,7 @@ export function createFormatter(language: string): Formatter {
     }
     return format
   }
-  const dateFormat = new Intl.DateTimeFormat(locale, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
-  const dateTimeFormat = new Intl.DateTimeFormat(locale, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
   const axisFormats = {
-    days: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }),
     months: new Intl.DateTimeFormat(locale, { month: 'short' }),
     years: new Intl.DateTimeFormat(locale, { month: 'short', year: '2-digit' }),
   }
@@ -67,9 +57,11 @@ export function createFormatter(language: string): Formatter {
       if (Number(Math.abs(value).toFixed(decimals)) === 0) return magnitude
       return `${value > 0 ? '+' : MINUS}${magnitude}`
     },
-    date: (value) => dateFormat.format(toDate(value)),
-    dateTime: (value) => dateTimeFormat.format(toDate(value)),
-    axisDate: (value, span) => axisFormats[span].format(new Date(value)),
+    date: (value) => formatDate(toDate(value)),
+    dateTime: (value) => formatDateTime(toDate(value)),
+    // Days as `02.10.`, the date format without the year; months and years by name.
+    axisDate: (value, span) =>
+      span === 'days' ? formatDayMonth(new Date(value)) : axisFormats[span].format(new Date(value)),
   }
 }
 

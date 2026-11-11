@@ -1,3 +1,4 @@
+import { formatDateTime } from '../../../lib/dates'
 import { act, screen, waitFor, within } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
@@ -110,7 +111,7 @@ describe('ActivitiesPage', () => {
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 
-  it('shows the date without time, no source column and the renamed elevation header', async () => {
+  it('shows date and start time as DD.MM.YYYY, HH:MM, no source column and the renamed elevation header', async () => {
     renderWithRelay(<ActivitiesPage />, () => response(), {
       path: '/activities',
       routePath: '/activities',
@@ -119,7 +120,9 @@ describe('ActivitiesPage', () => {
     const table = await screen.findByRole('table')
     const time = table.querySelector('time')
     expect(time).toHaveAttribute('datetime', activity.date)
-    expect(time?.textContent).not.toContain(':')
+    // Local time, so the expectation is built the same way in every time zone.
+    expect(time).toHaveTextContent(formatDateTime(new Date(activity.date as string)))
+    expect(time?.textContent).toMatch(/^\d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}$/)
     expect(within(table).queryByText('Quelle')).not.toBeInTheDocument()
     expect(within(table).getByText('Höhenmeter').closest('th')).toBeInTheDocument()
   })
@@ -182,9 +185,13 @@ describe('ActivitiesPage', () => {
       'Feierabendrunde am See',
     )
     expect(within(table).getByText('142')).toHaveAttribute('title', '120–170')
-    expect(within(table).getByText('7')).toBeInTheDocument()
-    expect(within(table).getByText('Gut')).toBeInTheDocument()
-    expect(within(table).getByText('Leicht')).toBeInTheDocument()
+    // Effort 7 belongs to the "Hart" group, shown as its emoji before the number.
+    expect(within(table).getByTitle('Hart')).toHaveTextContent('🥵 7')
+    // Mood and wind as emoji, named by their label. The columns are hidden below 2xl, which jsdom
+    // reports as `display: none`, so the role query cannot see them.
+    expect(within(table).getByTitle('Gut')).toHaveTextContent('🙂')
+    expect(within(table).getByTitle('Gut')).toHaveAttribute('aria-label', 'Gut')
+    expect(within(table).getByTitle('Leicht')).toHaveTextContent('🍃')
     expect(within(table).getByText('Garmin Edge')).toBeInTheDocument()
     expect(within(table).getByText('Training')).toBeInTheDocument()
   })
