@@ -54,6 +54,7 @@ describe('Relay network authentication', () => {
     expect(fetch).toHaveBeenCalledWith(authUrl('refresh'), {
       method: 'POST',
       credentials: 'include',
+      signal: expect.any(AbortSignal),
     })
   })
 
@@ -80,6 +81,7 @@ describe('Relay network authentication', () => {
     expect(fetch).toHaveBeenNthCalledWith(2, authUrl('refresh'), {
       method: 'POST',
       credentials: 'include',
+      signal: expect.any(AbortSignal),
     })
     expect(fetch).toHaveBeenNthCalledWith(3, graphqlUrl(), expect.objectContaining({
       headers: expect.objectContaining({ Authorization: expect.stringMatching(/^Bearer /) }),

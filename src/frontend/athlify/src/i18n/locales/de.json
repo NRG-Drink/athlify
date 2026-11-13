@@ -26,6 +26,7 @@
     },
     "auth": {
       "restoringSession": "Sitzung wird wiederhergestellt …",
+      "sessionRefreshFailed": "Deine Sitzung konnte nicht aktualisiert werden. Melde dich erneut an, um den Zugriff wiederherzustellen.",
       "logout": {
         "label": "Abmelden",
         "failed": "Du wurdest auf diesem Gerät abgemeldet. Die Serversitzung könnte noch aktiv sein."

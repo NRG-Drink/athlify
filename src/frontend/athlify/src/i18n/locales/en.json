@@ -26,6 +26,7 @@
     },
     "auth": {
       "restoringSession": "Restoring your session …",
+      "sessionRefreshFailed": "Your session could not be refreshed. Sign in again to restore access.",
       "logout": {
         "label": "Sign out",
         "failed": "You were signed out on this device, but your server session may still be active."

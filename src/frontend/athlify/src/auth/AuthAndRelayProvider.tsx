@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -9,9 +10,21 @@ import { RelayEnvironmentProvider } from "react-relay";
 import { authUrl, readAccessTokenResponse } from "./api";
 import { AuthContext } from "./context";
 import { authEvents } from "./events";
-import { refreshAccessToken } from "./refresh";
+import {
+  clearRefreshFailure,
+  invalidateRefreshRequests,
+  refreshAccessToken,
+} from "./refresh";
+import {
+  getSessionGeneration,
+  invalidateSessionRequests,
+  isSessionGenerationCurrent,
+  runSessionRequest,
+  SessionRequestInvalidatedError,
+} from "./sessionRequests";
 import { tokenStore } from "./tokenStore";
 import { createRelayEnvironment } from "../relay/environment";
+import { toaster } from "../components/ui/toaster";
 
 const SCHEDULED_REFRESH_BUFFER_MS = 60_000;
 
@@ -26,6 +39,7 @@ function FullPageSpinner() {
 }
 
 export function AuthAndRelayProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const [environment, setEnvironment] = useState(createRelayEnvironment);
   const [sessionKey, setSessionKey] = useState(0);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -34,6 +48,7 @@ export function AuthAndRelayProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
+  const refreshFailureNotified = useRef(false);
 
   const resetRelaySession = useCallback(() => {
     setEnvironment(createRelayEnvironment());
@@ -51,7 +66,7 @@ export function AuthAndRelayProvider({ children }: { children: ReactNode }) {
           setUserName(token ? tokenStore.getUserName() : null);
         }
       } catch (error: unknown) {
-        if (active) {
+        if (active && !(error instanceof SessionRequestInvalidatedError)) {
           setBootstrapError(
             error instanceof Error
               ? `Could not restore your session: ${error.message}`
@@ -112,13 +127,19 @@ export function AuthAndRelayProvider({ children }: { children: ReactNode }) {
           }
         })
         .catch((error: unknown) => {
-          if (!active) return;
+          if (!active || error instanceof SessionRequestInvalidatedError) return;
           setBootstrapError(
             error instanceof Error
               ? `Could not refresh your session: ${error.message}`
               : "Could not refresh your session.",
           );
-          authEvents.dispatchEvent(new Event("session-expired"));
+          if (!refreshFailureNotified.current) {
+            refreshFailureNotified.current = true;
+            toaster.create({
+              type: "error",
+              title: t("auth.sessionRefreshFailed"),
+            });
+          }
         });
     };
 
@@ -142,15 +163,20 @@ export function AuthAndRelayProvider({ children }: { children: ReactNode }) {
 
     const handleSessionExpired = () => {
       clearRefreshTimeout();
+      invalidateSessionRequests();
+      invalidateRefreshRequests();
       tokenStore.clear();
       setIsLoggedIn(false);
       setRoles([]);
       setUserName(null);
       setBootstrapError(null);
+      refreshFailureNotified.current = false;
       resetRelaySession();
     };
 
     const handleTokenUpdated = () => {
+      setBootstrapError(null);
+      refreshFailureNotified.current = false;
       setRoles(tokenStore.getRoles());
       setUserName(tokenStore.getUserName());
       scheduleRefresh();
@@ -167,34 +193,48 @@ export function AuthAndRelayProvider({ children }: { children: ReactNode }) {
       authEvents.removeEventListener("token-updated", handleTokenUpdated);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [resetRelaySession]);
+  }, [resetRelaySession, t]);
 
   const login = useCallback(async (username: string, password: string) => {
+    invalidateSessionRequests();
+    const generation = getSessionGeneration();
+    invalidateRefreshRequests(false);
     setIsLoading(true);
     setBootstrapError(null);
     try {
-      const response = await fetch(authUrl("login"), {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+      await runSessionRequest(async () => {
+        if (!isSessionGenerationCurrent(generation)) {
+          throw new SessionRequestInvalidatedError();
+        }
+
+        const response = await fetch(authUrl("login"), {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            response.status === 401
+              ? "Invalid username or password."
+              : `Sign-in failed (HTTP ${response.status}).`,
+          );
+        }
+
+        const data = await readAccessTokenResponse(response);
+        if (!isSessionGenerationCurrent(generation)) {
+          throw new SessionRequestInvalidatedError();
+        }
+
+        tokenStore.set(data.token, data.expiresAt);
+        clearRefreshFailure();
+        setIsLoggedIn(true);
+        setRoles(tokenStore.getRoles());
+        setUserName(tokenStore.getUserName());
+        authEvents.dispatchEvent(new Event("token-updated"));
+        resetRelaySession();
       });
-
-      if (!response.ok) {
-        throw new Error(
-          response.status === 401
-            ? "Invalid username or password."
-            : `Sign-in failed (HTTP ${response.status}).`,
-        );
-      }
-
-      const data = await readAccessTokenResponse(response);
-      tokenStore.set(data.token, data.expiresAt);
-      setIsLoggedIn(true);
-      setRoles(tokenStore.getRoles());
-      setUserName(tokenStore.getUserName());
-      authEvents.dispatchEvent(new Event("token-updated"));
-      resetRelaySession();
     } finally {
       setIsLoading(false);
     }
@@ -205,10 +245,12 @@ export function AuthAndRelayProvider({ children }: { children: ReactNode }) {
 
     let logoutError: Error | null = null;
     try {
-      const response = await fetch(authUrl("logout"), {
-        method: "POST",
-        credentials: "include",
-      });
+      const response = await runSessionRequest(() =>
+        fetch(authUrl("logout"), {
+          method: "POST",
+          credentials: "include",
+        }),
+      );
       if (!response.ok) {
         logoutError = new Error(`Sign-out failed (HTTP ${response.status}).`);
       }
