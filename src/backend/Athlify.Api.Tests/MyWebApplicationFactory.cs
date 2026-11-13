@@ -18,13 +18,13 @@ public abstract class WebApiTestBase : WebApplicationTest<MyWebApplicationFactor
     /// Creates a user in this test's database and returns a client that acts as that user.
     /// <c>Factory.CreateClient()</c> without this helper acts as nobody (<c>NOT_AUTHENTICATED</c>).
     /// </summary>
-    protected async Task<HttpClient> CreateUserClientAsync(string email = "luca@example.com", string role = UserRole.User)
+    protected async Task<HttpClient> CreateUserClientAsync(string username = "luca@example.com", string role = UserRole.User)
     {
         int userId;
         await using (var scope = Factory.Services.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
-            var user = new User { Email = email, FirstName = "Test", LastName = email, Role = role };
+            var user = new User { Username = username, FirstName = "Test", LastName = username, Role = role };
             db.Users.Add(user);
             await db.SaveChangesAsync();
             userId = user.Id;
