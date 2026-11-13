@@ -18,6 +18,7 @@ describe('UserMenu', () => {
   test('opens by keyboard and offers settings, language and color mode', async () => {
     const { panel } = await openUserMenu()
     const menu = within(panel)
+    expect(menu.getByText('test')).toBeInTheDocument()
     expect(menu.getByRole('link', { name: 'Einstellungen' })).toHaveAttribute(
       'href',
       paths.settings,

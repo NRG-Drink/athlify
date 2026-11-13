@@ -1,15 +1,15 @@
 import { render } from '@testing-library/react'
 import { describe, expect, test } from 'vitest'
 import { BrandMark } from '../../components/BrandMark'
-import { Provider } from '../../components/ui/provider'
+import { ChakraProviderAthlify } from '../../components/ui/ChakraProviderAthlify'
 
 describe('BrandMark', () => {
   test('each instance references its own gradient', () => {
     const { container } = render(
-      <Provider>
+      <ChakraProviderAthlify>
         <BrandMark />
         <BrandMark />
-      </Provider>,
+      </ChakraProviderAthlify>,
     )
     const gradients = [...container.querySelectorAll('linearGradient')]
     const fills = [...container.querySelectorAll('path')].map((path) => path.getAttribute('fill'))
@@ -21,9 +21,9 @@ describe('BrandMark', () => {
 
   test('is hidden from assistive technology', () => {
     const { container } = render(
-      <Provider>
+      <ChakraProviderAthlify>
         <BrandMark />
-      </Provider>,
+      </ChakraProviderAthlify>,
     )
     expect(container.querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
   })

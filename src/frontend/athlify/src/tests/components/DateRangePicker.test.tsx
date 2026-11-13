@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { DateRangePicker } from '../../components/DateRangePicker'
-import { Provider } from '../../components/ui/provider'
+import { ChakraProviderAthlify } from '../../components/ui/ChakraProviderAthlify'
 
 const selection = {
   range: { from: '2026-07-05', to: '2026-10-03' },
@@ -11,9 +11,9 @@ const selection = {
 
 const renderPicker = (onChange = vi.fn()) => {
   const result = render(
-    <Provider>
+    <ChakraProviderAthlify>
       <DateRangePicker value={selection} onChange={onChange} />
-    </Provider>,
+    </ChakraProviderAthlify>,
   )
   return { ...result, onChange }
 }

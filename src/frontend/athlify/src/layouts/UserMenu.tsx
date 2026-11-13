@@ -3,12 +3,14 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LuCircleUser, LuSettings } from 'react-icons/lu'
 import { Link as RouterLink } from 'react-router-dom'
+import { useAuth } from '../auth/context'
 import DarkModeToggle from '../components/DarkModeToggle'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 import { paths } from '../navigation/paths'
 
 export function UserMenu() {
   const { t } = useTranslation()
+  const { userName } = useAuth()
   const [open, setOpen] = useState(false)
 
   return (
@@ -34,6 +36,14 @@ export function UserMenu() {
           >
             <Popover.Body p="2">
               <Stack gap="1">
+                {userName && (
+                  <>
+                    <Text px="3" py="2" fontFamily="heading" fontSize="lg" fontWeight="bold">
+                      {userName}
+                    </Text>
+                    <Separator my="1" />
+                  </>
+                )}
                 <Button asChild variant="ghost" justifyContent="flex-start" size="sm">
                   <RouterLink to={paths.settings} onClick={() => setOpen(false)}>
                     <LuSettings aria-hidden />

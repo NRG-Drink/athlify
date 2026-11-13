@@ -159,7 +159,7 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
   const variables = useMemo(() => ({ first: PAGE_SIZE, ...activityQueryVariables(query) }), [query])
   const queryData = useLazyLoadQuery<ActivitiesPageQuery>(pageQuery, variables, {
     fetchKey,
-    fetchPolicy: 'network-only',
+    fetchPolicy: 'store-and-network',
   })
   const { data, hasNext, isLoadingNext, loadNext, refetch } = usePaginationFragment<
     ActivitiesPageMoreQuery,
