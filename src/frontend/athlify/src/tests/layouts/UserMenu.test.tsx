@@ -1,10 +1,11 @@
 import { screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
+import type { AuthContextValue } from '../../auth/context'
 import { paths } from '../../navigation/paths'
 import { renderRoute } from '../utils/renderRoute'
 
-async function openUserMenu() {
-  const rendered = renderRoute(paths.dashboard)
+async function openUserMenu(authOverrides: Partial<AuthContextValue> = {}) {
+  const rendered = renderRoute(paths.dashboard, undefined, authOverrides)
   await screen.findByRole('heading', { level: 1 })
   const trigger = screen.getByRole('button', { name: 'Benutzermenü' })
   expect(trigger).toHaveAttribute('aria-haspopup', 'dialog')
@@ -37,6 +38,31 @@ describe('UserMenu', () => {
     await waitFor(() =>
       expect(screen.queryByRole('dialog', { name: 'Benutzermenü' })).not.toBeInTheDocument(),
     )
+  })
+
+  test('signs out from the bottom of the menu and closes it', async () => {
+    const logout = vi.fn().mockResolvedValue(undefined)
+    const { panel, user } = await openUserMenu({ logout })
+
+    await user.click(within(panel).getByRole('button', { name: 'Abmelden' }))
+
+    expect(logout).toHaveBeenCalledOnce()
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Benutzermenü' })).not.toBeInTheDocument(),
+    )
+  })
+
+  test('shows an error when the server logout request fails', async () => {
+    const logout = vi.fn().mockRejectedValue(new Error('Sign-out failed.'))
+    const { panel, user } = await openUserMenu({ logout })
+
+    await user.click(within(panel).getByRole('button', { name: 'Abmelden' }))
+
+    expect(
+      await screen.findByText(
+        'Du wurdest auf diesem Gerät abgemeldet. Die Serversitzung könnte noch aktiv sein.',
+      ),
+    ).toBeInTheDocument()
   })
 
   test('switching the language updates labels, html lang and title', async () => {

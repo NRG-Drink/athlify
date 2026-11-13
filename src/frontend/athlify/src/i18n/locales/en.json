@@ -26,6 +26,10 @@
     },
     "auth": {
       "restoringSession": "Restoring your session …",
+      "logout": {
+        "label": "Sign out",
+        "failed": "You were signed out on this device, but your server session may still be active."
+      },
       "login": {
         "title": "Sign in",
         "description": "Sign in to Athlify to manage your personal data.",

@@ -1,7 +1,7 @@
 # Athlify Frontend – Software Architecture Document
 
 **Project**: Athlify
-**Last Updated**: 2026-10-21
+**Last Updated**: 2026-11-13
 **Version**: 1.0
 
 ## Overview
@@ -32,7 +32,7 @@ TypeScript and Vite.
 | Tooling                | ESLint 10 + typescript-eslint, Prettier; no git hooks                                                                                     | Implemented                                                                                                                           |
 | Backend contract       | Hot Chocolate GraphQL                                                                                                                     | Proposed in [shared ADR-001](../adr/ADR-001-graphql-api-contract.md); IDs follow [shared ADR-006](../adr/ADR-006-relay-global-ids.md) |
 | GraphQL client         | Relay (`react-relay`, `relay-compiler`, committed `schema.graphql`)                                                                       | Proposed in [ADR-007](adr/ADR-007-domain-page-pattern.md)                                                                             |
-| Auth                   | Backend-owned authentication and authorization; frontend keeps the access token in memory for Relay and checks the refresh-cookie session | Session routing and login submission implemented                                                                                      |
+| Auth                   | Backend-owned authentication and authorization; frontend keeps the access token in memory for Relay and checks the refresh-cookie session | Session routing, login submission and logout with Relay session reset implemented                                                   |
 | Hosting                | Docker Compose with static files served by ASP.NET Core                                                                                   | The combined app service serves the Vite build, provides SPA fallback and handles same-origin `/graphql/` in the same process         |
 
 ## System Components

@@ -26,6 +26,10 @@
     },
     "auth": {
       "restoringSession": "Sitzung wird wiederhergestellt …",
+      "logout": {
+        "label": "Abmelden",
+        "failed": "Du wurdest auf diesem Gerät abgemeldet. Die Serversitzung könnte noch aktiv sein."
+      },
       "login": {
         "title": "Anmelden",
         "description": "Melde dich bei Athlify an, um deine persönlichen Daten zu verwalten.",

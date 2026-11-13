@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useRelayEnvironment } from 'react-relay'
+import type { Environment } from 'relay-runtime'
 import { describe, expect, test, vi } from 'vitest'
 import { authUrl } from '../../../auth/api'
 import { AuthAndRelayProvider } from '../../../auth/AuthAndRelayProvider'
@@ -29,9 +31,18 @@ function tokenResponse(token = createAccessToken()) {
   )
 }
 
-function AuthProbe() {
+function AuthProbe({
+  onRelayEnvironment,
+}: {
+  onRelayEnvironment?: (environment: Environment) => void
+}) {
   const auth = useAuth()
+  const relayEnvironment = useRelayEnvironment()
   const [loginError, setLoginError] = useState<string | null>(null)
+
+  useEffect(() => {
+    onRelayEnvironment?.(relayEnvironment)
+  }, [onRelayEnvironment, relayEnvironment])
 
   return (
     <>
@@ -40,6 +51,15 @@ function AuthProbe() {
       </p>
       <p data-testid="role">{auth.hasRole('User') ? 'user role' : 'no user role'}</p>
       {loginError && <p role="alert">{loginError}</p>}
+      <button
+        onClick={() => {
+          void auth.logout().catch((error: unknown) => {
+            setLoginError(error instanceof Error ? error.message : 'Sign-out failed')
+          })
+        }}
+      >
+        Sign out
+      </button>
       <button
         onClick={() => {
           void auth.login('rider', 'correct-password').catch((error: unknown) => {
@@ -97,5 +117,48 @@ describe('AuthAndRelayProvider session', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: 'rider', password: 'correct-password' }),
     })
+  })
+
+  test('logs out, clears auth state and replaces the Relay cache', async () => {
+    tokenStore.clear()
+    const relayEnvironments: Environment[] = []
+    const onRelayEnvironment = (environment: Environment) => {
+      relayEnvironments.push(environment)
+    }
+    const fetch = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(tokenResponse())
+      .mockResolvedValueOnce(new Response(null, { status: 200 }))
+    const user = userEvent.setup()
+
+    render(
+      <AuthAndRelayProvider>
+        <AuthProbe onRelayEnvironment={onRelayEnvironment} />
+      </AuthAndRelayProvider>,
+    )
+
+    expect(await screen.findByTestId('session')).toHaveTextContent('signed in: rider')
+    const previousEnvironment = relayEnvironments[0]
+    if (!previousEnvironment) throw new Error('Relay environment was not provided.')
+    previousEnvironment.commitUpdate((store) => {
+      store.create('client:private-stats', 'PrivateStats').setValue('distance', 42)
+    })
+
+    await user.click(screen.getByRole('button', { name: 'Sign out' }))
+
+    expect(await screen.findByTestId('session')).toHaveTextContent('signed out')
+    expect(screen.getByTestId('role')).toHaveTextContent('no user role')
+    expect(tokenStore.get()).toBeNull()
+    expect(tokenStore.getRoles()).toEqual([])
+    expect(tokenStore.getUserName()).toBeNull()
+    expect(fetch).toHaveBeenNthCalledWith(2, authUrl('logout'), {
+      method: 'POST',
+      credentials: 'include',
+    })
+
+    const currentEnvironment = relayEnvironments.at(-1)
+    if (!currentEnvironment) throw new Error('Relay environment was not reset.')
+    expect(currentEnvironment).not.toBe(previousEnvironment)
+    expect(currentEnvironment.getStore().getSource().get('client:private-stats')).toBeUndefined()
   })
 })

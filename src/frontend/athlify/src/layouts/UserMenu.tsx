@@ -1,17 +1,27 @@
 import { Button, Flex, IconButton, Popover, Portal, Separator, Stack, Text } from '@chakra-ui/react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { LuCircleUser, LuSettings } from 'react-icons/lu'
+import { LuCircleUser, LuLogOut, LuSettings } from 'react-icons/lu'
 import { Link as RouterLink } from 'react-router-dom'
 import { useAuth } from '../auth/context'
 import DarkModeToggle from '../components/DarkModeToggle'
 import LanguageSwitcher from '../components/LanguageSwitcher'
+import { toaster } from '../components/ui/toaster'
 import { paths } from '../navigation/paths'
 
 export function UserMenu() {
   const { t } = useTranslation()
-  const { userName } = useAuth()
+  const { userName, logout } = useAuth()
   const [open, setOpen] = useState(false)
+
+  const handleLogout = async () => {
+    setOpen(false)
+    try {
+      await logout()
+    } catch {
+      toaster.create({ type: 'error', title: t('auth.logout.failed') })
+    }
+  }
 
   return (
     <Popover.Root
@@ -59,6 +69,16 @@ export function UserMenu() {
                   <Text textStyle="sm">{t('layout.colorMode')}</Text>
                   <DarkModeToggle />
                 </Flex>
+                <Separator my="1" />
+                <Button
+                  variant="ghost"
+                  justifyContent="flex-start"
+                  size="sm"
+                  onClick={() => void handleLogout()}
+                >
+                  <LuLogOut aria-hidden />
+                  {t('auth.logout.label')}
+                </Button>
               </Stack>
             </Popover.Body>
           </Popover.Content>

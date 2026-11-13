@@ -146,6 +146,7 @@ export function AuthAndRelayProvider({ children }: { children: ReactNode }) {
       setIsLoggedIn(false);
       setRoles([]);
       setUserName(null);
+      setBootstrapError(null);
       resetRelaySession();
     };
 
@@ -200,6 +201,8 @@ export function AuthAndRelayProvider({ children }: { children: ReactNode }) {
   }, [resetRelaySession]);
 
   const logout = useCallback(async () => {
+    authEvents.dispatchEvent(new Event("session-expired"));
+
     let logoutError: Error | null = null;
     try {
       const response = await fetch(authUrl("logout"), {
@@ -211,8 +214,6 @@ export function AuthAndRelayProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       logoutError = error instanceof Error ? error : new Error("Sign-out failed.");
-    } finally {
-      authEvents.dispatchEvent(new Event("session-expired"));
     }
 
     if (logoutError) throw logoutError;
