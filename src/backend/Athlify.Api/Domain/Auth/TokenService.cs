@@ -32,7 +32,6 @@ public class TokenService(
         {
             new Claim(ClaimTypes.NameIdentifier, dbUser.Id.ToString()),
             new Claim(ClaimTypes.Name, dbUser.Username),
-            new Claim(ClaimTypes.Email, dbUser.Email),
             new Claim(ClaimTypes.Role, dbUser.Role),
         };
 
@@ -124,29 +123,34 @@ public class TokenService(
         RefreshToken stored,
         RefreshToken newRefreshToken)
     {
-        await using var transaction = await db.Database.BeginTransactionAsync();
-        var affectedRows = await db.RefreshTokens
-            .Where(t => t.Id == stored.Id && t.Revoked == null && t.ExpiresAt > newRefreshToken.Created)
-            .ExecuteUpdateAsync(setters => setters
-                .SetProperty(t => t.Revoked, newRefreshToken.Created)
-                .SetProperty(t => t.RevokedByIp, ip)
-                .SetProperty(t => t.ReasonRevoked, RefreshToken.RevokeReason.Rotated));
-
-        if (affectedRows > 1)
+        // https://learn.microsoft.com/en-gb/ef/core/miscellaneous/connection-resiliency
+        var strategy = db.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
         {
-            throw new InvalidOperationException("Refresh-token consumption affected more than one row.");
-        }
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            var affectedRows = await db.RefreshTokens
+                .Where(t => t.Id == stored.Id && t.Revoked == null && t.ExpiresAt > newRefreshToken.Created)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(t => t.Revoked, newRefreshToken.Created)
+                    .SetProperty(t => t.RevokedByIp, ip)
+                    .SetProperty(t => t.ReasonRevoked, RefreshToken.RevokeReason.Rotated));
 
-        if (affectedRows == 1)
-        {
-            await db.RefreshTokens.AddAsync(newRefreshToken);
-            await db.SaveChangesAsync();
-            await transaction.CommitAsync();
-            return true;
-        }
+            if (affectedRows > 1)
+            {
+                throw new InvalidOperationException("Refresh-token consumption affected more than one row.");
+            }
 
-        await transaction.RollbackAsync();
-        return false;
+            if (affectedRows == 1)
+            {
+                await db.RefreshTokens.AddAsync(newRefreshToken);
+                await db.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return true;
+            }
+
+            await transaction.RollbackAsync();
+            return false;
+        });
     }
 
     private async Task ThrowNotRotated(

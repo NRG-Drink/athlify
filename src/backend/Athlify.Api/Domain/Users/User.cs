@@ -19,7 +19,6 @@ public static class UserRole
 public class User : Entity
 {
     public string Username { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
 
     /// <summary>Set by the authentication feature; never exposed through the API.</summary>
     public string? PasswordHash { get; set; }

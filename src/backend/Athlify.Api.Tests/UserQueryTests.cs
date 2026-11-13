@@ -11,9 +11,9 @@ public class UserQueryTests : WebApiTestBase
     {
         var client = await CreateUserClientAsync("admin@example.com", UserRole.Admin);
 
-        var me = (await DataAsync(client, "query { me { id email role language } }")).GetProperty("me");
+        var me = (await DataAsync(client, "query { me { id username role language } }")).GetProperty("me");
 
-        await Assert.That(me.GetProperty("email").GetString()).IsEqualTo("admin@example.com");
+        await Assert.That(me.GetProperty("username").GetString()).IsEqualTo("admin@example.com");
         await Assert.That(me.GetProperty("role").GetString()).IsEqualTo("Admin");
         await Assert.That(me.GetProperty("language").GetString()).IsEqualTo("DE");
     }
@@ -45,11 +45,11 @@ public class UserQueryTests : WebApiTestBase
         var mia = await CreateUserClientAsync("mia@example.com");
         var lucasId = (await DataAsync(luca, "query { me { id } }")).GetProperty("me").GetProperty("id").GetString();
 
-        const string node = "query($id: ID!) { node(id: $id) { ... on User { email } } }";
+        const string node = "query($id: ID!) { node(id: $id) { ... on User { username } } }";
         var own = (await DataAsync(luca, node, new { id = lucasId })).GetProperty("node");
         var foreign = (await DataAsync(mia, node, new { id = lucasId })).GetProperty("node");
 
-        await Assert.That(own.GetProperty("email").GetString()).IsEqualTo("luca@example.com");
+        await Assert.That(own.GetProperty("username").GetString()).IsEqualTo("luca@example.com");
         await Assert.That(IsNull(foreign)).IsTrue();
     }
 
@@ -59,9 +59,9 @@ public class UserQueryTests : WebApiTestBase
         var client = await CreateUserClientAsync();
         await AddAsync(client, Input());
 
-        var data = await DataAsync(client, "query { me { email } bodyStats { nodes { id } } }");
+        var data = await DataAsync(client, "query { me { username } bodyStats { nodes { id } } }");
 
-        await Assert.That(data.GetProperty("me").GetProperty("email").GetString()).IsEqualTo("luca@example.com");
+        await Assert.That(data.GetProperty("me").GetProperty("username").GetString()).IsEqualTo("luca@example.com");
         await Assert.That(Nodes(data, "bodyStats").Count).IsEqualTo(1);
     }
 

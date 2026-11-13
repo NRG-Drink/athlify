@@ -4,7 +4,7 @@ import { use } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { Page } from '../../components/Page'
 import { QueryBoundary } from '../../components/QueryBoundary'
-import { Provider } from '../../components/ui/provider'
+import { ChakraProviderAthlify } from '../../components/ui/ChakraProviderAthlify'
 
 function Broken(): never {
   throw new Error('query failed')
@@ -17,13 +17,13 @@ function Pending() {
 
 const renderInPage = (child: React.ReactNode, onRetry = () => {}) =>
   render(
-    <Provider>
+    <ChakraProviderAthlify>
       <Page title="Garage">
         <QueryBoundary onRetry={onRetry} errorMessage="Konnte nicht geladen werden.">
           {child}
         </QueryBoundary>
       </Page>
-    </Provider>,
+    </ChakraProviderAthlify>,
   )
 
 describe('QueryBoundary', () => {
