@@ -124,6 +124,10 @@ public class TokenService(
         RefreshToken stored,
         RefreshToken newRefreshToken)
     {
+        // https://learn.microsoft.com/en-gb/ef/core/miscellaneous/connection-resiliency
+        var strategy = db.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
         await using var transaction = await db.Database.BeginTransactionAsync();
         var affectedRows = await db.RefreshTokens
             .Where(t => t.Id == stored.Id && t.Revoked == null && t.ExpiresAt > newRefreshToken.Created)
@@ -147,6 +151,7 @@ public class TokenService(
 
         await transaction.RollbackAsync();
         return false;
+        });
     }
 
     private async Task ThrowNotRotated(
