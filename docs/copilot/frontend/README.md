@@ -68,8 +68,9 @@ in the URL and cursor-based "load more" pagination; activities are added,
 edited, duplicated and deleted in a form dialog
 ([ADR-012](adr/ADR-012-store-updates-for-server-sorted-lists.md)). The `/events`
 page loads the complete cursor connection for TanStack Table's client-side
-filters, multi-column sorting, optional columns, virtualized rows and CSV
-export.
+filters, URL-backed filter state, multi-column sorting, locally persisted
+column widths, optional columns, clipped or wrapped cell text, virtualized
+rows and CSV export.
 `/events/ag-grid` retains the server-filtered AG Grid comparison, while
 `/ag-events` is the full-featured AG Grid showcase. The comparison and
 recommendation are in

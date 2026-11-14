@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TanStackEventsPage } from '../../../features/events/TanStackEventsPage'
 import { paths } from '../../../navigation/paths'
 import { renderWithRelay } from '../../utils/relay'
@@ -56,6 +56,10 @@ const response = (
 })
 
 describe('TanStackEventsPage', () => {
+  beforeEach(() => {
+    localStorage.removeItem('athlify.events.tanstack.columnWidths')
+  })
+
   it('loads the complete cursor connection before enabling local table operations', async () => {
     vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (
       this: HTMLElement,
@@ -83,7 +87,7 @@ describe('TanStackEventsPage', () => {
     ) {
       return this.tagName === 'SECTION' ? 600 : 0
     })
-    const { user } = renderWithRelay(<TanStackEventsPage />, () => response(), {
+    const { user, router } = renderWithRelay(<TanStackEventsPage />, () => response(), {
       path: paths.events,
       routePath: paths.events,
     })
@@ -111,6 +115,9 @@ describe('TanStackEventsPage', () => {
     await waitFor(() => {
       expect(screen.queryByText('Sturz beim Rennen')).not.toBeInTheDocument()
       expect(screen.getByText('Werkstatttermin')).toBeInTheDocument()
+      expect(new URLSearchParams(router.state.location.search).get('eventsTableType')).toBe(
+        'REPAIR',
+      )
     })
   })
 
@@ -193,6 +200,60 @@ describe('TanStackEventsPage', () => {
     })
   }, 15_000)
 
+  it('restores saved widths and clamps them to supported bounds', async () => {
+    localStorage.setItem(
+      'athlify.events.tanstack.columnWidths',
+      JSON.stringify({ name: 480, type: 80, startDate: 200, unknown: 320 }),
+    )
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      return this.tagName === 'SECTION' ? 600 : 0
+    })
+    renderWithRelay(<TanStackEventsPage />, () => response(), {
+      path: paths.events,
+      routePath: paths.events,
+    })
+
+    expect(await screen.findByText('Sturz beim Rennen')).toBeInTheDocument()
+    const columns = screen.getByRole('table').querySelectorAll('col')
+    expect(columns[0]).toHaveStyle({ width: '480px' })
+    expect(columns[1]).toHaveStyle({ width: '144px' })
+    expect(columns[2]).toHaveStyle({ width: '200px' })
+  })
+
+  it('restores filters from the URL and updates URL filters without dropping unrelated params', async () => {
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      return this.tagName === 'SECTION' ? 600 : 0
+    })
+    const { router } = renderWithRelay(<TanStackEventsPage />, () => response(), {
+      path: `${paths.events}?keep=1&eventsTableSearch=Bremsen`,
+      routePath: paths.events,
+    })
+
+    expect(await screen.findByText('Werkstatttermin')).toBeInTheDocument()
+    expect(screen.queryByText('Sturz beim Rennen')).not.toBeInTheDocument()
+    expect(screen.getByRole('searchbox', { name: 'Schnellfilter' })).toHaveValue('Bremsen')
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Schnellfilter' }), {
+      target: { value: 'Werkstatt' },
+    })
+    await waitFor(() => {
+      const params = new URLSearchParams(router.state.location.search)
+      expect(params.get('keep')).toBe('1')
+      expect(params.get('eventsTableSearch')).toBe('Werkstatt')
+    })
+
+    await router.navigate(`${paths.events}?keep=1&eventsTableSearch=Sturz`)
+    await waitFor(() => {
+      expect(screen.getByRole('searchbox', { name: 'Schnellfilter' })).toHaveValue('Sturz')
+      expect(screen.getByText('Sturz beim Rennen')).toBeInTheDocument()
+      expect(screen.queryByText('Werkstatttermin')).not.toBeInTheDocument()
+    })
+  })
+
   it('resizes columns with pointer and keyboard input while keeping the Event column pinned', async () => {
     vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (
       this: HTMLElement,
@@ -216,6 +277,13 @@ describe('TanStackEventsPage', () => {
     expect(resizeHandle).toHaveAttribute('aria-valuenow', '320')
     expect(table.querySelector('col')).toHaveStyle({ width: '320px' })
     expect(screen.getByText('Sturz beim Rennen').closest('td')).toHaveStyle({ width: '320px' })
+    await waitFor(() => {
+      expect(
+        JSON.parse(localStorage.getItem('athlify.events.tanstack.columnWidths') ?? '{}'),
+      ).toMatchObject({
+        name: 320,
+      })
+    })
 
     resizeHandle.focus()
     await user.keyboard('{ArrowRight}')
@@ -225,8 +293,38 @@ describe('TanStackEventsPage', () => {
     expect(firstHeader).toHaveStyle({ position: 'sticky', left: '0px' })
     await user.click(screen.getByRole('button', { name: 'Spalten' }))
     const columnsGroup = screen.getByRole('group', { name: 'Sichtbare Event-Spalten' })
-    expect(
-      within(columnsGroup).queryByRole('checkbox', { name: 'Event' }),
-    ).not.toBeInTheDocument()
+    expect(within(columnsGroup).queryByRole('checkbox', { name: 'Event' })).not.toBeInTheDocument()
+  })
+
+  it('clips cell text by default and lets users enable wrapping', async () => {
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      return this.tagName === 'SECTION' ? 600 : 0
+    })
+    const { user } = renderWithRelay(<TanStackEventsPage />, () => response(), {
+      path: paths.events,
+      routePath: paths.events,
+    })
+
+    expect(await screen.findByText('Sturz beim Rennen')).toBeInTheDocument()
+    const cell = screen.getByText('Sturz beim Rennen').closest('td')
+    const content = cell?.firstElementChild
+    const row = cell?.closest('tr')
+    expect(row).toHaveStyle({ height: '48px' })
+    expect(cell).toHaveStyle({ overflow: 'hidden' })
+    expect(content).toHaveStyle({
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+    })
+
+    await user.click(screen.getByRole('button', { name: 'Spalten' }))
+    const wrapOption = screen.getByRole('checkbox', { name: 'Zellentext umbrechen' })
+    await user.click(wrapOption)
+
+    expect(wrapOption).toBeChecked()
+    expect(row).not.toHaveStyle({ height: '48px' })
+    expect(content).toHaveStyle({ whiteSpace: 'normal', overflowWrap: 'anywhere' })
   })
 })

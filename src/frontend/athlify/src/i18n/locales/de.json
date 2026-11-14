@@ -317,6 +317,7 @@
         "columns": "Spalten",
         "columnsLabel": "Sichtbare Event-Spalten",
         "columnsHint": "Wähle die angezeigten Felder. Der Event-Name bleibt immer sichtbar.",
+        "wrapCellText": "Zellentext umbrechen",
         "exportCsv": "CSV exportieren",
         "csvFileName": "events.csv",
         "resetTable": "Tabelle zurücksetzen",

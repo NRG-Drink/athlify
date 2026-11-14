@@ -27,12 +27,17 @@ The `/events` page uses TanStack Table's client-side row models with:
 - a sticky, non-hideable Event name column that stays visible while scrolling
   horizontally;
 - an optional-column chooser for the remaining fields;
+- cell text clipped with an ellipsis by default, with an option to wrap long
+  content;
+- filter state encoded in the URL for shareable and reloadable views;
+- saved column widths restored from local storage;
 - app-generated CSV export of the filtered, sorted rows and visible columns.
 
 TanStack Table supplies the table state and row-model operations, while
-Athlify supplies the controls, markup, localization and CSV download. The
-rows are virtualized in the browser so the full locally loaded list can be
-filtered and sorted without rendering every matching row at once.
+Athlify supplies the controls, markup, localization, URL synchronization,
+column-width persistence and CSV download. The rows are virtualized in the
+browser so the full locally loaded list can be filtered and sorted without
+rendering every matching row at once.
 
 ## AG-Events showcase
 
@@ -64,7 +69,9 @@ Server-Side Row Model is an Enterprise feature.
 | Sorting                   | Multi-column client sorting; Shift-click adds a sort, with a small custom indicator for sort order.                                   | Built-in multi-column sorting UI; AG-Events also enables sorting multiple columns without a modifier key.                                                       |
 | Filtering                 | Global search plus header-menu text and type filters, and inclusive date ranges with either boundary optional.                         | AG-Events provides a global quick filter and native text/date filters, including date ranges and blank-value options.                                           |
 | Row rendering             | TanStack Virtual renders only visible rows plus overscan from the fully loaded connection.                                               | AG Grid renders its client-side row model with built-in virtualization.                                                                                         |
-| Column controls           | App-rendered chooser toggles visibility; columns resize by dragging or keyboard; Event name stays pinned.                             | Resizing and movement are built in; AG-Events adds an optional-column chooser backed by the grid API.                                                           |
+| Column controls           | App-rendered chooser toggles visibility; columns resize by dragging or keyboard and widths persist locally; Event name stays pinned.   | Resizing and movement are built in; AG-Events adds an optional-column chooser backed by the grid API.                                                           |
+| Cell content              | Long text is clipped with an ellipsis by default; an option enables wrapping within the cell.                                          | Cell rendering and overflow follow the grid's column sizing and cell configuration.                                                                              |
+| Filter persistence        | Global and per-column filter arguments are stored in the URL and restored on load.                                                       | The AG-Events showcase currently keeps local filters in the grid session.                                                                                       |
 | Export                    | App-generated CSV exports filtered, sorted rows and visible columns.                                                                  | AG-Events uses the Community CSV export API for filtered and sorted rows.                                                                                        |
 | Bundle                    | Headless table logic; does not include a rendered grid.                                                                               | The lazy AG Grid chunk is about 1.2 MB minified (338 kB gzip); it exceeds Vite's 500 kB warning threshold and is loaded only on grid routes.                     |
 | Accessibility and styling | Uses the application's semantic table and Chakra design system, with app-owned interactions to maintain.                             | Uses the grid's ARIA grid interaction model and theme system; it needs separate integration and accessibility checks.                                           |

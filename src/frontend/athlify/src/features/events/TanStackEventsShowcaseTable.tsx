@@ -29,6 +29,7 @@ import {
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
 import {
   LuArrowDown,
   LuArrowUp,
@@ -44,6 +45,7 @@ import { useFormat } from '../../i18n/useFormat'
 import { localDateKey } from '../../lib/period'
 import { parseDate } from '../../lib/dates'
 import { eventTypes } from './eventsQuery'
+import { applyTanStackEventsFilters, parseTanStackEventsFilters } from './tanStackEventsFilters'
 import type {
   TanStackEventsShowcaseTable_rows$data,
   TanStackEventsShowcaseTable_rows$key,
@@ -85,6 +87,53 @@ const initialColumnWidths: Readonly<Record<string, number>> = {
 const MIN_COLUMN_WIDTH = 144
 const MAX_COLUMN_WIDTH = 640
 const COLUMN_RESIZE_STEP = 16
+const EVENT_ROW_HEIGHT = 48
+const WRAPPED_EVENT_ROW_ESTIMATE = 56
+const VIRTUAL_ROW_OVERSCAN = 5
+const COLUMN_WIDTHS_STORAGE_KEY = 'athlify.events.tanstack.columnWidths'
+
+function clampColumnWidth(width: number) {
+  return Math.max(MIN_COLUMN_WIDTH, Math.min(MAX_COLUMN_WIDTH, Math.round(width)))
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function readColumnWidths() {
+  let serialized: string | null
+  try {
+    serialized = window.localStorage.getItem(COLUMN_WIDTHS_STORAGE_KEY)
+  } catch (error) {
+    console.warn('Unable to read saved Events table column widths.', error)
+    return { ...initialColumnWidths }
+  }
+  if (!serialized) return { ...initialColumnWidths }
+
+  let stored: unknown
+  try {
+    stored = JSON.parse(serialized)
+  } catch (error) {
+    console.warn('Ignoring invalid saved Events table column widths.', error)
+    return { ...initialColumnWidths }
+  }
+  if (!isRecord(stored)) {
+    console.warn('Ignoring invalid saved Events table column widths.')
+    return { ...initialColumnWidths }
+  }
+
+  return Object.fromEntries(
+    Object.entries(initialColumnWidths).map(([columnId, defaultWidth]) => {
+      const width = stored[columnId]
+      return [
+        columnId,
+        typeof width === 'number' && Number.isFinite(width)
+          ? clampColumnWidth(width)
+          : defaultWidth,
+      ]
+    }),
+  )
+}
 
 function isEventDateRange(value: unknown): value is EventDateRange {
   return (
@@ -144,6 +193,8 @@ interface TanStackEventsTableProps {
 export function TanStackEventsShowcaseTable({ entries, loading }: TanStackEventsTableProps) {
   const { t, i18n } = useTranslation()
   const format = useFormat()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [initialFilters] = useState(() => parseTanStackEventsFilters(searchParams))
   const rows = useFragment(rowsFragment, entries)
   const data = useMemo(() => [...rows], [rows])
   const scrollElementRef = useRef<HTMLDivElement>(null)
@@ -152,7 +203,8 @@ export function TanStackEventsShowcaseTable({ entries, loading }: TanStackEvents
   const [openFilterColumn, setOpenFilterColumn] = useState<string>()
   const [dateFilterDrafts, setDateFilterDrafts] = useState<Record<string, EventDateRangeDraft>>({})
   const [dateRangeError, setDateRangeError] = useState<string>()
-  const [columnWidths, setColumnWidths] = useState({ ...initialColumnWidths })
+  const [wrapCellText, setWrapCellText] = useState(false)
+  const [columnWidths, setColumnWidths] = useState(readColumnWidths)
   const [resizingColumn, setResizingColumn] = useState<string>()
   const resizeSession = useRef<{
     pointerId: number
@@ -223,15 +275,19 @@ export function TanStackEventsShowcaseTable({ entries, loading }: TanStackEvents
     maxMultiSortColCount: 3,
     initialState: {
       sorting: [{ id: 'startDate', desc: true }],
+      globalFilter: initialFilters.globalFilter || undefined,
+      columnFilters: initialFilters.columnFilters,
     },
   })
+  const tableRef = useRef(table)
+  tableRef.current = table
   const tableRows = table.getRowModel().rows
   const virtualizer = useVirtualizer({
     count: tableRows.length,
     getScrollElement: () => scrollElementRef.current,
-    estimateSize: () => 56,
+    estimateSize: () => (wrapCellText ? WRAPPED_EVENT_ROW_ESTIMATE : EVENT_ROW_HEIGHT),
     initialRect: { width: 0, height: 600 },
-    overscan: 8,
+    overscan: VIRTUAL_ROW_OVERSCAN,
     scrollMargin: headerHeight,
   })
   const virtualRows = virtualizer.getVirtualItems()
@@ -244,9 +300,47 @@ export function TanStackEventsShowcaseTable({ entries, loading }: TanStackEvents
   const setColumnWidth = (columnId: string, width: number) => {
     setColumnWidths((current) => ({
       ...current,
-      [columnId]: Math.max(MIN_COLUMN_WIDTH, Math.min(MAX_COLUMN_WIDTH, width)),
+      [columnId]: clampColumnWidth(width),
     }))
   }
+
+  useEffect(() => {
+    const next = parseTanStackEventsFilters(searchParams)
+    const current = tableRef.current
+    const currentGlobalFilter = String(current.state.globalFilter ?? '')
+    if (currentGlobalFilter !== next.globalFilter) {
+      current.setGlobalFilter(next.globalFilter || undefined)
+    }
+    if (JSON.stringify(current.state.columnFilters) !== JSON.stringify(next.columnFilters)) {
+      current.setColumnFilters(next.columnFilters)
+    }
+  }, [searchParams])
+
+  useEffect(() => {
+    virtualizer.measure()
+  }, [wrapCellText, virtualizer.measure])
+
+  useEffect(() => {
+    const filters = {
+      globalFilter: String(table.state.globalFilter ?? ''),
+      columnFilters: table.state.columnFilters,
+    }
+    setSearchParams(
+      (current) => {
+        const next = applyTanStackEventsFilters(current, filters)
+        return next.toString() === current.toString() ? current : next
+      },
+      { replace: true },
+    )
+  }, [table.state.columnFilters, table.state.globalFilter, setSearchParams])
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(COLUMN_WIDTHS_STORAGE_KEY, JSON.stringify(columnWidths))
+    } catch (error) {
+      console.error('Unable to save Events table column widths.', error)
+    }
+  }, [columnWidths])
 
   useEffect(() => {
     const header = headerRef.current
@@ -268,10 +362,7 @@ export function TanStackEventsShowcaseTable({ entries, loading }: TanStackEvents
       if (!session || session.pointerId !== event.pointerId) return
       setColumnWidths((current) => ({
         ...current,
-        [session.columnId]: Math.max(
-          MIN_COLUMN_WIDTH,
-          Math.min(MAX_COLUMN_WIDTH, session.startWidth + event.clientX - session.startX),
-        ),
+        [session.columnId]: clampColumnWidth(session.startWidth + event.clientX - session.startX),
       }))
     }
 
@@ -304,6 +395,9 @@ export function TanStackEventsShowcaseTable({ entries, loading }: TanStackEvents
 
   const onReset = () => {
     table.reset()
+    table.setGlobalFilter(undefined)
+    table.setColumnFilters([])
+    setWrapCellText(false)
     setColumnWidths({ ...initialColumnWidths })
   }
 
@@ -402,6 +496,17 @@ export function TanStackEventsShowcaseTable({ entries, loading }: TanStackEvents
                         </Checkbox.Root>
                       ))}
                     </Stack>
+                    <Checkbox.Root
+                      size="sm"
+                      checked={wrapCellText}
+                      onCheckedChange={({ checked }) => setWrapCellText(checked === true)}
+                    >
+                      <Checkbox.HiddenInput />
+                      <Checkbox.Control>
+                        <Checkbox.Indicator />
+                      </Checkbox.Control>
+                      <Checkbox.Label>{t('events.tanStack.wrapCellText')}</Checkbox.Label>
+                    </Checkbox.Root>
                     <Button
                       size="sm"
                       variant="outline"
@@ -777,7 +882,8 @@ export function TanStackEventsShowcaseTable({ entries, loading }: TanStackEvents
                     <Table.Row
                       key={row.id}
                       data-index={virtualRow.index}
-                      ref={virtualizer.measureElement}
+                      ref={wrapCellText ? virtualizer.measureElement : undefined}
+                      height={wrapCellText ? undefined : '3rem'}
                     >
                       {row.getVisibleCells().map((cell) => (
                         <Table.Cell
@@ -791,9 +897,18 @@ export function TanStackEventsShowcaseTable({ entries, loading }: TanStackEvents
                           maxW={`${widthOf(cell.column.id)}px`}
                           borderRightWidth={cell.column.id === 'name' ? '1px' : undefined}
                           borderColor="border"
-                          whiteSpace="nowrap"
+                          overflow="hidden"
                         >
-                          <table.FlexRender cell={cell} />
+                          <Box
+                            width="100%"
+                            minW="0"
+                            overflow="hidden"
+                            textOverflow={wrapCellText ? 'clip' : 'ellipsis'}
+                            whiteSpace={wrapCellText ? 'normal' : 'nowrap'}
+                            overflowWrap={wrapCellText ? 'anywhere' : 'normal'}
+                          >
+                            <table.FlexRender cell={cell} />
+                          </Box>
                         </Table.Cell>
                       ))}
                     </Table.Row>
