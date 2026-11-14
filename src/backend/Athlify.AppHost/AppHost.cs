@@ -20,6 +20,7 @@ internal class Program
             //.WithLifetime(ContainerLifetime.Persistent)
             .WithDataVolume("athlify-postgres-data")
             // Fixed port so the dev container can forward it to the host
+            .WithHostPort(5432)
             .WithPgWeb(pgweb => pgweb.WithHostPort(5050))
             .AddDatabase("postgres-db");
 
