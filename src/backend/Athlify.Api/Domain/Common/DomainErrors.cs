@@ -5,9 +5,17 @@ public static class DomainErrors
 {
     public const string ValidationCode = "VALIDATION_ERROR";
     public const string NotAuthenticatedCode = "NOT_AUTHENTICATED";
+    public const string CurrentPasswordIncorrectCode = "CURRENT_PASSWORD_INCORRECT";
 
     public static GraphQLException Validation(string message) =>
         new(ErrorBuilder.New().SetMessage(message).SetCode(ValidationCode).Build());
+
+    public static GraphQLException CurrentPasswordIncorrect() =>
+        new(ErrorBuilder.New()
+            .SetMessage("The current password is incorrect.")
+            .SetCode(CurrentPasswordIncorrectCode)
+            .SetExtension("field", "currentPassword")
+            .Build());
 
     public static GraphQLException NotAuthenticated() =>
         new(ErrorBuilder.New().SetMessage("No user is signed in.").SetCode(NotAuthenticatedCode).Build());
@@ -21,6 +29,14 @@ public sealed class ValidationErrors
     public void Add(string message) =>
         _errors.Add(ErrorBuilder.New().SetMessage(message).SetCode(DomainErrors.ValidationCode).Build());
 
+    /// <summary>Adds an error that names the input field it belongs to, in <c>extensions.field</c>.</summary>
+    public void Add(string message, string field) =>
+        _errors.Add(ErrorBuilder.New()
+            .SetMessage(message)
+            .SetCode(DomainErrors.ValidationCode)
+            .SetExtension("field", field)
+            .Build());
+
     public void AddIf(bool condition, string message)
     {
         if (condition) Add(message);
@@ -31,11 +47,11 @@ public sealed class ValidationErrors
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            AddIf(required, $"{field} is required.");
+            if (required) Add($"{field} is required.", field);
         }
         else if (value.Length > maxLength)
         {
-            Add($"{field} must not be longer than {maxLength} characters.");
+            Add($"{field} must not be longer than {maxLength} characters.", field);
         }
     }
 

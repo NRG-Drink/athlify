@@ -178,6 +178,7 @@ type Mutation {
   createTag(tag: TagInput!): Tag! @cost(weight: "10")
   updateTag(id: ID!, tag: TagInput!): Tag @cost(weight: "10")
   deleteTag(id: ID!): ID @cost(weight: "10")
+  updateMe(input: UpdateMeInput!): User! @cost(weight: "10")
   createMaintenanceCycle(maintenanceCycle: MaintenanceCycleInput!): MaintenanceCycle!
     @cost(weight: "10")
   updateMaintenanceCycle(id: ID!, maintenanceCycle: MaintenanceCycleInput!): MaintenanceCycle
@@ -903,6 +904,11 @@ input NullableOfWindOperationFilterInput {
   nin: [Wind] @cost(weight: "10")
 }
 
+input PasswordChangeInput {
+  currentPassword: String!
+  newPassword: String!
+}
+
 input SourceOperationFilterInput {
   eq: Source @cost(weight: "10")
   neq: Source @cost(weight: "10")
@@ -945,6 +951,13 @@ input TagSortInput {
   uid: SortEnumType @cost(weight: "10")
   createdAt: SortEnumType @cost(weight: "10")
   modifiedAt: SortEnumType @cost(weight: "10")
+}
+
+input UpdateMeInput {
+  firstName: String
+  lastName: String
+  language: Language
+  passwordChange: PasswordChangeInput
 }
 
 input UuidOperationFilterInput {

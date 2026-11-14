@@ -15,6 +15,12 @@ public interface ITokenService
     TokenResponse GenerateAccessToken(User dbUser);
     Task<TokenResponse> GenerateRefreshTokenAsync(User user, string ip);
     Task RevokeTokenFamily(Guid familyId, string ip, RefreshToken.RevokeReason reason = RefreshToken.RevokeReason.ReuseDetected);
+    /// <summary>Marks the user's active tokens revoked without saving; the caller commits.</summary>
+    Task RevokeAllForUserAsync(
+        int userId,
+        string ip,
+        RefreshToken.RevokeReason reason,
+        CancellationToken cancellationToken = default);
     Task<(TokenResponse Token, User User)> RotateRefreshTokenOrThrow(HttpContext httpContext);
 }
 
@@ -90,6 +96,28 @@ public class TokenService(
                 .SetProperty(t => t.Revoked, DateTime.UtcNow)
                 .SetProperty(t => t.RevokedByIp, ip)
                 .SetProperty(t => t.ReasonRevoked, reason));
+    }
+
+    /// <summary>
+    /// Marks every active token of the user as revoked on the tracked context; the caller saves, so the revocation
+    /// commits together with the caller's other changes. Refresh tokens carry no owner filter, so the user is explicit.
+    /// </summary>
+    public async Task RevokeAllForUserAsync(
+        int userId,
+        string ip,
+        RefreshToken.RevokeReason reason,
+        CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.UtcNow;
+        var active = await db.RefreshTokens
+            .Where(t => t.UserId == userId && t.Revoked == null)
+            .ToListAsync(cancellationToken);
+        foreach (var token in active)
+        {
+            token.Revoked = now;
+            token.RevokedByIp = ip;
+            token.ReasonRevoked = reason;
+        }
     }
 
     public async Task<(TokenResponse Token, User User)> RotateRefreshTokenOrThrow(HttpContext httpContext)

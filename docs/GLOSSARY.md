@@ -222,6 +222,12 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 
 **UI state** — The loading, empty, error or populated state of a view.
 
+**updateMe** — The self-service GraphQL mutation with which a signed-in user
+  changes their own first name, last name, language and password. It has no
+  user id, role or username input. A password change needs the current
+  password and revokes all refresh tokens of the user. See
+  [`security.md`](concept/security.md).
+
 **User** — An authenticated account that can access and manage its own
   personal cycling data. See [`CONCEPT.md`](concept/CONCEPT.md).
 
