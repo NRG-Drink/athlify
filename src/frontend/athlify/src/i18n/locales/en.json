@@ -24,6 +24,23 @@
       "retry": "Try again",
       "comingSoon": "Coming soon. {{message}}"
     },
+    "auth": {
+      "restoringSession": "Restoring your session …",
+      "sessionRefreshFailed": "Your session could not be refreshed. Sign in again to restore access.",
+      "logout": {
+        "label": "Sign out",
+        "failed": "You were signed out on this device, but your server session may still be active."
+      },
+      "login": {
+        "title": "Sign in",
+        "description": "Sign in to Athlify to manage your personal data.",
+        "username": "Username",
+        "password": "Password",
+        "submit": "Sign in",
+        "failed": "Sign-in failed. Check your username and password and try again.",
+        "sessionRestoreFailed": "Your session could not be restored. Please sign in again."
+      }
+    },
     "form": {
       "cancel": "Cancel",
       "save": "Save",

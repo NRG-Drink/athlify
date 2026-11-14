@@ -182,6 +182,11 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 **Resolver** — A backend operation that executes a GraphQL query or mutation.
   See [`api-design.md`](concept/api-design.md).
 
+**Role (API)** — The GraphQL enum `Role` with the values `USER` and `ADMIN`,
+  exposed as `User.role`. It maps explicitly from the stored backend values
+  `User` and `Admin`, which correspond to the concept term Administrator. See
+  [`api-design.md`](concept/api-design.md) and [`data-model.md`](concept/data-model.md).
+
 ## S — Z
 
 **Soft delete** — Deletion by marking a record so it remains available for
@@ -216,6 +221,12 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
   [`activity-management.md`](concept/activity-management.md).
 
 **UI state** — The loading, empty, error or populated state of a view.
+
+**updateMe** — The self-service GraphQL mutation with which a signed-in user
+  changes their own first name, last name, language and password. It has no
+  user id, role or username input. A password change needs the current
+  password and revokes all refresh tokens of the user. See
+  [`security.md`](concept/security.md).
 
 **User** — An authenticated account that can access and manage its own
   personal cycling data. See [`CONCEPT.md`](concept/CONCEPT.md).

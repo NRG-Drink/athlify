@@ -45,7 +45,7 @@ describe('routes', () => {
     const Boom = () => {
       throw new Error('boom')
     }
-    const layout = routes[0] as Omit<RouteObject, 'index'>
+    const layout = routes.find((route) => route.children) as Omit<RouteObject, 'index'>
     const routesWithCrash: RouteObject[] = [
       { ...layout, children: [{ path: '/boom', element: <Boom /> }, ...(layout.children ?? [])] },
     ]

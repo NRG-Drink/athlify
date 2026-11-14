@@ -68,7 +68,6 @@ public abstract class AuthApiFactory : TestWebApplicationFactory<Program>
     {
         var testUser = new User()
         {
-            Email = Guid.NewGuid().ToString() + "@test.com",
             Username = username ?? "test",
             PasswordHash = new HashService().HashPassword(password ?? "test"),
             Role = role ?? UserRole.Admin,

@@ -4,7 +4,6 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using static Athlify.Api.Domain.Auth.AuthTestQuery;
 
 namespace Athlify.Api.Tests.AuthEndpoints;
 
@@ -35,10 +34,14 @@ public abstract class AuthEndpointsTestsBase<T>(ITestFixture<T> fixture) where T
         return response;
     }
 
-    protected async Task<HttpResponseMessage> RefreshTokenAsync(string refreshCookie)
+    protected async Task<HttpResponseMessage> RefreshTokenAsync(string? refreshCookie)
     {
         var refreshContent = new StringContent(string.Empty, Encoding.UTF8, "application/json");
-        refreshContent.Headers.Add("Cookie", refreshCookie);
+        if (refreshCookie is not null)
+        {
+            refreshContent.Headers.Add("Cookie", refreshCookie);
+        }
+
         var refreshResponse = await fixture.Client.PostAsync("/auth/refresh", refreshContent);
 
         return refreshResponse;
@@ -109,6 +112,8 @@ public abstract class AuthEndpointsTestsBase<T>(ITestFixture<T> fixture) where T
         HttpResponseMessage refreshResponse,
         bool isLogin = false)
     {
+        await Assert.That(refreshResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
+
         // Check that the Set-Cookie header is present and contains the refresh token cookie with the correct options
         var (newRefreshToken, newRefreshCookie) = await GetAndTestRefreshCookie(refreshResponse, isLogin);
         TestContext.Current!.StateBag.Items[$"RefreshToken"] = newRefreshToken;
@@ -122,46 +127,27 @@ public abstract class AuthEndpointsTestsBase<T>(ITestFixture<T> fixture) where T
         return (newRefreshToken, newRefreshCookie, deserialised.Token);
     }
 
+    // The probe is the production `me` query: it resolves for a valid access token and fails with
+    // NOT_AUTHENTICATED for a missing, expired or invalid one.
+    private const string MeQuery = "{ me { username } }";
+
     protected async Task TestIsNotAuthorized(string? accessToken = null, string userName = "test-user")
     {
-        await RequestHelloUnauthorized("User", accessToken);
+        using var response = await PostGraphQl(fixture.Client, MeQuery, accessToken);
+
+        var errors = await GetGraphQlErrors(response);
+        await Assert.That(errors).Contains("NOT_AUTHENTICATED");
     }
 
     protected async Task TestIsAuthorized(string? accessToken, string userName = "test")
     {
-        await RequestHelloAuthorized("User", userName, accessToken);
-        await RequestHelloAuthorized("Admin", userName, accessToken);
-        await RequestHelloAuthorized("Employee", userName, accessToken);
-        await RequestHelloUnauthorized("Staff", accessToken);
-    }
-
-    private async Task RequestHelloAuthorized(string name, string userName, string? accessToken)
-    {
-        var query = $"{{ hello{name} {{ hello timestamp }} }}";
-        using var response = await PostGraphQl(fixture.Client, query, accessToken);
+        using var response = await PostGraphQl(fixture.Client, MeQuery, accessToken);
 
         var content = await response.Content.ReadAsStringAsync();
-        var jsonDocument = JsonDocument.Parse(content);
-        var dataElement = jsonDocument.RootElement.GetProperty("data").GetProperty($"hello{name}");
-        var helloContent = dataElement.GetRawText();
-        var graphqlResult = JsonSerializer.Deserialize<HelloData>(helloContent, JsonOptions);
-
-        await Assert.That(graphqlResult)
-            .IsNotNull()
-            .And.Member(e => e.Hello, e => e.StartsWith($"Hello {name.ToLowerInvariant()}").And.EndsWith($"{userName}!"))
-            .And.Member(e => e.Timestamp, e => e.IsBeforeOrEqualTo(DateTime.UtcNow));
-    }
-
-    private async Task RequestHelloUnauthorized(string name, string? accessToken)
-    {
-        var query = $"{{ hello{name} {{ hello timestamp }} }}";
-        using var response = await PostGraphQl(fixture.Client, query, accessToken);
-
-        var errors = await GetGraphQlErrors(response);
-        await Assert.That(errors).IsNotNull();
-        await Assert.That(errors)
-            .Contains("Unauthorized", StringComparison.OrdinalIgnoreCase)
-            .Or.Contains("not authorized", StringComparison.OrdinalIgnoreCase);
+        using var jsonDocument = JsonDocument.Parse(content);
+        await Assert.That(jsonDocument.RootElement.TryGetProperty("errors", out _)).IsFalse();
+        var username = jsonDocument.RootElement.GetProperty("data").GetProperty("me").GetProperty("username").GetString();
+        await Assert.That(username).IsEqualTo(userName);
     }
 
     protected static async Task<TokenResponse> GetAndTestAccessToken(string content)

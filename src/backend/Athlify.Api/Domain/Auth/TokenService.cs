@@ -15,6 +15,12 @@ public interface ITokenService
     TokenResponse GenerateAccessToken(User dbUser);
     Task<TokenResponse> GenerateRefreshTokenAsync(User user, string ip);
     Task RevokeTokenFamily(Guid familyId, string ip, RefreshToken.RevokeReason reason = RefreshToken.RevokeReason.ReuseDetected);
+    /// <summary>Marks the user's active tokens revoked without saving; the caller commits.</summary>
+    Task RevokeAllForUserAsync(
+        int userId,
+        string ip,
+        RefreshToken.RevokeReason reason,
+        CancellationToken cancellationToken = default);
     Task<(TokenResponse Token, User User)> RotateRefreshTokenOrThrow(HttpContext httpContext);
 }
 
@@ -32,7 +38,6 @@ public class TokenService(
         {
             new Claim(ClaimTypes.NameIdentifier, dbUser.Id.ToString()),
             new Claim(ClaimTypes.Name, dbUser.Username),
-            new Claim(ClaimTypes.Email, dbUser.Email),
             new Claim(ClaimTypes.Role, dbUser.Role),
         };
 
@@ -93,6 +98,28 @@ public class TokenService(
                 .SetProperty(t => t.ReasonRevoked, reason));
     }
 
+    /// <summary>
+    /// Marks every active token of the user as revoked on the tracked context; the caller saves, so the revocation
+    /// commits together with the caller's other changes. Refresh tokens carry no owner filter, so the user is explicit.
+    /// </summary>
+    public async Task RevokeAllForUserAsync(
+        int userId,
+        string ip,
+        RefreshToken.RevokeReason reason,
+        CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.UtcNow;
+        var active = await db.RefreshTokens
+            .Where(t => t.UserId == userId && t.Revoked == null)
+            .ToListAsync(cancellationToken);
+        foreach (var token in active)
+        {
+            token.Revoked = now;
+            token.RevokedByIp = ip;
+            token.ReasonRevoked = reason;
+        }
+    }
+
     public async Task<(TokenResponse Token, User User)> RotateRefreshTokenOrThrow(HttpContext httpContext)
     {
         var ip = cookieService.GetIpAddress(httpContext);
@@ -124,29 +151,34 @@ public class TokenService(
         RefreshToken stored,
         RefreshToken newRefreshToken)
     {
-        await using var transaction = await db.Database.BeginTransactionAsync();
-        var affectedRows = await db.RefreshTokens
-            .Where(t => t.Id == stored.Id && t.Revoked == null && t.ExpiresAt > newRefreshToken.Created)
-            .ExecuteUpdateAsync(setters => setters
-                .SetProperty(t => t.Revoked, newRefreshToken.Created)
-                .SetProperty(t => t.RevokedByIp, ip)
-                .SetProperty(t => t.ReasonRevoked, RefreshToken.RevokeReason.Rotated));
-
-        if (affectedRows > 1)
+        // https://learn.microsoft.com/en-gb/ef/core/miscellaneous/connection-resiliency
+        var strategy = db.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
         {
-            throw new InvalidOperationException("Refresh-token consumption affected more than one row.");
-        }
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            var affectedRows = await db.RefreshTokens
+                .Where(t => t.Id == stored.Id && t.Revoked == null && t.ExpiresAt > newRefreshToken.Created)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(t => t.Revoked, newRefreshToken.Created)
+                    .SetProperty(t => t.RevokedByIp, ip)
+                    .SetProperty(t => t.ReasonRevoked, RefreshToken.RevokeReason.Rotated));
 
-        if (affectedRows == 1)
-        {
-            await db.RefreshTokens.AddAsync(newRefreshToken);
-            await db.SaveChangesAsync();
-            await transaction.CommitAsync();
-            return true;
-        }
+            if (affectedRows > 1)
+            {
+                throw new InvalidOperationException("Refresh-token consumption affected more than one row.");
+            }
 
-        await transaction.RollbackAsync();
-        return false;
+            if (affectedRows == 1)
+            {
+                await db.RefreshTokens.AddAsync(newRefreshToken);
+                await db.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return true;
+            }
+
+            await transaction.RollbackAsync();
+            return false;
+        });
     }
 
     private async Task ThrowNotRotated(

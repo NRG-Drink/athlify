@@ -55,7 +55,7 @@ If a requirement is not supported by these sources, do not invent a function. Do
 The frontend is under `../../../src/frontend/athlify/`. It uses React 19,
 TypeScript, Vite, Chakra UI v3, Tailwind CSS v4, react-router-dom and
 i18next. It provides the App Layout (header with Primary Navigation, User
-Menu with language switcher and color mode, mobile drawer), the `Page` frame,
+Menu with sign-out, language switcher and color mode, mobile drawer), the `Page` frame,
 the "Night Ride" theme in `src/theme/`
 ([ADR-005](adr/ADR-005-theme-tokens.md)), plus the Body-Stats domain page
 ([ADR-007](adr/ADR-007-domain-page-pattern.md)): summary tiles, a chart of the
