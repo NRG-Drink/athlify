@@ -268,6 +268,8 @@
         "ariaSortableColumn": "Press Enter to sort this column."
       },
       "columns": {
+        "rowNumber": "No.",
+        "id": "Event ID",
         "startDate": "Start date",
         "name": "Name",
         "type": "Type",

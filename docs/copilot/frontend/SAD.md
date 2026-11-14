@@ -25,7 +25,7 @@ TypeScript and Vite.
 | Fonts                  | Inter (variable) and Barlow Semi Condensed, self-hosted via `@fontsource`                                                                 | Implemented                                                                                                                           |
 | Styling utilities      | Tailwind CSS v4 through `@tailwindcss/vite`                                                                                               | Loaded; coexistence with Chakra is open                                                                                               |
 | Charts                 | Recharts 3 behind `MetricChart`, colored through the theme's CSS variables                                                                | Implemented ([ADR-007](adr/ADR-007-domain-page-pattern.md))                                                                           |
-| Tables                 | TanStack Table 9 with TanStack Virtual 3 for Events; AG Grid Community for AG-Events                                                     | Implemented                                                                                                                           |
+| Tables                 | TanStack Table 9 with TanStack Virtual 3 for Events; AG Grid Community Infinite Row Model for cursor-paged AG-Events                    | Implemented                                                                                                                           |
 | Routing                | `react-router-dom` v7 data mode (`createBrowserRouter`, nested app-layout route)                                                          | Proposed in [ADR-004](adr/ADR-004-react-router-data-mode.md)                                                                          |
 | Localization           | i18next with react-i18next (`de` default, `en` fallback)                                                                                  | Proposed in [ADR-003](adr/ADR-003-i18next-localization.md)                                                                            |
 | Icons                  | `react-icons` (Lucide set)                                                                                                                | Implemented                                                                                                                           |
@@ -58,8 +58,8 @@ is the first list slice with editing. The Activities page lists activities
 from the backend connection, applies URL-backed filters, loads additional
 pages on demand and adds, edits, duplicates and deletes activities in a form
 dialog. Events is a read-only TanStack table of the newest 200 backend records,
-with row virtualization; AG-Events displays the same data in AG Grid. Dashboard
-and Garage remain placeholders.
+with row virtualization; AG-Events loads records in cursor-based blocks of 20
+through AG Grid's Infinite Row Model. Dashboard and Garage remain placeholders.
 
 ```text
 src/frontend/athlify/src/

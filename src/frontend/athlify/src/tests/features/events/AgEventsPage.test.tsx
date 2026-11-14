@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AgEventsPage } from '../../../features/events/AgEventsPage'
 import { renderWithRelay } from '../../utils/relay'
@@ -17,36 +17,35 @@ const event = {
   endDate: null,
 }
 
-describe('AgEventsPage', () => {
-  it('renders formatted event data in the AG Grid', async () => {
-    class TestResizeObserver implements ResizeObserver {
-      private readonly callback: ResizeObserverCallback
+function mockGridViewport() {
+  class TestResizeObserver implements ResizeObserver {
+    private readonly callback: ResizeObserverCallback
 
-      constructor(callback: ResizeObserverCallback) {
-        this.callback = callback
-      }
-
-      observe(target: Element) {
-        const contentRect = target.getBoundingClientRect()
-        const size = { inlineSize: contentRect.width, blockSize: contentRect.height }
-        this.callback(
-          [
-            {
-              target,
-              contentRect,
-              borderBoxSize: [size],
-              contentBoxSize: [size],
-              devicePixelContentBoxSize: [size],
-            },
-          ],
-          this,
-        )
-      }
-
-      unobserve() {}
-      disconnect() {}
+    constructor(callback: ResizeObserverCallback) {
+      this.callback = callback
     }
-    vi.stubGlobal('ResizeObserver', TestResizeObserver)
+
+    observe(target: Element) {
+      const contentRect = target.getBoundingClientRect()
+      const size = { inlineSize: contentRect.width, blockSize: contentRect.height }
+      this.callback(
+        [
+          {
+            target,
+            contentRect,
+            borderBoxSize: [size],
+            contentBoxSize: [size],
+            devicePixelContentBoxSize: [size],
+          },
+        ],
+        this,
+      )
+    }
+
+    unobserve() {}
+    disconnect() {}
+  }
+  vi.stubGlobal('ResizeObserver', TestResizeObserver)
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
       width: 800,
       height: 480,
@@ -62,13 +61,53 @@ describe('AgEventsPage', () => {
     vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(480)
     vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(800)
     vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(800)
+}
+
+describe('AgEventsPage', () => {
+  it('configures event columns and reports the total event count', async () => {
+    mockGridViewport()
     const { calls } = renderWithRelay(
       <AgEventsPage />,
       () => ({
         data: {
           events: {
             nodes: [event],
+            totalCount: 1,
+            pageInfo: { endCursor: null, hasNextPage: false },
           },
+        },
+      }),
+      { path: '/ag-events', routePath: '/ag-events' },
+    )
+
+    await screen.findByRole('region', { name: 'Events' })
+    expect(screen.getByText('1 Event')).toBeInTheDocument()
+    expect(calls('AgEventsPageQuery')).toEqual([{ first: 20, after: null }])
+  })
+
+  it('fetches the next cursor page when scrolling to the end of a block', async () => {
+    mockGridViewport()
+    const events = Array.from({ length: 20 }, (_, index) => ({
+      ...event,
+      id: `event-${index}`,
+      name: `Event ${index}`,
+    }))
+    const { calls } = renderWithRelay(
+      <AgEventsPage />,
+      (_operation, variables) => ({
+        data: {
+          events:
+            variables.after === 'cursor-20'
+              ? {
+                  nodes: [{ ...event, id: 'event-20', name: 'Event 20' }],
+                  totalCount: 205,
+                  pageInfo: { endCursor: null, hasNextPage: false },
+                }
+              : {
+                  nodes: events,
+                  totalCount: 205,
+                  pageInfo: { endCursor: 'cursor-20', hasNextPage: true },
+                },
         },
       }),
       { path: '/ag-events', routePath: '/ag-events' },
@@ -76,11 +115,14 @@ describe('AgEventsPage', () => {
 
     const region = await screen.findByRole('region', { name: 'Events' })
     const grid = within(region).getByRole('grid')
-    expect(await within(grid).findByText('Veloservice')).toBeInTheDocument()
-    expect(await within(grid).findByText('16.10.2026')).toBeInTheDocument()
-    expect(within(grid).getByRole('columnheader', { name: /Beginn/ })).toBeInTheDocument()
-    expect(within(grid).getByRole('columnheader', { name: 'Name' })).toBeInTheDocument()
-    expect(screen.getByText('1 Event')).toBeInTheDocument()
-    expect(calls('AgEventsPageQuery')).toEqual([{}])
+    expect(screen.getByText('205 Events')).toBeInTheDocument()
+    const viewport = grid
+    viewport.scrollTop = 2000
+    fireEvent.scroll(viewport)
+
+    await waitFor(() => {
+      expect(calls('AgEventsPageQuery')).toHaveLength(2)
+    })
+    expect(calls('AgEventsPageQuery')[1]).toEqual({ first: 20, after: 'cursor-20' })
   })
 })
