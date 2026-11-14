@@ -16,6 +16,10 @@ development user, so the API must not be exposed beyond a local machine.
   permissions available to regular users and gain additional user-management
   permissions.
 - Check user ownership for every personal resource.
+- A signed-in user changes their own name, language and password only through
+  the self-service `updateMe` mutation. It takes no user id and cannot change
+  role or username. A password change requires the current password and
+  revokes all of the user's refresh tokens, so every device signs in again.
 
 ## Protection of personal data
 
