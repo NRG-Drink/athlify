@@ -20,7 +20,6 @@ public partial class Program
         // GraphQL
         builder.Services
             .AddGraphQLServer()
-            .AddAuthorization() // HotChocolate auth
             .AddAthlifyTypes()
             .AddGlobalObjectIdentification()
             .AddProjections()
