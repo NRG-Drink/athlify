@@ -11,7 +11,7 @@ describe('MobileNav', () => {
     await user.click(screen.getByRole('button', { name: 'Menü öffnen' }))
     const dialog = await screen.findByRole('dialog')
     const nav = within(dialog).getByRole('navigation', { name: 'Hauptnavigation' })
-    expect(within(nav).getAllByRole('link')).toHaveLength(5)
+    expect(within(nav).getAllByRole('link')).toHaveLength(6)
 
     await user.click(within(nav).getByRole('link', { name: 'Garage' }))
     expect(router.state.location.pathname).toBe(paths.garage)

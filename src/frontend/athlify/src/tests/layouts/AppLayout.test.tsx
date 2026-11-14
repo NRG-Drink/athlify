@@ -8,7 +8,7 @@ function primaryNav() {
 }
 
 describe('AppLayout', () => {
-  test('primary navigation lists the five areas in order', async () => {
+  test('primary navigation lists the six areas in order', async () => {
     renderRoute(paths.dashboard)
     await screen.findByRole('heading', { level: 1 })
     const links = within(primaryNav()).getAllByRole('link')
@@ -18,6 +18,7 @@ describe('AppLayout', () => {
       'Garage',
       'Body-Stats',
       'Events',
+      'AG-Events',
     ])
     expect(links.map((link) => link.getAttribute('href'))).toEqual([
       paths.dashboard,
@@ -25,6 +26,7 @@ describe('AppLayout', () => {
       paths.garage,
       paths.bodyStats,
       paths.events,
+      paths.agEvents,
     ])
   })
 
@@ -33,9 +35,17 @@ describe('AppLayout', () => {
     await screen.findByRole('heading', { level: 1, name: 'Garage' })
     const nav = within(primaryNav())
     expect(nav.getByRole('link', { name: 'Garage' })).toHaveAttribute('aria-current', 'page')
-    for (const name of ['Dashboard', 'Aktivitäten', 'Body-Stats', 'Events']) {
+    for (const name of ['Dashboard', 'Aktivitäten', 'Body-Stats', 'Events', 'AG-Events']) {
       expect(nav.getByRole('link', { name })).not.toHaveAttribute('aria-current')
     }
+  })
+
+  test('AG-Events navigation opens the AG Grid events page', async () => {
+    const { router, user } = renderRoute(paths.dashboard)
+    await screen.findByRole('heading', { level: 1, name: 'Dashboard' })
+    await user.click(within(primaryNav()).getByRole('link', { name: 'AG-Events' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'AG-Events' })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe(paths.agEvents)
   })
 
   test('clicking a nav link navigates and updates heading and document title', async () => {

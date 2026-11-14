@@ -7,6 +7,7 @@
       "garage": "Garage",
       "bodyStats": "Body-Stats",
       "events": "Events",
+      "agEvents": "AG-Events",
       "settings": "Settings"
     },
     "layout": {
@@ -95,7 +96,6 @@
       "dashboard": "Soon you will see distance, time, elevation and training load at a glance.",
       "activities": "Soon you will manage all activities here, imported from Strava or entered manually.",
       "garage": "Soon you will record your bicycles and gadgets here.",
-      "events": "Soon you will document crashes, repairs, breaks and other events here.",
       "settings": "Soon you will manage your account and the Strava connection here."
     },
     "activities": {
@@ -260,6 +260,38 @@
       "sources": {
         "MANUAL": "Manual",
         "STRAVA": "Strava"
+      }
+    },
+    "events": {
+      "emptyValue": "—",
+      "grid": {
+        "ariaSortableColumn": "Press Enter to sort this column."
+      },
+      "columns": {
+        "startDate": "Start date",
+        "name": "Name",
+        "type": "Type",
+        "endDate": "End date",
+        "description": "Description"
+      },
+      "table": {
+        "caption": "Events"
+      },
+      "types": {
+        "CRASH": "Crash",
+        "INJURY": "Injury",
+        "ILLNESS": "Illness",
+        "REPAIR": "Repair",
+        "BREAK": "Break",
+        "GOAL": "Goal",
+        "OTHER": "Other"
+      },
+      "resultCount_one": "{{count}} event",
+      "resultCount_other": "{{count}} events",
+      "loadFailed": "Events could not be loaded.",
+      "empty": {
+        "title": "No events yet",
+        "message": "Events you record will appear here."
       }
     },
     "bodyStats": {

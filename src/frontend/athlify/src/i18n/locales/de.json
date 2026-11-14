@@ -7,6 +7,7 @@
       "garage": "Garage",
       "bodyStats": "Body-Stats",
       "events": "Events",
+      "agEvents": "AG-Events",
       "settings": "Einstellungen"
     },
     "layout": {
@@ -95,7 +96,6 @@
       "dashboard": "Hier siehst du bald Distanz, Zeit, Höhenmeter und Trainingsbelastung auf einen Blick.",
       "activities": "Hier verwaltest du bald alle Aktivitäten, aus Strava importiert oder manuell erfasst.",
       "garage": "Hier erfasst du bald deine Velos und Gadgets.",
-      "events": "Hier dokumentierst du bald Stürze, Reparaturen, Pausen und andere Ereignisse.",
       "settings": "Hier verwaltest du bald dein Konto und die Verbindung zu Strava."
     },
     "activities": {
@@ -260,6 +260,38 @@
       "sources": {
         "MANUAL": "Manuell",
         "STRAVA": "Strava"
+      }
+    },
+    "events": {
+      "emptyValue": "—",
+      "grid": {
+        "ariaSortableColumn": "Drücke die Eingabetaste, um diese Spalte zu sortieren."
+      },
+      "columns": {
+        "startDate": "Beginn",
+        "name": "Name",
+        "type": "Typ",
+        "endDate": "Ende",
+        "description": "Beschreibung"
+      },
+      "table": {
+        "caption": "Events"
+      },
+      "types": {
+        "CRASH": "Sturz",
+        "INJURY": "Verletzung",
+        "ILLNESS": "Krankheit",
+        "REPAIR": "Reparatur",
+        "BREAK": "Pause",
+        "GOAL": "Ziel",
+        "OTHER": "Sonstiges"
+      },
+      "resultCount_one": "{{count}} Event",
+      "resultCount_other": "{{count}} Events",
+      "loadFailed": "Events konnten nicht geladen werden.",
+      "empty": {
+        "title": "Noch keine Events",
+        "message": "Hier erscheinen deine erfassten Events."
       }
     },
     "bodyStats": {

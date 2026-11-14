@@ -19,7 +19,6 @@ describe('routes', () => {
   test.each([
     [paths.dashboard, 'Dashboard', /Distanz, Zeit, Höhenmeter/],
     [paths.garage, 'Garage', /deine Velos und Gadgets/],
-    [paths.events, 'Events', /Stürze, Reparaturen/],
     [paths.settings, 'Einstellungen', /dein Konto/],
   ])('%s renders a coming-soon placeholder titled %s', async (path, title, areaMessage) => {
     renderRoute(path)

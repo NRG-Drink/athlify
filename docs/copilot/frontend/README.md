@@ -65,9 +65,11 @@ entry with the newest date. The Activities page is a list backed by
 the `activities` connection, with period, type, bicycle and tag filters stored
 in the URL and cursor-based "load more" pagination; activities are added,
 edited, duplicated and deleted in a form dialog
-([ADR-012](adr/ADR-012-store-updates-for-server-sorted-lists.md)). Dashboard, Garage and
-Events remain placeholders, although their backend API exists. The backend is
-under `../../../src/backend/`. See
+([ADR-012](adr/ADR-012-store-updates-for-server-sorted-lists.md)). Dashboard and
+Garage remain placeholders. Events is a read-only list of the newest 200
+backend records, rendered with TanStack Table and row virtualization.
+AG-Events displays those records in AG Grid. The backend is under
+`../../../src/backend/`. See
 [`SAD.md`](SAD.md) for the folder layout and open decisions. Do not present
 the exploration UI as completed product functionality.
 
