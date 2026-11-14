@@ -33,7 +33,7 @@ public class SchemaTests : WebApiTestBase
     [Test]
     public async Task InputsAreNamedInputWithoutDtoOrDoubledSuffix()
     {
-        var sdl = await Factory.CreateClient().GetStringAsync("/graphql?sdl");
+        var sdl = await FetchSdl();
 
         foreach (var input in new[]
                  {
@@ -48,9 +48,38 @@ public class SchemaTests : WebApiTestBase
         await Assert.That(sdl).DoesNotContain("InputInput");
     }
 
-    private static string InputType(string sdl, string name)
+    [Test]
+    public async Task UserExposesUidAndRoleEnumButNoEmailOrRawRole()
     {
-        var start = sdl.IndexOf($"input {name} {{", StringComparison.Ordinal);
+        var sdl = await FetchSdl();
+
+        var user = Block(sdl, "type User implements Node {");
+
+        await Assert.That(user).Contains("\n  uid: UUID!");
+        await Assert.That(user).Contains("\n  role: Role!");
+        await Assert.That(user).DoesNotContain("\n  email:");
+        await Assert.That(user).DoesNotContain("\n  role: String");
+        await Assert.That(sdl).Contains("enum Role {\n  USER\n  ADMIN\n}");
+    }
+
+    [Test]
+    public async Task RefreshTokensAreNotPartOfTheSchema()
+    {
+        var sdl = await FetchSdl();
+
+        await Assert.That(sdl).DoesNotContain("type RefreshToken");
+        await Assert.That(sdl).DoesNotContain("tokenHash");
+    }
+
+    // Hot Chocolate writes the platform newline, so the SDL is normalised to "\n" once here.
+    private async Task<string> FetchSdl() =>
+        (await Factory.CreateClient().GetStringAsync("/graphql?sdl")).Replace("\r\n", "\n");
+
+    private static string Block(string sdl, string header)
+    {
+        var start = sdl.IndexOf(header, StringComparison.Ordinal);
         return sdl[start..sdl.IndexOf("\n}", start, StringComparison.Ordinal)];
     }
+
+    private static string InputType(string sdl, string name) => Block(sdl, $"input {name} {{");
 }

@@ -14,8 +14,18 @@ public class UserQueryTests : WebApiTestBase
         var me = (await DataAsync(client, "query { me { id username role language } }")).GetProperty("me");
 
         await Assert.That(me.GetProperty("username").GetString()).IsEqualTo("admin@example.com");
-        await Assert.That(me.GetProperty("role").GetString()).IsEqualTo("Admin");
+        await Assert.That(me.GetProperty("role").GetString()).IsEqualTo("ADMIN");
         await Assert.That(me.GetProperty("language").GetString()).IsEqualTo("DE");
+    }
+
+    [Test]
+    public async Task MeReturnsUserRoleForARegularUser()
+    {
+        var client = await CreateUserClientAsync("luca@example.com", UserRole.User);
+
+        var me = (await DataAsync(client, "query { me { role } }")).GetProperty("me");
+
+        await Assert.That(me.GetProperty("role").GetString()).IsEqualTo("USER");
     }
 
     [Test]
@@ -45,11 +55,12 @@ public class UserQueryTests : WebApiTestBase
         var mia = await CreateUserClientAsync("mia@example.com");
         var lucasId = (await DataAsync(luca, "query { me { id } }")).GetProperty("me").GetProperty("id").GetString();
 
-        const string node = "query($id: ID!) { node(id: $id) { ... on User { username } } }";
+        const string node = "query($id: ID!) { node(id: $id) { ... on User { username role } } }";
         var own = (await DataAsync(luca, node, new { id = lucasId })).GetProperty("node");
         var foreign = (await DataAsync(mia, node, new { id = lucasId })).GetProperty("node");
 
         await Assert.That(own.GetProperty("username").GetString()).IsEqualTo("luca@example.com");
+        await Assert.That(own.GetProperty("role").GetString()).IsEqualTo("USER");
         await Assert.That(IsNull(foreign)).IsTrue();
     }
 

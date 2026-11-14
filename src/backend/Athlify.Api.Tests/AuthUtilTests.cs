@@ -29,33 +29,4 @@ public class AuthUtilTests
         Console.WriteLine("Access Token:");
         Console.WriteLine(token);
     }
-
-    [Test]
-    [Arguments("http://localhost:5095/graphql")]
-    public async Task Hello(string url)
-    {
-        using var client = new HttpClient();
-        using var response = await client.PostAsJsonAsync(url, new
-        {
-            query = """
-                query {
-                    helloWorld {
-                        hello
-                        timestamp
-                    }
-                }
-                """
-        });
-
-        if (!response.IsOk())
-        {
-            Console.WriteLine(response.StatusCode);
-            Assert.Fail("Response Status not OK");
-        }
-
-        var responseBody = await response.Content.ReadFromJsonAsync<JsonElement>();
-        await Assert.That(responseBody.TryGetProperty("errors", out _)).IsFalse();
-        await Assert.That(responseBody.GetProperty("data").GetProperty("helloWorld").GetProperty("hello").GetString())
-            .IsEqualTo("Hello World!");
-    }
 }
