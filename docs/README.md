@@ -39,6 +39,9 @@ with that current state:
 - [`copilot/README.md`](copilot/README.md) — central AI documentation index
 - [`copilot/frontend/README.md`](copilot/frontend/README.md) — frontend scope,
   architecture and learnings
+- [`copilot/frontend/EVENTS-TABLE-COMPARISON.md`](copilot/frontend/EVENTS-TABLE-COMPARISON.md)
+  — comparison and recommendation for the Events table routes, including the
+  TanStack and AG-Events feature showcases
 - [`copilot/backend/README.md`](copilot/backend/README.md) — backend scope,
   architecture and learnings
 - [`copilot/adr/README.md`](copilot/adr/README.md) — cross-cutting architecture decisions

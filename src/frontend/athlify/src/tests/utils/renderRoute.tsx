@@ -1,9 +1,11 @@
 import { render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { RelayEnvironmentProvider } from 'react-relay'
 import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router-dom'
 import { AuthContext, type AuthContextValue } from '../../auth/context'
 import { ChakraProviderAthlify } from '../../components/ui/ChakraProviderAthlify'
 import { routes as appRoutes } from '../../routes'
+import { createTestEnvironment } from './relay'
 
 const defaultAuth: AuthContextValue = {
   isLoggedIn: true,
@@ -22,10 +24,21 @@ export function renderRoute(
 ) {
   const router = createMemoryRouter(routes, { initialEntries: [initialPath] })
   const user = userEvent.setup()
+  const relay = createTestEnvironment(() => ({
+    data: {
+      events: {
+        totalCount: 0,
+        edges: [],
+        pageInfo: { hasNextPage: false, endCursor: null },
+      },
+    },
+  }))
   const result = render(
     <ChakraProviderAthlify>
       <AuthContext.Provider value={{ ...defaultAuth, ...authOverrides }}>
-        <RouterProvider router={router} />
+        <RelayEnvironmentProvider environment={relay.environment}>
+          <RouterProvider router={router} />
+        </RelayEnvironmentProvider>
       </AuthContext.Provider>
     </ChakraProviderAthlify>,
   )

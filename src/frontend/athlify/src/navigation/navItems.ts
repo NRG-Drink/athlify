@@ -1,8 +1,21 @@
 import type { IconType } from 'react-icons'
-import { LuActivity, LuBike, LuCalendarDays, LuLayoutDashboard, LuWarehouse } from 'react-icons/lu'
+import {
+  LuActivity,
+  LuBike,
+  LuCalendarDays,
+  LuLayoutDashboard,
+  LuTable,
+  LuWarehouse,
+} from 'react-icons/lu'
 import { paths } from './paths'
 
-export type NavItemId = 'dashboard' | 'activities' | 'garage' | 'bodyStats' | 'events'
+export type NavItemId =
+  | 'dashboard'
+  | 'activities'
+  | 'garage'
+  | 'bodyStats'
+  | 'events'
+  | 'agEvents'
 
 interface NavItem {
   id: NavItemId
@@ -17,4 +30,5 @@ export const primaryNavItems: readonly NavItem[] = [
   { id: 'garage', path: paths.garage, labelKey: 'nav.garage', icon: LuWarehouse },
   { id: 'bodyStats', path: paths.bodyStats, labelKey: 'nav.bodyStats', icon: LuActivity },
   { id: 'events', path: paths.events, labelKey: 'nav.events', icon: LuCalendarDays },
+  { id: 'agEvents', path: paths.agEvents, labelKey: 'nav.agEvents', icon: LuTable },
 ]

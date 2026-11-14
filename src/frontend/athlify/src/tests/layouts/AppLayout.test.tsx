@@ -8,7 +8,7 @@ function primaryNav() {
 }
 
 describe('AppLayout', () => {
-  test('primary navigation lists the five areas in order', async () => {
+  test('primary navigation lists the six areas in order', async () => {
     renderRoute(paths.dashboard)
     await screen.findByRole('heading', { level: 1 })
     const links = within(primaryNav()).getAllByRole('link')
@@ -18,6 +18,7 @@ describe('AppLayout', () => {
       'Garage',
       'Body-Stats',
       'Events',
+      'AG-Events',
     ])
     expect(links.map((link) => link.getAttribute('href'))).toEqual([
       paths.dashboard,
@@ -25,6 +26,7 @@ describe('AppLayout', () => {
       paths.garage,
       paths.bodyStats,
       paths.events,
+      paths.agEvents,
     ])
   })
 

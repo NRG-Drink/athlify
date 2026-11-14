@@ -28,23 +28,26 @@ implementation. The current repository contains a GraphQL backend with the
 owner-scoped domain model under `src/backend/` (no authentication, Strava
 synchronization or Dashboard analyses yet) and a React/TypeScript frontend
 under `src/frontend/athlify/`. Body-Stats and the Activities list with add,
-edit, duplicate and delete are implemented; the remaining areas are still placeholders. Do not
-present the implemented slices as completed product functionality.
+edit, duplicate and delete are implemented; Events has a TanStack showcase, a
+server-filtered AG Grid route and an AG-Events feature showcase. Dashboard,
+Garage and Settings remain
+placeholders. Do not present the implemented slices as completed product
+functionality.
 
 ## Documentation map
 
-| Area | Entry point | Responsibility |
-|---|---|---|
-| Product requirements | [`PRD.md`](PRD.md) | Canonical requirements entry point |
-| Personas | [`personas.md`](personas.md) | Who the UI is designed for; read before design and UI work |
-| Architecture | [`SAD.md`](SAD.md) | Canonical architecture entry point |
-| Shared product | [`../concept/CONCEPT.md`](../concept/CONCEPT.md) | Functional scope, use cases and quality requirements |
-| Shared technical context | [`../concept/`](../concept/CONCEPT.md) | Architecture, data model, API, security and deployment details |
-| Shared terminology | [`../GLOSSARY.md`](../GLOSSARY.md) | Binding domain, user-facing and technical terms |
-| Shared decisions | [`adr/README.md`](adr/README.md) | Cross-cutting architectural decisions |
-| Shared learnings | [`LEARNINGS.md`](LEARNINGS.md) | Durable cross-cutting implementation decisions |
-| Frontend | [`frontend/README.md`](frontend/README.md) | UI responsibility, interaction and frontend context |
-| Backend | [`backend/README.md`](backend/README.md) | API, persistence, ownership and backend context |
+| Area                     | Entry point                                      | Responsibility                                                 |
+| ------------------------ | ------------------------------------------------ | -------------------------------------------------------------- |
+| Product requirements     | [`PRD.md`](PRD.md)                               | Canonical requirements entry point                             |
+| Personas                 | [`personas.md`](personas.md)                     | Who the UI is designed for; read before design and UI work     |
+| Architecture             | [`SAD.md`](SAD.md)                               | Canonical architecture entry point                             |
+| Shared product           | [`../concept/CONCEPT.md`](../concept/CONCEPT.md) | Functional scope, use cases and quality requirements           |
+| Shared technical context | [`../concept/`](../concept/CONCEPT.md)           | Architecture, data model, API, security and deployment details |
+| Shared terminology       | [`../GLOSSARY.md`](../GLOSSARY.md)               | Binding domain, user-facing and technical terms                |
+| Shared decisions         | [`adr/README.md`](adr/README.md)                 | Cross-cutting architectural decisions                          |
+| Shared learnings         | [`LEARNINGS.md`](LEARNINGS.md)                   | Durable cross-cutting implementation decisions                 |
+| Frontend                 | [`frontend/README.md`](frontend/README.md)       | UI responsibility, interaction and frontend context            |
+| Backend                  | [`backend/README.md`](backend/README.md)         | API, persistence, ownership and backend context                |
 
 ## Area-specific loading
 
@@ -80,15 +83,15 @@ contract and glossary as the seam between frontend and backend.
 
 ## Update triggers
 
-| Change | Update |
-|---|---|
-| Product scope or acceptance criteria | Concept and affected user stories/PRDs |
-| New or changed domain/API/security term | [`../GLOSSARY.md`](../GLOSSARY.md) |
-| Shared architecture decision | [`adr/README.md`](adr/README.md) and a new ADR |
-| Frontend boundary or UI decision | Frontend SAD and frontend ADR when warranted |
+| Change                                               | Update                                                            |
+| ---------------------------------------------------- | ----------------------------------------------------------------- |
+| Product scope or acceptance criteria                 | Concept and affected user stories/PRDs                            |
+| New or changed domain/API/security term              | [`../GLOSSARY.md`](../GLOSSARY.md)                                |
+| Shared architecture decision                         | [`adr/README.md`](adr/README.md) and a new ADR                    |
+| Frontend boundary or UI decision                     | Frontend SAD and frontend ADR when warranted                      |
 | Backend contract, persistence, auth or sync decision | Backend SAD, shared technical docs and backend ADR when warranted |
-| Verified implementation finding | Relevant frontend or backend `LEARNINGS.md` |
-| New documentation file | This map and the affected README |
+| Verified implementation finding                      | Relevant frontend or backend `LEARNINGS.md`                       |
+| New documentation file                               | This map and the affected README                                  |
 
 Do not copy complete requirements into AI-only documents. Add links and
 ownership guidance instead so that the concept remains authoritative.
@@ -111,8 +114,12 @@ src/
 - **Frontend**: Chakra UI, Tailwind CSS, react-router-dom and i18next app
   shell with the App Layout, a Body-Stats domain page, and an
   Activities list with URL-backed filters, Relay pagination and add, edit,
-  duplicate and delete. Dashboard,
-  Garage, Events and Settings remain placeholders. See
+  duplicate and delete. `/events` demonstrates TanStack's client-side table
+  features over the full Event connection; `/events/ag-grid` retains
+  server-backed filtering with AG Grid, and `/ag-events` demonstrates the
+  Community grid's richer client-side features. Dashboard, Garage and Settings
+  remain
+  placeholders. See
   [`frontend/SAD.md`](frontend/SAD.md).
 - **Tooling**: the frontend is a standalone npm package with its own
   `package.json` and lockfile; the repository root has none. There are no

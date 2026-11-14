@@ -10,8 +10,8 @@ This is the planned architecture. The current repository contains a
 React/TypeScript frontend app shell and a GraphQL backend with the
 owner-scoped domain model (Activities, merges, Garage, tags, Body-Stats and
 Events). There is no authentication, Strava integration or Dashboard analysis
-yet. The Body-Stats page of the frontend calls the backend; the other areas
-are placeholders.
+yet. The Body-Stats and Events pages of the frontend call the backend;
+Dashboard, Garage and Settings are placeholders.
 
 ```mermaid
 flowchart LR

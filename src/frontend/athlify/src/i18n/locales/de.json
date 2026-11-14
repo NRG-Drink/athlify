@@ -7,6 +7,7 @@
       "garage": "Garage",
       "bodyStats": "Body-Stats",
       "events": "Events",
+      "agEvents": "AG-Events",
       "settings": "Einstellungen"
     },
     "layout": {
@@ -260,6 +261,154 @@
       "sources": {
         "MANUAL": "Manuell",
         "STRAVA": "Strava"
+      }
+    },
+    "events": {
+      "implementation": {
+        "label": "Tabellenimplementierung",
+        "tanstack": "TanStack Table",
+        "agGrid": "AG Grid"
+      },
+      "filters": {
+        "search": "Events suchen",
+        "searchPlaceholder": "Name oder Beschreibung",
+        "type": "Event-Typ",
+        "allTypes": "Alle Typen",
+        "reset": "Filter zurücksetzen"
+      },
+      "types": {
+        "CRASH": "Sturz",
+        "INJURY": "Verletzung",
+        "ILLNESS": "Krankheit",
+        "REPAIR": "Reparatur",
+        "BREAK": "Pause",
+        "GOAL": "Ziel",
+        "OTHER": "Andere"
+      },
+      "columns": {
+        "name": "Event",
+        "type": "Typ",
+        "startDate": "Startdatum",
+        "endDate": "Enddatum",
+        "description": "Beschreibung",
+        "tags": "Tags"
+      },
+      "table": {
+        "caption": "Events"
+      },
+      "sort": {
+        "headerHint": "Zum Sortieren die Eingabetaste drücken."
+      },
+      "resultCount_one": "{{count}} Event",
+      "resultCount_other": "{{count}} Events",
+      "loadMore": "Weitere Events laden",
+      "loadMoreFailed": "Weitere Events konnten nicht geladen werden.",
+      "loadFailed": "Events konnten nicht geladen werden.",
+      "empty": {
+        "title": "Noch keine Events",
+        "message": "Erfasste Events erscheinen hier.",
+        "filteredTitle": "Keine passenden Events",
+        "filteredMessage": "Passe die Filter an oder setze sie zurück."
+      },
+      "tanStack": {
+        "description": "Durchsuche, filtere und sortiere deine vollständige Event-Liste. Die virtuelle Tabelle bleibt auch bei vielen Einträgen schnell.",
+        "quickFilterLabel": "Schnellfilter",
+        "quickFilterPlaceholder": "Alle Event-Felder durchsuchen",
+        "columns": "Spalten",
+        "columnsLabel": "Sichtbare Event-Spalten",
+        "columnsHint": "Wähle die angezeigten Felder. Der Event-Name bleibt immer sichtbar.",
+        "exportCsv": "CSV exportieren",
+        "csvFileName": "events.csv",
+        "resetTable": "Tabelle zurücksetzen",
+        "resetColumns": "Spalten zurücksetzen",
+        "multiSortHint": "Halte Umschalt gedrückt und klicke weitere Spaltenüberschriften, um die Sortierung zu ergänzen.",
+        "tableLabel": "TanStack-Events-Tabelle",
+        "filterColumn": "{{column}} filtern",
+        "resizeColumn": "Spaltenbreite von {{column}} anpassen",
+        "dateFrom": "Von",
+        "dateTo": "Bis",
+        "applyDateFilter": "Anwenden",
+        "clearFilter": "Filter löschen",
+        "invalidDateRange": "Gib gültige Daten ein. «Von» darf nicht nach «Bis» liegen.",
+        "noMatches": "Keine Events entsprechen den aktuellen Filtern.",
+        "loadedCount": "{{loaded}} von {{count}} Events geladen",
+        "loadingAll": "Weitere Events für vollständige Filterung und Export werden geladen ({{loaded}} von {{count}}).",
+        "loadAllFailed": "Weitere Events konnten nicht geladen werden. Filter und Export umfassen aktuell nur die geladenen Einträge."
+      },
+      "agGrid": {
+        "noRows": "Keine Events zum Anzeigen",
+        "loading": "Events werden geladen …"
+      },
+      "agEvents": {
+        "description": "Teste Mehrfachsortierung, Filter pro Spalte, optionale Spalten und CSV-Export mit der vollständigen Event-Liste.",
+        "quickFilterLabel": "Schnellfilter",
+        "quickFilterPlaceholder": "Alle Event-Felder durchsuchen",
+        "columns": "Spalten",
+        "columnsLabel": "Sichtbare Event-Spalten",
+        "columnsHint": "Wähle die angezeigten Felder. Der Event-Name bleibt immer sichtbar.",
+        "exportCsv": "CSV exportieren",
+        "csvFileName": "events.csv",
+        "resetGrid": "Tabelle zurücksetzen",
+        "resetColumns": "Spalten zurücksetzen",
+        "multiSortHint": "Klicke weitere Spaltenüberschriften, um die Sortierung zu ergänzen.",
+        "gridLabel": "AG-Events-Tabelle",
+        "loadedCount": "{{loaded}} von {{count}} Events geladen",
+        "loadingAll": "Weitere Events für vollständige Filterung und Export werden geladen ({{loaded}} von {{count}}).",
+        "loadAllFailed": "Weitere Events konnten nicht geladen werden. Filter und Export umfassen aktuell nur die geladenen Einträge.",
+        "emptyValue": "—",
+        "locale": {
+          "ariaLabelColumnFilter": "Spaltenfilter",
+          "ariaLabelColumnMenu": "Spaltenmenü",
+          "ariaLabelInputClear": "Eingabe leeren",
+          "ariaPageSizeSelectorLabel": "Seitengrösse",
+          "pageSizeSelectorLabel": "Zeilen pro Seite:",
+          "firstPage": "Erste Seite",
+          "previousPage": "Vorherige Seite",
+          "nextPage": "Nächste Seite",
+          "lastPage": "Letzte Seite",
+          "page": "Seite",
+          "number": "Nummer",
+          "of": "von",
+          "to": "bis",
+          "filter": "Filtern",
+          "filterOoo": "Filtern …",
+          "textFilter": "Textfilter",
+          "dateFilter": "Datumsfilter",
+          "applyFilter": "Filter anwenden",
+          "clearFilter": "Leeren",
+          "resetFilter": "Zurücksetzen",
+          "cancelFilter": "Abbrechen",
+          "equals": "Ist gleich",
+          "notEqual": "Ist nicht gleich",
+          "lessThan": "Ist kleiner als",
+          "greaterThan": "Ist grösser als",
+          "inRange": "Zwischen",
+          "inRangeStart": "Von",
+          "inRangeEnd": "Bis",
+          "lessThanOrEqual": "Ist kleiner oder gleich",
+          "greaterThanOrEqual": "Ist grösser oder gleich",
+          "contains": "Enthält",
+          "notContains": "Enthält nicht",
+          "startsWith": "Beginnt mit",
+          "endsWith": "Endet mit",
+          "blank": "Leer",
+          "notBlank": "Nicht leer",
+          "before": "Vor",
+          "after": "Nach",
+          "andCondition": "UND",
+          "orCondition": "ODER",
+          "dateFormat": "TT.MM.JJJJ",
+          "sortAscending": "Aufsteigend sortieren",
+          "sortDescending": "Absteigend sortieren",
+          "sortUnSort": "Sortierung aufheben",
+          "pinColumn": "Spalte fixieren",
+          "pinLeft": "Links fixieren",
+          "pinRight": "Rechts fixieren",
+          "noPin": "Nicht fixiert",
+          "autosizeThisColumn": "Diese Spalte automatisch anpassen",
+          "autosizeAllColumns": "Alle Spalten automatisch anpassen",
+          "resetColumns": "Spalten zurücksetzen"
+        }
       }
     },
     "bodyStats": {

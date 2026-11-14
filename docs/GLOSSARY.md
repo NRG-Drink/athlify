@@ -14,6 +14,11 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 **Administrator** — A User with all regular personal-area permissions plus
   permission to manage user accounts. See [`CONCEPT.md`](concept/CONCEPT.md).
 
+**AG-Events** — The separate Events table showcase for evaluating AG Grid's
+  configurable filters, sorting, columns and export alongside the standard
+  Events views. See the
+  [table comparison](copilot/frontend/EVENTS-TABLE-COMPARISON.md#ag-events-showcase).
+
 **API contract** — The agreed inputs, outputs, errors and permission rules
   exchanged between frontend and backend. See [`api-design.md`](concept/api-design.md).
 
@@ -175,9 +180,10 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
   aggregation is enabled; disabled aggregation shows every real measurement.
   It does not change raw records, KPI calculations or history-table data.
 
-**Primary Navigation** — The header navigation between the personal areas
-  Dashboard, Activities, Garage, Body-Stats and Events. On small screens it
-  opens as a drawer. See [`SAD.md`](copilot/frontend/SAD.md#app-layout-and-routes).
+**Primary Navigation** — The header navigation between Dashboard, Activities,
+  Garage, Body-Stats, Events and the AG-Events table showcase. On small screens
+  it opens as a drawer. See
+  [`SAD.md`](copilot/frontend/SAD.md#app-layout-and-routes).
 
 **Resolver** — A backend operation that executes a GraphQL query or mutation.
   See [`api-design.md`](concept/api-design.md).

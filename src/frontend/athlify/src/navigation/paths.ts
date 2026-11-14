@@ -6,5 +6,7 @@ export const paths = {
   garage: '/garage',
   bodyStats: '/body-stats',
   events: '/events',
+  eventsAgGrid: '/events/ag-grid',
+  agEvents: '/ag-events',
   settings: '/settings',
 } as const

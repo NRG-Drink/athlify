@@ -32,7 +32,8 @@ TypeScript and Vite.
 | Tooling                | ESLint 10 + typescript-eslint, Prettier; no git hooks                                                                                     | Implemented                                                                                                                           |
 | Backend contract       | Hot Chocolate GraphQL                                                                                                                     | Proposed in [shared ADR-001](../adr/ADR-001-graphql-api-contract.md); IDs follow [shared ADR-006](../adr/ADR-006-relay-global-ids.md) |
 | GraphQL client         | Relay (`react-relay`, `relay-compiler`, committed `schema.graphql`)                                                                       | Proposed in [ADR-007](adr/ADR-007-domain-page-pattern.md)                                                                             |
-| Auth                   | Backend-owned authentication and authorization; frontend keeps the access token in memory for Relay and checks the refresh-cookie session | Session routing, login submission and logout with Relay session reset implemented                                                   |
+| Tables                 | TanStack Table 9 and AG Grid Community 36                                                                                                 | TanStack and AG Grid Events showcases plus server-filtered comparison; see [implementation review](EVENTS-TABLE-COMPARISON.md)       |
+| Auth                   | Backend-owned authentication and authorization; frontend keeps the access token in memory for Relay and checks the refresh-cookie session | Session routing, login submission and logout with Relay session reset implemented                                                     |
 | Hosting                | Docker Compose with static files served by ASP.NET Core                                                                                   | The combined app service serves the Vite build, provides SPA fallback and handles same-origin `/graphql/` in the same process         |
 
 ## System Components
@@ -56,7 +57,9 @@ domain pages (see [Domain page pattern](#domain-page-pattern)), and Activities
 is the first list slice with editing. The Activities page lists activities
 from the backend connection, applies URL-backed filters, loads additional
 pages on demand and adds, edits, duplicates and deletes activities in a form
-dialog. Dashboard, Garage and Events remain placeholders.
+dialog. Events lists backend records with URL-backed server filters and sort,
+cursor pagination and two switchable table renderers. Dashboard and Garage
+remain placeholders.
 
 ```text
 src/frontend/athlify/src/
@@ -119,17 +122,29 @@ Settings, the language switcher and the color-mode toggle. Render errors of a
 view are shown inside the layout through the route `errorElement`
 ([ADR-004](adr/ADR-004-react-router-data-mode.md)).
 
-| Path          | View                                                                                      | Navigation         |
-| ------------- | ----------------------------------------------------------------------------------------- | ------------------ |
-| `/`           | redirects unauthenticated users to `/login`; authenticated users continue to `/dashboard` | –                  |
-| `/login`      | Login page; authenticated users are redirected to `/dashboard`                            | –                  |
-| `/dashboard`  | Dashboard (placeholder)                                                                   | Primary Navigation |
-| `/activities` | Activities (list with URL filters and pagination; add, edit, duplicate, delete)           | Primary Navigation |
-| `/garage`     | Garage (placeholder)                                                                      | Primary Navigation |
-| `/body-stats` | Body-Stats (domain page; `?metric=`, `?from=` and `?to=` select the view)                 | Primary Navigation |
-| `/events`     | Events (placeholder)                                                                      | Primary Navigation |
-| `/settings`   | Settings (placeholder)                                                                    | User Menu          |
-| any other     | Not Found page                                                                            | –                  |
+| Path              | View                                                                                      | Navigation           |
+| ----------------- | ----------------------------------------------------------------------------------------- | -------------------- |
+| `/`               | redirects unauthenticated users to `/login`; authenticated users continue to `/dashboard` | –                    |
+| `/login`          | Login page; authenticated users are redirected to `/dashboard`                            | –                    |
+| `/dashboard`      | Dashboard (placeholder)                                                                   | Primary Navigation   |
+| `/activities`     | Activities (list with URL filters and pagination; add, edit, duplicate, delete)           | Primary Navigation   |
+| `/garage`         | Garage (placeholder)                                                                      | Primary Navigation   |
+| `/body-stats`     | Body-Stats (domain page; `?metric=`, `?from=` and `?to=` select the view)                 | Primary Navigation   |
+| `/events`         | TanStack Table experience with local filters, sorting and virtualized rows               | Primary Navigation   |
+| `/events/ag-grid` | Server-filtered Events list using AG Grid Community                                       | Events page switcher |
+| `/ag-events`      | Full-feature AG Grid Community showcase                                                   | Primary Navigation   |
+| `/settings`       | Settings (placeholder)                                                                    | User Menu            |
+| any other         | Not Found page                                                                            | –                    |
+
+`/events` loads all cursor pages in batches of 200 before enabling TanStack
+Table's local quick and per-column filters, multi-column sorting, virtualized
+rows, optional columns and app-generated CSV export. `/ag-events` uses the same
+complete-connection loading strategy with AG Grid Community's client-side row
+model and built-in filtering, pagination and CSV export; its column chooser
+uses the grid API. `/events/ag-grid` retains the server-filtered flow with
+URL-backed search, type and sort parameters, plus cursor pagination. The
+table comparison and recommendation are documented in
+[`EVENTS-TABLE-COMPARISON.md`](EVENTS-TABLE-COMPARISON.md).
 
 There is no Administration entry until the backend exposes user roles.
 

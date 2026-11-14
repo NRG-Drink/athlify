@@ -7,6 +7,7 @@
       "garage": "Garage",
       "bodyStats": "Body-Stats",
       "events": "Events",
+      "agEvents": "AG-Events",
       "settings": "Settings"
     },
     "layout": {
@@ -260,6 +261,154 @@
       "sources": {
         "MANUAL": "Manual",
         "STRAVA": "Strava"
+      }
+    },
+    "events": {
+      "implementation": {
+        "label": "Table implementation",
+        "tanstack": "TanStack Table",
+        "agGrid": "AG Grid"
+      },
+      "filters": {
+        "search": "Search events",
+        "searchPlaceholder": "Name or description",
+        "type": "Event type",
+        "allTypes": "All types",
+        "reset": "Reset filters"
+      },
+      "types": {
+        "CRASH": "Crash",
+        "INJURY": "Injury",
+        "ILLNESS": "Illness",
+        "REPAIR": "Repair",
+        "BREAK": "Break",
+        "GOAL": "Goal",
+        "OTHER": "Other"
+      },
+      "columns": {
+        "name": "Event",
+        "type": "Type",
+        "startDate": "Start date",
+        "endDate": "End date",
+        "description": "Description",
+        "tags": "Tags"
+      },
+      "table": {
+        "caption": "Events"
+      },
+      "sort": {
+        "headerHint": "Press Enter to sort."
+      },
+      "resultCount_one": "{{count}} event",
+      "resultCount_other": "{{count}} events",
+      "loadMore": "Load more events",
+      "loadMoreFailed": "More events could not be loaded.",
+      "loadFailed": "Events could not be loaded.",
+      "empty": {
+        "title": "No events yet",
+        "message": "Events you have recorded will appear here.",
+        "filteredTitle": "No matching events",
+        "filteredMessage": "Adjust or reset the filters."
+      },
+      "tanStack": {
+        "description": "Search, filter, and sort your complete Events list. The virtualized table stays fast, even with many entries.",
+        "quickFilterLabel": "Quick filter",
+        "quickFilterPlaceholder": "Search all Event fields",
+        "columns": "Columns",
+        "columnsLabel": "Visible Event columns",
+        "columnsHint": "Choose which fields are shown. The Event name always stays visible.",
+        "exportCsv": "Export CSV",
+        "csvFileName": "events.csv",
+        "resetTable": "Reset table",
+        "resetColumns": "Reset columns",
+        "multiSortHint": "Hold Shift and click additional column headers to add them to the sort.",
+        "tableLabel": "TanStack Events table",
+        "filterColumn": "Filter {{column}}",
+        "resizeColumn": "Resize {{column}} column",
+        "dateFrom": "From",
+        "dateTo": "To",
+        "applyDateFilter": "Apply",
+        "clearFilter": "Clear filter",
+        "invalidDateRange": "Enter valid dates. The From date must not be after the To date.",
+        "noMatches": "No events match the current filters.",
+        "loadedCount": "{{loaded}} of {{count}} Events loaded",
+        "loadingAll": "Loading remaining Events for complete filtering and export ({{loaded}} of {{count}}).",
+        "loadAllFailed": "Remaining Events could not be loaded. Filters and export currently include loaded records only."
+      },
+      "agGrid": {
+        "noRows": "No events to show",
+        "loading": "Loading events…"
+      },
+      "agEvents": {
+        "description": "Explore multi-column sorting, per-column filters, optional columns and CSV export across the complete Events list.",
+        "quickFilterLabel": "Quick filter",
+        "quickFilterPlaceholder": "Search all Event fields",
+        "columns": "Columns",
+        "columnsLabel": "Visible Event columns",
+        "columnsHint": "Choose which fields are shown. The Event name always stays visible.",
+        "exportCsv": "Export CSV",
+        "csvFileName": "events.csv",
+        "resetGrid": "Reset grid",
+        "resetColumns": "Reset columns",
+        "multiSortHint": "Click additional column headers to add them to the sort.",
+        "gridLabel": "AG-Events table",
+        "loadedCount": "{{loaded}} of {{count}} Events loaded",
+        "loadingAll": "Loading remaining Events for complete filtering and export ({{loaded}} of {{count}}).",
+        "loadAllFailed": "Remaining Events could not be loaded. Filters and export currently include loaded records only.",
+        "emptyValue": "—",
+        "locale": {
+          "ariaLabelColumnFilter": "Column filter",
+          "ariaLabelColumnMenu": "Column menu",
+          "ariaLabelInputClear": "Clear input",
+          "ariaPageSizeSelectorLabel": "Page size",
+          "pageSizeSelectorLabel": "Rows per page:",
+          "firstPage": "First page",
+          "previousPage": "Previous page",
+          "nextPage": "Next page",
+          "lastPage": "Last page",
+          "page": "Page",
+          "number": "Number",
+          "of": "of",
+          "to": "to",
+          "filter": "Filter",
+          "filterOoo": "Filter…",
+          "textFilter": "Text filter",
+          "dateFilter": "Date filter",
+          "applyFilter": "Apply filter",
+          "clearFilter": "Clear",
+          "resetFilter": "Reset",
+          "cancelFilter": "Cancel",
+          "equals": "Equals",
+          "notEqual": "Does not equal",
+          "lessThan": "Less than",
+          "greaterThan": "Greater than",
+          "inRange": "Between",
+          "inRangeStart": "From",
+          "inRangeEnd": "To",
+          "lessThanOrEqual": "Less than or equal to",
+          "greaterThanOrEqual": "Greater than or equal to",
+          "contains": "Contains",
+          "notContains": "Does not contain",
+          "startsWith": "Begins with",
+          "endsWith": "Ends with",
+          "blank": "Blank",
+          "notBlank": "Not blank",
+          "before": "Before",
+          "after": "After",
+          "andCondition": "AND",
+          "orCondition": "OR",
+          "dateFormat": "yyyy-mm-dd",
+          "sortAscending": "Sort ascending",
+          "sortDescending": "Sort descending",
+          "sortUnSort": "Clear sort",
+          "pinColumn": "Pin column",
+          "pinLeft": "Pin left",
+          "pinRight": "Pin right",
+          "noPin": "No pin",
+          "autosizeThisColumn": "Autosize this column",
+          "autosizeAllColumns": "Autosize all columns",
+          "resetColumns": "Reset columns"
+        }
       }
     },
     "bodyStats": {

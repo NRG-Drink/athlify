@@ -22,14 +22,15 @@ If a requirement is not supported by these sources, do not invent a function. Do
 
 ## Files
 
-| File | Purpose |
-|---|---|
-| [`PRD.md`](PRD.md) | Product scope, priorities, acceptance criteria and explicit non-goals |
-| [`SAD.md`](SAD.md) | Frontend architecture, UI states and boundaries for code changes |
-| [`../../GLOSSARY.md`](../../GLOSSARY.md) | Shared binding terminology; update it in the same change when adding terminology |
-| [`DESIGN-SYSTEM.md`](DESIGN-SYSTEM.md) | Brand book for the "Night Ride" theme: voice, colour meanings, type, spacing, states and components to reuse; loaded by `plan-design-review` and build agents |
-| [`LEARNINGS.md`](LEARNINGS.md) | Verified findings and recurring pitfalls, recorded as dated one-line entries; actively review it at the end of every task and maintain it when new durable learnings arise |
-| [`../adr/README.md`](../adr/README.md) | Shared cross-cutting architecture decisions |
+| File                                                       | Purpose                                                                                                                                                                    |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`PRD.md`](PRD.md)                                         | Product scope, priorities, acceptance criteria and explicit non-goals                                                                                                      |
+| [`SAD.md`](SAD.md)                                         | Frontend architecture, UI states and boundaries for code changes                                                                                                           |
+| [`EVENTS-TABLE-COMPARISON.md`](EVENTS-TABLE-COMPARISON.md) | Trade-offs and recommendation for the TanStack and AG Grid Events showcases and the server-filtered comparison route                                                    |
+| [`../../GLOSSARY.md`](../../GLOSSARY.md)                   | Shared binding terminology; update it in the same change when adding terminology                                                                                           |
+| [`DESIGN-SYSTEM.md`](DESIGN-SYSTEM.md)                     | Brand book for the "Night Ride" theme: voice, colour meanings, type, spacing, states and components to reuse; loaded by `plan-design-review` and build agents              |
+| [`LEARNINGS.md`](LEARNINGS.md)                             | Verified findings and recurring pitfalls, recorded as dated one-line entries; actively review it at the end of every task and maintain it when new durable learnings arise |
+| [`../adr/README.md`](../adr/README.md)                     | Shared cross-cutting architecture decisions                                                                                                                                |
 
 ## Rules for Copilot
 
@@ -65,8 +66,15 @@ entry with the newest date. The Activities page is a list backed by
 the `activities` connection, with period, type, bicycle and tag filters stored
 in the URL and cursor-based "load more" pagination; activities are added,
 edited, duplicated and deleted in a form dialog
-([ADR-012](adr/ADR-012-store-updates-for-server-sorted-lists.md)). Dashboard, Garage and
-Events remain placeholders, although their backend API exists. The backend is
+([ADR-012](adr/ADR-012-store-updates-for-server-sorted-lists.md)). The `/events`
+page loads the complete cursor connection for TanStack Table's client-side
+filters, multi-column sorting, optional columns, virtualized rows and CSV
+export.
+`/events/ag-grid` retains the server-filtered AG Grid comparison, while
+`/ag-events` is the full-featured AG Grid showcase. The comparison and
+recommendation are in
+[`EVENTS-TABLE-COMPARISON.md`](EVENTS-TABLE-COMPARISON.md).
+Dashboard, Garage and Settings remain placeholders. The backend is
 under `../../../src/backend/`. See
 [`SAD.md`](SAD.md) for the folder layout and open decisions. Do not present
 the exploration UI as completed product functionality.

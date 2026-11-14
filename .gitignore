@@ -415,6 +415,7 @@ FodyWeavers.xsd
 *.csproj.lscache
 .obsidian
 src/frontend/athlify/coverage/**
+src/backend/Athlify.Api.Tests/DatabaseWriteTests/appsettings.json
 
 # AI stuff
 .agents/planning

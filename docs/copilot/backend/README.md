@@ -64,3 +64,25 @@ See [`SAD.md`](SAD.md) for the layout and known gaps compared with the concept.
 Run the API with `dotnet run --project src/backend/Athlify.Api`. Run the
 tests with `dotnet run --project src/backend/Athlify.Api.Tests` (TUnit test
 projects are executables).
+
+Explicit PostgreSQL write tests use the shared
+[`DatabaseWriteDatabase` fixture](../../../src/backend/Athlify.Api.Tests/DatabaseWriteTests/DatabaseWriteDatabase.cs)
+for settings, owner validation and a per-test EF Core context. To add one,
+add `[ClassDataSource<DatabaseWriteDatabase>(Shared = SharedType.None)]` to
+the test class and inject the fixture; keep each test focused on its
+model-specific data and assertions.
+
+[`EventsDatabaseWriteTests.cs`](../../../src/backend/Athlify.Api.Tests/DatabaseWriteTests/EventsDatabaseWriteTests.cs)
+is the first example in the `DatabaseWrite` category. To run it, copy
+`appsettings.example.json` in that folder to `appsettings.json`, set
+`ConnectionStrings:postgres-db` and an existing `Database:OwnerUserId`, then
+run:
+
+```text
+dotnet run --project src/backend/Athlify.Api.Tests -- --treenode-filter "/*/*/EventsDatabaseWriteTests/*[Category=DatabaseWrite]"
+```
+
+The test inserts Events into the configured database and does not clean them
+up. It uses Bogus with the test's seed argument so generated Event fields are
+reproducible. It is explicit so ordinary test runs do not write to a real
+database.

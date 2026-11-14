@@ -14,6 +14,7 @@
   - [Overview \& Features](#overview--features)
   - [Tech Stack \& Sources](#tech-stack--sources)
   - [Documentation](#documentation)
+    - [Events table comparison](docs/copilot/frontend/EVENTS-TABLE-COMPARISON.md)
   - [Getting Started \& Installation](#getting-started--installation)
     - [Prerequisites](#prerequisites)
     - [Install](#install)
@@ -42,15 +43,19 @@ The product is not implemented yet. The repository currently contains:
   language switcher and routing. The Activities page lists activities in a
   paged table; type, bicycle, wind and tag filters sit in the column headers
   and live in the URL. The Body-Stats page shows summary tiles, a chart, a
-  paged history table and add/edit/delete. Both use the backend API.
+  paged history table and add/edit/delete. The Events views compare TanStack
+  Table and AG Grid through two server-filtered routes and a separate
+  AG-Events showcase with client-side filters, multi-sort, optional columns,
+  pagination and CSV export over the complete Event list. These pages use the
+  backend API.
 
 ## Tech Stack & Sources
 
-| Area     | Technology                                                                                  |
-| -------- | ------------------------------------------------------------------------------------------- |
-| Frontend | React 19, TypeScript, Vite, Chakra UI v3 (custom theme), Tailwind CSS v4, react-router-dom, i18next, Recharts, self-hosted Inter and Barlow Semi Condensed |
-| Backend  | .NET 10, ASP.NET Core, Hot Chocolate GraphQL 16, EF Core + PostgreSQL (Aspire)              |
-| Testing  | TUnit (backend); Vitest + React Testing Library, ESLint, Prettier and `tsc` (frontend)      |
+| Area     | Technology                                                                                                                                                                                    |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend | React 19, TypeScript, Vite, Chakra UI v3 (custom theme), Tailwind CSS v4, react-router-dom, i18next, Recharts, TanStack Table, AG Grid Community, self-hosted Inter and Barlow Semi Condensed |
+| Backend  | .NET 10, ASP.NET Core, Hot Chocolate GraphQL 16, EF Core + PostgreSQL (Aspire)                                                                                                                |
+| Testing  | TUnit (backend); Vitest + React Testing Library, ESLint, Prettier and `tsc` (frontend)                                                                                                        |
 
 ```text
 src/
@@ -72,6 +77,9 @@ are recorded as ADRs (see [Documentation](#documentation)).
 - [Personas](docs/copilot/personas.md): who the UI is designed for.
 - [Configuration](docs/CONFIGURATION.md): ports, settings and tooling
   configuration.
+- [Events table comparison](docs/copilot/frontend/EVENTS-TABLE-COMPARISON.md):
+  trade-offs and recommendation for TanStack Table and AG Grid, including the
+  AG-Events feature showcase.
 - [Contributing guide](docs/CONTRIBUTING.md): branches, commits, hooks and
   documentation rules.
 
@@ -112,6 +120,7 @@ Markdown preview of a dev container session; open the repository folder in a
 local WebStorm or view the file on GitHub instead.
 
 ### Run
+
 1. Start Docker
 2. `aspire run` or `dotnet run --project ./src/backend/Athlify.AppHost/Athlify.AppHost.csproj`
 
@@ -130,6 +139,10 @@ volume was created before the migrations existed; remove it once with
 - Open the frontend and go to **Body-Stats** to see the measurements, add,
   edit or delete one, and switch the chart between measurements and periods.
   Use the user menu in the header to switch the color mode and the language.
+- Open **Events** to search and filter the event list, sort its columns and
+  switch between the TanStack Table and AG Grid routes.
+- Open **AG-Events** to try multi-column sorting, per-column filters, optional
+  columns, client-side pagination and CSV export.
 
 Common checks:
 
