@@ -2,17 +2,28 @@ import { Box, Button, Checkbox, Field, Grid, Input, Popover, Portal, Stack, Text
 import {
   AllCommunityModule,
   type ColDef,
+  type ColumnMovedEvent,
+  type ColumnResizedEvent,
   type ColumnVisibleEvent,
   type GridApi,
   type GridReadyEvent,
+  type FilterChangedEvent,
+  type SortChangedEvent,
 } from 'ag-grid-community'
 import { AgGridProvider, AgGridReact } from 'ag-grid-react'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
 import { graphql, useFragment } from 'react-relay'
 import { LuColumns3, LuDownload, LuRotateCcw } from 'react-icons/lu'
 import { useFormat } from '../../i18n/useFormat'
 import { useAgGridTheme } from './useAgGridTheme'
+import {
+  readAgEventsColumnState,
+  readAgEventsUrlState,
+  saveAgEventsColumnState,
+  writeAgEventsUrlState,
+} from './agEventsState'
 import type {
   AgEventsGrid_rows$data,
   AgEventsGrid_rows$key,
@@ -45,10 +56,15 @@ interface AgEventsGridProps {
 
 export function AgEventsGrid({ entries, loading }: AgEventsGridProps) {
   const { t, i18n } = useTranslation()
+  const [searchParams, setSearchParams] = useSearchParams()
   const format = useFormat()
   const theme = useAgGridTheme()
   const [gridApi, setGridApi] = useState<GridApi<EventRow>>()
-  const [quickFilter, setQuickFilter] = useState('')
+  const [quickFilter, setQuickFilter] = useState(
+    () => readAgEventsUrlState(new URLSearchParams(window.location.search)).search,
+  )
+  const [wrapCellText, setWrapCellText] = useState(false)
+  const internallyWrittenSearches = useRef(new Set<string>())
   const [visibleColumns, setVisibleColumns] = useState<ReadonlySet<EventColumnId>>(
     () => new Set(columnIds),
   )
@@ -69,6 +85,7 @@ export function AgEventsGrid({ entries, loading }: AgEventsGridProps) {
         headerName: t('events.columns.name'),
         minWidth: 180,
         filter: 'agTextColumnFilter',
+        lockVisible: true,
       },
       {
         field: 'type',
@@ -150,6 +167,19 @@ export function AgEventsGrid({ entries, loading }: AgEventsGridProps) {
     ],
     [format, i18n.language, i18n.resolvedLanguage, t],
   )
+  const defaultColDef = useMemo<ColDef<EventRow>>(
+    () => ({
+      flex: 1,
+      minWidth: 120,
+      resizable: true,
+      sortable: true,
+      floatingFilter: true,
+      sortingOrder: ['desc', 'asc', null],
+      wrapText: wrapCellText,
+      autoHeight: wrapCellText,
+    }),
+    [wrapCellText],
+  )
   const localeText = useMemo(
     () => ({
       noRowsToShow: t('events.agGrid.noRows'),
@@ -223,14 +253,104 @@ export function AgEventsGrid({ entries, loading }: AgEventsGridProps) {
   const onGridReady = useCallback(
     ({ api }: GridReadyEvent<EventRow>) => {
       setGridApi(api)
+      const localColumnState = readAgEventsColumnState()
+      if (localColumnState) api.applyColumnState({ state: localColumnState, applyOrder: true })
+      const urlState = readAgEventsUrlState(searchParams)
+      setQuickFilter(urlState.search)
+      api.setFilterModel(urlState.filterModel)
+      if (searchParams.has('agEventsSort')) {
+        api.applyColumnState({
+          state: urlState.sortModel,
+          defaultState: { sort: null, sortIndex: null },
+        })
+      }
       syncVisibleColumns(api)
     },
-    [syncVisibleColumns],
+    [searchParams, syncVisibleColumns],
+  )
+  const persistColumnState = useCallback((api: GridApi<EventRow>) => {
+    saveAgEventsColumnState(
+      api
+        .getColumnState()
+        .map(({ colId, hide, width, flex, pinned }) => ({ colId, hide, width, flex, pinned })),
+    )
+  }, [])
+  const onColumnResized = useCallback(
+    ({ api, finished }: ColumnResizedEvent<EventRow>) => {
+      if (finished) persistColumnState(api)
+    },
+    [persistColumnState],
+  )
+  const onColumnMoved = useCallback(
+    ({ api }: ColumnMovedEvent<EventRow>) => persistColumnState(api),
+    [persistColumnState],
   )
   const onColumnVisible = useCallback(
-    ({ api }: ColumnVisibleEvent<EventRow>) => syncVisibleColumns(api),
-    [syncVisibleColumns],
+    ({ api }: ColumnVisibleEvent<EventRow>) => {
+      syncVisibleColumns(api)
+      persistColumnState(api)
+    },
+    [persistColumnState, syncVisibleColumns],
   )
+  const updateUrl = useCallback(
+    (api: GridApi<EventRow>, search: string) => {
+      const sortModel = api
+        .getColumnState()
+        .filter((column) => column.sort)
+        .sort((left, right) => (left.sortIndex ?? 0) - (right.sortIndex ?? 0))
+        .flatMap((column) =>
+          column.sort === 'asc' || column.sort === 'desc'
+            ? [{ colId: column.colId, sort: column.sort }]
+            : [],
+        )
+      const next = writeAgEventsUrlState(searchParams, {
+        search,
+        filterModel: api.getFilterModel(),
+        sortModel,
+      })
+      if (next.toString() !== searchParams.toString()) {
+        const nextSearch = next.toString()
+        if (internallyWrittenSearches.current.size > 20) {
+          internallyWrittenSearches.current.clear()
+        }
+        internallyWrittenSearches.current.add(nextSearch)
+        setSearchParams(next, { replace: true })
+      }
+    },
+    [searchParams, setSearchParams],
+  )
+  const onFilterChanged = useCallback(
+    ({ api }: FilterChangedEvent<EventRow>) => {
+      const current = readAgEventsUrlState(searchParams).filterModel
+      if (JSON.stringify(api.getFilterModel()) !== JSON.stringify(current)) {
+        updateUrl(api, quickFilter)
+      }
+    },
+    [quickFilter, searchParams, updateUrl],
+  )
+  const onSortChanged = useCallback(
+    ({ api }: SortChangedEvent<EventRow>) => updateUrl(api, quickFilter),
+    [quickFilter, updateUrl],
+  )
+  useEffect(() => {
+    const currentSearch = searchParams.toString()
+    if (internallyWrittenSearches.current.delete(currentSearch)) {
+      return
+    }
+    const urlState = readAgEventsUrlState(searchParams)
+    setQuickFilter(urlState.search)
+    if (!gridApi) return
+    const currentFilterModel = gridApi.getFilterModel()
+    if (JSON.stringify(currentFilterModel) !== JSON.stringify(urlState.filterModel)) {
+      gridApi.setFilterModel(urlState.filterModel)
+    }
+    if (searchParams.has('agEventsSort')) {
+      gridApi.applyColumnState({
+        state: urlState.sortModel,
+        defaultState: { sort: null, sortIndex: null },
+      })
+    }
+  }, [gridApi, searchParams])
   const onExport = useCallback(() => {
     gridApi?.exportDataAsCsv({ fileName: t('events.agEvents.csvFileName') })
   }, [gridApi, t])
@@ -239,14 +359,16 @@ export function AgEventsGrid({ entries, loading }: AgEventsGridProps) {
     gridApi?.resetColumnState()
     gridApi?.paginationGoToFirstPage()
     setQuickFilter('')
-  }, [gridApi])
+    setWrapCellText(false)
+    if (gridApi) updateUrl(gridApi, '')
+  }, [gridApi, updateUrl])
 
   return (
     <Grid gap="4">
       <Grid
         alignItems="end"
         gap="3"
-        templateColumns={{ base: '1fr', md: 'minmax(14rem, 1fr) auto auto auto' }}
+        templateColumns={{ base: '1fr', md: 'minmax(14rem, 1fr) repeat(4, auto)' }}
       >
         <Field.Root>
           <Field.Label>{t('events.agEvents.quickFilterLabel')}</Field.Label>
@@ -254,7 +376,16 @@ export function AgEventsGrid({ entries, loading }: AgEventsGridProps) {
             type="search"
             value={quickFilter}
             placeholder={t('events.agEvents.quickFilterPlaceholder')}
-            onChange={(event) => setQuickFilter(event.currentTarget.value)}
+            onChange={(event) => {
+              const value = event.currentTarget.value
+              setQuickFilter(value)
+            }}
+            onBlur={(event) => {
+              if (gridApi) updateUrl(gridApi, event.currentTarget.value)
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && gridApi) updateUrl(gridApi, quickFilter)
+            }}
             disabled={loading}
           />
         </Field.Root>
@@ -314,6 +445,16 @@ export function AgEventsGrid({ entries, loading }: AgEventsGridProps) {
           <LuDownload aria-hidden />
           {t('events.agEvents.exportCsv')}
         </Button>
+        <Checkbox.Root
+          checked={wrapCellText}
+          onCheckedChange={({ checked }) => setWrapCellText(checked === true)}
+        >
+          <Checkbox.HiddenInput />
+          <Checkbox.Control>
+            <Checkbox.Indicator />
+          </Checkbox.Control>
+          <Checkbox.Label>{t('events.agEvents.wrapCellText')}</Checkbox.Label>
+        </Checkbox.Root>
         <Button variant="outline" onClick={onReset} disabled={loading || !gridApi}>
           <LuRotateCcw aria-hidden />
           {t('events.agEvents.resetGrid')}
@@ -334,14 +475,7 @@ export function AgEventsGrid({ entries, loading }: AgEventsGridProps) {
           <AgGridReact
             rowData={rowData}
             columnDefs={columnDefs}
-            defaultColDef={{
-              flex: 1,
-              minWidth: 120,
-              resizable: true,
-              sortable: true,
-              floatingFilter: true,
-              sortingOrder: ['desc', 'asc', null],
-            }}
+            defaultColDef={defaultColDef}
             theme={theme}
             localeText={localeText}
             quickFilterText={quickFilter}
@@ -354,6 +488,10 @@ export function AgEventsGrid({ entries, loading }: AgEventsGridProps) {
             loading={loading}
             onGridReady={onGridReady}
             onColumnVisible={onColumnVisible}
+            onColumnResized={onColumnResized}
+            onColumnMoved={onColumnMoved}
+            onFilterChanged={onFilterChanged}
+            onSortChanged={onSortChanged}
           />
         </AgGridProvider>
       </Box>

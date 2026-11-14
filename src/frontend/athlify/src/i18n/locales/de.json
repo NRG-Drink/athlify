@@ -314,6 +314,7 @@
         "description": "Durchsuche, filtere und sortiere deine vollständige Event-Liste. Die virtuelle Tabelle bleibt auch bei vielen Einträgen schnell.",
         "quickFilterLabel": "Schnellfilter",
         "quickFilterPlaceholder": "Alle Event-Felder durchsuchen",
+        "wrapCellText": "Zellentext umbrechen",
         "columns": "Spalten",
         "columnsLabel": "Sichtbare Event-Spalten",
         "columnsHint": "Wähle die angezeigten Felder. Der Event-Name bleibt immer sichtbar.",

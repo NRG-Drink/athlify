@@ -59,7 +59,7 @@ describe('AgEventsPage', () => {
   })
 
   it('quick-filters rows and lets the user hide optional columns', async () => {
-    const { user } = renderWithRelay(<AgEventsPage />, () => response(), {
+    const { user, router } = renderWithRelay(<AgEventsPage />, () => response(), {
       path: paths.agEvents,
       routePath: paths.agEvents,
     })
@@ -75,6 +75,18 @@ describe('AgEventsPage', () => {
     })
 
     await user.clear(quickFilter)
+    await user.type(quickFilter, 'Bremsen')
+    await waitFor(() => {
+      expect(screen.queryByText('Sturz beim Rennen')).not.toBeInTheDocument()
+      expect(screen.getByText('Werkstatttermin')).toBeInTheDocument()
+    })
+    await user.tab()
+    await waitFor(() => {
+      expect(new URLSearchParams(router.state.location.search).get('agEventsSearch')).toBe(
+        'Bremsen',
+      )
+    })
+
     await user.click(screen.getByRole('button', { name: 'Spalten' }))
     await user.click(screen.getByRole('checkbox', { name: 'Beschreibung' }))
 
@@ -82,11 +94,9 @@ describe('AgEventsPage', () => {
       expect(screen.queryByRole('columnheader', { name: /Beschreibung/ })).not.toBeInTheDocument()
     })
     expect(screen.getByRole('columnheader', { name: /Event/ })).toBeInTheDocument()
-
-    await user.type(quickFilter, 'Bremsen')
-    await waitFor(() => {
-      expect(screen.queryByText('Sturz beim Rennen')).not.toBeInTheDocument()
-      expect(screen.getByText('Werkstatttermin')).toBeInTheDocument()
-    })
+    const savedColumns = JSON.parse(
+      window.localStorage.getItem('athlify.events.agGrid.columnState') ?? '[]',
+    ) as Array<{ colId: string; hide?: boolean }>
+    expect(savedColumns.find((column) => column.colId === 'description')?.hide).toBe(true)
   })
 })

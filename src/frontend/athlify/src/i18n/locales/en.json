@@ -314,6 +314,7 @@
         "description": "Search, filter, and sort your complete Events list. The virtualized table stays fast, even with many entries.",
         "quickFilterLabel": "Quick filter",
         "quickFilterPlaceholder": "Search all Event fields",
+        "wrapCellText": "Wrap cell text",
         "columns": "Columns",
         "columnsLabel": "Visible Event columns",
         "columnsHint": "Choose which fields are shown. The Event name always stays visible.",
