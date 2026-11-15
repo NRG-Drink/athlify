@@ -184,6 +184,11 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 
 ## S — Z
 
+**Saved view** — A named, browser-local Events grid configuration that stores
+  its filters, sort order and column layout. Applying a saved view restores
+  that configuration; the URL remains the shareable source of the active grid
+  filters and sorting.
+
 **Soft delete** — Deletion by marking a record so it remains available for
   synchronization and traceability rules. See
   [`activity-management.md`](concept/activity-management.md).

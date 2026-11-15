@@ -266,7 +266,24 @@
     "events": {
       "emptyValue": "—",
       "quickFilter": "Search events",
+      "filterYtd": "Year to date",
+      "fromFilter": "From",
+      "toFilter": "To",
       "resetFilters": "Reset filters",
+      "columnPicker": {
+        "label": "Choose visible columns",
+        "open": "Columns"
+      },
+      "views": {
+        "select": "Saved views",
+        "choose": "Choose a saved view",
+        "saveCurrent": "Save view",
+        "name": "View name",
+        "save": "Save",
+        "delete": "Delete view",
+        "duplicateName": "A view with this name already exists.",
+        "storageFailed": "Saved views could not be stored on this device."
+      },
       "typeFilter": {
         "ariaLabel": "Filter by event type",
         "selectAll": "Select all"
@@ -281,7 +298,8 @@
         "name": "Name",
         "type": "Type",
         "endDate": "End date",
-        "description": "Description"
+        "description": "Description",
+        "tags": "Tags"
       },
       "table": {
         "caption": "Events"

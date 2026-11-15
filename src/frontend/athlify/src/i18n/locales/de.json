@@ -266,7 +266,24 @@
     "events": {
       "emptyValue": "—",
       "quickFilter": "Events durchsuchen",
+      "filterYtd": "Seit Jahresbeginn",
+      "fromFilter": "Von",
+      "toFilter": "Bis",
       "resetFilters": "Filter zurücksetzen",
+      "columnPicker": {
+        "label": "Sichtbare Spalten auswählen",
+        "open": "Spalten"
+      },
+      "views": {
+        "select": "Gespeicherte Ansichten",
+        "choose": "Ansicht auswählen",
+        "saveCurrent": "Ansicht speichern",
+        "name": "Name der Ansicht",
+        "save": "Speichern",
+        "delete": "Ansicht löschen",
+        "duplicateName": "Eine Ansicht mit diesem Namen existiert bereits.",
+        "storageFailed": "Ansichten konnten auf diesem Gerät nicht gespeichert werden."
+      },
       "typeFilter": {
         "ariaLabel": "Nach Eventtyp filtern",
         "selectAll": "Alle auswählen"
@@ -281,7 +298,8 @@
         "name": "Name",
         "type": "Typ",
         "endDate": "Ende",
-        "description": "Beschreibung"
+        "description": "Beschreibung",
+        "tags": "Tags"
       },
       "table": {
         "caption": "Events"
