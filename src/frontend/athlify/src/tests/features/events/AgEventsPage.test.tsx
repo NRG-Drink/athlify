@@ -9,12 +9,13 @@ afterEach(() => {
 
 const event = {
   __typename: 'Event',
-  id: 'event-1',
+  id: 'RXZlbnQ6NDI=',
   name: 'Veloservice',
   type: 'REPAIR',
   description: 'Kette ersetzt',
   startDate: '2026-10-16',
   endDate: null,
+  tags: [],
 }
 
 function mockGridViewport() {
@@ -80,9 +81,17 @@ describe('AgEventsPage', () => {
       { path: '/ag-events', routePath: '/ag-events' },
     )
 
-    await screen.findByRole('region', { name: 'Events' })
+    const region = await screen.findByRole('region', { name: 'Events' })
     expect(screen.getByText('1 Event')).toBeInTheDocument()
-    expect(calls('AgEventsPageQuery')).toEqual([{ first: 20, after: null }])
+    await within(region).findByText('42')
+    expect(calls('AgEventsPageQuery')).toEqual([
+      {
+        first: 20,
+        after: null,
+        where: null,
+        order: [{ startDate: 'DESC' }, { id: 'DESC' }],
+      },
+    ])
   })
 
   it('fetches the next cursor page when scrolling to the end of a block', async () => {
@@ -123,6 +132,11 @@ describe('AgEventsPage', () => {
     await waitFor(() => {
       expect(calls('AgEventsPageQuery')).toHaveLength(2)
     })
-    expect(calls('AgEventsPageQuery')[1]).toEqual({ first: 20, after: 'cursor-20' })
+    expect(calls('AgEventsPageQuery')[1]).toEqual({
+      first: 20,
+      after: 'cursor-20',
+      where: null,
+      order: [{ startDate: 'DESC' }, { id: 'DESC' }],
+    })
   })
 })

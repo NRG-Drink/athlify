@@ -7,6 +7,7 @@
       "garage": "Garage",
       "bodyStats": "Body-Stats",
       "events": "Events",
+      "myEvents": "Meine Events",
       "agEvents": "AG-Events",
       "settings": "Einstellungen"
     },
@@ -264,6 +265,8 @@
     },
     "events": {
       "emptyValue": "—",
+      "quickFilter": "Events durchsuchen",
+      "resetFilters": "Filter zurücksetzen",
       "grid": {
         "ariaSortableColumn": "Drücke die Eingabetaste, um diese Spalte zu sortieren."
       },
@@ -291,6 +294,10 @@
       "resultCount_one": "{{count}} Event",
       "resultCount_other": "{{count}} Events",
       "loadFailed": "Events konnten nicht geladen werden.",
+      "edit": {
+        "saved": "Event aktualisiert.",
+        "saveFailed": "Event konnte nicht gespeichert werden. Bitte versuche es nochmals."
+      },
       "empty": {
         "title": "Noch keine Events",
         "message": "Hier erscheinen deine erfassten Events."

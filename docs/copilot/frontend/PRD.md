@@ -96,8 +96,9 @@ mood, effort, wind and Event type are decided; see
 
 - The frontend is an exploration app shell under `src/frontend/athlify/`.
   Body-Stats and the Activities list (with add, edit, duplicate and delete)
-  use the backend. Events and AG-Events are read-only views of the newest 200
-  records, using TanStack Table and AG Grid respectively. Dashboard and Garage
+  use the backend. Events is a read-only view of the newest 200 records using
+  TanStack Table; AG-Events uses AG Grid and allows inline edits to event fields.
+  Dashboard and Garage
   have no completed pages yet.
 - The project remains limited to a realistic scope for a two-person student
   project.

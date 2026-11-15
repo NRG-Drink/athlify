@@ -59,7 +59,8 @@ from the backend connection, applies URL-backed filters, loads additional
 pages on demand and adds, edits, duplicates and deletes activities in a form
 dialog. Events is a read-only TanStack table of the newest 200 backend records,
 with row virtualization; AG-Events loads records in cursor-based blocks of 20
-through AG Grid's Infinite Row Model. Dashboard and Garage remain placeholders.
+through AG Grid's Infinite Row Model and persists editable fields through the
+GraphQL update mutation. Dashboard and Garage remain placeholders.
 
 ```text
 src/frontend/athlify/src/

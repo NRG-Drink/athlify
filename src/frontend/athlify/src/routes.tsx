@@ -8,6 +8,7 @@ import { ActivitiesPage } from './features/activities/ActivitiesPage'
 import { BodyStatsPage } from './features/body-stats/BodyStatsPage'
 import { AgEventsPage } from './features/events/AgEventsPage'
 import { EventsPage } from './features/events/EventsPage'
+import { MyEventsPage } from './features/events/MyEventsPage'
 import { primaryNavItems, type NavItemId } from './navigation/navItems'
 import { paths } from './navigation/paths'
 
@@ -36,6 +37,7 @@ export const routes: RouteObject[] = [
       { path: paths.garage, element: areaPlaceholder('garage') },
       { path: paths.bodyStats, element: <BodyStatsPage /> },
       { path: paths.events, element: <EventsPage /> },
+      { path: paths.myEvents, element: <MyEventsPage /> },
       { path: paths.agEvents, element: <AgEventsPage /> },
       {
         path: paths.settings,
