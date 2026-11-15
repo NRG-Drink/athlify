@@ -10,26 +10,19 @@ import {
   colorSchemeDarkBlue,
   themeQuartz,
   type ColDef,
-  type SortModelItem,
 } from 'ag-grid-community'
 import { graphql } from 'react-relay/legacy'
-import type {
-  EventFilterInput,
-  EventSortInput,
-  MyEventsPageQuery,
-} from './__generated__/MyEventsPageQuery.graphql'
+import type { EventFilterInput, MyEventsPageQuery } from './__generated__/MyEventsPageQuery.graphql'
 import { MyEventsDataSource } from './MyEventsDataSource'
-import {
-  useRelayEnvironment,
-} from 'react-relay'
+import { useRelayEnvironment } from 'react-relay'
+import { MyEventsTypeFilter } from './MyEventsTypeFilter'
+import { defaultOrder, getGridQuery } from './MyEventsGridQuery'
 
 type QueryEvent = NonNullable<NonNullable<MyEventsPageQuery['response']['events']>['nodes']>[number]
 
 type EventsRow = {
   -readonly [K in keyof QueryEvent]: QueryEvent[K]
 }
-
-const defaultOrder: EventSortInput[] = [{ id: 'ASC' }]
 
 const pageQuery = graphql`
   query MyEventsPageQuery(
@@ -45,6 +38,12 @@ const pageQuery = graphql`
         name
         startDate
         endDate
+        description
+        type
+        tags {
+          id
+          name
+        }
       }
       pageInfo {
         endCursor
@@ -110,7 +109,7 @@ const MyEventsGrid = ({
       pinned: 'left',
       valueGetter: (params) => getEventRowNumber(params.data?.id),
     },
-    { field: 'name', flex: 1, filter: 'agTextColumnFilter', width: 200 },
+    { field: 'name', flex: 1, filter: 'agTextColumnFilter', minWidth: 300, width: 200 },
     {
       field: 'startDate',
       filter: 'agDateColumnFilter',
@@ -122,6 +121,22 @@ const MyEventsGrid = ({
       filter: 'agDateColumnFilter',
       valueFormatter: (params) =>
         params.value ? new Date(params.value).toLocaleDateString() : '-',
+    },
+    {
+      field: 'type',
+      filter: MyEventsTypeFilter,
+      minWidth: 100,
+    },
+    {
+      field: 'tags',
+      filter: 'agTextColumnFilter',
+      minWidth: 100,
+      valueFormatter: (params) => params.value?.tags?.join(', ') ?? '-',
+    },
+    {
+      field: 'description',
+      filter: 'agTextColumnFilter',
+      minWidth: 400,
     },
   ])
 
@@ -159,39 +174,6 @@ const toGraphQLDate = (dateString: string) => {
 
   const date = new Date(dateString)
   return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
-}
-
-function getGridQuery(
-  sortModel: SortModelItem[],
-  filterModel: Record<string, unknown>,
-  baseWhere: EventFilterInput | null,
-): { where: EventFilterInput | null; order: EventSortInput[] } {
-  const order = sortModel.flatMap(({ colId, sort }) =>
-    ['name', 'startDate', 'endDate', 'id'].includes(colId) && sort
-      ? [{ [colId]: sort.toUpperCase() as 'ASC' | 'DESC' }]
-      : [],
-  ) as EventSortInput[]
-  if (order.length === 0) order.push(...defaultOrder)
-  else if (!order.some((item) => 'id' in item)) order.push({ id: 'ASC' })
-
-  const clauses: EventFilterInput[] = baseWhere ? [baseWhere] : []
-  for (const [field, raw] of Object.entries(filterModel)) {
-    const filter = raw as { filter?: string; type?: string; dateFrom?: string }
-    if (field === 'name' && filter.filter) {
-      clauses.push({
-        name: { [filter.type === 'equals' ? 'eq' : 'contains']: filter.filter },
-      })
-    } else if ((field === 'startDate' || field === 'endDate') && filter.dateFrom) {
-      const operator =
-        filter.type === 'equals' ? 'eq' : filter.type === 'lessThan' ? 'lt' : 'gt'
-      clauses.push({ [field]: { [operator]: filter.dateFrom } })
-    }
-  }
-
-  return {
-    where: clauses.length === 0 ? null : clauses.length === 1 ? clauses[0] : { and: clauses },
-    order,
-  }
 }
 
 export const MyEventsPage = () => {

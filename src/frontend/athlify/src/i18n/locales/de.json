@@ -267,6 +267,10 @@
       "emptyValue": "—",
       "quickFilter": "Events durchsuchen",
       "resetFilters": "Filter zurücksetzen",
+      "typeFilter": {
+        "ariaLabel": "Nach Eventtyp filtern",
+        "selectAll": "Alle auswählen"
+      },
       "grid": {
         "ariaSortableColumn": "Drücke die Eingabetaste, um diese Spalte zu sortieren."
       },
