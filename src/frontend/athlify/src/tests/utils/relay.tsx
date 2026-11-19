@@ -13,7 +13,7 @@ import {
   type Variables,
 } from 'relay-runtime'
 import { vi } from 'vitest'
-import { Provider } from '../../components/ui/provider'
+import { ChakraProviderAthlify } from '../../components/ui/ChakraProviderAthlify'
 
 // Loosely typed on purpose: tests also return error payloads and never-settling promises.
 type Handler = (operation: string, variables: Variables) => unknown
@@ -44,17 +44,23 @@ export function renderWithRelay(
     path = '/',
     routePath = '/',
     otherRoutes = [],
-  }: { path?: string; routePath?: string; otherRoutes?: RouteObject[] } = {},
+    testEnvironment,
+  }: {
+    path?: string
+    routePath?: string
+    otherRoutes?: RouteObject[]
+    testEnvironment?: ReturnType<typeof createTestEnvironment>
+  } = {},
 ) {
-  const test = createTestEnvironment(handler)
+  const test = testEnvironment ?? createTestEnvironment(handler)
   const routes: RouteObject[] = [{ path: routePath, element: ui }, ...otherRoutes]
   const router = createMemoryRouter(routes, { initialEntries: [path] })
   const user = userEvent.setup()
   const result = render(
     <RelayEnvironmentProvider environment={test.environment}>
-      <Provider>
+      <ChakraProviderAthlify>
         <RouterProvider router={router} />
-      </Provider>
+      </ChakraProviderAthlify>
     </RelayEnvironmentProvider>,
   )
   return { ...result, ...test, router, user }

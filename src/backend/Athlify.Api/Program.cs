@@ -69,7 +69,14 @@ public partial class Program
         app.UseDefaultFiles();
         app.UseStaticFiles();
 
-        app.MapGraphQL();
+        var graphqlBuilder = app
+            .MapGraphQL()
+            .WithOptions(e => e.Enable = app.Environment.IsDevelopment());
+        if (!app.Environment.IsDevelopment())
+        {
+            graphqlBuilder.RequireAuthorization();
+        }
+
         app.MapFallbackToFile("index.html");
 
         app.RunWithGraphQLCommands(args);
@@ -119,9 +126,9 @@ public partial class Program
     {
         var seedOptions = app.Configuration.GetSection(SeedOptions.Section).Get<SeedOptions>() ?? new SeedOptions();
         var developmentUserOptions = app.Configuration
-        .GetSection(DevelopmentUserOptions.Section)
-        .Get<DevelopmentUserOptions>()
-        ?? new DevelopmentUserOptions();
+            .GetSection(DevelopmentUserOptions.Section)
+            .Get<DevelopmentUserOptions>()
+            ?? new DevelopmentUserOptions();
         await using var scope = app.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
         if (db.Database.IsRelational())

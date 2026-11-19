@@ -3,9 +3,9 @@ import { Navigate, type RouteObject } from 'react-router-dom'
 import { NotFoundPage } from './app/NotFoundPage'
 import { RouteErrorPage } from './app/RouteErrorPage'
 import { PlaceholderPage } from './app/PlaceholderPage'
+import { AuthenticatedAppLayout, LoginRoute } from './features/auth/AuthRoutes'
 import { ActivitiesPage } from './features/activities/ActivitiesPage'
 import { BodyStatsPage } from './features/body-stats/BodyStatsPage'
-import { AppLayout } from './layouts/AppLayout'
 import { primaryNavItems, type NavItemId } from './navigation/navItems'
 import { paths } from './navigation/paths'
 
@@ -20,9 +20,12 @@ function areaPlaceholder(id: NavItemId) {
   )
 }
 
+// https://reactrouter.com/start/data/route-object
 export const routes: RouteObject[] = [
+  { path: paths.login, element: <LoginRoute /> },
   {
-    element: <AppLayout />,
+    path: paths.root,
+    element: <AuthenticatedAppLayout />,
     errorElement: <RouteErrorPage />,
     children: [
       { index: true, element: <Navigate to={paths.dashboard} replace /> },

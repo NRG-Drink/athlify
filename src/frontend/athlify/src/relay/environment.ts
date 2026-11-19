@@ -4,51 +4,127 @@ import {
   RecordSource,
   Store,
   type FetchFunction,
-  type GraphQLResponse,
-} from 'relay-runtime'
+} from "relay-runtime";
+import { graphqlUrl } from "../auth/api";
+import { AuthorizationError } from "../auth/errors";
+import { authEvents } from "../auth/events";
+import { refreshAccessToken } from "../auth/refresh";
+import { tokenStore } from "../auth/tokenStore";
 
-// Relative by default so requests stay same-origin and go through the dev-server
-// proxy (see vite.config.ts); override with VITE_GRAPHQL_ENDPOINT for production builds.
-const GRAPHQL_ENDPOINT = import.meta.env.VITE_GRAPHQL_ENDPOINT ?? '/graphql/'
+const TOKEN_EXPIRY_SKEW_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 15_000;
 
-// A request that never answers would keep the page skeleton forever. After this time the request
-// fails, and the page shows its error state with a retry.
-const REQUEST_TIMEOUT_MS = 15_000
+async function ensureAccessToken(): Promise<string | null> {
+  const token = tokenStore.get();
+  const expiry = tokenStore.getExpiry();
+  if (!token || (expiry !== null && expiry - Date.now() <= TOKEN_EXPIRY_SKEW_MS)) {
+    return refreshAccessToken();
+  }
 
-const fetchGraphQL: FetchFunction = async (params, variables) => {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  return token;
+}
+
+function isAuthenticationError(
+  response: { errors?: ReadonlyArray<{ extensions?: { code?: unknown } }> },
+  status: number,
+): boolean {
+  return (
+    status === 401 ||
+    response.errors?.some(({ extensions }) =>
+      extensions?.code === "AUTH_NOT_AUTHENTICATED",
+    ) === true
+  );
+}
+
+function hasAuthorizationError(
+  response: { errors?: ReadonlyArray<{ extensions?: { code?: unknown } }> },
+  status: number,
+): boolean {
+  return (
+    status === 403 ||
+    response.errors?.some(
+      ({ extensions }) => extensions?.code === "AUTH_NOT_AUTHORIZED",
+    ) === true
+  );
+}
+
+async function sendRequest(
+  request: Parameters<FetchFunction>[0],
+  variables: Parameters<FetchFunction>[1],
+  token: string | null,
+): Promise<{ response: Response; json: Awaited<ReturnType<Response["json"]>> }> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
-    const response = await fetch(GRAPHQL_ENDPOINT, {
-      method: 'POST',
+    const response = await fetch(graphqlUrl(), {
+      method: "POST",
+      credentials: "include",
       headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "GraphQL-Preflight": "1",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({
-        query: params.text,
-        variables,
-      }),
+      body: JSON.stringify({ query: request.text, variables }),
       signal: controller.signal,
-    })
+    });
 
-    if (!response.ok) {
-      throw new Error(`GraphQL request failed with status ${response.status}`)
+    if (response.status !== 401 && response.status !== 403 && !response.ok) {
+      throw new Error(`GraphQL request failed with status ${response.status}`);
     }
 
-    return (await response.json()) as GraphQLResponse
+    const json: unknown =
+      response.status === 401 || response.status === 403
+        ? {}
+        : await response.json();
+    return { response, json };
   } finally {
-    clearTimeout(timeout)
+    clearTimeout(timeout);
   }
 }
 
-export function createRelayEnvironment() {
+export const fetchQuery: FetchFunction = async (request, variables) => {
+  let token = await ensureAccessToken();
+  if (!token) {
+    authEvents.dispatchEvent(new Event("session-expired"));
+    throw new Error("Your session has expired. Please sign in again.");
+  }
+
+  let result = await sendRequest(request, variables, token);
+  const initialResponse = result.json as {
+    errors?: ReadonlyArray<{ extensions?: { code?: unknown } }>;
+  };
+
+  if (isAuthenticationError(initialResponse, result.response.status)) {
+    token = await refreshAccessToken();
+    if (!token) {
+      tokenStore.clear();
+      authEvents.dispatchEvent(new Event("session-expired"));
+      throw new Error("Your session has expired. Please sign in again.");
+    }
+
+    result = await sendRequest(request, variables, token);
+    const retryResponse = result.json as {
+      errors?: ReadonlyArray<{ extensions?: { code?: unknown } }>;
+    };
+    if (isAuthenticationError(retryResponse, result.response.status)) {
+      tokenStore.clear();
+      authEvents.dispatchEvent(new Event("session-expired"));
+      throw new Error("Your session has expired. Please sign in again.");
+    }
+    if (hasAuthorizationError(retryResponse, result.response.status)) {
+      throw new AuthorizationError();
+    }
+  } else if (hasAuthorizationError(initialResponse, result.response.status)) {
+    throw new AuthorizationError();
+  }
+
+  return result.json;
+};
+
+export function createRelayEnvironment(): Environment {
   return new Environment({
-    network: Network.create(fetchGraphQL),
+    network: Network.create(fetchQuery),
     store: new Store(new RecordSource()),
-  })
+  });
 }
-
-const RelayEnvironment = createRelayEnvironment()
-
-export default RelayEnvironment

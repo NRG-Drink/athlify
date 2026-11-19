@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { DataTable, type DataTableColumn } from '../../components/DataTable'
-import { Provider } from '../../components/ui/provider'
+import { ChakraProviderAthlify } from '../../components/ui/ChakraProviderAthlify'
 import { expectNoTooltip } from '../utils/tooltip'
 
 interface Row {
@@ -24,7 +24,7 @@ const columns: DataTableColumn<Row>[] = [
 
 function renderTable(props: Partial<React.ComponentProps<typeof DataTable<Row>>> = {}) {
   return render(
-    <Provider>
+    <ChakraProviderAthlify>
       <DataTable
         data={rows}
         columns={columns}
@@ -34,7 +34,7 @@ function renderTable(props: Partial<React.ComponentProps<typeof DataTable<Row>>>
         caption="Beträge"
         {...props}
       />
-    </Provider>,
+    </ChakraProviderAthlify>,
   )
 }
 
@@ -200,7 +200,7 @@ describe('DataTable', () => {
     expect(onLoadMore).toHaveBeenCalledTimes(1)
 
     rerender(
-      <Provider>
+      <ChakraProviderAthlify>
         <DataTable
           data={rows}
           columns={columns}
@@ -210,7 +210,7 @@ describe('DataTable', () => {
           caption="Beträge"
           pagination={{ ...pagination, error: true }}
         />
-      </Provider>,
+      </ChakraProviderAthlify>,
     )
     expect(screen.getByRole('alert')).toHaveTextContent('Weitere konnten nicht geladen werden.')
     expect(screen.queryByRole('button', { name: 'Weitere laden' })).not.toBeInTheDocument()

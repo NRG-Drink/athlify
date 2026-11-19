@@ -11,6 +11,10 @@ export default defineConfig({
   plugins: [react(), babel({ plugins: ['relay'] }), tailwindcss()],
   server: {
     proxy: {
+      '/auth': {
+        target: apiOrigin,
+        changeOrigin: true,
+      },
       '/graphql': {
         target: apiOrigin,
         changeOrigin: true,

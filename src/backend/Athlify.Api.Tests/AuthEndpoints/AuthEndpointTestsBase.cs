@@ -35,10 +35,14 @@ public abstract class AuthEndpointsTestsBase<T>(ITestFixture<T> fixture) where T
         return response;
     }
 
-    protected async Task<HttpResponseMessage> RefreshTokenAsync(string refreshCookie)
+    protected async Task<HttpResponseMessage> RefreshTokenAsync(string? refreshCookie)
     {
         var refreshContent = new StringContent(string.Empty, Encoding.UTF8, "application/json");
-        refreshContent.Headers.Add("Cookie", refreshCookie);
+        if (refreshCookie is not null)
+        {
+            refreshContent.Headers.Add("Cookie", refreshCookie);
+        }
+
         var refreshResponse = await fixture.Client.PostAsync("/auth/refresh", refreshContent);
 
         return refreshResponse;
@@ -109,6 +113,8 @@ public abstract class AuthEndpointsTestsBase<T>(ITestFixture<T> fixture) where T
         HttpResponseMessage refreshResponse,
         bool isLogin = false)
     {
+        await Assert.That(refreshResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
+
         // Check that the Set-Cookie header is present and contains the refresh token cookie with the correct options
         var (newRefreshToken, newRefreshCookie) = await GetAndTestRefreshCookie(refreshResponse, isLogin);
         TestContext.Current!.StateBag.Items[$"RefreshToken"] = newRefreshToken;

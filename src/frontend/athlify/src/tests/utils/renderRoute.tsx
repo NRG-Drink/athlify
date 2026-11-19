@@ -1,16 +1,33 @@
 import { render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router-dom'
-import { Provider } from '../../components/ui/provider'
+import { AuthContext, type AuthContextValue } from '../../auth/context'
+import { ChakraProviderAthlify } from '../../components/ui/ChakraProviderAthlify'
 import { routes as appRoutes } from '../../routes'
 
-export function renderRoute(initialPath: string, routes: RouteObject[] = appRoutes) {
+const defaultAuth: AuthContextValue = {
+  isLoggedIn: true,
+  login: async () => {},
+  logout: async () => {},
+  isLoading: false,
+  bootstrapError: null,
+  hasRole: () => false,
+  userName: 'test',
+}
+
+export function renderRoute(
+  initialPath: string,
+  routes: RouteObject[] = appRoutes,
+  authOverrides: Partial<AuthContextValue> = {},
+) {
   const router = createMemoryRouter(routes, { initialEntries: [initialPath] })
   const user = userEvent.setup()
   const result = render(
-    <Provider>
-      <RouterProvider router={router} />
-    </Provider>,
+    <ChakraProviderAthlify>
+      <AuthContext.Provider value={{ ...defaultAuth, ...authOverrides }}>
+        <RouterProvider router={router} />
+      </AuthContext.Provider>
+    </ChakraProviderAthlify>,
   )
   return { ...result, router, user }
 }

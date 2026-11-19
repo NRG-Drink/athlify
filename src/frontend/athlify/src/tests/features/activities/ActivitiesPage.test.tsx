@@ -3,7 +3,7 @@ import { act, screen, waitFor, within } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { ActivitiesPage } from '../../../features/activities/ActivitiesPage'
-import { renderWithRelay } from '../../utils/relay'
+import { createTestEnvironment, renderWithRelay } from '../../utils/relay'
 
 const activity: Record<string, unknown> & { id: string } = {
   __typename: 'Activity',
@@ -15,6 +15,8 @@ const activity: Record<string, unknown> & { id: string } = {
   averageSpeed: 28.3,
   elevationGain: null,
   tss: null,
+  source: null,
+  merge: null,
   description: null,
   heartRateMin: null,
   heartRateMax: null,
@@ -45,13 +47,16 @@ const richActivity: typeof activity = {
 const response = (nodes = [activity]) => ({
   data: {
     activities: {
+      totalCount: nodes.length,
       edges: nodes.map((node) => ({ cursor: node.id, node })),
       pageInfo: {
         hasNextPage: false,
         endCursor: nodes.at(-1)?.id ?? null,
       },
     },
+    latest: { nodes: [] },
     vehicles: { nodes: [], pageInfo: { hasNextPage: false } },
+    gadgets: { nodes: [], pageInfo: { hasNextPage: false } },
     tags: { nodes: [], pageInfo: { hasNextPage: false } },
   },
 })
@@ -71,6 +76,35 @@ describe('ActivitiesPage', () => {
     expect(within(table).getAllByText('—').length).toBeGreaterThan(0)
     expect(calls('ActivitiesPageQuery')).toHaveLength(1)
     expect(calls('ActivitiesPageQuery')[0]).toMatchObject({ first: 50, where: null })
+  })
+
+  it('keeps cached rows visible while refreshing after returning to the page', async () => {
+    let holdResponse = false
+    let releaseResponse: (() => void) | undefined
+    const relay = createTestEnvironment(async () => {
+      if (holdResponse) {
+        await new Promise<void>((resolve) => {
+          releaseResponse = resolve
+        })
+      }
+      return response()
+    })
+    const options = {
+      path: '/activities',
+      routePath: '/activities',
+      testEnvironment: relay,
+    }
+
+    const firstRender = renderWithRelay(<ActivitiesPage />, () => response(), options)
+    expect(await screen.findByRole('table')).toBeInTheDocument()
+    firstRender.unmount()
+
+    holdResponse = true
+    renderWithRelay(<ActivitiesPage />, () => response(), options)
+
+    expect(screen.getByRole('table')).toBeInTheDocument()
+    await waitFor(() => expect(relay.calls('ActivitiesPageQuery')).toHaveLength(2))
+    await act(async () => releaseResponse?.())
   })
 
   it('shows the duration in hours and minutes, like the "Std." header', async () => {

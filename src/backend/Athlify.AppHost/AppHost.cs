@@ -23,8 +23,13 @@ internal class Program
             .WithPgWeb(pgweb => pgweb.WithHostPort(5050))
             .AddDatabase("postgres-db");
 
+        var launchProfile = args.IndexOf("--api-lp") switch
+        {
+            -1 => "http",
+            var i => args.ElementAtOrDefault(i + 1) ?? "http"
+        };
         var api = builder
-            .AddProject<Projects.Athlify_Api>("cs-api")
+            .AddProject<Projects.Athlify_Api>("cs-api", launchProfile)
             //.WithHttpHealthCheck("/health")
             .WithExternalHttpEndpoints()
             .WithReference(postgres)

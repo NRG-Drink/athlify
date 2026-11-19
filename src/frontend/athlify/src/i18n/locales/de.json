@@ -24,6 +24,23 @@
       "retry": "Erneut versuchen",
       "comingSoon": "Demnächst verfügbar. {{message}}"
     },
+    "auth": {
+      "restoringSession": "Sitzung wird wiederhergestellt …",
+      "sessionRefreshFailed": "Deine Sitzung konnte nicht aktualisiert werden. Melde dich erneut an, um den Zugriff wiederherzustellen.",
+      "logout": {
+        "label": "Abmelden",
+        "failed": "Du wurdest auf diesem Gerät abgemeldet. Die Serversitzung könnte noch aktiv sein."
+      },
+      "login": {
+        "title": "Anmelden",
+        "description": "Melde dich bei Athlify an, um deine persönlichen Daten zu verwalten.",
+        "username": "Benutzername",
+        "password": "Passwort",
+        "submit": "Anmelden",
+        "failed": "Anmeldung fehlgeschlagen. Prüfe deinen Benutzernamen und dein Passwort und versuche es erneut.",
+        "sessionRestoreFailed": "Deine Sitzung konnte nicht wiederhergestellt werden. Melde dich bitte erneut an."
+      }
+    },
     "form": {
       "cancel": "Abbrechen",
       "save": "Speichern",

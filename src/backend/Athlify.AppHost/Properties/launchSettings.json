@@ -24,6 +24,19 @@
       },
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:15163"
+    },
+    "https-production": {
+      "commandName": "Project",
+      "commandLineArgs": "--disable-open-frontend --api-lp http-production",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Production",
+        "DOTNET_ENVIRONMENT": "Production",
+        "ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL": "https://localhost:21061",
+        "ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL": "https://localhost:22063"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "https://localhost:17244;http://localhost:15163"
     }
   },
   "$schema": "https://json.schemastore.org/launchsettings.json"

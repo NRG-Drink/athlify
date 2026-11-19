@@ -2,11 +2,11 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { KpiTile } from '../../components/KpiTile'
-import { Provider } from '../../components/ui/provider'
+import { ChakraProviderAthlify } from '../../components/ui/ChakraProviderAthlify'
 
 const renderTile = (props: Partial<React.ComponentProps<typeof KpiTile>> = {}) =>
   render(
-    <Provider>
+    <ChakraProviderAthlify>
       <KpiTile
         label="Gewicht"
         unit="kg"
@@ -15,7 +15,7 @@ const renderTile = (props: Partial<React.ComponentProps<typeof KpiTile>> = {}) =
         onSelect={() => {}}
         {...props}
       />
-    </Provider>,
+    </ChakraProviderAthlify>,
   )
 
 describe('KpiTile', () => {
@@ -48,9 +48,9 @@ describe('KpiTile', () => {
     expect(onSelect).toHaveBeenCalledTimes(1)
 
     rerender(
-      <Provider>
+      <ChakraProviderAthlify>
         <KpiTile label="Gewicht" unit="kg" note="x" value="70.5" selected onSelect={onSelect} />
-      </Provider>,
+      </ChakraProviderAthlify>,
     )
     expect(screen.getByRole('button')).toHaveAttribute('aria-pressed', 'true')
   })

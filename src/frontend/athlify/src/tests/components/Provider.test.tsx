@@ -1,6 +1,6 @@
 import { render, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import { Provider } from '../../components/ui/provider'
+import { ChakraProviderAthlify } from '../../components/ui/ChakraProviderAthlify'
 
 function prefersDark(dark: boolean) {
   vi.spyOn(window, 'matchMedia').mockImplementation(
@@ -26,13 +26,13 @@ describe('color mode default', () => {
 
   test('follows a dark system preference when the user has not chosen a mode', async () => {
     prefersDark(true)
-    render(<Provider />)
+    render(<ChakraProviderAthlify />)
     await waitFor(() => expect(document.documentElement).toHaveClass('dark'))
   })
 
   test('follows a light system preference when the user has not chosen a mode', async () => {
     prefersDark(false)
-    render(<Provider />)
+    render(<ChakraProviderAthlify />)
     await waitFor(() => expect(document.documentElement).toHaveClass('light'))
     expect(document.documentElement).not.toHaveClass('dark')
   })

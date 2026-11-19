@@ -162,7 +162,6 @@ public class DbSeederTests
         context.Users.Add(new User
         {
             Id = userId,
-            Email = $"seed-{userId}@example.com",
             FirstName = "Seed",
             LastName = "User",
             Role = UserRole.User,

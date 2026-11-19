@@ -1,13 +1,13 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { MetricChart } from '../../components/MetricChart'
-import { Provider } from '../../components/ui/provider'
+import { ChakraProviderAthlify } from '../../components/ui/ChakraProviderAthlify'
 
 const domain: [Date, Date] = [new Date(2026, 8, 3), new Date(2026, 9, 3)]
 
 const renderChart = (props: Partial<React.ComponentProps<typeof MetricChart>> = {}) =>
   render(
-    <Provider>
+    <ChakraProviderAthlify>
       <MetricChart
         points={[
           { date: new Date(2026, 8, 30), value: 71.2 },
@@ -20,7 +20,7 @@ const renderChart = (props: Partial<React.ComponentProps<typeof MetricChart>> = 
         emptyMessage="Keine Messungen in den letzten 30 Tagen"
         {...props}
       />
-    </Provider>,
+    </ChakraProviderAthlify>,
   )
 
 describe('MetricChart', () => {

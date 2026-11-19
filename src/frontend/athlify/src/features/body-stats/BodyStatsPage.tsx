@@ -305,13 +305,22 @@ function BodyStatsHistory({ fetchKey, onCreate, onEdit, onDelete }: HistoryProps
 }
 
 interface ContentProps {
-  fetchKey: number
+  analyticsFetchKey: number
+  historyFetchKey: number
+  retryAnalytics: () => void
+  retryHistory: () => void
   dialog: Dialog
   onDialogChange: (dialog: Dialog) => void
-  onRetry: () => void
 }
 
-function BodyStatsContent({ fetchKey, dialog, onDialogChange, onRetry }: ContentProps) {
+function BodyStatsContent({
+  analyticsFetchKey,
+  historyFetchKey,
+  retryAnalytics,
+  retryHistory,
+  dialog,
+  onDialogChange,
+}: ContentProps) {
   const { t } = useTranslation()
   const format = useFormat()
   const [deleting, setDeleting] = useState<BodyStatsRow | null>(null)
@@ -328,12 +337,12 @@ function BodyStatsContent({ fetchKey, dialog, onDialogChange, onRetry }: Content
   return (
     <Stack gap="8">
       <QueryBoundary
-        onRetry={onRetry}
+        onRetry={retryAnalytics}
         fallback={<BodyStatsSkeleton />}
         errorMessage={t('bodyStats.loadFailed')}
       >
         <BodyStatsAnalytics
-          fetchKey={fetchKey}
+          fetchKey={analyticsFetchKey}
           onCreate={openCreate}
           onStatusChange={setAnalyticsStatus}
           onLatestChange={setLatestValues}
@@ -342,12 +351,12 @@ function BodyStatsContent({ fetchKey, dialog, onDialogChange, onRetry }: Content
 
       {analyticsStatus !== 'empty' && (
         <QueryBoundary
-          onRetry={onRetry}
+          onRetry={retryHistory}
           fallback={<DataTableSkeleton rows={4} />}
           errorMessage={t('bodyStats.loadFailed')}
         >
           <BodyStatsHistory
-            fetchKey={fetchKey}
+            fetchKey={historyFetchKey}
             onCreate={openCreate}
             onEdit={(row) => onDialogChange({ kind: 'edit', row })}
             onDelete={setDeleting}
@@ -392,22 +401,19 @@ function BodyStatsContent({ fetchKey, dialog, onDialogChange, onRetry }: Content
 export function BodyStatsPage() {
   const { t } = useTranslation()
   const [dialog, setDialog] = useState<Dialog>({ kind: 'closed' })
-  const [fetchKey, retry] = useFetchKey()
+  const [analyticsFetchKey, retryAnalytics] = useFetchKey()
+  const [historyFetchKey, retryHistory] = useFetchKey()
 
   return (
     <Page title={t('nav.bodyStats')}>
-      <QueryBoundary
-        onRetry={retry}
-        fallback={<BodyStatsSkeleton />}
-        errorMessage={t('bodyStats.loadFailed')}
-      >
-        <BodyStatsContent
-          fetchKey={fetchKey}
-          dialog={dialog}
-          onDialogChange={setDialog}
-          onRetry={retry}
-        />
-      </QueryBoundary>
+      <BodyStatsContent
+        analyticsFetchKey={analyticsFetchKey}
+        historyFetchKey={historyFetchKey}
+        retryAnalytics={retryAnalytics}
+        retryHistory={retryHistory}
+        dialog={dialog}
+        onDialogChange={setDialog}
+      />
     </Page>
   )
 }

@@ -3,10 +3,10 @@ import userEvent from '@testing-library/user-event'
 import type { ReactElement } from 'react'
 import { describe, expect, test, vi } from 'vitest'
 import { Page } from '../../components/Page'
-import { Provider } from '../../components/ui/provider'
+import { ChakraProviderAthlify } from '../../components/ui/ChakraProviderAthlify'
 
 function renderPage(ui: ReactElement) {
-  return render(<Provider>{ui}</Provider>)
+  return render(<ChakraProviderAthlify>{ui}</ChakraProviderAthlify>)
 }
 
 describe('Page', () => {

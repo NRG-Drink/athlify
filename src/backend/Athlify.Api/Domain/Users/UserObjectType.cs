@@ -11,6 +11,8 @@ public static partial class UserObjectType
         descriptor.ImplementsNode()
             .IdField(x => x.Id)
             .ResolveNodeWith(typeof(UserNode).GetMethod(nameof(UserNode.GetAsync))!);
-        descriptor.Ignore(x => x.PasswordHash);
+        descriptor
+            .Ignore(x => x.PasswordHash)
+            .Ignore(e => e.RefreshTokens);
     }
 }

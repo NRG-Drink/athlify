@@ -2,11 +2,11 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
-import { Provider } from '../../components/ui/provider'
+import { ChakraProviderAthlify } from '../../components/ui/ChakraProviderAthlify'
 
 const renderDialog = (props: Partial<React.ComponentProps<typeof ConfirmDialog>> = {}) =>
   render(
-    <Provider>
+    <ChakraProviderAthlify>
       <ConfirmDialog
         open
         onOpenChange={() => {}}
@@ -17,7 +17,7 @@ const renderDialog = (props: Partial<React.ComponentProps<typeof ConfirmDialog>>
         onConfirm={() => {}}
         {...props}
       />
-    </Provider>,
+    </ChakraProviderAthlify>,
   )
 
 describe('ConfirmDialog', () => {

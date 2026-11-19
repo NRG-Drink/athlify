@@ -64,11 +64,10 @@ public abstract class AuthApiFactory : TestWebApplicationFactory<Program>
         AthlifyDbContext db,
         string? username = null,
         string? password = null,
-        string? role = null)
+        UserRole? role = null)
     {
         var testUser = new User()
         {
-            Email = Guid.NewGuid().ToString() + "@test.com",
             Username = username ?? "test",
             PasswordHash = new HashService().HashPassword(password ?? "test"),
             Role = role ?? UserRole.Admin,
