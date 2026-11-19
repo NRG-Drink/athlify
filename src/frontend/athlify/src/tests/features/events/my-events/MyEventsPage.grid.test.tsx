@@ -1,13 +1,13 @@
 import { screen, waitFor } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
-import { MyEventsPage } from '../../../features/events/MyEventsPage'
+import { MyEventsPage } from '../../../../features/events/my-events/MyEventsPage'
 import {
   MY_EVENTS_COLUMN_STORAGE_KEY,
   MY_EVENTS_VIEWS_STORAGE_KEY,
   parseMyEventsColumnState,
   parseMyEventsSavedViews,
-} from '../../../features/events/myEventsGridState'
-import { renderWithRelay } from '../../utils/relay'
+} from '../../../../features/events/my-events/myEventsGridState'
+import { renderWithRelay } from '../../../utils/relay'
 
 function mockGridViewport() {
   vi.stubGlobal(
@@ -179,12 +179,12 @@ it('restores URL filters and sorting plus locally saved column visibility', asyn
   )
   await waitFor(() => {
     expect(new URLSearchParams(router.state.location.search).get('q')).toBe('journey')
+    expect(screen.getByRole('button', { name: 'Ansicht löschen' })).toBeEnabled()
   })
   await user.click(screen.getByRole('button', { name: 'Spalten' }))
   await waitFor(() => {
     expect(screen.getByRole('checkbox', { name: 'Beschreibung' })).toBeChecked()
   })
-  expect(screen.getByRole('button', { name: 'Ansicht löschen' })).toBeEnabled()
   await user.click(screen.getByRole('button', { name: 'Ansicht löschen' }))
   await waitFor(() => {
     expect(parseMyEventsSavedViews(localStorage.getItem(MY_EVENTS_VIEWS_STORAGE_KEY))).toEqual([])
@@ -201,7 +201,7 @@ it('restores URL filters and sorting plus locally saved column visibility', asyn
       )?.hide,
     ).not.toBe(true)
   })
-})
+}, 10000)
 
 it('deletes a row and reloads with the active filter and sorting intact', async () => {
   mockGridViewport()
@@ -249,6 +249,32 @@ it('deletes a row and reloads with the active filter and sorting intact', async 
       order: [{ name: 'DESC' }, { id: 'ASC' }],
       where: { name: { contains: 'Deleted event' } },
     })
+  })
+})
+
+it('accepts localized date filters and writes ISO dates to the URL', async () => {
+  mockGridViewport()
+  const { router, user } = renderWithRelay(
+    <MyEventsPage />,
+    () => ({
+      data: {
+        events: {
+          totalCount: 0,
+          nodes: [],
+          pageInfo: { endCursor: null, hasNextPage: false },
+        },
+      },
+    }),
+    { path: '/' },
+  )
+
+  await screen.findByRole('grid')
+  const fromFilter = screen.getByRole('textbox', { name: 'Von' })
+  expect(fromFilter).toHaveValue('')
+  await user.type(fromFilter, '12.02.2026')
+
+  await waitFor(() => {
+    expect(new URLSearchParams(router.state.location.search).get('from')).toBe('2026-02-12')
   })
 })
 

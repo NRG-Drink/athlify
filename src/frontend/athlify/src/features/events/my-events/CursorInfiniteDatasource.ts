@@ -15,6 +15,7 @@ type CursorInfiniteDatasourceOptions<TRow, TQuery> = {
   mapRow?: (row: TRow) => TRow
   onLoadFailed: (failed: boolean) => void
   onLoadStateChange: (loading: boolean) => void
+  onResultCountChange?: (count: number) => void
 }
 
 export class CursorInfiniteDatasource<TRow, TQuery> implements IDatasource {
@@ -58,21 +59,26 @@ export class CursorInfiniteDatasource<TRow, TQuery> implements IDatasource {
       () => undefined,
     )
 
-    void request.then(
-      (rows) => {
-        if (!this.isCurrent(generationKey) || rows === null) return
-        this.options.onLoadFailed(false)
-        params.successCallback(rows.map((row) => (this.options.mapRow ?? identity)(row)), this.totalCount)
-      },
-      () => {
-        if (!this.isCurrent(generationKey)) return
-        this.options.onLoadFailed(true)
-        params.failCallback()
-      },
-    ).finally(() => {
-      this.pendingRequests -= 1
-      this.options.onLoadStateChange(this.pendingRequests > 0)
-    })
+    void request
+      .then(
+        (rows) => {
+          if (!this.isCurrent(generationKey) || rows === null) return
+          this.options.onLoadFailed(false)
+          params.successCallback(
+            rows.map((row) => (this.options.mapRow ?? identity)(row)),
+            this.totalCount,
+          )
+        },
+        () => {
+          if (!this.isCurrent(generationKey)) return
+          this.options.onLoadFailed(true)
+          params.failCallback()
+        },
+      )
+      .finally(() => {
+        this.pendingRequests -= 1
+        this.options.onLoadStateChange(this.pendingRequests > 0)
+      })
   }
 
   destroy(): void {
@@ -109,6 +115,7 @@ export class CursorInfiniteDatasource<TRow, TQuery> implements IDatasource {
     if (!this.isCurrent(generationKey)) return null
 
     this.totalCount = page.totalCount
+    this.options.onResultCountChange?.(page.totalCount)
     if (startRow === this.nextBlockStart) {
       this.hasNextPage = page.hasNextPage
       this.nextBlockStart += this.options.pageSize

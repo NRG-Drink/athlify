@@ -11,6 +11,9 @@
       "agEvents": "AG-Events",
       "settings": "Settings"
     },
+    "agGrid": {
+      "ariaSortableColumn": "Press Enter to sort this column."
+    },
     "layout": {
       "skipToContent": "Skip to content",
       "openMenu": "Open menu",
@@ -265,10 +268,16 @@
     },
     "events": {
       "emptyValue": "—",
+      "controls": {
+        "title": "Filter events"
+      },
       "quickFilter": "Search events",
       "filterYtd": "Year to date",
       "fromFilter": "From",
       "toFilter": "To",
+      "filter": {
+        "invalidDate": "Enter a valid date."
+      },
       "resetFilters": "Reset filters",
       "resetTable": "Reset table",
       "columnPicker": {
@@ -288,9 +297,6 @@
       "typeFilter": {
         "ariaLabel": "Filter by event type",
         "selectAll": "Select all"
-      },
-      "grid": {
-        "ariaSortableColumn": "Press Enter to sort this column."
       },
       "columns": {
         "actions": "Actions",

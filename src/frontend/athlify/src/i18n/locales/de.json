@@ -11,6 +11,9 @@
       "agEvents": "AG-Events",
       "settings": "Einstellungen"
     },
+    "agGrid": {
+      "ariaSortableColumn": "Drücke die Eingabetaste, um diese Spalte zu sortieren."
+    },
     "layout": {
       "skipToContent": "Zum Inhalt springen",
       "openMenu": "Menü öffnen",
@@ -265,10 +268,16 @@
     },
     "events": {
       "emptyValue": "—",
+      "controls": {
+        "title": "Events filtern"
+      },
       "quickFilter": "Events durchsuchen",
       "filterYtd": "Seit Jahresbeginn",
       "fromFilter": "Von",
       "toFilter": "Bis",
+      "filter": {
+        "invalidDate": "Gib ein gültiges Datum ein."
+      },
       "resetFilters": "Filter zurücksetzen",
       "resetTable": "Tabelle zurücksetzen",
       "columnPicker": {
@@ -288,9 +297,6 @@
       "typeFilter": {
         "ariaLabel": "Nach Eventtyp filtern",
         "selectAll": "Alle auswählen"
-      },
-      "grid": {
-        "ariaSortableColumn": "Drücke die Eingabetaste, um diese Spalte zu sortieren."
       },
       "columns": {
         "actions": "Aktionen",

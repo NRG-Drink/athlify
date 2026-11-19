@@ -25,7 +25,7 @@ TypeScript and Vite.
 | Fonts                  | Inter (variable) and Barlow Semi Condensed, self-hosted via `@fontsource`                                                                 | Implemented                                                                                                                           |
 | Styling utilities      | Tailwind CSS v4 through `@tailwindcss/vite`                                                                                               | Loaded; coexistence with Chakra is open                                                                                               |
 | Charts                 | Recharts 3 behind `MetricChart`, colored through the theme's CSS variables                                                                | Implemented ([ADR-007](adr/ADR-007-domain-page-pattern.md))                                                                           |
-| Tables                 | TanStack Table 9 with TanStack Virtual 3 for Events; AG Grid Community Infinite Row Model for cursor-paged AG-Events                    | Implemented                                                                                                                           |
+| Tables                 | TanStack Table 9 with TanStack Virtual 3 for Events; shared `AgGridTable` for My Events and AG-Events                                     | Implemented                                                                                                                           |
 | Routing                | `react-router-dom` v7 data mode (`createBrowserRouter`, nested app-layout route)                                                          | Proposed in [ADR-004](adr/ADR-004-react-router-data-mode.md)                                                                          |
 | Localization           | i18next with react-i18next (`de` default, `en` fallback)                                                                                  | Proposed in [ADR-003](adr/ADR-003-i18next-localization.md)                                                                            |
 | Icons                  | `react-icons` (Lucide set)                                                                                                                | Implemented                                                                                                                           |
@@ -33,7 +33,7 @@ TypeScript and Vite.
 | Tooling                | ESLint 10 + typescript-eslint, Prettier; no git hooks                                                                                     | Implemented                                                                                                                           |
 | Backend contract       | Hot Chocolate GraphQL                                                                                                                     | Proposed in [shared ADR-001](../adr/ADR-001-graphql-api-contract.md); IDs follow [shared ADR-006](../adr/ADR-006-relay-global-ids.md) |
 | GraphQL client         | Relay (`react-relay`, `relay-compiler`, committed `schema.graphql`)                                                                       | Proposed in [ADR-007](adr/ADR-007-domain-page-pattern.md)                                                                             |
-| Auth                   | Backend-owned authentication and authorization; frontend keeps the access token in memory for Relay and checks the refresh-cookie session | Session routing, login submission and logout with Relay session reset implemented                                                   |
+| Auth                   | Backend-owned authentication and authorization; frontend keeps the access token in memory for Relay and checks the refresh-cookie session | Session routing, login submission and logout with Relay session reset implemented                                                     |
 | Hosting                | Docker Compose with static files served by ASP.NET Core                                                                                   | The combined app service serves the Vite build, provides SPA fallback and handles same-origin `/graphql/` in the same process         |
 
 ## System Components
@@ -74,9 +74,11 @@ src/frontend/athlify/src/
 ├── layouts/          # AppLayout, AppHeader, PrimaryNav, MobileNav, UserMenu
 ├── app/              # views without a domain (PlaceholderPage, NotFoundPage, RouteErrorPage)
 ├── features/         # one folder per domain area; body-stats/ is the reference (ADR-007)
+│   └── events/my-events/ # My Events page, grid and page-specific state
 ├── theme/            # Chakra system: palette, semantic tokens, fonts (ADR-005)
 ├── components/       # domain-free building blocks (Page, QueryBoundary, DataTable, MetricChart,
 │                     #   KpiTile, DateRangePicker, FormDialog, ConfirmDialog, BrandMark, toggles, switcher)
+│   ├── ag-grid/      # shared AG Grid theme, localization, modules and responsive frame
 │   └── ui/           # generated Chakra UI snippets (provider, color-mode, toaster, tooltip; the Provider mounts the Toaster)
 ├── lib/              # pure functions: metrics, period, ticks
 ├── relay/            # Relay environment
@@ -136,8 +138,8 @@ view are shown inside the layout through the route `errorElement`
 | `/activities` | Activities (list with URL filters and pagination; add, edit, duplicate, delete)           | Primary Navigation |
 | `/garage`     | Garage (placeholder)                                                                      | Primary Navigation |
 | `/body-stats` | Body-Stats (domain page; `?metric=`, `?from=` and `?to=` select the view)                 | Primary Navigation |
-| `/events`     | Events (virtualized list of the newest 200 records)                                      | Primary Navigation |
-| `/ag-events`  | AG-Events (AG Grid of the newest 200 records)                                               | Primary Navigation |
+| `/events`     | Events (virtualized list of the newest 200 records)                                       | Primary Navigation |
+| `/ag-events`  | AG-Events (AG Grid of the newest 200 records)                                             | Primary Navigation |
 | `/settings`   | Settings (placeholder)                                                                    | User Menu          |
 | any other     | Not Found page                                                                            | –                  |
 

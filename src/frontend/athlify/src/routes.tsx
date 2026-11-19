@@ -8,7 +8,7 @@ import { ActivitiesPage } from './features/activities/ActivitiesPage'
 import { BodyStatsPage } from './features/body-stats/BodyStatsPage'
 import { AgEventsPage } from './features/events/AgEventsPage'
 import { EventsPage } from './features/events/EventsPage'
-import { MyEventsPage } from './features/events/MyEventsPage'
+import { MyEventsPage } from './features/events/my-events/MyEventsPage'
 import { primaryNavItems, type NavItemId } from './navigation/navItems'
 import { paths } from './navigation/paths'
 

@@ -2,8 +2,8 @@ import type { CellValueChangedEvent } from 'ag-grid-community'
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { graphql, useMutation } from 'react-relay'
-import { toaster } from '../../components/ui/toaster'
-import { parseDate } from '../../lib/dates'
+import { toaster } from '../../../components/ui/toaster'
+import { parseDate } from '../../../lib/dates'
 import type { MyEventsGridUpdateMutation } from './__generated__/MyEventsGridUpdateMutation.graphql'
 
 export type MyEventsGridRow = {
@@ -70,13 +70,9 @@ export function useMyEventsCellEdit(onEventUpdated?: (event: UpdatedEvent) => vo
 
     const colId = column.getColId()
     const startDate =
-      colId === 'startDate'
-        ? normalizeEventDate(newValue)
-        : normalizeEventDate(row.startDate)
+      colId === 'startDate' ? normalizeEventDate(newValue) : normalizeEventDate(row.startDate)
     const endDate =
-      colId === 'endDate'
-        ? normalizeEventDate(newValue)
-        : normalizeEventDate(row.endDate)
+      colId === 'endDate' ? normalizeEventDate(newValue) : normalizeEventDate(row.endDate)
 
     if (!startDate || startDate === undefined) {
       restoreCell()

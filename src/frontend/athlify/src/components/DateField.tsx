@@ -32,7 +32,13 @@ const toDate = (value: DateParts) => new Date(value.year, value.month - 1, value
  * `01.02.2025`) and invalid text stays, so the form's validation reports it. The calendar only
  * writes a picked day; it follows the UI language and starts the week on Monday.
  */
-export function DateField({ value, onChange, label, invalid, portalled = true }: DateFieldProps) {
+export function DateField({
+  value,
+  onChange,
+  label,
+  invalid,
+  portalled = true,
+}: DateFieldProps) {
   const { t, i18n } = useTranslation()
   const date = parseDate(value)
   const content = (

@@ -9,9 +9,7 @@ import { CursorInfiniteDatasource } from './CursorInfiniteDatasource'
 
 const PAGE_SIZE = 20
 
-type EventRow = NonNullable<
-  NonNullable<MyEventsPageQuery['response']['events']>['nodes']
->[number]
+type EventRow = NonNullable<NonNullable<MyEventsPageQuery['response']['events']>['nodes']>[number]
 type GridQuery = {
   where: EventFilterInput | null
   order: EventSortInput[]
@@ -25,6 +23,7 @@ type DataSourceOptions = {
   getQuery: (sort: SortModelItem[], filters: Record<string, unknown>) => GridQuery
   onLoadFailed: (failed: boolean) => void
   onLoadStateChange: (loading: boolean) => void
+  onResultCountChange: (count: number) => void
 }
 
 export class MyEventsDataSource extends CursorInfiniteDatasource<EventRow, GridQuery> {
@@ -36,6 +35,7 @@ export class MyEventsDataSource extends CursorInfiniteDatasource<EventRow, GridQ
     getQuery,
     onLoadFailed,
     onLoadStateChange,
+    onResultCountChange,
   }: DataSourceOptions) {
     super({
       pageSize: PAGE_SIZE,
@@ -60,6 +60,7 @@ export class MyEventsDataSource extends CursorInfiniteDatasource<EventRow, GridQ
       mapRow: (row) => ({ ...row }),
       onLoadFailed,
       onLoadStateChange,
+      onResultCountChange,
     })
   }
 }

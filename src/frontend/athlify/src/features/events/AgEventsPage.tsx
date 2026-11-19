@@ -1,18 +1,15 @@
 import { Box, Text } from '@chakra-ui/react'
-import {
-  AllCommunityModule,
-  colorSchemeDarkBlue,
-  InfiniteRowModelModule,
-  ModuleRegistry,
-  themeQuartz,
-  type ColDef,
-  type IDatasource,
-} from 'ag-grid-community'
-import { AG_GRID_LOCALE_DE, AG_GRID_LOCALE_EN } from '@ag-grid-community/locale'
-import { AgGridReact } from 'ag-grid-react'
+import type { ColDef, IDatasource } from 'ag-grid-community'
 import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { fetchQuery, graphql, useLazyLoadQuery, useMutation, useRelayEnvironment } from 'react-relay'
+import {
+  fetchQuery,
+  graphql,
+  useLazyLoadQuery,
+  useMutation,
+  useRelayEnvironment,
+} from 'react-relay'
+import { AgGridTable } from '../../components/ag-grid/AgGridTable'
 import { DataTableSkeleton } from '../../components/DataTableSkeleton'
 import { Page, PageEmptyState } from '../../components/Page'
 import { QueryBoundary } from '../../components/QueryBoundary'
@@ -22,8 +19,6 @@ import { parseDate } from '../../lib/dates'
 import { useFetchKey } from '../../relay/useFetchKey'
 import type { AgEventsPageQuery, EventSortInput } from './__generated__/AgEventsPageQuery.graphql'
 import type { AgEventsPageUpdateMutation } from './__generated__/AgEventsPageUpdateMutation.graphql'
-
-ModuleRegistry.registerModules([AllCommunityModule, InfiniteRowModelModule])
 
 const pageQuery = graphql`
   query AgEventsPageQuery(
@@ -44,7 +39,6 @@ const pageQuery = graphql`
         tags {
           id
         }
-
       }
       pageInfo {
         endCursor
@@ -75,8 +69,7 @@ function gridQuery(
     if (!['name', 'type', 'description', 'startDate', 'endDate'].includes(field)) continue
     if (field === 'startDate' || field === 'endDate') {
       if (!filter.dateFrom) continue
-      const operator =
-        filter.type === 'equals' ? 'eq' : filter.type === 'lessThan' ? 'lt' : 'gt'
+      const operator = filter.type === 'equals' ? 'eq' : filter.type === 'lessThan' ? 'lt' : 'gt'
       where[field] = { [operator]: filter.dateFrom }
       continue
     }
@@ -90,7 +83,7 @@ function gridQuery(
     where[field] = { [operator]: filter.filter }
   }
   return {
-    where: Object.keys(where).length ? where as AgEventsPageQuery['variables']['where'] : null,
+    where: Object.keys(where).length ? (where as AgEventsPageQuery['variables']['where']) : null,
     order,
   }
 }
@@ -281,7 +274,7 @@ function formatEventDate(
 }
 
 function AgEventsContent({ fetchKey }: { fetchKey: number }) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const format = useFormat()
   const environment = useRelayEnvironment()
   const [commitUpdate, isUpdating] = useMutation<AgEventsPageUpdateMutation>(updateEventMutation)
@@ -358,14 +351,6 @@ function AgEventsContent({ fetchKey }: { fetchKey: number }) {
     () => ({ flex: 1, sortable: true, filter: true, resizable: true }),
     [],
   )
-  const localeText = useMemo(
-    () => ({
-      ...(i18n.resolvedLanguage?.startsWith('de') ? AG_GRID_LOCALE_DE : AG_GRID_LOCALE_EN),
-      ariaSortableColumn: t('events.grid.ariaSortableColumn'),
-    }),
-    [i18n.resolvedLanguage, t],
-  )
-
   if (events.length === 0) {
     return <PageEmptyState title={t('events.empty.title')} message={t('events.empty.message')} />
   }
@@ -382,67 +367,56 @@ function AgEventsContent({ fetchKey }: { fetchKey: number }) {
           {t('events.loadFailed')}
         </Text>
       )}
-      <Box
-        role="region"
-        aria-label={t('events.table.caption')}
-        h="calc(100dvh - 18rem)"
-        minH="16rem"
-        minW="0"
-        borderWidth="1px"
-        borderColor="border"
-        borderRadius="l3"
-        overflow="hidden"
-      >
-        <AgGridReact<EventRow>
-          rowModelType="infinite"
-          datasource={datasource}
-          cacheBlockSize={PAGE_SIZE}
-          maxBlocksInCache={5}
-          columnDefs={columnDefs}
-          defaultColDef={defaultColDef}
-          getRowId={({ data }) => data.id}
-          onCellValueChanged={({ data, oldValue, newValue, node, column }) => {
-            if (revertingEdit.current || !data || oldValue === newValue) return
-            const restoreCell = () => {
-              revertingEdit.current = true
-              try {
-                node.setDataValue(column.getColId(), oldValue)
-              } finally {
-                revertingEdit.current = false
-              }
+      <AgGridTable<EventRow>
+        ariaLabel={t('events.table.caption')}
+        height="calc(100dvh - 18rem)"
+        minHeight="16rem"
+        rowModelType="infinite"
+        datasource={datasource}
+        cacheBlockSize={PAGE_SIZE}
+        maxBlocksInCache={5}
+        columnDefs={columnDefs}
+        defaultColDef={defaultColDef}
+        getRowId={({ data }) => data.id}
+        onCellValueChanged={({ data, oldValue, newValue, node, column }) => {
+          if (revertingEdit.current || !data || oldValue === newValue) return
+          const restoreCell = () => {
+            revertingEdit.current = true
+            try {
+              node.setDataValue(column.getColId(), oldValue)
+            } finally {
+              revertingEdit.current = false
             }
-            commitUpdate({
-              variables: {
-                id: data.id,
-                event: {
-                  name: data.name,
-                  type: data.type,
-                  description: data.description || null,
-                  startDate: data.startDate,
-                  endDate: data.endDate,
-                  tagIds: data.tags.map(({ id }) => id),
-                },
+          }
+          commitUpdate({
+            variables: {
+              id: data.id,
+              event: {
+                name: data.name,
+                type: data.type,
+                description: data.description || null,
+                startDate: data.startDate,
+                endDate: data.endDate,
+                tagIds: data.tags.map(({ id }) => id),
               },
-              onCompleted: (response, errors) => {
-                if (errors?.length || !response.updateEvent) {
-                  restoreCell()
-                  toaster.create({ type: 'error', title: t('events.edit.saveFailed') })
-                  return
-                }
-                toaster.create({ type: 'success', title: t('events.edit.saved') })
-              },
-              onError: () => {
+            },
+            onCompleted: (response, errors) => {
+              if (errors?.length || !response.updateEvent) {
                 restoreCell()
                 toaster.create({ type: 'error', title: t('events.edit.saveFailed') })
-              },
-            })
-          }}
-          localeText={localeText}
-          rowBuffer={10}
-          suppressRowVirtualisation={false}
-          theme={themeQuartz.withPart(colorSchemeDarkBlue)}
-        />
-      </Box>
+                return
+              }
+              toaster.create({ type: 'success', title: t('events.edit.saved') })
+            },
+            onError: () => {
+              restoreCell()
+              toaster.create({ type: 'error', title: t('events.edit.saveFailed') })
+            },
+          })
+        }}
+        rowBuffer={10}
+        suppressRowVirtualisation={false}
+      />
     </Box>
   )
 }

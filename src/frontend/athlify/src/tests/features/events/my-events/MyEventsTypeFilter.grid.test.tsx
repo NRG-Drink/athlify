@@ -11,8 +11,8 @@ import { AgGridProvider, AgGridReact } from 'ag-grid-react'
 import { screen, waitFor, within } from '@testing-library/react'
 import { createRef } from 'react'
 import { afterEach, expect, it, vi } from 'vitest'
-import { MyEventsTypeFilter } from '../../../features/events/MyEventsTypeFilter'
-import { renderWithRelay } from '../../utils/relay'
+import { MyEventsTypeFilter } from '../../../../features/events/my-events/MyEventsTypeFilter'
+import { renderWithRelay } from '../../../utils/relay'
 
 ModuleRegistry.registerModules([AllCommunityModule, InfiniteRowModelModule])
 

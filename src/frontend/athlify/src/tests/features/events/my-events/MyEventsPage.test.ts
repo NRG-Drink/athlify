@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { getGridQuery } from '../../../features/events/MyEventsGridQuery'
+import { formatEventTags } from '../../../../features/events/my-events/MyEventsGridColumns'
+import { getGridQuery } from '../../../../features/events/my-events/MyEventsGridQuery'
 import {
   applyMyEventsGridState,
   MY_EVENTS_FILTERS_PARAM,
@@ -10,9 +11,16 @@ import {
   parseMyEventsSortModel,
   serializeMyEventsSavedViews,
   serializeMyEventsColumnState,
-} from '../../../features/events/myEventsGridState'
+} from '../../../../features/events/my-events/myEventsGridState'
 
 describe('MyEventsPage grid type filter', () => {
+  it('formats event tags for the grid and uses the empty value when none are assigned', () => {
+    expect(formatEventTags([{ name: 'Spring rides' }, { name: 'Training' }], '—')).toBe(
+      'Spring rides, Training',
+    )
+    expect(formatEventTags([], '—')).toBe('—')
+  })
+
   it('sends selected event types to the server while retaining other filters', () => {
     const baseWhere = { name: { contains: 'service' } }
     const query = getGridQuery([], { type: { values: ['REPAIR', 'GOAL'] } }, baseWhere)
