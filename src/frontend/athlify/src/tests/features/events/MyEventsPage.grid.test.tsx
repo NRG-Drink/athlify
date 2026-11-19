@@ -188,4 +188,16 @@ it('restores URL filters and sorting plus locally saved column visibility', asyn
   await waitFor(() => {
     expect(parseMyEventsSavedViews(localStorage.getItem(MY_EVENTS_VIEWS_STORAGE_KEY))).toEqual([])
   })
+
+  await user.click(screen.getByRole('button', { name: 'Tabelle zurücksetzen' }))
+  await waitFor(() => {
+    expect(router.state.location.search).toBe('')
+  })
+  await waitFor(() => {
+    expect(
+      parseMyEventsColumnState(localStorage.getItem(MY_EVENTS_COLUMN_STORAGE_KEY)).find(
+        ({ colId }) => colId === 'description',
+      )?.hide,
+    ).not.toBe(true)
+  })
 })

@@ -30,6 +30,9 @@ export function MyEventsPageControls({ filters, views }: MyEventsPageControlsPro
     <>
       <Box display="flex" justifyContent="space-between" margin="10px 0">
         <Button onClick={filters.onFilterYearToDate}>{t('events.filterYtd')}</Button>
+        <Button variant="outline" onClick={filters.onResetTable}>
+          {t('events.resetTable')}
+        </Button>
       </Box>
       <Box display="grid" gridTemplateColumns="1fr 1fr 1fr auto" gap="2" margin="10px 0">
         <Input

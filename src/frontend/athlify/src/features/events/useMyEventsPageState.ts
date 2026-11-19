@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import type { EventFilterInput } from './__generated__/MyEventsPageQuery.graphql'
 import {
   applyMyEventsGridState,
+  MY_EVENTS_COLUMN_STORAGE_KEY,
   MY_EVENTS_VIEWS_STORAGE_KEY,
   parseMyEventsFilterModel,
   parseMyEventsSavedViews,
@@ -24,6 +25,7 @@ export type MyEventsPageFilterControls = {
   onToFilterChange: (value: string) => void
   onFilterYearToDate: () => void
   onResetFilters: () => void
+  onResetTable: () => void
 }
 
 export type MyEventsSavedViewControls = {
@@ -57,6 +59,7 @@ export function useMyEventsPageState() {
   const filterModel = useMemo(() => parseMyEventsFilterModel(searchParams), [searchParams])
   const sortModel = useMemo(() => parseMyEventsSortModel(searchParams), [searchParams])
   const [columnState, setColumnState] = useState<MyEventsColumnState[]>([])
+  const [resetTableVersion, setResetTableVersion] = useState(0)
   const [viewStore, setViewStore] = useState(() => {
     try {
       return {
@@ -154,6 +157,23 @@ export function useMyEventsPageState() {
     })
   }, [updateSearchParams])
 
+  const onResetTable = useCallback(() => {
+    setQuickFilterDraft(null)
+    setColumnState([])
+    setResetTableVersion((version) => version + 1)
+    try {
+      window.localStorage.removeItem(MY_EVENTS_COLUMN_STORAGE_KEY)
+    } catch (error) {
+      console.error('Could not reset My Events column preferences.', error)
+    }
+    updateSearchParams((params) => {
+      params.delete('q')
+      params.delete('from')
+      params.delete('to')
+      return applyMyEventsGridState(params, {}, [])
+    })
+  }, [updateSearchParams])
+
   const onGridStateChange = useCallback(
     (filters: MyEventsFilterModel, sort: MyEventsSortModel) =>
       updateSearchParams((params) => applyMyEventsGridState(params, filters, sort)),
@@ -238,6 +258,7 @@ export function useMyEventsPageState() {
     filterModel,
     sortModel,
     columnState,
+    resetTableVersion,
     onColumnStateChange: setColumnState,
     onGridStateChange,
     filters: {
@@ -249,6 +270,7 @@ export function useMyEventsPageState() {
       onToFilterChange,
       onFilterYearToDate,
       onResetFilters,
+      onResetTable,
     },
     views: {
       items: viewStore.views,

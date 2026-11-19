@@ -270,6 +270,7 @@
       "fromFilter": "From",
       "toFilter": "To",
       "resetFilters": "Reset filters",
+      "resetTable": "Reset table",
       "columnPicker": {
         "label": "Choose visible columns",
         "open": "Columns"

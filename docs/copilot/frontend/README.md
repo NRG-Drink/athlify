@@ -68,8 +68,9 @@ edited, duplicated and deleted in a form dialog
 ([ADR-012](adr/ADR-012-store-updates-for-server-sorted-lists.md)). Dashboard and
 Garage remain placeholders. Events is a read-only list of the newest 200
 backend records, rendered with TanStack Table and row virtualization.
-AG-Events displays events in AG Grid with row virtualization, loads cursor
-pages of 20 as you scroll and saves edits to event fields immediately. The backend is under
+My Events and AG-Events display events in AG Grid with row virtualization,
+load cursor pages of 20 as you scroll and save cell edits immediately.
+The backend is under
 `../../../src/backend/`. See
 [`SAD.md`](SAD.md) for the folder layout and open decisions. Do not present
 the exploration UI as completed product functionality.

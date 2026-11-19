@@ -10,12 +10,14 @@ import {
 import { AgGridProvider, AgGridReact } from 'ag-grid-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { graphql } from 'react-relay/legacy'
-import { useRelayEnvironment } from 'react-relay'
+import { graphql, useRelayEnvironment } from 'react-relay'
 import type { EventFilterInput, MyEventsPageQuery } from './__generated__/MyEventsPageQuery.graphql'
 import { MyEventsDataSource } from './MyEventsDataSource'
 import { defaultOrder, getGridQuery } from './MyEventsGridQuery'
 import { MyEventsTypeFilter } from './MyEventsTypeFilter'
+import { useMyEventsCellEdit } from './useMyEventsCellEdit'
+import { useFormat } from '../../i18n/useFormat'
+import { parseDate } from '../../lib/dates'
 import {
   MY_EVENTS_COLUMN_STORAGE_KEY,
   myEventsColumnIds,
@@ -37,6 +39,7 @@ type MyEventsGridProps = {
   filterModel: MyEventsFilterModel
   sortModel: MyEventsSortModel
   columnState: MyEventsColumnState[]
+  resetTableVersion: number
   onColumnStateChange: (columns: MyEventsColumnState[]) => void
   onGridStateChange: (filters: MyEventsFilterModel, sort: MyEventsSortModel) => void
 }
@@ -70,6 +73,18 @@ const pageQuery = graphql`
   }
 `
 
+const eventTypes = ['CRASH', 'INJURY', 'ILLNESS', 'REPAIR', 'BREAK', 'GOAL', 'OTHER'] as const
+
+function formatEventDate(
+  value: string | null | undefined,
+  formatDate: (date: Date) => string,
+  emptyValue: string,
+) {
+  if (!value) return emptyValue
+  const date = parseDate(value.split('-').reverse().join('.'))
+  return date ? formatDate(date) : value
+}
+
 function getEventRowNumber(id: string | undefined): number | null {
   if (!id) return null
 
@@ -90,11 +105,14 @@ export function MyEventsGrid({
   filterModel,
   sortModel,
   columnState,
+  resetTableVersion,
   onColumnStateChange,
   onGridStateChange,
 }: MyEventsGridProps) {
   const { t } = useTranslation()
+  const format = useFormat()
   const environment = useRelayEnvironment()
+  const { isUpdating, onCellValueChanged } = useMyEventsCellEdit()
   const agGridModules = [AllCommunityModule, InfiniteRowModelModule]
   const [loadFailed, setLoadFailed] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -197,6 +215,23 @@ export function MyEventsGrid({
   useEffect(() => applyColumnPreset(), [applyColumnPreset])
 
   useEffect(() => {
+    if (resetTableVersion === 0) return
+    const api = gridApiRef.current
+    if (!api) return
+
+    applyingUrlState.current = true
+    try {
+      api.resetColumnState()
+      api.setFilterModel(null)
+      persistColumnState(api)
+    } finally {
+      queueMicrotask(() => {
+        applyingUrlState.current = false
+      })
+    }
+  }, [persistColumnState, resetTableVersion])
+
+  useEffect(() => {
     if (gridApiRef.current) applyUrlGridState(gridApiRef.current)
   }, [applyUrlGridState])
 
@@ -226,26 +261,40 @@ export function MyEventsGrid({
         filter: 'agTextColumnFilter',
         minWidth: 300,
         width: 200,
+        editable: !isUpdating,
+        cellEditor: 'agTextCellEditor',
+        cellEditorParams: { useFormatter: false },
       },
       {
         field: 'startDate',
         headerName: t('events.columns.startDate'),
         filter: 'agDateColumnFilter',
-        valueFormatter: (params) =>
-          params.value ? new Date(params.value).toLocaleDateString() : '-',
+        valueFormatter: ({ value }) => formatEventDate(value, format.date, t('events.emptyValue')),
+        editable: !isUpdating,
+        cellEditor: 'agDateStringCellEditor',
       },
       {
         field: 'endDate',
         headerName: t('events.columns.endDate'),
         filter: 'agDateColumnFilter',
-        valueFormatter: (params) =>
-          params.value ? new Date(params.value).toLocaleDateString() : '-',
+        valueFormatter: ({ value }) => formatEventDate(value, format.date, t('events.emptyValue')),
+        editable: !isUpdating,
+        cellEditor: 'agDateStringCellEditor',
       },
       {
         field: 'type',
         headerName: t('events.columns.type'),
         filter: MyEventsTypeFilter,
         minWidth: 100,
+        valueFormatter: ({ value }) =>
+          value ? t(`events.types.${value}`) : t('events.emptyValue'),
+        editable: !isUpdating,
+        cellEditor: 'agSelectCellEditor',
+        cellEditorParams: {
+          values: [...eventTypes],
+          valueFormatter: ({ value }: { value: (typeof eventTypes)[number] }) =>
+            t(`events.types.${value}`),
+        },
       },
       {
         field: 'tags',
@@ -260,9 +309,12 @@ export function MyEventsGrid({
         headerName: t('events.columns.description'),
         filter: 'agTextColumnFilter',
         minWidth: 400,
+        valueFormatter: ({ value }) => value || t('events.emptyValue'),
+        editable: !isUpdating,
+        cellEditor: 'agLargeStringCellEditor',
       },
     ],
-    [t],
+    [format.date, isUpdating, t],
   )
 
   const saveGridState = useCallback(
@@ -360,6 +412,7 @@ export function MyEventsGrid({
             }}
             onFilterChanged={({ api }) => saveGridState(api)}
             onSortChanged={({ api }) => saveGridState(api)}
+            onCellValueChanged={onCellValueChanged}
             onColumnMoved={({ api }) => persistColumnState(api)}
             onColumnVisible={({ api }) => persistColumnState(api)}
             onColumnResized={({ api, finished }) => {

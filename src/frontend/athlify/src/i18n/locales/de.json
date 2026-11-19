@@ -270,6 +270,7 @@
       "fromFilter": "Von",
       "toFilter": "Bis",
       "resetFilters": "Filter zurücksetzen",
+      "resetTable": "Tabelle zurücksetzen",
       "columnPicker": {
         "label": "Sichtbare Spalten auswählen",
         "open": "Spalten"

@@ -17,6 +17,7 @@ export const MyEventsPage = () => {
         filterModel={state.filterModel}
         sortModel={state.sortModel}
         columnState={state.columnState}
+        resetTableVersion={state.resetTableVersion}
         onColumnStateChange={state.onColumnStateChange}
         onGridStateChange={state.onGridStateChange}
       />
