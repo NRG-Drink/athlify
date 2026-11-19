@@ -318,6 +318,13 @@
       "resultCount_one": "{{count}} Event",
       "resultCount_other": "{{count}} Events",
       "loadFailed": "Events konnten nicht geladen werden.",
+      "add": {
+        "open": "Event hinzufügen",
+        "defaultName": "Neues Event",
+        "success": "Event hinzugefügt und oben in der Tabelle angeheftet.",
+        "unpin": "Anheftung lösen",
+        "failed": "Event konnte nicht hinzugefügt werden. Bitte versuche es nochmals."
+      },
       "edit": {
         "saved": "Event aktualisiert.",
         "saveFailed": "Event konnte nicht gespeichert werden. Bitte versuche es nochmals."

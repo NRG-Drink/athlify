@@ -251,3 +251,112 @@ it('deletes a row and reloads with the active filter and sorting intact', async 
     })
   })
 })
+
+it('pins a new event through active filters until the user unpins it', async () => {
+  mockGridViewport()
+  const filters = new URLSearchParams({
+    q: 'unmatched',
+    from: '2026-01-01',
+    gridFilters: JSON.stringify({ name: { filter: 'unmatched', type: 'contains' } }),
+    gridSort: JSON.stringify([{ colId: 'name', sort: 'desc' }]),
+  })
+  const { calls, user, router } = renderWithRelay(
+    <MyEventsPage />,
+    (operation) => {
+      if (operation === 'MyEventsGridCreateMutation') {
+        return {
+          data: {
+            createEvent: {
+              id: 'RXZlbnQ6Mg==',
+              name: 'Neues Event',
+              startDate: new Date().toLocaleDateString('sv-SE'),
+              endDate: null,
+              description: null,
+              type: 'OTHER',
+              tags: [],
+            },
+          },
+        }
+      }
+      if (operation === 'MyEventsGridUpdateMutation') {
+        return {
+          data: {
+            updateEvent: {
+              id: 'RXZlbnQ6Mg==',
+              name: 'Überarbeitetes Event',
+              startDate: new Date().toLocaleDateString('sv-SE'),
+              endDate: null,
+              description: null,
+              type: 'OTHER',
+              tags: [],
+            },
+          },
+        }
+      }
+      return {
+        data: {
+          events: {
+            totalCount: 0,
+            nodes: [],
+            pageInfo: { endCursor: null, hasNextPage: false },
+          },
+        },
+      }
+    },
+    { path: `/?${filters.toString()}` },
+  )
+
+  await screen.findByRole('grid')
+  await user.click(screen.getByRole('button', { name: 'Event hinzufügen' }))
+
+  await screen.findByText('Neues Event')
+  expect(screen.getByRole('button', { name: 'Anheftung lösen' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Event hinzufügen' })).toBeDisabled()
+  expect(new URLSearchParams(router.state.location.search).get('q')).toBe('unmatched')
+  expect(new URLSearchParams(router.state.location.search).get('from')).toBe('2026-01-01')
+  expect(
+    JSON.parse(new URLSearchParams(router.state.location.search).get('gridFilters') ?? '{}'),
+  ).toMatchObject({ name: { filter: 'unmatched', type: 'contains' } })
+  expect(new URLSearchParams(router.state.location.search).get('gridSort')).toBe(
+    filters.get('gridSort'),
+  )
+  expect(calls('MyEventsGridCreateMutation')).toEqual([
+    {
+      event: {
+        name: 'Neues Event',
+        startDate: new Date().toLocaleDateString('sv-SE'),
+        type: 'OTHER',
+        description: null,
+        endDate: null,
+        tagIds: [],
+      },
+    },
+  ])
+
+  await user.dblClick(screen.getByText('Neues Event'))
+  const nameEditor = await screen.findByDisplayValue('Neues Event')
+  await user.clear(nameEditor)
+  await user.type(nameEditor, 'Überarbeitetes Event{Enter}')
+  await waitFor(() => {
+    expect(calls('MyEventsGridUpdateMutation')).toEqual([
+      {
+        id: 'RXZlbnQ6Mg==',
+        event: {
+          name: 'Überarbeitetes Event',
+          startDate: new Date().toLocaleDateString('sv-SE'),
+          endDate: null,
+          description: null,
+          type: 'OTHER',
+          tagIds: [],
+        },
+      },
+    ])
+  })
+  expect(await screen.findByText('Überarbeitetes Event')).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Anheftung lösen' }))
+  await waitFor(() => {
+    expect(screen.queryByText('Überarbeitetes Event')).not.toBeInTheDocument()
+  })
+  expect(screen.getByRole('button', { name: 'Event hinzufügen' })).toBeEnabled()
+})

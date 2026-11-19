@@ -15,6 +15,7 @@ import { LuTrash2 } from 'react-icons/lu'
 import { toaster } from '../../components/ui/toaster'
 import type { EventFilterInput, MyEventsPageQuery } from './__generated__/MyEventsPageQuery.graphql'
 import type { MyEventsGridDeleteMutation } from './__generated__/MyEventsGridDeleteMutation.graphql'
+import type { MyEventsGridCreateMutation } from './__generated__/MyEventsGridCreateMutation.graphql'
 import { MyEventsDataSource } from './MyEventsDataSource'
 import { defaultOrder, getGridQuery } from './MyEventsGridQuery'
 import { MyEventsTypeFilter } from './MyEventsTypeFilter'
@@ -82,7 +83,32 @@ const deleteMutation = graphql`
   }
 `
 
+const createMutation = graphql`
+  mutation MyEventsGridCreateMutation($event: EventInput!) {
+    createEvent(event: $event) {
+      id
+      name
+      startDate
+      endDate
+      description
+      type
+      tags {
+        id
+        name
+      }
+    }
+  }
+`
+
 const eventTypes = ['CRASH', 'INJURY', 'ILLNESS', 'REPAIR', 'BREAK', 'GOAL', 'OTHER'] as const
+
+function getTodayLocalDate(): string {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
 function formatEventDate(
   value: string | null | undefined,
@@ -122,12 +148,14 @@ export function MyEventsGrid({
   const format = useFormat()
   const environment = useRelayEnvironment()
   const [commitDelete, isDeleting] = useMutation<MyEventsGridDeleteMutation>(deleteMutation)
+  const [commitCreate, isCreating] = useMutation<MyEventsGridCreateMutation>(createMutation)
   const { isUpdating, onCellValueChanged } = useMyEventsCellEdit()
   const agGridModules = [AllCommunityModule, InfiniteRowModelModule]
   const [loadFailed, setLoadFailed] = useState(false)
   const [loading, setLoading] = useState(true)
   const [visibleColumns, setVisibleColumns] = useState<string[]>([...myEventsColumnIds])
   const [columnsOpen, setColumnsOpen] = useState(false)
+  const [pinnedEvent, setPinnedEvent] = useState<EventsRow | null>(null)
   const gridApiRef = useRef<GridApi<EventsRow> | null>(null)
   const applyingUrlState = useRef(false)
   const datasource = useMemo(
@@ -263,6 +291,7 @@ export function MyEventsGrid({
             toaster.create({ type: 'error', title: t('events.delete.failed') })
             return
           }
+          setPinnedEvent((current) => (current?.id === id ? null : current))
           datasource.reset()
           gridApiRef.current?.refreshInfiniteCache()
           toaster.create({ type: 'success', title: t('events.delete.success') })
@@ -274,6 +303,37 @@ export function MyEventsGrid({
     },
     [commitDelete, datasource, t],
   )
+
+  const createEvent = useCallback(() => {
+    commitCreate({
+      variables: {
+        event: {
+          name: t('events.add.defaultName'),
+          startDate: getTodayLocalDate(),
+          type: 'OTHER',
+          description: null,
+          endDate: null,
+          tagIds: [],
+        },
+      },
+      onCompleted: (response, errors) => {
+        if (errors?.length) {
+          toaster.create({ type: 'error', title: t('events.add.failed') })
+          return
+        }
+        setPinnedEvent({
+          ...response.createEvent,
+          tags: response.createEvent.tags.map((tag) => ({ ...tag })),
+        })
+        datasource.reset()
+        gridApiRef.current?.refreshInfiniteCache()
+        toaster.create({ type: 'success', title: t('events.add.success') })
+      },
+      onError: () => {
+        toaster.create({ type: 'error', title: t('events.add.failed') })
+      },
+    })
+  }, [commitCreate, datasource, t])
 
   const columnDefs = useMemo<ColDef<EventsRow>[]>(
     () => [
@@ -391,58 +451,73 @@ export function MyEventsGrid({
         </Text>
       )}
       <Box display="grid" gap="2">
-        <Popover.Root
-          open={columnsOpen}
-          onOpenChange={(details) => setColumnsOpen(details.open)}
-          positioning={{ placement: 'bottom-start', gutter: 8 }}
-          lazyMount
-          unmountOnExit
-        >
-          <Popover.Trigger asChild>
-            <Button size="sm" variant="outline">
-              {t('events.columnPicker.open')}
+        <Box display="grid" gridTemplateColumns="max-content max-content max-content" gap="2">
+          <Button
+            size="sm"
+            onClick={createEvent}
+            loading={isCreating}
+            disabled={pinnedEvent !== null}
+          >
+            {t('events.add.open')}
+          </Button>
+          {pinnedEvent && (
+            <Button size="sm" variant="outline" onClick={() => setPinnedEvent(null)}>
+              {t('events.add.unpin')}
             </Button>
-          </Popover.Trigger>
-          <Portal>
-            <Popover.Positioner>
-              <Popover.Content
-                aria-label={t('events.columnPicker.label')}
-                colorPalette="brand"
-                width="min(20rem, calc(100vw - 2rem))"
-                bg="bg.panel"
-                borderWidth="1px"
-                borderRadius="l3"
-                _dark={{ shadow: 'none' }}
-              >
-                <Popover.Header fontWeight="semibold">
-                  {t('events.columnPicker.label')}
-                </Popover.Header>
-                <Popover.Body>
-                  <Stack gap="2" role="group" aria-label={t('events.columnPicker.label')}>
-                    {myEventsColumnIds.filter((column) => column !== 'delete').map((column) => (
-                      <Box
-                        as="label"
-                        key={column}
-                        display="grid"
-                        gridTemplateColumns="auto 1fr"
-                        alignItems="center"
-                        gap="2"
-                        cursor="pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={visibleColumns.includes(column)}
-                          onChange={(event) => setColumnVisible(column, event.target.checked)}
-                        />
-                        {t(`events.columns.${column}`)}
-                      </Box>
-                    ))}
-                  </Stack>
-                </Popover.Body>
-              </Popover.Content>
-            </Popover.Positioner>
-          </Portal>
-        </Popover.Root>
+          )}
+          <Popover.Root
+            open={columnsOpen}
+            onOpenChange={(details) => setColumnsOpen(details.open)}
+            positioning={{ placement: 'bottom-start', gutter: 8 }}
+            lazyMount
+            unmountOnExit
+          >
+            <Popover.Trigger asChild>
+              <Button size="sm" variant="outline">
+                {t('events.columnPicker.open')}
+              </Button>
+            </Popover.Trigger>
+            <Portal>
+              <Popover.Positioner>
+                <Popover.Content
+                  aria-label={t('events.columnPicker.label')}
+                  colorPalette="brand"
+                  width="min(20rem, calc(100vw - 2rem))"
+                  bg="bg.panel"
+                  borderWidth="1px"
+                  borderRadius="l3"
+                  _dark={{ shadow: 'none' }}
+                >
+                  <Popover.Header fontWeight="semibold">
+                    {t('events.columnPicker.label')}
+                  </Popover.Header>
+                  <Popover.Body>
+                    <Stack gap="2" role="group" aria-label={t('events.columnPicker.label')}>
+                      {myEventsColumnIds.filter((column) => column !== 'delete').map((column) => (
+                        <Box
+                          as="label"
+                          key={column}
+                          display="grid"
+                          gridTemplateColumns="auto 1fr"
+                          alignItems="center"
+                          gap="2"
+                          cursor="pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={visibleColumns.includes(column)}
+                            onChange={(event) => setColumnVisible(column, event.target.checked)}
+                          />
+                          {t(`events.columns.${column}`)}
+                        </Box>
+                      ))}
+                    </Stack>
+                  </Popover.Body>
+                </Popover.Content>
+              </Popover.Positioner>
+            </Portal>
+          </Popover.Root>
+        </Box>
         <Box height="400px" overflow="hidden">
           <AgGridReact<EventsRow>
             rowModelType="infinite"
@@ -455,6 +530,7 @@ export function MyEventsGrid({
             columnDefs={columnDefs}
             defaultColDef={defaultColDef}
             loading={loading}
+            pinnedTopRowData={pinnedEvent ? [pinnedEvent] : undefined}
             theme={themeQuartz.withPart(colorSchemeDarkBlue)}
             onGridReady={({ api }) => {
               gridApiRef.current = api

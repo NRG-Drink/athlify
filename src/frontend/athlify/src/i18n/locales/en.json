@@ -318,6 +318,13 @@
       "resultCount_one": "{{count}} event",
       "resultCount_other": "{{count}} events",
       "loadFailed": "Events could not be loaded.",
+      "add": {
+        "open": "Add event",
+        "defaultName": "New event",
+        "success": "Event added and pinned above the grid.",
+        "unpin": "Unpin event",
+        "failed": "Event could not be added. Please try again."
+      },
       "edit": {
         "saved": "Event updated.",
         "saveFailed": "Event could not be saved. Please try again."
