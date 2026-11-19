@@ -96,6 +96,7 @@ it('restores URL filters and sorting plus locally saved column visibility', asyn
     }),
     gridSort: JSON.stringify([{ colId: 'name', sort: 'desc' }]),
   })
+
   const { calls, router, user } = renderWithRelay(
     <MyEventsPage />,
     () => ({
@@ -199,5 +200,54 @@ it('restores URL filters and sorting plus locally saved column visibility', asyn
         ({ colId }) => colId === 'description',
       )?.hide,
     ).not.toBe(true)
+  })
+})
+
+it('deletes a row and reloads with the active filter and sorting intact', async () => {
+  mockGridViewport()
+  let deleted = false
+  const { calls, user } = renderWithRelay(
+    <MyEventsPage />,
+    (operation) => {
+      if (operation === 'MyEventsGridDeleteMutation') {
+        deleted = true
+        return { data: { deleteEvent: 'Event:1' } }
+      }
+      return {
+        data: {
+          events: {
+            totalCount: deleted ? 0 : 1,
+            nodes: deleted
+              ? []
+              : [
+                  {
+                    id: 'RXZlbnQ6MQ==',
+                    name: 'Deleted event',
+                    startDate: '2026-01-01',
+                    endDate: null,
+                    description: null,
+                    type: 'OTHER',
+                    tags: [],
+                  },
+                ],
+            pageInfo: { endCursor: null, hasNextPage: false },
+          },
+        },
+      }
+    },
+    {
+      path: `/?gridFilters=${encodeURIComponent(JSON.stringify({ name: { filter: 'Deleted event', type: 'contains' } }))}&gridSort=${encodeURIComponent(JSON.stringify([{ colId: 'name', sort: 'desc' }]))}`,
+    },
+  )
+
+  await screen.findByText('Deleted event')
+  await user.click(screen.getByRole('button', { name: 'Löschen' }))
+  await waitFor(() => expect(screen.queryByText('Deleted event')).not.toBeInTheDocument())
+  expect(calls('MyEventsGridDeleteMutation')).toEqual([{ id: 'RXZlbnQ6MQ==' }])
+  await waitFor(() => {
+    expect(calls('MyEventsPageQuery').at(-1)).toMatchObject({
+      order: [{ name: 'DESC' }, { id: 'ASC' }],
+      where: { name: { contains: 'Deleted event' } },
+    })
   })
 })

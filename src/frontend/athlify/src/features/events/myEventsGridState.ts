@@ -6,6 +6,7 @@ export const MY_EVENTS_FILTERS_PARAM = 'gridFilters'
 export const MY_EVENTS_SORT_PARAM = 'gridSort'
 
 export const myEventsColumnIds = [
+  'delete',
   'id',
   'name',
   'startDate',

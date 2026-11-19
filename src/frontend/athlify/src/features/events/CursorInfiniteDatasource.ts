@@ -37,6 +37,10 @@ export class CursorInfiniteDatasource<TRow, TQuery> implements IDatasource {
     return this.totalCount
   }
 
+  reset(): void {
+    this.resetForQuery(this.activeQueryKey)
+  }
+
   getRows = (params: IGetRowsParams<TRow>): void => {
     const query = this.options.getQuery(params.sortModel, params.filterModel)
     const queryKey = this.queryKey(query)

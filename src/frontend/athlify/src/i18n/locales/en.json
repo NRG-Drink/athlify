@@ -293,6 +293,7 @@
         "ariaSortableColumn": "Press Enter to sort this column."
       },
       "columns": {
+        "actions": "Actions",
         "rowNumber": "No.",
         "id": "Event ID",
         "startDate": "Start date",
@@ -320,6 +321,11 @@
       "edit": {
         "saved": "Event updated.",
         "saveFailed": "Event could not be saved. Please try again."
+      },
+      "delete": {
+        "action": "Delete",
+        "success": "Event deleted.",
+        "failed": "Event could not be deleted. Please try again."
       },
       "empty": {
         "title": "No events yet",

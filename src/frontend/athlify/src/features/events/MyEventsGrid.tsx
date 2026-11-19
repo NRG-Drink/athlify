@@ -10,8 +10,11 @@ import {
 import { AgGridProvider, AgGridReact } from 'ag-grid-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { graphql, useRelayEnvironment } from 'react-relay'
+import { graphql, useMutation, useRelayEnvironment } from 'react-relay'
+import { LuTrash2 } from 'react-icons/lu'
+import { toaster } from '../../components/ui/toaster'
 import type { EventFilterInput, MyEventsPageQuery } from './__generated__/MyEventsPageQuery.graphql'
+import type { MyEventsGridDeleteMutation } from './__generated__/MyEventsGridDeleteMutation.graphql'
 import { MyEventsDataSource } from './MyEventsDataSource'
 import { defaultOrder, getGridQuery } from './MyEventsGridQuery'
 import { MyEventsTypeFilter } from './MyEventsTypeFilter'
@@ -73,6 +76,12 @@ const pageQuery = graphql`
   }
 `
 
+const deleteMutation = graphql`
+  mutation MyEventsGridDeleteMutation($id: ID!) {
+    deleteEvent(id: $id)
+  }
+`
+
 const eventTypes = ['CRASH', 'INJURY', 'ILLNESS', 'REPAIR', 'BREAK', 'GOAL', 'OTHER'] as const
 
 function formatEventDate(
@@ -112,6 +121,7 @@ export function MyEventsGrid({
   const { t } = useTranslation()
   const format = useFormat()
   const environment = useRelayEnvironment()
+  const [commitDelete, isDeleting] = useMutation<MyEventsGridDeleteMutation>(deleteMutation)
   const { isUpdating, onCellValueChanged } = useMyEventsCellEdit()
   const agGridModules = [AllCommunityModule, InfiniteRowModelModule]
   const [loadFailed, setLoadFailed] = useState(false)
@@ -244,8 +254,49 @@ export function MyEventsGrid({
     [],
   )
 
+  const deleteEvent = useCallback(
+    (id: string) => {
+      commitDelete({
+        variables: { id },
+        onCompleted: (_response, errors) => {
+          if (errors?.length) {
+            toaster.create({ type: 'error', title: t('events.delete.failed') })
+            return
+          }
+          datasource.reset()
+          gridApiRef.current?.refreshInfiniteCache()
+          toaster.create({ type: 'success', title: t('events.delete.success') })
+        },
+        onError: () => {
+          toaster.create({ type: 'error', title: t('events.delete.failed') })
+        },
+      })
+    },
+    [commitDelete, datasource, t],
+  )
+
   const columnDefs = useMemo<ColDef<EventsRow>[]>(
     () => [
+      {
+        colId: 'delete',
+        headerName: t('events.columns.actions'),
+        width: 90,
+        pinned: 'left',
+        filter: false,
+        cellRenderer: ({ data }: { data?: EventsRow }) =>
+          data ? (
+            <Button
+              size="xs"
+              variant="ghost"
+              colorPalette="red"
+              aria-label={t('events.delete.action')}
+              disabled={isDeleting}
+              onClick={() => deleteEvent(data.id)}
+            >
+              <LuTrash2 aria-hidden />
+            </Button>
+          ) : null,
+      },
       {
         field: 'id',
         headerName: t('events.columns.id'),
@@ -314,7 +365,7 @@ export function MyEventsGrid({
         cellEditor: 'agLargeStringCellEditor',
       },
     ],
-    [format.date, isUpdating, t],
+    [deleteEvent, format.date, isDeleting, isUpdating, t],
   )
 
   const saveGridState = useCallback(
@@ -368,7 +419,7 @@ export function MyEventsGrid({
                 </Popover.Header>
                 <Popover.Body>
                   <Stack gap="2" role="group" aria-label={t('events.columnPicker.label')}>
-                    {myEventsColumnIds.map((column) => (
+                    {myEventsColumnIds.filter((column) => column !== 'delete').map((column) => (
                       <Box
                         as="label"
                         key={column}

@@ -46,7 +46,7 @@ export class MyEventsDataSource extends CursorInfiniteDatasource<EventRow, GridQ
           environment,
           pageQuery,
           { first, after, where, order },
-          { fetchPolicy: 'store-or-network' },
+          { fetchPolicy: 'network-only' },
         ).toPromise()
         if (!response) throw new Error('The events page request returned no response.')
         const connection = response.events
