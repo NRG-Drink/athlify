@@ -11,11 +11,12 @@ import { AgGridProvider, AgGridReact } from 'ag-grid-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { graphql, useMutation, useRelayEnvironment } from 'react-relay'
-import { LuTrash2 } from 'react-icons/lu'
+import { LuPin, LuPinOff, LuTrash2 } from 'react-icons/lu'
 import { toaster } from '../../components/ui/toaster'
 import type { EventFilterInput, MyEventsPageQuery } from './__generated__/MyEventsPageQuery.graphql'
 import type { MyEventsGridDeleteMutation } from './__generated__/MyEventsGridDeleteMutation.graphql'
 import type { MyEventsGridCreateMutation } from './__generated__/MyEventsGridCreateMutation.graphql'
+import type { MyEventsGridUpdateMutation } from './__generated__/MyEventsGridUpdateMutation.graphql'
 import { MyEventsDataSource } from './MyEventsDataSource'
 import { defaultOrder, getGridQuery } from './MyEventsGridQuery'
 import { MyEventsTypeFilter } from './MyEventsTypeFilter'
@@ -36,6 +37,10 @@ type QueryEvent = NonNullable<NonNullable<MyEventsPageQuery['response']['events'
 
 type EventsRow = {
   -readonly [K in keyof QueryEvent]: QueryEvent[K]
+}
+
+function copyEventRow(row: EventsRow): EventsRow {
+  return { ...row, tags: row.tags.map((tag) => ({ ...tag })) }
 }
 
 type MyEventsGridProps = {
@@ -149,15 +154,34 @@ export function MyEventsGrid({
   const environment = useRelayEnvironment()
   const [commitDelete, isDeleting] = useMutation<MyEventsGridDeleteMutation>(deleteMutation)
   const [commitCreate, isCreating] = useMutation<MyEventsGridCreateMutation>(createMutation)
-  const { isUpdating, onCellValueChanged } = useMyEventsCellEdit()
   const agGridModules = [AllCommunityModule, InfiniteRowModelModule]
   const [loadFailed, setLoadFailed] = useState(false)
   const [loading, setLoading] = useState(true)
   const [visibleColumns, setVisibleColumns] = useState<string[]>([...myEventsColumnIds])
   const [columnsOpen, setColumnsOpen] = useState(false)
-  const [pinnedEvent, setPinnedEvent] = useState<EventsRow | null>(null)
+  const [pinnedEvents, setPinnedEvents] = useState<EventsRow[]>([])
   const gridApiRef = useRef<GridApi<EventsRow> | null>(null)
   const applyingUrlState = useRef(false)
+  const onEventUpdated = useCallback(
+    (event: NonNullable<MyEventsGridUpdateMutation['response']['updateEvent']>) => {
+      setPinnedEvents((current) =>
+        current.map((pinnedEvent) =>
+          pinnedEvent.id === event.id
+            ? { ...pinnedEvent, ...event, tags: pinnedEvent.tags }
+            : pinnedEvent,
+        ),
+      )
+    },
+    [],
+  )
+  const { isUpdating, onCellValueChanged } = useMyEventsCellEdit(onEventUpdated)
+  const togglePinnedEvent = useCallback((row: EventsRow) => {
+    setPinnedEvents((current) =>
+      current.some((event) => event.id === row.id)
+        ? current.filter((event) => event.id !== row.id)
+        : [...current, copyEventRow(row)],
+    )
+  }, [])
   const datasource = useMemo(
     () =>
       new MyEventsDataSource({
@@ -291,7 +315,7 @@ export function MyEventsGrid({
             toaster.create({ type: 'error', title: t('events.delete.failed') })
             return
           }
-          setPinnedEvent((current) => (current?.id === id ? null : current))
+          setPinnedEvents((current) => current.filter((event) => event.id !== id))
           datasource.reset()
           gridApiRef.current?.refreshInfiniteCache()
           toaster.create({ type: 'success', title: t('events.delete.success') })
@@ -321,10 +345,7 @@ export function MyEventsGrid({
           toaster.create({ type: 'error', title: t('events.add.failed') })
           return
         }
-        setPinnedEvent({
-          ...response.createEvent,
-          tags: response.createEvent.tags.map((tag) => ({ ...tag })),
-        })
+        setPinnedEvents((current) => [...current, copyEventRow(response.createEvent)])
         datasource.reset()
         gridApiRef.current?.refreshInfiniteCache()
         toaster.create({ type: 'success', title: t('events.add.success') })
@@ -340,22 +361,39 @@ export function MyEventsGrid({
       {
         colId: 'delete',
         headerName: t('events.columns.actions'),
-        width: 90,
+        width: 104,
         pinned: 'left',
         filter: false,
-        cellRenderer: ({ data }: { data?: EventsRow }) =>
-          data ? (
-            <Button
-              size="xs"
-              variant="ghost"
-              colorPalette="red"
-              aria-label={t('events.delete.action')}
-              disabled={isDeleting}
-              onClick={() => deleteEvent(data.id)}
-            >
-              <LuTrash2 aria-hidden />
-            </Button>
-          ) : null,
+        cellRenderer: ({ data }: { data?: EventsRow }) => {
+          if (!data) return null
+          const isPinned = pinnedEvents.some((event) => event.id === data.id)
+          return (
+            <>
+              <Button
+                size="xs"
+                variant="ghost"
+                aria-label={t(isPinned ? 'events.pin.unpinRow' : 'events.pin.pinRow')}
+                aria-pressed={isPinned}
+                disabled={isUpdating}
+                margin={0}
+                padding={0}
+                onClick={() => togglePinnedEvent(data)}
+              >
+                {isPinned ? <LuPinOff aria-hidden /> : <LuPin aria-hidden />}
+              </Button>
+              <Button
+                size="xs"
+                variant="ghost"
+                colorPalette="red"
+                aria-label={t('events.delete.action')}
+                disabled={isDeleting}
+                onClick={() => deleteEvent(data.id)}
+              >
+                <LuTrash2 aria-hidden />
+              </Button>
+            </>
+          )
+        },
       },
       {
         field: 'id',
@@ -425,7 +463,7 @@ export function MyEventsGrid({
         cellEditor: 'agLargeStringCellEditor',
       },
     ],
-    [deleteEvent, format.date, isDeleting, isUpdating, t],
+    [deleteEvent, format.date, isDeleting, isUpdating, pinnedEvents, t, togglePinnedEvent],
   )
 
   const saveGridState = useCallback(
@@ -451,20 +489,10 @@ export function MyEventsGrid({
         </Text>
       )}
       <Box display="grid" gap="2">
-        <Box display="grid" gridTemplateColumns="max-content max-content max-content" gap="2">
-          <Button
-            size="sm"
-            onClick={createEvent}
-            loading={isCreating}
-            disabled={pinnedEvent !== null}
-          >
+        <Box display="grid" gridTemplateColumns="max-content max-content" gap="2">
+          <Button size="sm" onClick={createEvent} loading={isCreating}>
             {t('events.add.open')}
           </Button>
-          {pinnedEvent && (
-            <Button size="sm" variant="outline" onClick={() => setPinnedEvent(null)}>
-              {t('events.add.unpin')}
-            </Button>
-          )}
           <Popover.Root
             open={columnsOpen}
             onOpenChange={(details) => setColumnsOpen(details.open)}
@@ -530,7 +558,7 @@ export function MyEventsGrid({
             columnDefs={columnDefs}
             defaultColDef={defaultColDef}
             loading={loading}
-            pinnedTopRowData={pinnedEvent ? [pinnedEvent] : undefined}
+            pinnedTopRowData={pinnedEvents.length > 0 ? pinnedEvents : undefined}
             theme={themeQuartz.withPart(colorSchemeDarkBlue)}
             onGridReady={({ api }) => {
               gridApiRef.current = api

@@ -42,7 +42,9 @@ function normalizeEventDate(value: unknown): string | null | undefined {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
-export function useMyEventsCellEdit() {
+type UpdatedEvent = NonNullable<MyEventsGridUpdateMutation['response']['updateEvent']>
+
+export function useMyEventsCellEdit(onEventUpdated?: (event: UpdatedEvent) => void) {
   const { t } = useTranslation()
   const [commitUpdate, isUpdating] = useMutation<MyEventsGridUpdateMutation>(updateEventMutation)
   const revertingEdit = useRef(false)
@@ -105,6 +107,7 @@ export function useMyEventsCellEdit() {
           toaster.create({ type: 'error', title: t('events.edit.saveFailed') })
           return
         }
+        onEventUpdated?.(response.updateEvent)
         toaster.create({ type: 'success', title: t('events.edit.saved') })
       },
       onError: () => {

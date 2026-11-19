@@ -311,7 +311,7 @@ it('pins a new event through active filters until the user unpins it', async () 
 
   await screen.findByText('Neues Event')
   expect(screen.getByRole('button', { name: 'Anheftung lösen' })).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Event hinzufügen' })).toBeDisabled()
+  expect(screen.getByRole('button', { name: 'Event hinzufügen' })).toBeEnabled()
   expect(new URLSearchParams(router.state.location.search).get('q')).toBe('unmatched')
   expect(new URLSearchParams(router.state.location.search).get('from')).toBe('2026-01-01')
   expect(
@@ -359,4 +359,38 @@ it('pins a new event through active filters until the user unpins it', async () 
     expect(screen.queryByText('Überarbeitetes Event')).not.toBeInTheDocument()
   })
   expect(screen.getByRole('button', { name: 'Event hinzufügen' })).toBeEnabled()
+})
+
+it('lets the user pin and unpin an existing event row', async () => {
+  mockGridViewport()
+  const { user } = renderWithRelay(<MyEventsPage />, () => ({
+    data: {
+      events: {
+        totalCount: 1,
+        nodes: [
+          {
+            id: 'RXZlbnQ6Mw==',
+            name: 'Existing event',
+            startDate: '2026-01-01',
+            endDate: null,
+            description: null,
+            type: 'OTHER',
+            tags: [],
+          },
+        ],
+        pageInfo: { endCursor: null, hasNextPage: false },
+      },
+    },
+  }))
+
+  await screen.findByText('Existing event')
+  await user.click(screen.getByRole('button', { name: 'Event anheften' }))
+  await waitFor(() => {
+    expect(screen.getAllByText('Existing event')).toHaveLength(2)
+  })
+
+  await user.click(screen.getAllByRole('button', { name: 'Anheftung lösen' })[0])
+  await waitFor(() => {
+    expect(screen.getAllByText('Existing event')).toHaveLength(1)
+  })
 })

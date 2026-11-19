@@ -62,7 +62,8 @@ with row virtualization; AG-Events loads records in cursor-based blocks of 20
 through AG Grid's Infinite Row Model and persists editable fields through the
 GraphQL update mutation. My Events also creates events with a default name and
 today's date, then keeps the new event in an app-managed pinned row above the
-grid for inline completion until the user unpins it. Dashboard and Garage
+grid for inline completion. Every event row can be pinned independently of
+filters and sort, then unpinned through its row action. Dashboard and Garage
 remain placeholders.
 
 ```text

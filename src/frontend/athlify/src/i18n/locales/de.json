@@ -322,8 +322,11 @@
         "open": "Event hinzufügen",
         "defaultName": "Neues Event",
         "success": "Event hinzugefügt und oben in der Tabelle angeheftet.",
-        "unpin": "Anheftung lösen",
         "failed": "Event konnte nicht hinzugefügt werden. Bitte versuche es nochmals."
+      },
+      "pin": {
+        "pinRow": "Event anheften",
+        "unpinRow": "Anheftung lösen"
       },
       "edit": {
         "saved": "Event aktualisiert.",

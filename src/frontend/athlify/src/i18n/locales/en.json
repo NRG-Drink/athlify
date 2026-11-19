@@ -322,8 +322,11 @@
         "open": "Add event",
         "defaultName": "New event",
         "success": "Event added and pinned above the grid.",
-        "unpin": "Unpin event",
         "failed": "Event could not be added. Please try again."
+      },
+      "pin": {
+        "pinRow": "Pin event",
+        "unpinRow": "Unpin event"
       },
       "edit": {
         "saved": "Event updated.",

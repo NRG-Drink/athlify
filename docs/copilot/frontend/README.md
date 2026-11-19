@@ -71,8 +71,9 @@ backend records, rendered with TanStack Table and row virtualization.
 My Events and AG-Events display events in AG Grid with row virtualization,
 load cursor pages of 20 as you scroll and save cell edits immediately.
 My Events also creates an event with a default name and today's date; users
-complete the remaining fields through inline editing. The new event stays in
-an app-managed pinned row above the grid until the user unpins it.
+complete the remaining fields through inline editing. Every event row can be
+pinned above the grid independently of its filters and sort, then unpinned
+through its row action.
 The backend is under
 `../../../src/backend/`. See
 [`SAD.md`](SAD.md) for the folder layout and open decisions. Do not present
