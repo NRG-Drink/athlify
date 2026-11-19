@@ -75,7 +75,7 @@ Priorities (Must/Should/Could Have) are in the
   analyses; it is not the complete product.
 - The frontend app shell exists under `src/frontend/athlify/`. The Body-Stats
   page and the Activities list (with add, edit, duplicate and delete) are
-  implemented and talk to the backend; Dashboard, Garage and Events remain
+  implemented and talk to the backend; Dashboard and Garage remain
   placeholders.
 - Personal data must remain isolated to the logged-in user.
 - The user interface is bilingual in German and English; documentation is

@@ -112,7 +112,8 @@ src/
   shell with the App Layout, a Body-Stats domain page, and an
   Activities list with URL-backed filters, Relay pagination and add, edit,
   duplicate and delete. Dashboard,
-  Garage, Events and Settings remain placeholders. See
+  Garage and Settings remain placeholders; Events has a backend-backed
+  management page. See
   [`frontend/SAD.md`](frontend/SAD.md).
 - **Tooling**: the frontend is a standalone npm package with its own
   `package.json` and lockfile; the repository root has none. There are no
