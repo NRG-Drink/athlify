@@ -2,6 +2,7 @@ import type { ColumnState, SortModelItem } from 'ag-grid-community'
 
 export const EVENTS_COLUMN_STORAGE_KEY = 'athlify.events.columns.v1'
 export const EVENTS_VIEWS_STORAGE_KEY = 'athlify.events.views.v1'
+export const EVENTS_FILTER_PREFIX = 'filter.'
 export const EVENTS_FILTERS_PARAM = 'gridFilters'
 export const EVENTS_SORT_PARAM = 'gridSort'
 
@@ -66,7 +67,35 @@ function parseJson(params: URLSearchParams, key: string): unknown {
 }
 
 export function parseEventsFilterModel(params: URLSearchParams): EventsFilterModel {
-  return parseEventsFilterModelValue(parseJson(params, EVENTS_FILTERS_PARAM))
+  const flattened = [...params.entries()].filter(([key]) => key.startsWith(EVENTS_FILTER_PREFIX))
+  if (flattened.length === 0) {
+    return parseEventsFilterModelValue(parseJson(params, EVENTS_FILTERS_PARAM))
+  }
+
+  const result: Record<string, unknown> = {}
+  for (const [key, value] of flattened) {
+    const path = key.slice(EVENTS_FILTER_PREFIX.length).split('.')
+    if (!path.length || !eventsFilterColumnIds.includes(path[0] as (typeof eventsFilterColumnIds)[number])) {
+      continue
+    }
+
+    let current: Record<string, unknown> = result
+    for (const segment of path.slice(0, -1)) {
+      const nested = current[segment]
+      if (!isRecord(nested)) current[segment] = {}
+      current = current[segment] as Record<string, unknown>
+    }
+    const leaf = path[path.length - 1]
+    if (leaf !== undefined) {
+      const previous = current[leaf]
+      if (leaf === 'values') {
+        current[leaf] = [...(Array.isArray(previous) ? previous : []), value]
+      } else {
+        current[leaf] = previous === undefined ? value : Array.isArray(previous) ? [...previous, value] : [previous, value]
+      }
+    }
+  }
+  return parseEventsFilterModelValue(result)
 }
 
 export function parseEventsFilterModelValue(parsed: unknown): EventsFilterModel {
@@ -106,10 +135,20 @@ export function applyEventsGridState(
   sortModel: EventsSortModel,
 ): URLSearchParams {
   const next = new URLSearchParams(params)
+  for (const key of [...next.keys()]) {
+    if (key.startsWith(EVENTS_FILTER_PREFIX) || key === EVENTS_FILTERS_PARAM) next.delete(key)
+  }
   if (Object.keys(filterModel).length > 0) {
-    next.set(EVENTS_FILTERS_PARAM, JSON.stringify(filterModel))
-  } else {
-    next.delete(EVENTS_FILTERS_PARAM)
+    const flatten = (value: unknown, path: string[]) => {
+      if (isRecord(value)) {
+        for (const [key, nested] of Object.entries(value)) flatten(nested, [...path, key])
+      } else if (Array.isArray(value)) {
+        for (const item of value) flatten(item, path)
+      } else if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        next.append(`${EVENTS_FILTER_PREFIX}${path.join('.')}`, String(value))
+      }
+    }
+    for (const [column, model] of Object.entries(filterModel)) flatten(model, [column])
   }
   if (sortModel.length > 0) {
     next.set(EVENTS_SORT_PARAM, JSON.stringify(sortModel))

@@ -3,6 +3,7 @@ import { formatEventTags } from '../../../features/events/EventsGridColumns'
 import { getGridQuery } from '../../../features/events/EventsGridQuery'
 import {
   applyEventsGridState,
+  EVENTS_FILTER_PREFIX,
   EVENTS_FILTERS_PARAM,
   EVENTS_SORT_PARAM,
   parseEventsColumnState,
@@ -36,13 +37,18 @@ describe('EventsPage grid type filter', () => {
     expect(query.where).toEqual({ type: { in: [] } })
   })
 
-  it('round-trips grid filters and sorting in URL parameters without dropping other arguments', () => {
+  it('round-trips grid filters as readable URL parameters and sorting without dropping other arguments', () => {
     const filterModel = { type: { values: ['REPAIR'] }, name: { filter: 'service' } }
     const sortModel = [{ colId: 'name', sort: 'desc' as const }]
     const params = applyEventsGridState(new URLSearchParams('view=table'), filterModel, sortModel)
 
     expect(params.get('view')).toBe('table')
-    expect(params.get(EVENTS_FILTERS_PARAM)).toBe(JSON.stringify(filterModel))
+    expect(params.get(`${EVENTS_FILTER_PREFIX}name.filter`)).toBe('service')
+    expect(params.get(`${EVENTS_FILTER_PREFIX}type.values`)).toBe('REPAIR')
+    expect(params.has(EVENTS_FILTERS_PARAM)).toBe(false)
+    expect(
+      [...params.keys()].filter((key) => key.startsWith(EVENTS_FILTER_PREFIX)).join('&'),
+    ).not.toContain('%')
     expect(params.get(EVENTS_SORT_PARAM)).toBe(JSON.stringify(sortModel))
     expect(parseEventsFilterModel(params)).toEqual(filterModel)
     expect(parseEventsSortModel(params)).toEqual(sortModel)
