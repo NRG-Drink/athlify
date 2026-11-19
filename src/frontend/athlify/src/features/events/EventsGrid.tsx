@@ -232,8 +232,7 @@ export function EventsGrid({
     if (!api || columnState.length === 0) return
 
     if (
-      serializeEventsColumnState(api.getColumnState()) !==
-      serializeEventsColumnState(columnState)
+      serializeEventsColumnState(api.getColumnState()) !== serializeEventsColumnState(columnState)
     ) {
       api.applyColumnState({ state: columnState, applyOrder: true })
     }
@@ -372,7 +371,7 @@ export function EventsGrid({
       />
       <AgGridTable<EventsRow>
         ariaLabel={t('events.table.caption')}
-        height="clamp(24rem, calc(100dvh - 28rem), 48rem)"
+        height="clamp(24rem, calc(100dvh - 22rem), 48rem)"
         rowModelType="infinite"
         datasource={datasource}
         getRowId={({ data }) => data?.id}

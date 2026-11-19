@@ -364,6 +364,7 @@
     "events": {
       "controls": { "title": "Filter events" },
       "filterYtd": "This year",
+      "filterActions": "Filter actions",
       "resetFilters": "Reset filters",
       "quickFilter": "Search events",
       "fromFilter": "From",

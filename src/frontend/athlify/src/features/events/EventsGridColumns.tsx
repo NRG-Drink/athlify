@@ -61,7 +61,7 @@ export function createEventsColumnDefs({
     {
       colId: 'delete',
       headerName: t('events.columns.actions'),
-      width: 104,
+      minWidth: 100,
       pinned: 'left',
       filter: false,
       cellRenderer: ({ data }: ICellRendererParams<EventsRow>) => {
@@ -105,6 +105,7 @@ export function createEventsColumnDefs({
       headerName: t('events.columns.id'),
       filter: false,
       width: 100,
+      hide: true,
       pinned: 'left',
       valueGetter: (params) => getEventRowNumber(params.data?.id),
     },
@@ -113,7 +114,7 @@ export function createEventsColumnDefs({
       headerName: t('events.columns.name'),
       flex: 1,
       filter: 'agTextColumnFilter',
-      minWidth: 240,
+      minWidth: 100,
       pinned: 'left',
       editable: !isUpdating,
       cellEditor: 'agTextCellEditor',

@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  Collapsible,
   Field,
   Grid,
   Input,
@@ -12,6 +13,7 @@ import {
 } from '@chakra-ui/react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { LuChevronDown } from 'react-icons/lu'
 import { DateField } from '../../components/DateField'
 import { localDateKey } from '../../lib/period'
 import { parseDate } from '../../lib/dates'
@@ -89,163 +91,183 @@ export function EventsPageControls({ filters, views }: EventsPageControlsProps) 
   }
 
   return (
-    <Box
-      display="grid"
-      gap="5"
-      bg="bg.panel"
-      borderWidth="1px"
-      borderColor="border"
-      borderRadius="l3"
-      p={{ base: '4', md: '6' }}
-    >
-      <Grid templateColumns={{ base: '1fr', md: '1fr auto' }} alignItems="center" gap="3">
-        <Text fontWeight="semibold">{t('events.controls.title')}</Text>
-        <Grid
-          templateColumns="repeat(2, max-content)"
-          justifyContent={{ base: 'start', md: 'end' }}
-          gap="2"
-        >
-          <Button size="sm" onClick={filters.onFilterYearToDate}>
-            {t('events.filterYtd')}
-          </Button>
-          <Button size="sm" variant="outline" onClick={filters.onResetFilters}>
-            {t('events.resetFilters')}
-          </Button>
-        </Grid>
-      </Grid>
-
-      <Grid
-        templateColumns={{
-          base: '1fr',
-          md: 'minmax(12rem, 2fr) minmax(10rem, 1fr) minmax(10rem, 1fr)',
-        }}
-        alignItems="start"
-        gap="3"
-      >
-        <Field.Root>
-          <Field.Label>{t('events.quickFilter')}</Field.Label>
-          <Input
-            aria-label={t('events.quickFilter')}
-            value={filters.quickFilter}
-            onChange={(event) => filters.onQuickFilterChange(event.target.value)}
-          />
-        </Field.Root>
-        <Field.Root invalid={fromInvalid}>
-          <Field.Label>{t('events.fromFilter')}</Field.Label>
-          <DateField
-            label={t('events.fromFilter')}
-            value={visibleDateDraft.from}
-            invalid={fromInvalid}
-            onChange={(value) => updateDateDraft('from', value)}
-          />
-          {fromInvalid && <Field.ErrorText>{t('events.filter.invalidDate')}</Field.ErrorText>}
-        </Field.Root>
-        <Field.Root invalid={toInvalid}>
-          <Field.Label>{t('events.toFilter')}</Field.Label>
-          <DateField
-            label={t('events.toFilter')}
-            value={visibleDateDraft.to}
-            invalid={toInvalid}
-            onChange={(value) => updateDateDraft('to', value)}
-          />
-          {toInvalid && <Field.ErrorText>{t('events.filter.invalidDate')}</Field.ErrorText>}
-        </Field.Root>
-      </Grid>
-
-      <Grid
-        templateColumns={{
-          base: 'repeat(2, minmax(0, 1fr))',
-          md: 'minmax(12rem, 1fr) repeat(4, max-content)',
-        }}
-        alignItems="center"
-        gap="2"
-      >
-        <NativeSelect.Root gridColumn={{ base: '1 / -1', md: 'auto' }}>
-          <NativeSelect.Field
-            aria-label={t('events.views.select')}
-            value={views.selectedId}
-            onChange={(event) => views.onApply(event.target.value)}
+    <Collapsible.Root defaultOpen>
+      <Box display="grid" gap="2">
+        <Collapsible.Trigger asChild>
+          <Button
+            variant="ghost"
+            justifyContent="space-between"
+            width="full"
+            paddingInline="0"
+            fontWeight="semibold"
           >
-            <option value="">{t('events.views.choose')}</option>
-            {views.items.map(({ id, name }) => (
-              <option key={id} value={id}>
-                {name}
-              </option>
-            ))}
-          </NativeSelect.Field>
-          <NativeSelect.Indicator />
-        </NativeSelect.Root>
-        <Popover.Root
-          open={saveViewOpen}
-          onOpenChange={(details) => setSaveViewOpen(details.open)}
-          positioning={{ placement: 'bottom-start', gutter: 8 }}
-          lazyMount
-          unmountOnExit
-        >
-          <Popover.Trigger asChild>
-            <Button size="sm" variant="outline">
-              {t('events.views.saveCurrent')}
-            </Button>
-          </Popover.Trigger>
-          <Portal>
-            <Popover.Positioner>
-              <Popover.Content
-                aria-label={t('events.views.saveCurrent')}
-                colorPalette="brand"
-                width="min(20rem, calc(100vw - 2rem))"
-                bg="bg.panel"
-                borderWidth="1px"
-                borderRadius="l3"
-                _dark={{ shadow: 'none' }}
-              >
-                <Popover.Header fontWeight="semibold">
-                  {t('events.views.saveCurrent')}
-                </Popover.Header>
-                <Popover.Body>
-                  <Stack gap="3">
-                    <Input
-                      aria-label={t('events.views.name')}
-                      maxLength={80}
-                      value={newViewName}
-                      onChange={(event) => setNewViewName(event.target.value)}
-                    />
-                    {newViewName.trim() && duplicateViewName && (
-                      <Text role="alert" color="fg.error">
-                        {t('events.views.duplicateName')}
-                      </Text>
-                    )}
-                    <Button
-                      size="sm"
-                      onClick={saveView}
-                      disabled={
-                        !newViewName.trim() ||
-                        duplicateViewName ||
-                        !views.canSave ||
-                        fromInvalid ||
-                        toInvalid
-                      }
-                    >
-                      {t('events.views.save')}
-                    </Button>
-                  </Stack>
-                </Popover.Body>
-              </Popover.Content>
-            </Popover.Positioner>
-          </Portal>
-        </Popover.Root>
-        <Button size="sm" variant="outline" onClick={views.onDelete} disabled={!views.selectedId}>
-          {t('events.views.delete')}
-        </Button>
-        <Button size="sm" variant="outline" onClick={filters.onResetTable}>
-          {t('events.resetTable')}
-        </Button>
-      </Grid>
+            {t('events.controls.title')}
+            <Collapsible.Indicator>
+              <LuChevronDown />
+            </Collapsible.Indicator>
+          </Button>
+        </Collapsible.Trigger>
+        <Collapsible.Content>
+          <Box
+            display="grid"
+            gap="5"
+            bg="bg.panel"
+            borderWidth="1px"
+            borderColor="border"
+            borderRadius="l3"
+            p={{ base: '4', md: '6' }}
+          >
+            <Grid
+              templateColumns={{
+                base: 'repeat(2, minmax(0, 1fr))',
+                md: 'minmax(12rem, 2fr) minmax(10rem, 1fr) minmax(10rem, 1fr) max-content',
+              }}
+              alignItems="center"
+              gap="3"
+            >
+              <Field.Root gridColumn={{ base: '1 / -1', md: 'auto' }}>
+                <Field.Label>{t('events.quickFilter')}</Field.Label>
+                <Input
+                  aria-label={t('events.quickFilter')}
+                  value={filters.quickFilter}
+                  onChange={(event) => filters.onQuickFilterChange(event.target.value)}
+                />
+              </Field.Root>
+              <Field.Root invalid={fromInvalid}>
+                <Field.Label>{t('events.fromFilter')}</Field.Label>
+                <DateField
+                  label={t('events.fromFilter')}
+                  value={visibleDateDraft.from}
+                  invalid={fromInvalid}
+                  onChange={(value) => updateDateDraft('from', value)}
+                />
+                {fromInvalid && <Field.ErrorText>{t('events.filter.invalidDate')}</Field.ErrorText>}
+              </Field.Root>
+              <Field.Root invalid={toInvalid}>
+                <Field.Label>{t('events.toFilter')}</Field.Label>
+                <DateField
+                  label={t('events.toFilter')}
+                  value={visibleDateDraft.to}
+                  invalid={toInvalid}
+                  onChange={(value) => updateDateDraft('to', value)}
+                />
+                {toInvalid && <Field.ErrorText>{t('events.filter.invalidDate')}</Field.ErrorText>}
+              </Field.Root>
+              <Field.Root gridColumn={{ base: '1 / -1', md: 'auto' }}>
+                <Field.Label>{t('events.filterActions')}</Field.Label>
+                <Grid templateColumns="repeat(2, max-content)" gap="2">
+                  <Button size="sm" onClick={filters.onFilterYearToDate}>
+                    {t('events.filterYtd')}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={filters.onResetFilters}>
+                    {t('events.resetFilters')}
+                  </Button>
+                </Grid>
+              </Field.Root>
+            </Grid>
 
-      {views.storageFailed && (
-        <Text role="alert" color="fg.error">
-          {t('events.views.storageFailed')}
-        </Text>
-      )}
-    </Box>
+            <Grid
+              templateColumns={{
+                base: 'repeat(2, minmax(0, 1fr))',
+                md: 'minmax(12rem, 1fr) repeat(4, max-content)',
+              }}
+              alignItems="center"
+              gap="2"
+            >
+              <NativeSelect.Root gridColumn={{ base: '1 / -1', md: 'auto' }}>
+                <NativeSelect.Field
+                  aria-label={t('events.views.select')}
+                  value={views.selectedId}
+                  onChange={(event) => views.onApply(event.target.value)}
+                >
+                  <option value="">{t('events.views.choose')}</option>
+                  {views.items.map(({ id, name }) => (
+                    <option key={id} value={id}>
+                      {name}
+                    </option>
+                  ))}
+                </NativeSelect.Field>
+                <NativeSelect.Indicator />
+              </NativeSelect.Root>
+              <Popover.Root
+                open={saveViewOpen}
+                onOpenChange={(details) => setSaveViewOpen(details.open)}
+                positioning={{ placement: 'bottom-start', gutter: 8 }}
+                lazyMount
+                unmountOnExit
+              >
+                <Popover.Trigger asChild>
+                  <Button size="sm" variant="outline">
+                    {t('events.views.saveCurrent')}
+                  </Button>
+                </Popover.Trigger>
+                <Portal>
+                  <Popover.Positioner>
+                    <Popover.Content
+                      aria-label={t('events.views.saveCurrent')}
+                      colorPalette="brand"
+                      width="min(20rem, calc(100vw - 2rem))"
+                      bg="bg.panel"
+                      borderWidth="1px"
+                      borderRadius="l3"
+                      _dark={{ shadow: 'none' }}
+                    >
+                      <Popover.Header fontWeight="semibold">
+                        {t('events.views.saveCurrent')}
+                      </Popover.Header>
+                      <Popover.Body>
+                        <Stack gap="3">
+                          <Input
+                            aria-label={t('events.views.name')}
+                            maxLength={80}
+                            value={newViewName}
+                            onChange={(event) => setNewViewName(event.target.value)}
+                          />
+                          {newViewName.trim() && duplicateViewName && (
+                            <Text role="alert" color="fg.error">
+                              {t('events.views.duplicateName')}
+                            </Text>
+                          )}
+                          <Button
+                            size="sm"
+                            onClick={saveView}
+                            disabled={
+                              !newViewName.trim() ||
+                              duplicateViewName ||
+                              !views.canSave ||
+                              fromInvalid ||
+                              toInvalid
+                            }
+                          >
+                            {t('events.views.save')}
+                          </Button>
+                        </Stack>
+                      </Popover.Body>
+                    </Popover.Content>
+                  </Popover.Positioner>
+                </Portal>
+              </Popover.Root>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={views.onDelete}
+                disabled={!views.selectedId}
+              >
+                {t('events.views.delete')}
+              </Button>
+              <Button size="sm" variant="outline" onClick={filters.onResetTable}>
+                {t('events.resetTable')}
+              </Button>
+            </Grid>
+
+            {views.storageFailed && (
+              <Text role="alert" color="fg.error">
+                {t('events.views.storageFailed')}
+              </Text>
+            )}
+          </Box>
+        </Collapsible.Content>
+      </Box>
+    </Collapsible.Root>
   )
 }

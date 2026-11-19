@@ -364,6 +364,7 @@
     "events": {
       "controls": { "title": "Events filtern" },
       "filterYtd": "Dieses Jahr",
+      "filterActions": "Filteraktionen",
       "resetFilters": "Filter zurücksetzen",
       "quickFilter": "Events durchsuchen",
       "fromFilter": "Von",
