@@ -23,21 +23,21 @@ public partial class AuthTestQuery
         return new HelloData($"Hello user {userName}!", DateTime.UtcNow);
     }
 
-    [Authorize(Roles = [UserRole.Admin])]
+    [Authorize(Roles = [nameof(UserRole.Admin)])]
     public async Task<HelloData> HelloAdmin(ClaimsPrincipal claimsPrincipal)
     {
         var userName = claimsPrincipal.FindFirstValue(ClaimTypes.Name);
         return new HelloData($"Hello admin {userName}!", DateTime.UtcNow);
     }
 
-    [Authorize(Roles = [UserRole.User])]
+    [Authorize(Roles = [nameof(UserRole.User)])]
     public async Task<HelloData> HelloStaff(ClaimsPrincipal claimsPrincipal)
     {
         var userName = claimsPrincipal.FindFirstValue(ClaimTypes.Name);
         return new HelloData($"Hello staff {userName}!", DateTime.UtcNow);
     }
 
-    [Authorize(Roles = [UserRole.User, UserRole.Admin])]
+    [Authorize(Roles = [nameof(UserRole.User), nameof(UserRole.Admin)])]
     public async Task<HelloData> HelloEmployee(ClaimsPrincipal claimsPrincipal)
     {
         var userName = claimsPrincipal.FindFirstValue(ClaimTypes.Name);

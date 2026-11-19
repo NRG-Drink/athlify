@@ -1,4 +1,5 @@
 ﻿using Athlify.Api.Database;
+using Athlify.Api.Domain.Common;
 using Athlify.Api.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -32,7 +33,7 @@ public class TokenService(
         {
             new Claim(ClaimTypes.NameIdentifier, dbUser.Id.ToString()),
             new Claim(ClaimTypes.Name, dbUser.Username),
-            new Claim(ClaimTypes.Role, dbUser.Role),
+            new Claim(ClaimTypes.Role, EnumStringResolver.ToString(dbUser.Role)),
         };
 
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Value.SigningKey));

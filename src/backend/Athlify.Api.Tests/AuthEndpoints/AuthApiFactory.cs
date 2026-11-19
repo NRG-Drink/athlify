@@ -64,7 +64,7 @@ public abstract class AuthApiFactory : TestWebApplicationFactory<Program>
         AthlifyDbContext db,
         string? username = null,
         string? password = null,
-        string? role = null)
+        UserRole? role = null)
     {
         var testUser = new User()
         {

@@ -31,8 +31,8 @@ public static class WebapplicationBuilderExtensions
         Microsoft.AspNetCore.Authorization.AuthorizationOptions options,
         ConfigurationManager config)
     {
-        options.AddPolicy("Admin", policy => policy.RequireRole(UserRole.Admin));
-        options.AddPolicy("User", policy => policy.RequireRole(UserRole.User));
+        options.AddPolicy("Admin", policy => policy.RequireRole(nameof(UserRole.Admin)));
+        options.AddPolicy("User", policy => policy.RequireRole(nameof(UserRole.User)));
     }
 
     private static void ConfigureJwtOptions(JwtBearerOptions options, ConfigurationManager config)

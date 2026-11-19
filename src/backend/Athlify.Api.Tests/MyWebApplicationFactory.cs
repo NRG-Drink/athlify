@@ -18,7 +18,7 @@ public abstract class WebApiTestBase : WebApplicationTest<MyWebApplicationFactor
     /// Creates a user in this test's database and returns a client that acts as that user.
     /// <c>Factory.CreateClient()</c> without this helper acts as nobody (<c>NOT_AUTHENTICATED</c>).
     /// </summary>
-    protected async Task<HttpClient> CreateUserClientAsync(string username = "luca@example.com", string role = UserRole.User)
+    protected async Task<HttpClient> CreateUserClientAsync(string username = "luca@example.com", UserRole role = UserRole.User)
     {
         int userId;
         await using (var scope = Factory.Services.CreateAsyncScope())
