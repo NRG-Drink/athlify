@@ -253,6 +253,70 @@ it('deletes a row and reloads with the active filter and sorting intact', async 
   })
 })
 
+it('refreshes server-filtered rows after a successful cell edit', async () => {
+  mockGridViewport()
+  let updated = false
+  const { calls, user } = renderWithRelay(
+    <EventsPage />,
+    (operation) => {
+      if (operation === 'EventsGridUpdateMutation') {
+        updated = true
+        return {
+          data: {
+            updateEvent: {
+              id: 'RXZlbnQ6MQ==',
+              name: 'No longer matching',
+              startDate: '2026-01-01',
+              endDate: null,
+              description: null,
+              type: 'OTHER',
+              tags: [],
+            },
+          },
+        }
+      }
+      return {
+        data: {
+          events: {
+            totalCount: updated ? 0 : 1,
+            nodes: updated
+              ? []
+              : [
+                  {
+                    id: 'RXZlbnQ6MQ==',
+                    name: 'Matching event',
+                    startDate: '2026-01-01',
+                    endDate: null,
+                    description: null,
+                    type: 'OTHER',
+                    tags: [],
+                  },
+                ],
+            pageInfo: { endCursor: null, hasNextPage: false },
+          },
+        },
+      }
+    },
+    {
+      path: '/?filter.name.filter=Matching&filter.name.type=contains',
+    },
+  )
+
+  await screen.findByText('Matching event')
+  await user.dblClick(screen.getByText('Matching event'))
+  const nameEditor = await screen.findByDisplayValue('Matching event')
+  await user.clear(nameEditor)
+  await user.type(nameEditor, 'No longer matching{Enter}')
+
+  await waitFor(() => {
+    expect(calls('EventsGridUpdateMutation')).toHaveLength(1)
+    expect(screen.queryByText('Matching event')).not.toBeInTheDocument()
+  })
+  expect(calls('EventsManagementPageQuery').at(-1)).toMatchObject({
+    where: { name: { contains: 'Matching' } },
+  })
+})
+
 it('accepts localized date filters and writes ISO dates to the URL', async () => {
   mockGridViewport()
   const { router, user } = renderWithRelay(

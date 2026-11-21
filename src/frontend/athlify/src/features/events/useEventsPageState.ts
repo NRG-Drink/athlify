@@ -8,7 +8,6 @@ import {
   parseEventsFilterModel,
   parseEventsSavedViews,
   parseEventsSortModel,
-  serializeEventsColumnState,
   serializeEventsSavedViews,
   type EventsColumnState,
   type EventsFilterModel,
@@ -38,8 +37,9 @@ export type EventsSavedViewControls = {
   onDelete: () => void
 }
 
-function toGraphQLDate(dateString: string): string | undefined {
+export function toGraphQLDate(dateString: string): string | undefined {
   if (!dateString) return undefined
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return dateString
 
   const date = new Date(dateString)
   return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`

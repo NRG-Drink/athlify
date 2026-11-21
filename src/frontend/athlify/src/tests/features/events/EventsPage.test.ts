@@ -15,8 +15,19 @@ import {
   serializeEventsSavedViews,
   serializeEventsColumnState,
 } from '../../../features/events/EventsGridState'
+import { toGraphQLDate } from '../../../features/events/useEventsPageState'
 
 describe('EventsPage grid type filter', () => {
+  it('preserves date-only URL filters in time zones west of UTC', () => {
+    vi.stubEnv('TZ', 'America/Los_Angeles')
+    try {
+      expect(new Date('2026-01-01').getDate()).toBe(31)
+      expect(toGraphQLDate('2026-01-01')).toBe('2026-01-01')
+    } finally {
+      vi.unstubAllEnvs()
+    }
+  })
+
   it('formats event tags for the grid and uses the empty value when none are assigned', () => {
     expect(formatEventTags([{ name: 'Spring rides' }, { name: 'Training' }], '—')).toBe(
       'Spring rides, Training',

@@ -129,17 +129,6 @@ export function EventsGrid({
   const [gridApi, setGridApi] = useState<GridApi<EventsRow> | null>(null)
   const applyingUrlState = useRef(false)
 
-  const onEventUpdated = useCallback((event: UpdatedEvent) => {
-    setPinnedEvents((current) =>
-      current.map((pinnedEvent) =>
-        pinnedEvent.id === event.id
-          ? { ...pinnedEvent, ...event, tags: pinnedEvent.tags }
-          : pinnedEvent,
-      ),
-    )
-  }, [])
-  const { isUpdating, onCellValueChanged } = useEventsCellEdit(onEventUpdated)
-
   const togglePinnedEvent = useCallback((row: EventsRow) => {
     setPinnedEvents((current) =>
       current.some((event) => event.id === row.id)
@@ -160,8 +149,24 @@ export function EventsGrid({
         onLoadStateChange: setLoading,
         onResultCountChange: setResultCount,
       }),
-    [environment, i18n.resolvedLanguage, where],
+    [environment, where],
   )
+
+  const onEventUpdated = useCallback(
+    (event: UpdatedEvent) => {
+      setPinnedEvents((current) =>
+        current.map((pinnedEvent) =>
+          pinnedEvent.id === event.id
+            ? { ...pinnedEvent, ...event, tags: pinnedEvent.tags }
+            : pinnedEvent,
+        ),
+      )
+      datasource.reset()
+      gridApi?.refreshInfiniteCache()
+    },
+    [datasource, gridApi],
+  )
+  const { isUpdating, onCellValueChanged } = useEventsCellEdit(onEventUpdated)
 
   const applyUrlGridState = useCallback(
     (api: GridApi<EventsRow>) => {
