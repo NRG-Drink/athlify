@@ -145,7 +145,8 @@ it('restores URL filters and sorting plus locally saved column visibility', asyn
       )?.hide,
     ).toBe(false)
   })
-  expect(router.state.location.search).toContain('gridFilters=')
+  expect(router.state.location.search).toContain('filter.name.filter=trail')
+  expect(router.state.location.search).toContain('filter.type.values=REPAIR')
   expect(router.state.location.search).toContain('gridSort=')
 
   await user.click(screen.getByRole('button', { name: 'Ansicht speichern' }))
@@ -340,9 +341,12 @@ it('pins a new event through active filters until the user unpins it', async () 
   expect(screen.getByRole('button', { name: 'Event hinzufügen' })).toBeEnabled()
   expect(new URLSearchParams(router.state.location.search).get('q')).toBe('unmatched')
   expect(new URLSearchParams(router.state.location.search).get('from')).toBe('2026-01-01')
-  expect(
-    JSON.parse(new URLSearchParams(router.state.location.search).get('gridFilters') ?? '{}'),
-  ).toMatchObject({ name: { filter: 'unmatched', type: 'contains' } })
+  expect(new URLSearchParams(router.state.location.search).get('filter.name.filter')).toBe(
+    'unmatched',
+  )
+  expect(new URLSearchParams(router.state.location.search).get('filter.name.type')).toBe(
+    'contains',
+  )
   expect(new URLSearchParams(router.state.location.search).get('gridSort')).toBe(
     filters.get('gridSort'),
   )

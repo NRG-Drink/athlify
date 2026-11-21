@@ -13,11 +13,11 @@ import {
 } from '@chakra-ui/react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { LuChevronDown } from 'react-icons/lu'
 import { DateField } from '../../components/DateField'
 import { localDateKey } from '../../lib/period'
 import { parseDate } from '../../lib/dates'
 import type { EventsPageFilterControls, EventsSavedViewControls } from './useEventsPageState'
+import { LuChevronRight } from 'react-icons/lu'
 
 type EventsPageControlsProps = {
   filters: EventsPageFilterControls
@@ -92,31 +92,24 @@ export function EventsPageControls({ filters, views }: EventsPageControlsProps) 
 
   return (
     <Collapsible.Root defaultOpen>
-      <Box display="grid" gap="2">
-        <Collapsible.Trigger asChild>
-          <Button
-            variant="ghost"
-            justifyContent="space-between"
-            width="full"
-            paddingInline="0"
-            fontWeight="semibold"
-          >
-            {t('events.controls.title')}
-            <Collapsible.Indicator>
-              <LuChevronDown />
-            </Collapsible.Indicator>
-          </Button>
+      <Box
+        display="grid"
+        bg="bg.panel"
+        gap="2"
+        borderWidth="1px"
+        borderColor="border"
+        borderRadius="15px"
+        p={{ base: '4', md: '3' }}
+      >
+        <Collapsible.Trigger display="flex" gap="2" alignItems="center">
+          <Collapsible.Indicator transition="transform 0.2s" _open={{ transform: 'rotate(90deg)' }}>
+            <LuChevronRight />
+          </Collapsible.Indicator>
+          <Text>{t('events.controls.title')}</Text>
+          {/* {t('events.controls.title')} */}
         </Collapsible.Trigger>
         <Collapsible.Content>
-          <Box
-            display="grid"
-            gap="5"
-            bg="bg.panel"
-            borderWidth="1px"
-            borderColor="border"
-            borderRadius="l3"
-            p={{ base: '4', md: '6' }}
-          >
+          <Box display="grid" gap="3">
             <Grid
               templateColumns={{
                 base: 'repeat(2, minmax(0, 1fr))',

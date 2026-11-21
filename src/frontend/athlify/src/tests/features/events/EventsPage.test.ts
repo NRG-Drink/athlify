@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest'
-import { formatEventTags } from '../../../features/events/EventsGridColumns'
+import { describe, expect, it, vi } from 'vitest'
+import i18next from 'i18next'
+import { createEventsColumnDefs, formatEventTags } from '../../../features/events/EventsGridColumns'
+import { clearNoOpGridFilters } from '../../../features/events/EventsGridFilterParams'
 import { getGridQuery } from '../../../features/events/EventsGridQuery'
 import {
   applyEventsGridState,
@@ -102,6 +104,131 @@ describe('EventsPage grid type filter', () => {
       },
       order: [{ description: 'DESC' }, { id: 'ASC' }],
     })
+  })
+
+  it.each([
+    ['equals', 'eq'],
+    ['notEqual', 'neq'],
+    ['contains', 'contains'],
+    ['notContains', 'ncontains'],
+    ['startsWith', 'startsWith'],
+    ['endsWith', 'endsWith'],
+  ])('translates the %s text filter to the backend operator', (type, operator) => {
+    expect(
+      getGridQuery([], { name: { filter: 'ride', type } }, null).where,
+    ).toEqual({ name: { [operator]: 'ride' } })
+  })
+
+  it.each([
+    ['equals', { eq: '2026-03-10' }],
+    ['notEqual', { neq: '2026-03-10' }],
+    ['lessThan', { lt: '2026-03-10' }],
+    ['greaterThan', { gt: '2026-03-10' }],
+    ['inRange', { gte: '2026-03-10', lte: '2026-03-20' }],
+  ])('translates the %s date filter to the backend operator', (type, expected) => {
+    const filter = {
+      type,
+      dateFrom: '2026-03-10',
+      ...(type === 'inRange' ? { dateTo: '2026-03-20' } : {}),
+    }
+
+    expect(getGridQuery([], { startDate: filter }, null).where).toEqual({
+      startDate: expected,
+    })
+  })
+
+  it('translates non-equality text operators for tag names', () => {
+    expect(
+      getGridQuery([], { tags: { filter: 'winter', type: 'notContains' } }, null).where,
+    ).toEqual({ tags: { some: { name: { ncontains: 'winter' } } } })
+  })
+
+  it.each([
+    ['blank', { or: [{ name: { eq: null } }, { name: { eq: '' } }] }],
+    ['notBlank', { and: [{ name: { neq: null } }, { name: { neq: '' } }] }],
+  ])('translates the %s text filter', (type, expected) => {
+    expect(getGridQuery([], { name: { type } }, null).where).toEqual(expected)
+  })
+
+  it.each([
+    ['blank', { startDate: { eq: null } }],
+    ['notBlank', { startDate: { neq: null } }],
+  ])('translates the %s date filter', (type, expected) => {
+    expect(getGridQuery([], { startDate: { type } }, null).where).toEqual(expected)
+  })
+
+  it('translates a tag blank filter to an empty tag collection', () => {
+    expect(getGridQuery([], { tags: { type: 'blank' } }, null).where).toEqual({
+      tags: { none: {} },
+    })
+  })
+
+  it('does not send a backend clause for the default none filter', () => {
+    const baseWhere = { type: { eq: 'REPAIR' as const } }
+    expect(getGridQuery([], { name: { type: 'none' } }, baseWhere).where).toEqual(baseWhere)
+    expect(getGridQuery([], { name: { type: 'none' } }, null).where).toBeNull()
+  })
+
+  it('clears only no-op filters and notifies the grid after clearing', async () => {
+    const cleared: string[] = []
+    let notified = false
+
+    const didClear = await clearNoOpGridFilters(
+      {
+        name: { type: 'none' },
+        startDate: { type: 'none' },
+        description: { type: 'contains', filter: 'race' },
+      },
+      async (column) => {
+        cleared.push(column)
+      },
+      () => {
+        notified = true
+      },
+    )
+
+    expect(didClear).toBe(true)
+    expect(cleared).toEqual(['name', 'startDate'])
+    expect(notified).toBe(true)
+  })
+
+  it('does not notify the grid when no no-op filters are present', async () => {
+    const clearFilter = vi.fn()
+    const notifyFilterChanged = vi.fn()
+
+    const didClear = await clearNoOpGridFilters(
+      { name: { type: 'contains', filter: 'race' } },
+      clearFilter,
+      notifyFilterChanged,
+    )
+
+    expect(didClear).toBe(false)
+    expect(clearFilter).not.toHaveBeenCalled()
+    expect(notifyFilterChanged).not.toHaveBeenCalled()
+  })
+
+  it('configures none as the default option for text and date column filters', () => {
+    const columns = createEventsColumnDefs({
+      t: i18next.t,
+      formatDate: (date) => date.toISOString(),
+      emptyValue: '—',
+      isDeleting: false,
+      isUpdating: false,
+      pinnedEventIds: new Set(),
+      onDelete: () => {},
+      onTogglePin: () => {},
+    })
+    const textColumn = columns.find(({ field }) => field === 'name')
+    const dateColumn = columns.find(({ field }) => field === 'startDate')
+    const textParams = textColumn?.filterParams as { defaultOption?: string; filterOptions?: { displayKey?: string; displayName?: string }[] }
+    const dateParams = dateColumn?.filterParams as { defaultOption?: string; filterOptions?: { displayKey?: string; displayName?: string }[] }
+
+    expect(textParams.defaultOption).toBe('none')
+    expect(textParams.filterOptions?.[0]?.displayKey).toBe('none')
+    expect(textParams.filterOptions?.[0]?.displayName).toBe('Kein Filter')
+    expect(dateParams.defaultOption).toBe('none')
+    expect(dateParams.filterOptions?.[0]?.displayKey).toBe('none')
+    expect(dateParams.filterOptions?.[0]?.displayName).toBe('Kein Filter')
   })
 
   it('round-trips saved views containing filters, sorting and a column preset', () => {

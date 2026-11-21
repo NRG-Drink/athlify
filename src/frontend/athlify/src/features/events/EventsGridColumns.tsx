@@ -3,10 +3,13 @@ import type { ColDef, ICellRendererParams } from 'ag-grid-community'
 import type { TFunction } from 'i18next'
 import { LuPin, LuPinOff, LuTrash2 } from 'react-icons/lu'
 import { parseDate } from '../../lib/dates'
+import {
+  createEventsDateFilterParams,
+  createEventsTextFilterParams,
+} from './EventsGridFilterParams'
 import type { EventsRow } from './EventsGridTypes'
 import { EventsTypeFilter } from './EventsTypeFilter'
-
-const eventTypes = ['CRASH', 'INJURY', 'ILLNESS', 'REPAIR', 'BREAK', 'GOAL', 'OTHER'] as const
+import { eventTypes } from './EventTypes'
 
 type EventsColumnOptions = {
   t: TFunction
@@ -57,6 +60,9 @@ export function createEventsColumnDefs({
   onDelete,
   onTogglePin,
 }: EventsColumnOptions): ColDef<EventsRow>[] {
+  const textFilterParams = createEventsTextFilterParams(t)
+  const dateFilterParams = createEventsDateFilterParams(t)
+
   return [
     {
       colId: 'delete',
@@ -64,6 +70,7 @@ export function createEventsColumnDefs({
       minWidth: 100,
       pinned: 'left',
       filter: false,
+      sortable: false,
       cellRenderer: ({ data }: ICellRendererParams<EventsRow>) => {
         if (!data) return null
         const isPinned = pinnedEventIds.has(data.id)
@@ -103,7 +110,6 @@ export function createEventsColumnDefs({
     {
       field: 'id',
       headerName: t('events.columns.id'),
-      filter: false,
       width: 100,
       hide: true,
       pinned: 'left',
@@ -114,6 +120,7 @@ export function createEventsColumnDefs({
       headerName: t('events.columns.name'),
       flex: 1,
       filter: 'agTextColumnFilter',
+      filterParams: textFilterParams,
       minWidth: 100,
       pinned: 'left',
       editable: !isUpdating,
@@ -124,6 +131,7 @@ export function createEventsColumnDefs({
       field: 'startDate',
       headerName: t('events.columns.startDate'),
       filter: 'agDateColumnFilter',
+      filterParams: dateFilterParams,
       valueFormatter: ({ value }) => formatEventDate(value, formatDate, emptyValue),
       editable: !isUpdating,
       cellEditor: 'agDateStringCellEditor',
@@ -132,6 +140,7 @@ export function createEventsColumnDefs({
       field: 'endDate',
       headerName: t('events.columns.endDate'),
       filter: 'agDateColumnFilter',
+      filterParams: dateFilterParams,
       valueFormatter: ({ value }) => formatEventDate(value, formatDate, emptyValue),
       editable: !isUpdating,
       cellEditor: 'agDateStringCellEditor',
@@ -154,6 +163,7 @@ export function createEventsColumnDefs({
       field: 'tags',
       headerName: t('events.columns.tags'),
       filter: 'agTextColumnFilter',
+      filterParams: textFilterParams,
       sortable: false,
       minWidth: 160,
       valueFormatter: ({ value }) => formatEventTags(value, emptyValue),
@@ -162,6 +172,7 @@ export function createEventsColumnDefs({
       field: 'description',
       headerName: t('events.columns.description'),
       filter: 'agTextColumnFilter',
+      filterParams: textFilterParams,
       minWidth: 320,
       valueFormatter: ({ value }) => value || emptyValue,
       editable: !isUpdating,

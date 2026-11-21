@@ -12,6 +12,7 @@ import type { EventsGridCreateMutation } from './__generated__/EventsGridCreateM
 import type { EventsGridUpdateMutation } from './__generated__/EventsGridUpdateMutation.graphql'
 import { EventsDataSource } from './EventsDataSource'
 import { createEventsColumnDefs } from './EventsGridColumns'
+import { clearNoOpGridFilters } from './EventsGridFilterParams'
 import { EventsGridToolbar } from './EventsGridToolbar'
 import { defaultOrder, getGridQuery } from './EventsGridQuery'
 import { copyEventRow, type EventsRow } from './EventsGridTypes'
@@ -115,7 +116,7 @@ export function EventsGrid({
   onColumnStateChange,
   onGridStateChange,
 }: EventsGridProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const format = useFormat()
   const environment = useRelayEnvironment()
   const [commitDelete, isDeleting] = useMutation<EventsGridDeleteMutation>(deleteMutation)
@@ -159,7 +160,7 @@ export function EventsGrid({
         onLoadStateChange: setLoading,
         onResultCountChange: setResultCount,
       }),
-    [environment, where],
+    [environment, i18n.resolvedLanguage, where],
   )
 
   const applyUrlGridState = useCallback(
@@ -345,6 +346,23 @@ export function EventsGrid({
     [onGridStateChange],
   )
 
+  const handleFilterChanged = useCallback(
+    (api: GridApi<EventsRow>) => {
+      void clearNoOpGridFilters(
+        api.getFilterModel() ?? {},
+        (column) => api.setColumnFilterModel(column, null),
+        () => api.onFilterChanged(),
+      )
+        .then((cleared) => {
+          if (!cleared) saveGridState(api)
+        })
+          .catch((error: unknown) => {
+            console.error('Could not clear no-op event filters.', error)
+          })
+    },
+    [saveGridState],
+  )
+
   const setColumnVisible = useCallback(
     (column: string, visible: boolean) => {
       const api = gridApi
@@ -370,8 +388,24 @@ export function EventsGrid({
         onColumnVisibleChange={setColumnVisible}
       />
       <AgGridTable<EventsRow>
+        key={i18n.resolvedLanguage}
         ariaLabel={t('events.table.caption')}
         height="clamp(24rem, calc(100dvh - 22rem), 48rem)"
+        localeText={{
+          equals: t('events.gridFilter.options.equals'),
+          notEqual: t('events.gridFilter.options.notEqual'),
+          contains: t('events.gridFilter.options.contains'),
+          notContains: t('events.gridFilter.options.notContains'),
+          startsWith: t('events.gridFilter.options.startsWith'),
+          endsWith: t('events.gridFilter.options.endsWith'),
+          blank: t('events.gridFilter.options.blank'),
+          notBlank: t('events.gridFilter.options.notBlank'),
+          lessThan: t('events.gridFilter.options.lessThan'),
+          greaterThan: t('events.gridFilter.options.greaterThan'),
+          inRange: t('events.gridFilter.options.inRange'),
+          before: t('events.gridFilter.options.before'),
+          after: t('events.gridFilter.options.after'),
+        }}
         rowModelType="infinite"
         datasource={datasource}
         getRowId={({ data }) => data?.id}
@@ -388,7 +422,7 @@ export function EventsGrid({
           restoreColumnState(api)
           applyUrlGridState(api)
         }}
-        onFilterChanged={({ api }) => saveGridState(api)}
+        onFilterChanged={({ api }) => handleFilterChanged(api)}
         onSortChanged={({ api }) => saveGridState(api)}
         onCellValueChanged={onCellValueChanged}
         onColumnMoved={({ api }) => persistColumnState(api)}

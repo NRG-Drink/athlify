@@ -363,6 +363,24 @@
     },
     "events": {
       "controls": { "title": "Events filtern" },
+        "gridFilter": {
+          "none": "Kein Filter",
+          "options": {
+            "equals": "Ist gleich",
+            "notEqual": "Ist nicht gleich",
+            "contains": "Enthält",
+            "notContains": "Enthält nicht",
+            "startsWith": "Beginnt mit",
+            "endsWith": "Endet mit",
+            "blank": "Leer",
+            "notBlank": "Nicht leer",
+            "lessThan": "Kleiner als",
+            "greaterThan": "Grösser als",
+            "inRange": "Zwischen",
+            "before": "Vor",
+            "after": "Nach"
+          }
+        },
       "filterYtd": "Dieses Jahr",
       "filterActions": "Filteraktionen",
       "resetFilters": "Filter zurücksetzen",

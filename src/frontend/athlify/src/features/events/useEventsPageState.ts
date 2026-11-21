@@ -45,6 +45,17 @@ function toGraphQLDate(dateString: string): string | undefined {
   return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
 }
 
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`
+  if (value !== null && typeof value === 'object') {
+    return `{${Object.entries(value)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, nested]) => `${JSON.stringify(key)}:${stableStringify(nested)}`)
+      .join(',')}}`
+  }
+  return JSON.stringify(value) ?? 'undefined'
+}
+
 export function useEventsPageState() {
   const [searchParams, setSearchParams] = useSearchParams()
   const urlQuickFilter = searchParams.get('q') ?? ''
@@ -108,9 +119,8 @@ export function useEventsPageState() {
         view.filters.quick === quickFilter &&
         view.filters.from === fromFilter &&
         view.filters.to === toFilter &&
-        JSON.stringify(view.filters.grid) === JSON.stringify(filterModel) &&
-        JSON.stringify(view.sort) === JSON.stringify(sortModel) &&
-        serializeEventsColumnState(view.columns) === serializeEventsColumnState(columnState),
+        stableStringify(view.filters.grid) === stableStringify(filterModel) &&
+        stableStringify(view.sort) === stableStringify(sortModel),
     )?.id ?? ''
 
   const onQuickFilterChange = useCallback(

@@ -7,6 +7,41 @@ import type {
 
 export const defaultOrder: EventSortInput[] = [{ id: 'ASC' }]
 
+const textFilterOperators: Record<string, string> = {
+  equals: 'eq',
+  notEqual: 'neq',
+  contains: 'contains',
+  notContains: 'ncontains',
+  startsWith: 'startsWith',
+  endsWith: 'endsWith',
+}
+
+const dateFilterOperators: Record<string, string> = {
+  equals: 'eq',
+  notEqual: 'neq',
+  lessThan: 'lt',
+  greaterThan: 'gt',
+}
+
+function getTextFilter(field: 'name' | 'description' | 'tags', type: string, value?: string) {
+  const operator = textFilterOperators[type]
+  if (operator && value) {
+    const operation = { [operator]: value }
+    return field === 'tags'
+      ? { tags: { some: { name: operation } } }
+      : { [field]: operation }
+  }
+
+  if (type === 'blank' || type === 'notBlank') {
+    const empty = type === 'blank'
+    if (field === 'tags') return { tags: { [empty ? 'none' : 'some']: {} } }
+    return empty
+      ? { or: [{ [field]: { eq: null } }, { [field]: { eq: '' } }] }
+      : { and: [{ [field]: { neq: null } }, { [field]: { neq: '' } }] }
+  }
+  return null
+}
+
 export function getGridQuery(
   sortModel: SortModelItem[],
   filterModel: Record<string, unknown>,
@@ -26,21 +61,33 @@ export function getGridQuery(
       filter?: string
       type?: string
       dateFrom?: string
+      dateTo?: string
       values?: EventType[]
     }
-    if ((field === 'name' || field === 'description') && filter.filter) {
-      clauses.push({
-        [field]: { [filter.type === 'equals' ? 'eq' : 'contains']: filter.filter },
-      })
-    } else if (field === 'tags' && filter.filter) {
-      clauses.push({
-        tags: { some: { name: { contains: filter.filter } } },
-      })
+    if (filter.type === 'none') continue
+
+    if (field === 'name' || field === 'description' || field === 'tags') {
+      const textFilter = getTextFilter(field, filter.type ?? 'contains', filter.filter)
+      if (textFilter) clauses.push(textFilter as EventFilterInput)
     } else if (field === 'type' && Array.isArray(filter.values)) {
       clauses.push({ type: { in: filter.values } })
-    } else if ((field === 'startDate' || field === 'endDate') && filter.dateFrom) {
-      const operator = filter.type === 'equals' ? 'eq' : filter.type === 'lessThan' ? 'lt' : 'gt'
+    } else if (
+      (field === 'startDate' || field === 'endDate') &&
+      (filter.type === 'blank' || filter.type === 'notBlank')
+    ) {
+      clauses.push({
+        [field]: { [filter.type === 'blank' ? 'eq' : 'neq']: null },
+      })
+    } else if (
+      (field === 'startDate' || field === 'endDate') &&
+      filter.dateFrom &&
+      dateFilterOperators[filter.type ?? 'equals']
+    ) {
+      const operator = dateFilterOperators[filter.type ?? 'equals']!
       clauses.push({ [field]: { [operator]: filter.dateFrom } })
+    } else if ((field === 'startDate' || field === 'endDate') && filter.type === 'inRange' &&
+      filter.dateFrom && filter.dateTo) {
+      clauses.push({ [field]: { gte: filter.dateFrom, lte: filter.dateTo } })
     }
   }
 
