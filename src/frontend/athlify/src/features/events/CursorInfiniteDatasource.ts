@@ -20,6 +20,7 @@ type CursorInfiniteDatasourceOptions<TRow, TQuery> = {
 
 export class CursorInfiniteDatasource<TRow, TQuery> implements IDatasource {
   private activeQueryKey: string
+  private generation = 0
   private cursors = new Map<number, string | null>([[0, null]])
   private nextBlockStart = 0
   private hasNextPage = true
@@ -49,9 +50,9 @@ export class CursorInfiniteDatasource<TRow, TQuery> implements IDatasource {
 
     this.pendingRequests += 1
     this.options.onLoadStateChange(true)
-    const generationKey = this.activeQueryKey
+    const generation = this.generation
     const request = this.requestQueue.then(() =>
-      this.loadRows(params.startRow, query, generationKey),
+      this.loadRows(params.startRow, query, generation),
     )
     // This ensures that requests are processed sequentially, maintaining the correct order of row loading and preventing race conditions.
     this.requestQueue = request.then(
@@ -62,7 +63,7 @@ export class CursorInfiniteDatasource<TRow, TQuery> implements IDatasource {
     void request
       .then(
         (rows) => {
-          if (!this.isCurrent(generationKey) || rows === null) return
+          if (!this.isCurrent(generation) || rows === null) return
           this.options.onLoadFailed(false)
           params.successCallback(
             rows.map((row) => (this.options.mapRow ?? identity)(row)),
@@ -70,7 +71,7 @@ export class CursorInfiniteDatasource<TRow, TQuery> implements IDatasource {
           )
         },
         () => {
-          if (!this.isCurrent(generationKey)) return
+          if (!this.isCurrent(generation)) return
           this.options.onLoadFailed(true)
           params.failCallback()
         },
@@ -88,31 +89,34 @@ export class CursorInfiniteDatasource<TRow, TQuery> implements IDatasource {
   private async loadRows(
     startRow: number,
     query: TQuery,
-    generationKey: string,
+    generation: number,
   ): Promise<ReadonlyArray<TRow> | null> {
+    if (!this.isCurrent(generation)) return null
+
     // Load rows until we have a cursor for the requested startRow or there are no more pages.
     while (!this.cursors.has(startRow) && this.hasNextPage) {
       const cursor = this.cursors.get(this.nextBlockStart)
       if (cursor === undefined) {
         throw new Error('The connection has no cursor for its next page.')
       }
-      const rows = await this.fetchBlock(this.nextBlockStart, cursor, query, generationKey)
+      const rows = await this.fetchBlock(this.nextBlockStart, cursor, query, generation)
       if (rows === null) return null
     }
 
     const cursor = this.cursors.get(startRow)
     if (cursor === undefined) return []
-    return this.fetchBlock(startRow, cursor, query, generationKey)
+    return this.fetchBlock(startRow, cursor, query, generation)
   }
 
   private async fetchBlock(
     startRow: number,
     cursor: string | null,
     query: TQuery,
-    generationKey: string,
+    generation: number,
   ): Promise<ReadonlyArray<TRow> | null> {
+    if (!this.isCurrent(generation)) return null
     const page = await this.options.fetchPage(this.options.pageSize, cursor, query)
-    if (!this.isCurrent(generationKey)) return null
+    if (!this.isCurrent(generation)) return null
 
     this.totalCount = page.totalCount
     this.options.onResultCountChange?.(page.totalCount)
@@ -126,14 +130,15 @@ export class CursorInfiniteDatasource<TRow, TQuery> implements IDatasource {
 
   private resetForQuery(queryKey: string): void {
     this.activeQueryKey = queryKey
+    this.generation += 1
     this.cursors = new Map([[0, null]])
     this.nextBlockStart = 0
     this.hasNextPage = true
     this.totalCount = 0
   }
 
-  private isCurrent(generationKey: string): boolean {
-    return !this.destroyed && generationKey === this.activeQueryKey
+  private isCurrent(generation: number): boolean {
+    return !this.destroyed && generation === this.generation
   }
 
   private queryKey(query: TQuery): string {
