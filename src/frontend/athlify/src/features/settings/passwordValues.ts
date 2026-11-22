@@ -25,8 +25,7 @@ export function validatePassword(values: PasswordValues, t: TFunction): Password
   if (values.currentPassword === '') errors.currentPassword = t('form.errors.required')
   if (values.newPassword.trim() === '') errors.newPassword = t('form.errors.required')
   if (values.confirmation === '') errors.confirmation = t('form.errors.required')
-  else if (values.confirmation !== values.newPassword)
-    errors.confirmation = t('settings.errors.confirmationMismatch')
+  else if (confirmationMismatch(values)) errors.confirmation = t('settings.errors.confirmationMismatch')
   return errors
 }
 

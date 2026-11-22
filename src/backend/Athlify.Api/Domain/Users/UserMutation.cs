@@ -74,11 +74,10 @@ public static partial class UserMutation
         if (change is not null)
         {
             user.PasswordHash = hashService.HashPassword(change.NewPassword);
-            var ip = httpContextAccessor.HttpContext is { } http ? cookieService.GetIpAddress(http) : "unknown";
-
             // Marked here, saved below: the new hash and the revocation commit together or not at all.
             await tokenService.RevokeAllForUserAsync(
-                userId, ip, RefreshToken.RevokeReason.PasswordChanged, cancellationToken);
+                userId, cookieService.GetClientIp(httpContextAccessor), RefreshToken.RevokeReason.PasswordChanged,
+                cancellationToken);
         }
 
         await db.SaveChangesAsync(cancellationToken);

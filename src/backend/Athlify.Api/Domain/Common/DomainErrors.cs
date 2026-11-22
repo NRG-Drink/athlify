@@ -6,19 +6,34 @@ public static class DomainErrors
     public const string ValidationCode = "VALIDATION_ERROR";
     public const string NotAuthenticatedCode = "NOT_AUTHENTICATED";
     public const string CurrentPasswordIncorrectCode = "CURRENT_PASSWORD_INCORRECT";
+    public const string ForbiddenCode = "FORBIDDEN";
+    public const string UsernameTakenCode = "USERNAME_TAKEN";
+    public const string LastAdminCode = "LAST_ADMIN";
+    public const string CannotChangeOwnRoleCode = "CANNOT_CHANGE_OWN_ROLE";
 
     public static GraphQLException Validation(string message) =>
         new(ErrorBuilder.New().SetMessage(message).SetCode(ValidationCode).Build());
 
     public static GraphQLException CurrentPasswordIncorrect() =>
-        new(ErrorBuilder.New()
-            .SetMessage("The current password is incorrect.")
-            .SetCode(CurrentPasswordIncorrectCode)
-            .SetExtension("field", "currentPassword")
-            .Build());
+        WithField("The current password is incorrect.", CurrentPasswordIncorrectCode, "currentPassword");
+
+    public static GraphQLException Forbidden() =>
+        new(ErrorBuilder.New().SetMessage("Only administrators may do this.").SetCode(ForbiddenCode).Build());
+
+    public static GraphQLException UsernameTaken() =>
+        WithField("This username is already taken.", UsernameTakenCode, "username");
+
+    public static GraphQLException LastAdmin() =>
+        WithField("At least one administrator must remain.", LastAdminCode, "role");
+
+    public static GraphQLException CannotChangeOwnRole() =>
+        WithField("You cannot change your own role.", CannotChangeOwnRoleCode, "role");
 
     public static GraphQLException NotAuthenticated() =>
         new(ErrorBuilder.New().SetMessage("No user is signed in.").SetCode(NotAuthenticatedCode).Build());
+
+    private static GraphQLException WithField(string message, string code, string field) =>
+        new(ErrorBuilder.New().SetMessage(message).SetCode(code).SetExtension("field", field).Build());
 }
 
 /// <summary>Collects validation messages so that a client sees every problem of an input at once.</summary>

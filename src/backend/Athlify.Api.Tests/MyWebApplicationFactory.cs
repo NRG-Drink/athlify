@@ -3,6 +3,7 @@ using Athlify.Api.Domain.Users;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -83,7 +84,10 @@ public class MyWebApplicationFactory : TestWebApplicationFactory<Program>
         }
 
         var databaseName = $"athlify-tests-{Guid.NewGuid()}";
-        services.AddDbContext<AthlifyDbContext>(options => options.UseInMemoryDatabase(databaseName));
+        // InMemory ignores transactions; the serializable isolation of the role change is verified on PostgreSQL only.
+        services.AddDbContext<AthlifyDbContext>(options => options
+            .UseInMemoryDatabase(databaseName)
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning)));
     }
 }
 

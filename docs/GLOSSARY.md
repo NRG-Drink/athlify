@@ -224,6 +224,13 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 
 **UI state** — The loading, empty, error or populated state of a view.
 
+**User management** — The Administrator-only functions to list, create and
+  edit user accounts (first name, last name, language, role) and to set a new
+  password for a user, through the `users`, `createUser`, `updateUser` and
+  `resetUserPassword` GraphQL operations. It shows accounts only, never a
+  user's personal records. The username cannot be changed after creation.
+  See [`security.md`](concept/security.md).
+
 **updateMe** — The self-service GraphQL mutation with which a signed-in user
   changes their own first name, last name, language and password. It has no
   user id, role or username input. A password change needs the current

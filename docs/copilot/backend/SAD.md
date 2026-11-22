@@ -100,6 +100,18 @@ src/backend/
   username. A password change verifies the current password
   (`CURRENT_PASSWORD_INCORRECT`) and revokes all refresh tokens of the user in
   the same `SaveChanges`.
+- User management (`Domain/Users/UserAdminQuery.cs`, `UserAdminMutation.cs`,
+  `UserAdminRules.cs`) offers `users`, `createUser`, `updateUser` and
+  `resetUserPassword` to Administrators
+  ([ADR-013](adr/ADR-013-admin-user-management.md)). `AdminUsers.All` is the
+  single place that ignores the `Owner` filter, for `User` only;
+  `AdminUsers.RequireAdminAsync` reads the caller's role from the database and
+  rejects others with `FORBIDDEN`. The username cannot be changed after
+  creation. Admin-set passwords need at least 8 characters. Rules: an
+  Administrator cannot change their own role (`CANNOT_CHANGE_OWN_ROLE`), the
+  last Administrator cannot be demoted (`LAST_ADMIN`), a duplicate username is
+  `USERNAME_TAKEN`. A role change revokes the target's refresh tokens
+  (`RoleChanged`), a password reset does so too (`PasswordChanged`).
 - Validation rejects invalid input with `VALIDATION_ERROR`, with the input
   field in `extensions.field` where one applies; a missing user
   gives `NOT_AUTHENTICATED`. Every rule is checked in application code; the

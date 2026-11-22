@@ -15,6 +15,7 @@ considered before creating a backend-specific ADR.
 | ADR | Title | Status |
 |---|---|---|
 | [ADR-011](ADR-011-ef-core-migrations.md) | EF Core migrations for the schema; endpoint tests on EF Core InMemory | Proposed |
+| [ADR-013](ADR-013-admin-user-management.md) | Admin user management bypasses the Owner filter for `User` only and checks the role in the database | Proposed |
 
 The API style is a shared decision; see
 [shared ADR-001](../../adr/ADR-001-graphql-api-contract.md). Ownership
