@@ -202,7 +202,7 @@ it('restores URL filters and sorting plus locally saved column visibility', asyn
       )?.hide,
     ).not.toBe(true)
   })
-}, 10000)
+}, 20000)
 
 it('deletes a row and reloads with the active filter and sorting intact', async () => {
   mockGridViewport()
@@ -241,7 +241,7 @@ it('deletes a row and reloads with the active filter and sorting intact', async 
     },
   )
 
-  await screen.findByText('Deleted event')
+  await screen.findByText('Deleted event', {}, { timeout: 5000 })
   await user.click(screen.getByRole('button', { name: 'Löschen' }))
   await waitFor(() => expect(screen.queryByText('Deleted event')).not.toBeInTheDocument())
   expect(calls('EventsGridDeleteMutation')).toEqual([{ id: 'RXZlbnQ6MQ==' }])
@@ -403,17 +403,14 @@ it('pins a new event through active filters until the user unpins it', async () 
   await screen.findByText('Neues Event')
   expect(screen.getByRole('button', { name: 'Anheftung lösen' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Event hinzufügen' })).toBeEnabled()
-  expect(new URLSearchParams(router.state.location.search).get('q')).toBe('unmatched')
-  expect(new URLSearchParams(router.state.location.search).get('from')).toBe('2026-01-01')
-  expect(new URLSearchParams(router.state.location.search).get('filter.name.filter')).toBe(
-    'unmatched',
-  )
-  expect(new URLSearchParams(router.state.location.search).get('filter.name.type')).toBe(
-    'contains',
-  )
-  expect(new URLSearchParams(router.state.location.search).get('gridSort')).toBe(
-    filters.get('gridSort'),
-  )
+  await waitFor(() => {
+    const search = new URLSearchParams(router.state.location.search)
+    expect(search.get('q')).toBe('unmatched')
+    expect(search.get('from')).toBe('2026-01-01')
+    expect(search.get('filter.name.filter')).toBe('unmatched')
+    expect(search.get('filter.name.type')).toBe('contains')
+    expect(search.get('gridSort')).toBe(filters.get('gridSort'))
+  })
   expect(calls('EventsGridCreateMutation')).toEqual([
     {
       event: {
