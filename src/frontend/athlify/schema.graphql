@@ -189,6 +189,7 @@ type Mutation {
   updateUser(id: ID!, input: UpdateUserInput!): User! @cost(weight: "10")
   resetUserPassword(id: ID!, input: ResetUserPasswordInput!): User!
     @cost(weight: "10")
+  deleteUser(id: ID!): ID! @cost(weight: "10")
   createMaintenanceCycle(maintenanceCycle: MaintenanceCycleInput!): MaintenanceCycle!
     @cost(weight: "10")
   updateMaintenanceCycle(id: ID!, maintenanceCycle: MaintenanceCycleInput!): MaintenanceCycle

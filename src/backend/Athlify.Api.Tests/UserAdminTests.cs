@@ -1,7 +1,11 @@
 using Athlify.Api.Database;
+using Athlify.Api.Domain.Activities;
 using Athlify.Api.Domain.Auth;
+using Athlify.Api.Domain.Body;
 using Athlify.Api.Domain.Common;
+using Athlify.Api.Domain.Tags;
 using Athlify.Api.Domain.Users;
+using Athlify.Api.Domain.Vehicles;
 using HotChocolate;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -174,6 +178,33 @@ public class UserAdminTests : WebApiTestBase
         await Assert.That(await CountUsersAsync("mia")).IsEqualTo(0);
     }
 
+    [Test]
+    public async Task CreateUserNamesTheTooShortRule()
+    {
+        var admin = await CreateUserClientAsync(Admin, UserRole.Admin);
+
+        var root = await PostAsync(admin, CreateUser, new { input = NewUser("mia", "short") });
+
+        await AssertRuleAsync(root, "password", PasswordPolicy.TooShortRule);
+    }
+
+    [Test]
+    public async Task CreateUserNamesTheTooLongRule()
+    {
+        var admin = await CreateUserClientAsync(Admin, UserRole.Admin);
+
+        var root = await PostAsync(admin, CreateUser, new { input = NewUser("mia", new string('x', PasswordPolicy.MaxLength + 1)) });
+
+        await AssertRuleAsync(root, "password", PasswordPolicy.TooLongRule);
+    }
+
+    private static async Task AssertRuleAsync(JsonElement root, string field, string rule)
+    {
+        var extensions = root.GetProperty("errors").EnumerateArray().Single().GetProperty("extensions");
+        await Assert.That(extensions.GetProperty("field").GetString()).IsEqualTo(field);
+        await Assert.That(extensions.GetProperty("rule").GetString()).IsEqualTo(rule);
+    }
+
     // ---- update ----
 
     [Test]
@@ -302,7 +333,7 @@ public class UserAdminTests : WebApiTestBase
         await using (var scope = Factory.Services.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
-            db.Users.Remove(await db.Users.IgnoreQueryFilters([AthlifyDbContext.OwnerFilter]).SingleAsync(u => u.Username == Luca));
+            db.Users.Remove(await AdminUsers.All(db).SingleAsync(u => u.Username == Luca));
             await db.SaveChangesAsync();
         }
 
@@ -353,6 +384,96 @@ public class UserAdminTests : WebApiTestBase
         await AssertValidationErrorAsync(root, "newPassword");
         var stored = await GetUserAsync(Luca);
         await Assert.That(Hasher.VerifyPassword("old-secret", stored.PasswordHash)).IsTrue();
+    }
+
+    // ---- delete ----
+
+    private const string DeleteUser = "mutation($id: ID!) { deleteUser(id: $id) }";
+
+    [Test]
+    public async Task DeleteUserRemovesTheAccountAndAllItsData()
+    {
+        var admin = await CreateUserClientAsync(Admin, UserRole.Admin);
+        await CreateUserClientAsync(Luca);
+        await CreateUserClientAsync("mia@example.com");
+        var lucaId = (await GetUserAsync(Luca)).Id;
+        var miaId = (await GetUserAsync("mia@example.com")).Id;
+        await SeedDataAsync(lucaId);
+        await SeedDataAsync(miaId);
+        await AddRefreshTokensAsync(lucaId, 2);
+
+        var id = await GlobalIdAsync(admin, Luca);
+        var deleted = (await DataAsync(admin, DeleteUser, new { id })).GetProperty("deleteUser").GetString();
+
+        await Assert.That(deleted).IsEqualTo(id);
+        await Assert.That(await CountUsersAsync(Luca)).IsEqualTo(0);
+        await Assert.That(await CountOwnedRecordsAsync(lucaId)).IsEqualTo(0);
+        await Assert.That(await GetRefreshTokensAsync(lucaId)).IsEmpty();
+        // Another user's data is untouched.
+        await Assert.That(await CountUsersAsync("mia@example.com")).IsEqualTo(1);
+        await Assert.That(await CountOwnedRecordsAsync(miaId)).IsGreaterThan(0);
+    }
+
+    [Test]
+    public async Task DeleteUserAlsoRemovesSoftDeletedActivities()
+    {
+        var admin = await CreateUserClientAsync(Admin, UserRole.Admin);
+        await CreateUserClientAsync(Luca);
+        var lucaId = (await GetUserAsync(Luca)).Id;
+        await SeedDataAsync(lucaId, softDeleted: true);
+
+        await DataAsync(admin, DeleteUser, new { id = await GlobalIdAsync(admin, Luca) });
+
+        await Assert.That(await CountOwnedRecordsAsync(lucaId)).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task DeleteUserRejectsTheAdministratorsOwnAccount()
+    {
+        var admin = await CreateUserClientAsync(Admin, UserRole.Admin);
+
+        var root = await PostAsync(admin, DeleteUser, new { id = await GlobalIdAsync(admin, Admin) });
+
+        await Assert.That(ErrorCodes(root)).Contains(DomainErrors.CannotDeleteSelfCode);
+        await Assert.That(await CountUsersAsync(Admin)).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task DeleteUserOfUnknownIdFailsLikeNotFound()
+    {
+        var admin = await CreateUserClientAsync(Admin, UserRole.Admin);
+        await CreateUserClientAsync(Luca);
+        var id = await GlobalIdAsync(admin, Luca);
+        await DataAsync(admin, DeleteUser, new { id });
+
+        var root = await PostAsync(admin, DeleteUser, new { id });
+
+        await Assert.That(ErrorCodes(root)).Contains(DomainErrors.ValidationCode);
+    }
+
+    [Test]
+    public async Task RegularUserCannotDeleteUsers()
+    {
+        var admin = await CreateUserClientAsync(Admin, UserRole.Admin);
+        var luca = await CreateUserClientAsync(Luca);
+        var adminId = await GlobalIdAsync(admin, Admin);
+
+        var root = await PostAsync(luca, DeleteUser, new { id = adminId });
+
+        await Assert.That(ErrorCodes(root)).Contains(DomainErrors.ForbiddenCode);
+        await Assert.That(await CountUsersAsync(Admin)).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task DeletedUserCannotUseTheApiAnymore()
+    {
+        var admin = await CreateUserClientAsync(Admin, UserRole.Admin);
+        var luca = await CreateUserClientAsync(Luca);
+        await DataAsync(admin, DeleteUser, new { id = await GlobalIdAsync(admin, Luca) });
+
+        var root = await PostAsync(luca, "query { me { id } }");
+
+        await Assert.That(root.TryGetProperty("errors", out _)).IsTrue();
     }
 
     // ---- authorization ----
@@ -437,70 +558,41 @@ public class UserAdminTests : WebApiTestBase
 
     // ---- helpers ----
 
-    private static async Task AssertValidationErrorAsync(JsonElement root, string field)
-    {
-        await Assert.That(ErrorCodes(root)).Contains(DomainErrors.ValidationCode);
-        var fields = root.GetProperty("errors").EnumerateArray()
-            .Select(e => e.GetProperty("extensions").TryGetProperty("field", out var f) ? f.GetString() : null);
-        await Assert.That(fields).Contains(field);
-    }
-
-    /// <summary>The Relay global id of a user, read through the admin list like the frontend does.</summary>
-    private static async Task<string> GlobalIdAsync(HttpClient admin, string username)
-    {
-        var users = (await DataAsync(admin, UsersQuery)).GetProperty("users").EnumerateArray();
-        return users.Single(u => u.GetProperty("username").GetString() == username).GetProperty("id").GetString()!;
-    }
-
-    private async Task<User> GetUserAsync(string username)
-    {
-        await using var scope = Factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
-        return await db.Users.IgnoreQueryFilters([AthlifyDbContext.OwnerFilter]).AsNoTracking()
-            .SingleAsync(u => u.Username == username);
-    }
-
     private async Task<int> CountUsersAsync(string username)
     {
         await using var scope = Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
-        return await db.Users.IgnoreQueryFilters([AthlifyDbContext.OwnerFilter]).CountAsync(u => u.Username == username);
+        return await AdminUsers.All(db).CountAsync(u => u.Username == username);
     }
 
-    private async Task<int> SetPasswordAsync(string username, string password)
+    private async Task SeedDataAsync(int userId, bool softDeleted = false)
     {
         await using var scope = Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
-        var user = await db.Users.IgnoreQueryFilters([AthlifyDbContext.OwnerFilter]).SingleAsync(u => u.Username == username);
-        user.PasswordHash = Hasher.HashPassword(password);
-        await db.SaveChangesAsync();
-        return user.Id;
-    }
-
-    private async Task AddRefreshTokensAsync(int userId, int count)
-    {
-        await using var scope = Factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
-        for (var i = 0; i < count; i++)
+        db.BodyStats.Add(new BodyStats { UserId = userId, Date = DateTime.UtcNow, Weight = 70 });
+        db.Tags.Add(new Tag { UserId = userId, Name = "Tour", NormalizedName = "TOUR" });
+        db.Vehicles.Add(new Vehicle { UserId = userId, Brand = "Canyon", Model = "Endurace" });
+        db.Activities.Add(new Activity
         {
-            db.RefreshTokens.Add(new RefreshToken
-            {
-                UserId = userId,
-                TokenHash = Guid.NewGuid().ToString("N"),
-                FamilyId = Guid.NewGuid(),
-                Created = DateTime.UtcNow,
-                CreatedByIp = "127.0.0.1",
-                ExpiresAt = DateTime.UtcNow.AddDays(7),
-            });
-        }
-
+            UserId = userId,
+            Date = DateTime.UtcNow,
+            Type = ActivityType.Road,
+            Time = 3600,
+            Distance = 30,
+            DeletedAt = softDeleted ? DateTime.UtcNow : null,
+        });
+        db.SeedMarkers.Add(new SeedMarker { UserId = userId, Key = "demo" });
         await db.SaveChangesAsync();
     }
 
-    private async Task<List<RefreshToken>> GetRefreshTokensAsync(int userId)
+    private async Task<int> CountOwnedRecordsAsync(int userId)
     {
         await using var scope = Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
-        return await db.RefreshTokens.IgnoreQueryFilters().AsNoTracking().Where(t => t.UserId == userId).ToListAsync();
+        return await db.BodyStats.IgnoreQueryFilters().CountAsync(e => e.UserId == userId)
+            + await db.Tags.IgnoreQueryFilters().CountAsync(e => e.UserId == userId)
+            + await db.Vehicles.IgnoreQueryFilters().CountAsync(e => e.UserId == userId)
+            + await db.Activities.IgnoreQueryFilters().CountAsync(e => e.UserId == userId)
+            + await db.SeedMarkers.IgnoreQueryFilters().CountAsync(e => e.UserId == userId);
     }
 }

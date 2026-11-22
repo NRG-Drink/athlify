@@ -60,7 +60,16 @@ last administrator cannot be demoted.
 
 - The administrator who sets a password knows it (documented in the security
   concept). Forcing a change at first login is a possible follow-up.
-- The last-administrator check runs in a serializable transaction on PostgreSQL
-  and retries on serialization failure (SQLSTATE 40001). The tests run on
-  InMemory ([ADR-011](ADR-011-ef-core-migrations.md)), which ignores
-  transactions, so the isolation itself is not covered by the test suite.
+- The last-administrator checks (role change and deletion) run in a serializable
+  transaction on PostgreSQL
+  inside the app's retrying execution strategy, and retries on serialization
+  failure (SQLSTATE 40001). The InMemory tests
+  ([ADR-011](ADR-011-ef-core-migrations.md)) ignore transactions and the
+  strategy, so `UserAdminPostgresTests` cover them against a real server
+  (opt-in through `ATHLIFY_TEST_POSTGRES`; see the backend learnings).
+- Deleting a user removes their data explicitly through every `IOwned` entity
+  instead of relying on the foreign-key cascade, because the InMemory tests
+  have no foreign-key actions. A new owned entity is covered automatically;
+  data that is not `IOwned` (like the seed markers) must be added to
+  `UserDataDeletion`. The deletion is permanent; there is no soft delete or
+  undo.

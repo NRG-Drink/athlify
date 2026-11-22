@@ -10,6 +10,7 @@ public static class DomainErrors
     public const string UsernameTakenCode = "USERNAME_TAKEN";
     public const string LastAdminCode = "LAST_ADMIN";
     public const string CannotChangeOwnRoleCode = "CANNOT_CHANGE_OWN_ROLE";
+    public const string CannotDeleteSelfCode = "CANNOT_DELETE_SELF";
 
     public static GraphQLException Validation(string message) =>
         new(ErrorBuilder.New().SetMessage(message).SetCode(ValidationCode).Build());
@@ -29,6 +30,12 @@ public static class DomainErrors
     public static GraphQLException CannotChangeOwnRole() =>
         WithField("You cannot change your own role.", CannotChangeOwnRoleCode, "role");
 
+    public static GraphQLException CannotDeleteSelf() =>
+        new(ErrorBuilder.New()
+            .SetMessage("You cannot delete your own account.")
+            .SetCode(CannotDeleteSelfCode)
+            .Build());
+
     public static GraphQLException NotAuthenticated() =>
         new(ErrorBuilder.New().SetMessage("No user is signed in.").SetCode(NotAuthenticatedCode).Build());
 
@@ -45,12 +52,21 @@ public sealed class ValidationErrors
         _errors.Add(ErrorBuilder.New().SetMessage(message).SetCode(DomainErrors.ValidationCode).Build());
 
     /// <summary>Adds an error that names the input field it belongs to, in <c>extensions.field</c>.</summary>
-    public void Add(string message, string field) =>
-        _errors.Add(ErrorBuilder.New()
+    public void Add(string message, string field) => Add(message, field, rule: null);
+
+    /// <summary>
+    /// Adds an error with the input field and the rule that failed, in <c>extensions.rule</c>, so a client can
+    /// show a matching message.
+    /// </summary>
+    public void Add(string message, string field, string? rule)
+    {
+        var error = ErrorBuilder.New()
             .SetMessage(message)
             .SetCode(DomainErrors.ValidationCode)
-            .SetExtension("field", field)
-            .Build());
+            .SetExtension("field", field);
+        if (rule is not null) error.SetExtension("rule", rule);
+        _errors.Add(error.Build());
+    }
 
     public void AddIf(bool condition, string message)
     {

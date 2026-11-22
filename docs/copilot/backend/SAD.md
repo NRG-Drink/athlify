@@ -101,17 +101,27 @@ src/backend/
   (`CURRENT_PASSWORD_INCORRECT`) and revokes all refresh tokens of the user in
   the same `SaveChanges`.
 - User management (`Domain/Users/UserAdminQuery.cs`, `UserAdminMutation.cs`,
-  `UserAdminRules.cs`) offers `users`, `createUser`, `updateUser` and
-  `resetUserPassword` to Administrators
+  `UserAdminRules.cs`, `UserDataDeletion.cs`) offers `users`, `createUser`,
+  `updateUser`, `resetUserPassword` and `deleteUser` to Administrators
   ([ADR-013](adr/ADR-013-admin-user-management.md)). `AdminUsers.All` is the
   single place that ignores the `Owner` filter, for `User` only;
   `AdminUsers.RequireAdminAsync` reads the caller's role from the database and
   rejects others with `FORBIDDEN`. The username cannot be changed after
-  creation. Admin-set passwords need at least 8 characters. Rules: an
+  creation. Every new password, set by an Administrator or changed through `updateMe`, is 8 to 200 characters long (`Domain/Auth/PasswordPolicy.cs`). Rules: an
   Administrator cannot change their own role (`CANNOT_CHANGE_OWN_ROLE`), the
   last Administrator cannot be demoted (`LAST_ADMIN`), a duplicate username is
   `USERNAME_TAKEN`. A role change revokes the target's refresh tokens
   (`RoleChanged`), a password reset does so too (`PasswordChanged`).
+  `deleteUser` removes the user with everything they own in one `SaveChanges`:
+  `UserDataDeletion` finds every `IOwned` entity through the model and removes
+  its rows with all query filters off, so soft-deleted activities go too,
+  plus the seed markers. PostgreSQL would cascade through the foreign keys,
+  but the InMemory tests have no foreign-key actions. Nobody can delete their
+  own account (`CANNOT_DELETE_SELF`), which also keeps the last Administrator. Role
+  changes and deletions run through one serializable-transaction helper
+  (`InSerializableTransactionAsync`) that re-reads the caller's role on every
+  attempt, so two Administrators demoting or deleting each other at the same
+  moment leave exactly one.
 - Validation rejects invalid input with `VALIDATION_ERROR`, with the input
   field in `extensions.field` where one applies; a missing user
   gives `NOT_AUTHENTICATED`. Every rule is checked in application code; the

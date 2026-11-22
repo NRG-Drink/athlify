@@ -1,3 +1,4 @@
+using Athlify.Api.Domain.Common;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -35,6 +36,22 @@ public static class GraphQl
                     : "")
                 .ToList()
             : [];
+
+    /// <summary>The Relay global id of a user, read through the admin list like the frontend does.</summary>
+    public static async Task<string> GlobalIdAsync(HttpClient admin, string username)
+    {
+        var users = (await DataAsync(admin, "query { users { id username } }")).GetProperty("users").EnumerateArray();
+        return users.Single(u => u.GetProperty("username").GetString() == username).GetProperty("id").GetString()!;
+    }
+
+    /// <summary>Asserts a <c>VALIDATION_ERROR</c> that names the given input field.</summary>
+    public static async Task AssertValidationErrorAsync(JsonElement root, string field)
+    {
+        await Assert.That(ErrorCodes(root)).Contains(DomainErrors.ValidationCode);
+        var fields = root.GetProperty("errors").EnumerateArray()
+            .Select(e => e.GetProperty("extensions").TryGetProperty("field", out var f) ? f.GetString() : null);
+        await Assert.That(fields).Contains(field);
+    }
 
     /// <summary>The nodes of a connection field, e.g. <c>Nodes(data, "activities")</c>.</summary>
     public static IReadOnlyList<JsonElement> Nodes(JsonElement data, string field) =>

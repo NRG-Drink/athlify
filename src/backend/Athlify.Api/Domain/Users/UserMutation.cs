@@ -26,9 +26,9 @@ public static class UpdateMeValidation
         var errors = new ValidationErrors();
         if (input.FirstName is not null) errors.Text(input.FirstName, "firstName", MaxNameLength, required: true);
         if (input.LastName is not null) errors.Text(input.LastName, "lastName", MaxNameLength, required: true);
-        if (input.PasswordChange is { } change && string.IsNullOrWhiteSpace(change.NewPassword))
+        if (input.PasswordChange is { } change)
         {
-            errors.Add("newPassword is required.", "newPassword");
+            PasswordPolicy.Check(errors, change.NewPassword, "newPassword");
         }
 
         errors.ThrowIfAny();

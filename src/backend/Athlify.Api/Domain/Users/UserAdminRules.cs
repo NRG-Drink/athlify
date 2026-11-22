@@ -37,6 +37,18 @@ public static class AdminUsers
 public static class UserAdminRules
 {
     /// <summary>
+    /// Checks a deletion. Nobody deletes their own account, so the signed-in administrator always remains
+    /// and the last administrator cannot be deleted either.
+    /// </summary>
+    public static void CheckDelete(int callerId, int targetId)
+    {
+        if (targetId == callerId)
+        {
+            throw DomainErrors.CannotDeleteSelf();
+        }
+    }
+
+    /// <summary>
     /// Checks a role change. An administrator cannot change their own role, and the last administrator cannot be
     /// demoted. The caller reads the count and writes the change in one serializable transaction, so two
     /// administrators demoting each other at the same moment cannot both pass.

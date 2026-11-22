@@ -27,6 +27,10 @@ development user, so the API must not be exposed beyond a local machine.
   their own role, and the last administrator cannot be demoted. A role change
   or password reset revokes the user's refresh tokens. User management shows
   accounts only and never grants access to another user's personal records.
+- Administrators can delete a user. This permanently removes the account and
+  all of its data (activities including deleted ones, bicycles, gadgets, tags,
+  Events, Body-Stats, Strava connection and sessions) and cannot be undone.
+  Nobody can delete their own account.
 
 ## Protection of personal data
 
