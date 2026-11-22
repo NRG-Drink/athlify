@@ -14,8 +14,7 @@
       "openMenu": "Menü öffnen",
       "closeMenu": "Menü schliessen",
       "userMenu": "Benutzermenü",
-      "colorMode": "Farbmodus wechseln",
-      "language": "Sprache"
+      "colorMode": "Farbmodus wechseln"
     },
     "page": {
       "loading": "Wird geladen …",
@@ -95,8 +94,34 @@
       "dashboard": "Hier siehst du bald Distanz, Zeit, Höhenmeter und Trainingsbelastung auf einen Blick.",
       "activities": "Hier verwaltest du bald alle Aktivitäten, aus Strava importiert oder manuell erfasst.",
       "garage": "Hier erfasst du bald deine Velos und Gadgets.",
-      "events": "Hier dokumentierst du bald Stürze, Reparaturen, Pausen und andere Ereignisse.",
-      "settings": "Hier verwaltest du bald dein Konto und die Verbindung zu Strava."
+      "events": "Hier dokumentierst du bald Stürze, Reparaturen, Pausen und andere Ereignisse."
+    },
+    "settings": {
+      "loadFailed": "Die Einstellungen konnten nicht geladen werden.",
+      "profile": {
+        "title": "Profil",
+        "username": "Benutzername",
+        "firstName": "Vorname",
+        "lastName": "Nachname",
+        "language": "Sprache",
+        "save": "Speichern",
+        "success": "Profil gespeichert."
+      },
+      "password": {
+        "title": "Passwort",
+        "current": "Aktuelles Passwort",
+        "new": "Neues Passwort",
+        "confirm": "Neues Passwort bestätigen",
+        "note": "Nach dem Ändern meldest du dich auf allen Geräten neu an.",
+        "submit": "Passwort ändern",
+        "success": "Passwort geändert. Bitte melde dich neu an."
+      },
+      "errors": {
+        "tooLong": "Maximal {{max}} Zeichen.",
+        "currentPasswordIncorrect": "Das aktuelle Passwort stimmt nicht.",
+        "confirmationMismatch": "Die Passwörter stimmen nicht überein.",
+        "saveFailed": "Speichern fehlgeschlagen. Bitte versuche es nochmals."
+      }
     },
     "activities": {
       "units": {

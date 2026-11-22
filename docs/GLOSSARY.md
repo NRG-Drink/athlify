@@ -8,6 +8,12 @@
 
 ## A — C
 
+**Account language** — The language stored on a user's account. Saving it on the
+  Settings page switches the interface at once, and it is applied at the start
+  of every session (after sign-in and after a reload). The language is chosen on the
+  Settings page only. See
+  [`CONCEPT.md`](concept/CONCEPT.md#38-settings-and-language).
+
 **Activity** — A single cycling session, entered manually or imported from
 Strava. See [`activity-management.md`](concept/activity-management.md).
 
@@ -127,10 +133,6 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
   missing value is shown as a dash, never as zero. On Body-Stats a tile also
   selects the measurement shown in the chart.
 
-**Language switcher** — The UI control in the User Menu that switches the
-  interface language between German and English. See
-  [ADR-003](copilot/frontend/adr/ADR-003-i18next-localization.md).
-
 ## M — R
 
 **Maintenance cycle** — A maintenance schedule of exactly one bicycle or
@@ -191,6 +193,11 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 **Source** — The origin of an activity, especially Strava or manual entry. See
   [`activity-management.md`](concept/activity-management.md).
 
+**Settings page** — The `/settings` view where the signed-in user edits their
+  own first name, last name, account language and password in two independent
+  forms. A password change signs the user out. See
+  [`SAD.md`](copilot/frontend/SAD.md#app-layout-and-routes).
+
 **Strava connection** — The link between a user's account and Strava,
   including the connection's tokens and the last synchronization time, status
   and error. A user has at most one. See [`data-model.md`](concept/data-model.md).
@@ -226,8 +233,7 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 **User** — An authenticated account that can access and manage its own
   personal cycling data. See [`CONCEPT.md`](concept/CONCEPT.md).
 
-**User Menu** — The header menu for Settings, the language switcher and the
-  color mode. It will hold logout once authentication exists. See
+**User Menu** — The header menu for Settings, the color mode and logout. See
   [`SAD.md`](copilot/frontend/SAD.md#app-layout-and-routes).
 
 **Wind** — The wind conditions of an activity: calm, light, moderate, strong

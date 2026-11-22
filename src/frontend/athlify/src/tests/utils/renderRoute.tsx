@@ -5,7 +5,7 @@ import { AuthContext, type AuthContextValue } from '../../auth/context'
 import { ChakraProviderAthlify } from '../../components/ui/ChakraProviderAthlify'
 import { routes as appRoutes } from '../../routes'
 
-const defaultAuth: AuthContextValue = {
+export const defaultAuth: AuthContextValue = {
   isLoggedIn: true,
   login: async () => {},
   logout: async () => {},

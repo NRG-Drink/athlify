@@ -1,6 +1,7 @@
 import { ChakraProvider } from '@chakra-ui/react'
 import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import i18n from 'i18next'
 import { useEffect, useState } from 'react'
 import { useRelayEnvironment } from 'react-relay'
 import type { Environment } from 'relay-runtime'
@@ -37,6 +38,13 @@ function tokenResponse(
     }),
     { status: 200, headers: { 'Content-Type': 'application/json' } },
   )
+}
+
+function accountLanguageResponse(language: 'DE' | 'EN') {
+  return new Response(JSON.stringify({ data: { me: { id: 'user-1', language } } }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  })
 }
 
 function AuthProbe({
@@ -140,6 +148,38 @@ describe('AuthAndRelayProvider session', () => {
     })
   })
 
+  test('applies the language of the account when the session starts', async () => {
+    tokenStore.clear()
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(tokenResponse())
+      .mockResolvedValueOnce(accountLanguageResponse('EN'))
+
+    render(
+      <AuthAndRelayProvider>
+        <AuthProbe />
+      </AuthAndRelayProvider>,
+    )
+
+    await waitFor(() => expect(i18n.resolvedLanguage).toBe('en'))
+  })
+
+  test('keeps the current language when the account language cannot be loaded', async () => {
+    tokenStore.clear()
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(tokenResponse())
+      .mockRejectedValueOnce(new Error('offline'))
+
+    render(
+      <AuthAndRelayProvider>
+        <AuthProbe />
+      </AuthAndRelayProvider>,
+    )
+
+    expect(await screen.findByTestId('session')).toHaveTextContent('signed in: rider')
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(2))
+    expect(i18n.resolvedLanguage).toBe('de')
+  })
+
   test('logs out, clears auth state and replaces the Relay cache', async () => {
     tokenStore.clear()
     const relayEnvironments: Environment[] = []
@@ -149,6 +189,7 @@ describe('AuthAndRelayProvider session', () => {
     const fetch = vi
       .spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(tokenResponse())
+      .mockResolvedValueOnce(accountLanguageResponse('DE'))
       .mockResolvedValueOnce(new Response(null, { status: 200 }))
     const user = userEvent.setup()
 
@@ -159,6 +200,7 @@ describe('AuthAndRelayProvider session', () => {
     )
 
     expect(await screen.findByTestId('session')).toHaveTextContent('signed in: rider')
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2))
     const previousEnvironment = relayEnvironments[0]
     if (!previousEnvironment) throw new Error('Relay environment was not provided.')
     previousEnvironment.commitUpdate((store) => {
@@ -172,7 +214,7 @@ describe('AuthAndRelayProvider session', () => {
     expect(tokenStore.get()).toBeNull()
     expect(tokenStore.getRoles()).toEqual([])
     expect(tokenStore.getUserName()).toBeNull()
-    expect(fetch).toHaveBeenNthCalledWith(2, authUrl('logout'), {
+    expect(fetch).toHaveBeenNthCalledWith(3, authUrl('logout'), {
       method: 'POST',
       credentials: 'include',
     })

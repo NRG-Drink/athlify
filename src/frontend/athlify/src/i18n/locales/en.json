@@ -14,8 +14,7 @@
       "openMenu": "Open menu",
       "closeMenu": "Close menu",
       "userMenu": "User menu",
-      "colorMode": "Toggle color mode",
-      "language": "Language"
+      "colorMode": "Toggle color mode"
     },
     "page": {
       "loading": "Loading …",
@@ -95,8 +94,34 @@
       "dashboard": "Soon you will see distance, time, elevation and training load at a glance.",
       "activities": "Soon you will manage all activities here, imported from Strava or entered manually.",
       "garage": "Soon you will record your bicycles and gadgets here.",
-      "events": "Soon you will document crashes, repairs, breaks and other events here.",
-      "settings": "Soon you will manage your account and the Strava connection here."
+      "events": "Soon you will document crashes, repairs, breaks and other events here."
+    },
+    "settings": {
+      "loadFailed": "The settings could not be loaded.",
+      "profile": {
+        "title": "Profile",
+        "username": "Username",
+        "firstName": "First name",
+        "lastName": "Last name",
+        "language": "Language",
+        "save": "Save",
+        "success": "Profile saved."
+      },
+      "password": {
+        "title": "Password",
+        "current": "Current password",
+        "new": "New password",
+        "confirm": "Confirm new password",
+        "note": "After changing it, you sign in again on all devices.",
+        "submit": "Change password",
+        "success": "Password changed. Please sign in again."
+      },
+      "errors": {
+        "tooLong": "At most {{max}} characters.",
+        "currentPasswordIncorrect": "The current password is incorrect.",
+        "confirmationMismatch": "The passwords do not match.",
+        "saveFailed": "Saving failed. Please try again."
+      }
     },
     "activities": {
       "units": {

@@ -20,7 +20,6 @@ describe('routes', () => {
     [paths.dashboard, 'Dashboard', /Distanz, Zeit, Höhenmeter/],
     [paths.garage, 'Garage', /deine Velos und Gadgets/],
     [paths.events, 'Events', /Stürze, Reparaturen/],
-    [paths.settings, 'Einstellungen', /dein Konto/],
   ])('%s renders a coming-soon placeholder titled %s', async (path, title, areaMessage) => {
     renderRoute(path)
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument()

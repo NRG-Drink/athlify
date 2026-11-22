@@ -5,7 +5,6 @@ import { LuCircleUser, LuLogOut, LuSettings } from 'react-icons/lu'
 import { Link as RouterLink } from 'react-router-dom'
 import { useAuth } from '../auth/context'
 import DarkModeToggle from '../components/DarkModeToggle'
-import LanguageSwitcher from '../components/LanguageSwitcher'
 import { toaster } from '../components/ui/toaster'
 import { paths } from '../navigation/paths'
 
@@ -61,10 +60,6 @@ export function UserMenu() {
                   </RouterLink>
                 </Button>
                 <Separator my="1" />
-                <Flex align="center" justify="space-between" gap="3" px="3" py="1">
-                  <Text textStyle="sm">{t('layout.language')}</Text>
-                  <LanguageSwitcher />
-                </Flex>
                 <Flex align="center" justify="space-between" gap="3" px="3" py="1">
                   <Text textStyle="sm">{t('layout.colorMode')}</Text>
                   <DarkModeToggle />
