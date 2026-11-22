@@ -41,10 +41,17 @@ function tokenResponse(
 }
 
 function accountLanguageResponse(language: 'DE' | 'EN') {
-  return new Response(JSON.stringify({ data: { me: { id: 'user-1', language } } }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  })
+  return new Response(
+    JSON.stringify({
+      data: {
+        me: { id: 'user-1', username: 'rider', firstName: 'Ria', lastName: 'Rider', language },
+      },
+    }),
+    {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    },
+  )
 }
 
 function AuthProbe({
@@ -62,9 +69,7 @@ function AuthProbe({
 
   return (
     <>
-      <p data-testid="session">
-        {auth.isLoggedIn ? `signed in: ${auth.userName}` : 'signed out'}
-      </p>
+      <p data-testid="session">{auth.isLoggedIn ? `signed in: ${auth.userName}` : 'signed out'}</p>
       <p data-testid="role">{auth.hasRole('User') ? 'user role' : 'no user role'}</p>
       {loginError && <p role="alert">{loginError}</p>}
       <button
@@ -230,9 +235,7 @@ describe('AuthAndRelayProvider session', () => {
     const token = createAccessToken()
     const fetch = vi
       .spyOn(globalThis, 'fetch')
-      .mockResolvedValueOnce(
-        tokenResponse(token, new Date(Date.now() + 1000).toISOString()),
-      )
+      .mockResolvedValueOnce(tokenResponse(token, new Date(Date.now() + 1000).toISOString()))
       .mockResolvedValueOnce(new Response(null, { status: 503 }))
 
     render(
@@ -250,9 +253,11 @@ describe('AuthAndRelayProvider session', () => {
     })
 
     expect(screen.getByTestId('session')).toHaveTextContent('signed in: rider')
-    expect(await screen.findByText(
-      'Deine Sitzung konnte nicht aktualisiert werden. Melde dich erneut an, um den Zugriff wiederherzustellen.',
-    )).toBeInTheDocument()
+    expect(
+      await screen.findByText(
+        'Deine Sitzung konnte nicht aktualisiert werden. Melde dich erneut an, um den Zugriff wiederherzustellen.',
+      ),
+    ).toBeInTheDocument()
     expect(tokenStore.get()).toBe(token)
     expect(fetch).toHaveBeenCalledTimes(2)
   })

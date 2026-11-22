@@ -1,21 +1,15 @@
-import { Button, Field, Input, NativeSelect, Stack, Text } from '@chakra-ui/react'
-import { useRef, useState, type FormEvent } from 'react'
+import { Button, Field, Input, Stack, Text } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
-import {
-  API_LANGUAGES,
-  languageLabel,
-  toI18nLanguage,
-  type ApiLanguage,
-} from '../../i18n/languages'
+import { SelectField } from '../../components/SelectField'
+import { API_LANGUAGES, languageLabel, toI18nLanguage } from '../../i18n/languages'
 import { SettingsPanel } from './SettingsPanel'
 import {
   isProfileDirty,
   MAX_NAME_LENGTH,
   validateProfile,
-  type ProfileErrors,
   type ProfileValues,
 } from './profileValues'
-import { useFocusFirstInvalid } from './useFocusFirstInvalid'
+import { useSettingsForm } from './useSettingsForm'
 import { useUpdateMe } from './useUpdateMe'
 
 interface ProfileFormProps {
@@ -24,28 +18,29 @@ interface ProfileFormProps {
   saved: ProfileValues
 }
 
+const languageOptions = API_LANGUAGES.map((language) => ({
+  id: language,
+  label: languageLabel(toI18nLanguage(language)),
+}))
+
 export function ProfileForm({ username, saved }: ProfileFormProps) {
   const { t } = useTranslation()
   const { saveProfile, isSaving } = useUpdateMe()
-  const formRef = useRef<HTMLFormElement>(null)
-  const [values, setValues] = useState<ProfileValues>(saved)
-  const [errors, setErrors] = useState<ProfileErrors>({})
-  useFocusFirstInvalid(formRef, errors)
+  const { formRef, values, setValues, errors, setErrors, handleSubmit } = useSettingsForm(
+    saved,
+    (draft) => validateProfile(draft, t),
+  )
 
-  const submit = (event: FormEvent) => {
-    event.preventDefault()
-    const found = validateProfile(values, t)
-    setErrors(found)
-    if (Object.keys(found).length > 0) return
-    saveProfile(values, {
+  const submit = handleSubmit((draft) =>
+    saveProfile(draft, {
       onFieldErrors: (fieldErrors) =>
         setErrors({
           firstName: fieldErrors.firstName && t(fieldErrors.firstName),
           lastName: fieldErrors.lastName && t(fieldErrors.lastName),
         }),
       onSuccess: () => setErrors({}),
-    })
-  }
+    }),
+  )
 
   return (
     <SettingsPanel title={t('settings.profile.title')}>
@@ -81,24 +76,12 @@ export function ProfileForm({ username, saved }: ProfileFormProps) {
             <Field.ErrorText>{errors.lastName}</Field.ErrorText>
           </Field.Root>
 
-          <Field.Root>
-            <Field.Label>{t('settings.profile.language')}</Field.Label>
-            <NativeSelect.Root>
-              <NativeSelect.Field
-                value={values.language}
-                onChange={(event) =>
-                  setValues((v) => ({ ...v, language: event.target.value as ApiLanguage }))
-                }
-              >
-                {API_LANGUAGES.map((language) => (
-                  <option key={language} value={language}>
-                    {languageLabel(toI18nLanguage(language))}
-                  </option>
-                ))}
-              </NativeSelect.Field>
-              <NativeSelect.Indicator />
-            </NativeSelect.Root>
-          </Field.Root>
+          <SelectField
+            label={t('settings.profile.language')}
+            value={values.language}
+            onChange={(language) => language && setValues((v) => ({ ...v, language }))}
+            options={languageOptions}
+          />
 
           <Button
             type="submit"

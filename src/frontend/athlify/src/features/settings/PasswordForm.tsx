@@ -1,15 +1,12 @@
 import { Button, Field, Input, Stack, Text } from '@chakra-ui/react'
-import { useRef, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { SettingsPanel } from './SettingsPanel'
 import {
   confirmationMismatch,
   emptyPasswordValues,
   validatePassword,
-  type PasswordErrors,
-  type PasswordValues,
 } from './passwordValues'
-import { useFocusFirstInvalid } from './useFocusFirstInvalid'
+import { useSettingsForm } from './useSettingsForm'
 import { useUpdateMe } from './useUpdateMe'
 
 interface PasswordFieldProps {
@@ -38,10 +35,10 @@ function PasswordField({ label, value, onChange, autoComplete, error }: Password
 export function PasswordForm() {
   const { t } = useTranslation()
   const { changePassword, isSaving } = useUpdateMe()
-  const formRef = useRef<HTMLFormElement>(null)
-  const [values, setValues] = useState<PasswordValues>(emptyPasswordValues)
-  const [errors, setErrors] = useState<PasswordErrors>({})
-  useFocusFirstInvalid(formRef, errors)
+  const { formRef, values, setValues, errors, setErrors, handleSubmit } = useSettingsForm(
+    emptyPasswordValues,
+    (draft) => validatePassword(draft, t),
+  )
 
   // Checked while typing, in both password fields, so a typo shows up before the user submits.
   const mismatch = confirmationMismatch(values)
@@ -51,12 +48,8 @@ export function PasswordForm() {
     values.confirmation !== '' &&
     !mismatch
 
-  const submit = (event: FormEvent) => {
-    event.preventDefault()
-    const found = validatePassword(values, t)
-    setErrors(found)
-    if (Object.keys(found).length > 0) return
-    changePassword(values, {
+  const submit = handleSubmit((draft) =>
+    changePassword(draft, {
       onFieldErrors: (fieldErrors) =>
         setErrors({
           currentPassword: fieldErrors.currentPassword && t(fieldErrors.currentPassword),
@@ -66,8 +59,8 @@ export function PasswordForm() {
         setErrors({})
         setValues(emptyPasswordValues)
       },
-    })
-  }
+    }),
+  )
 
   return (
     <SettingsPanel title={t('settings.password.title')}>
