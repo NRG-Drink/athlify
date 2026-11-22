@@ -7,6 +7,7 @@ import { toPasswordChangeInput, type PasswordValues } from './passwordValues'
 import { toProfileInput, type ProfileValues } from './profileValues'
 import {
   mapUpdateMeErrors,
+  relayErrorsOf,
   type GraphQLErrorLike,
   type MappedErrors,
 } from './settingsErrors'
@@ -28,12 +29,6 @@ interface Callbacks {
   onFieldErrors: (fieldErrors: MappedErrors['fieldErrors']) => void
   /** Called after the server confirmed the change. */
   onSuccess?: () => void
-}
-
-/** Relay reports a response without data (a failed non-null mutation) through `onError`, with the GraphQL errors in `source`. */
-function errorsOf(error: Error): readonly GraphQLErrorLike[] {
-  const source = (error as { source?: { errors?: readonly GraphQLErrorLike[] } }).source
-  return source?.errors ?? []
 }
 
 /**
@@ -63,7 +58,7 @@ export function useUpdateMe() {
         }
         callbacks.onSuccess?.()
       },
-      onError: (error) => failed(errorsOf(error), callbacks),
+      onError: (error) => failed(relayErrorsOf(error), callbacks),
     })
 
   /** Saves name and language; the language applies to the UI immediately. */

@@ -16,7 +16,13 @@ import { vi } from 'vitest'
 import { ChakraProviderAthlify } from '../../components/ui/ChakraProviderAthlify'
 
 // Loosely typed on purpose: tests also return error payloads and never-settling promises.
-type Handler = (operation: string, variables: Variables) => unknown
+export type Handler = (operation: string, variables: Variables) => unknown
+
+/** A GraphQL response without data and with one error, identified like the server does: by code and field. */
+export const graphqlError = (code: string, field?: string) => ({
+  data: null,
+  errors: [{ message: 'server text', extensions: { code, ...(field ? { field } : {}) } }],
+})
 
 /** A Relay environment whose network is a handler keyed by operation name, with call inspection. */
 export function createTestEnvironment(handler: Handler) {

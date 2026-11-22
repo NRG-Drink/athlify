@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { AuthContext, type AuthContextValue } from '../../../auth/context'
 import { SettingsPage } from '../../../features/settings/SettingsPage'
 import { defaultAuth } from '../../utils/renderRoute'
-import { renderWithRelay } from '../../utils/relay'
+import { graphqlError, renderWithRelay, type Handler } from '../../utils/relay'
 
 const UPDATE = 'useUpdateMeMutation'
 
@@ -17,8 +17,6 @@ const me = {
 }
 
 const okQuery = () => ({ data: { me } })
-
-type Handler = (operation: string, variables: Record<string, unknown>) => unknown
 
 const auth = (logout = vi.fn().mockResolvedValue(undefined)): AuthContextValue => ({
   ...defaultAuth,
@@ -36,11 +34,6 @@ function renderPage(handler: Handler, logout = vi.fn().mockResolvedValue(undefin
   )
   return { ...rendered, logout }
 }
-
-const updateError = (code: string, field?: string) => ({
-  data: null,
-  errors: [{ message: 'server text', extensions: { code, ...(field ? { field } : {}) } }],
-})
 
 describe('SettingsPage', () => {
   it('shows the current profile values to a signed-in user without admin role', async () => {
@@ -166,14 +159,14 @@ describe('SettingsPage', () => {
       const submit = await screen.findByRole('button', { name: 'Passwort ändern' })
       expect(submit).toBeDisabled()
 
-      await fill(user, 'alt', 'neu', 'neu')
+      await fill(user, 'alt', 'neues-passwort', 'neues-passwort')
       expect(submit).toBeEnabled()
     })
 
     it('reports a mismatching confirmation while typing and blocks the submit', async () => {
       const { user, calls } = renderPage(() => okQuery())
 
-      await fill(user, 'alt', 'neu', 'ne')
+      await fill(user, 'alt', 'neues-passwort', 'ne')
 
       expect(await screen.findByText('Die Passwörter stimmen nicht überein.')).toBeVisible()
       expect(screen.getByRole('button', { name: 'Passwort ändern' })).toBeDisabled()
@@ -183,7 +176,7 @@ describe('SettingsPage', () => {
     it('clears the mismatch once both new passwords match, whichever field is edited', async () => {
       const { user } = renderPage(() => okQuery())
 
-      await fill(user, 'alt', 'neu', 'neu')
+      await fill(user, 'alt', 'neues-passwort', 'neues-passwort')
       expect(screen.queryByText('Die Passwörter stimmen nicht überein.')).not.toBeInTheDocument()
 
       await user.type(screen.getByLabelText(/^Neues Passwort(?! bestätigen)/), 'x')
@@ -199,17 +192,17 @@ describe('SettingsPage', () => {
     it('reports a wrong current password and keeps the session', async () => {
       const { user, logout } = renderPage((operation) =>
         operation === UPDATE
-          ? updateError('CURRENT_PASSWORD_INCORRECT', 'currentPassword')
+          ? graphqlError('CURRENT_PASSWORD_INCORRECT', 'currentPassword')
           : okQuery(),
       )
 
-      await fill(user, 'falsch', 'neu', 'neu')
+      await fill(user, 'falsch', 'neues-passwort', 'neues-passwort')
       await user.click(screen.getByRole('button', { name: 'Passwort ändern' }))
 
       expect(await screen.findByText('Das aktuelle Passwort stimmt nicht.')).toBeVisible()
       expect(screen.getByLabelText(/Aktuelles Passwort/)).toHaveFocus()
       expect(logout).not.toHaveBeenCalled()
-      expect(screen.getByLabelText(/^Neues Passwort(?! bestätigen)/)).toHaveValue('neu')
+      expect(screen.getByLabelText(/^Neues Passwort(?! bestätigen)/)).toHaveValue('neues-passwort')
     })
 
     it('sends only the password change, never the confirmation, and signs out on success', async () => {
@@ -217,12 +210,12 @@ describe('SettingsPage', () => {
         operation === UPDATE ? { data: { updateMe: me } } : okQuery(),
       )
 
-      await fill(user, 'alt', 'neu', 'neu')
+      await fill(user, 'alt', 'neues-passwort', 'neues-passwort')
       await user.click(screen.getByRole('button', { name: 'Passwort ändern' }))
 
       expect(await screen.findByText('Passwort geändert. Bitte melde dich neu an.')).toBeVisible()
       expect(calls(UPDATE)).toEqual([
-        { input: { passwordChange: { currentPassword: 'alt', newPassword: 'neu' } } },
+        { input: { passwordChange: { currentPassword: 'alt', newPassword: 'neues-passwort' } } },
       ])
       expect(logout).toHaveBeenCalledTimes(1)
     })
@@ -233,7 +226,7 @@ describe('SettingsPage', () => {
         vi.fn().mockRejectedValue(new Error('offline')),
       )
 
-      await fill(user, 'alt', 'neu', 'neu')
+      await fill(user, 'alt', 'neues-passwort', 'neues-passwort')
       await user.click(screen.getByRole('button', { name: 'Passwort ändern' }))
 
       expect(await screen.findByText('Passwort geändert. Bitte melde dich neu an.')).toBeVisible()

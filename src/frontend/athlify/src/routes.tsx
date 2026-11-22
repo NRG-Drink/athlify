@@ -5,6 +5,8 @@ import { RouteErrorPage } from './app/RouteErrorPage'
 import { PlaceholderPage } from './app/PlaceholderPage'
 import { AuthenticatedAppLayout, LoginRoute } from './features/auth/AuthRoutes'
 import { ActivitiesPage } from './features/activities/ActivitiesPage'
+import { AdminRoute } from './features/admin-users/AdminRoute'
+import { AdminUsersPage } from './features/admin-users/AdminUsersPage'
 import { BodyStatsPage } from './features/body-stats/BodyStatsPage'
 import { SettingsPage } from './features/settings/SettingsPage'
 import { primaryNavItems, type NavItemId } from './navigation/navItems'
@@ -36,6 +38,14 @@ export const routes: RouteObject[] = [
       { path: paths.bodyStats, element: <BodyStatsPage /> },
       { path: paths.events, element: areaPlaceholder('events') },
       { path: paths.settings, element: <SettingsPage /> },
+      {
+        path: paths.adminUsers,
+        element: (
+          <AdminRoute>
+            <AdminUsersPage />
+          </AdminRoute>
+        ),
+      },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

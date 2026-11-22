@@ -4,6 +4,7 @@ import { SettingsPanel } from './SettingsPanel'
 import {
   confirmationMismatch,
   emptyPasswordValues,
+  passwordLimits,
   validatePassword,
 } from './passwordValues'
 import { useSettingsForm } from './useSettingsForm'
@@ -53,7 +54,7 @@ export function PasswordForm() {
       onFieldErrors: (fieldErrors) =>
         setErrors({
           currentPassword: fieldErrors.currentPassword && t(fieldErrors.currentPassword),
-          newPassword: fieldErrors.newPassword && t(fieldErrors.newPassword),
+          newPassword: fieldErrors.newPassword && t(fieldErrors.newPassword, passwordLimits),
         }),
       onSuccess: () => {
         setErrors({})

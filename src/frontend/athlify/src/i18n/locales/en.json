@@ -7,7 +7,8 @@
       "garage": "Garage",
       "bodyStats": "Body-Stats",
       "events": "Events",
-      "settings": "Settings"
+      "settings": "Settings",
+      "adminUsers": "User management"
     },
     "layout": {
       "skipToContent": "Skip to content",
@@ -52,6 +53,8 @@
       "minutes": "Minutes",
       "errors": {
         "required": "Required.",
+        "passwordTooShort": "The password needs at least {{min}} characters.",
+        "passwordTooLong": "The password must not be longer than {{max}} characters.",
         "number": "Please enter a number.",
         "positive": "Please enter a value greater than 0.",
         "percentage": "Please enter a value between 0 and 100.",
@@ -85,6 +88,75 @@
       "title": "Page not found",
       "message": "This page does not exist or has been moved.",
       "backToDashboard": "Back to Dashboard"
+    },
+    "noAccess": {
+      "title": "No access",
+      "message": "This area is for administrators only."
+    },
+    "adminUsers": {
+      "title": "User management",
+      "loadFailed": "The users could not be loaded.",
+      "resultCount_one": "{{count}} user",
+      "resultCount_other": "{{count}} users",
+      "you": "(you)",
+      "columns": {
+        "name": "Name",
+        "username": "Username",
+        "language": "Language",
+        "role": "Role"
+      },
+      "roles": {
+        "USER": "User",
+        "ADMIN": "Administrator"
+      },
+      "fields": {
+        "username": "Username",
+        "firstName": "First name",
+        "lastName": "Last name",
+        "language": "Language",
+        "role": "Role",
+        "password": "Password"
+      },
+      "ownRoleNote": "You cannot change your own role.",
+      "row": {
+        "actionsColumn": "Actions",
+        "edit": "Edit user {{name}}",
+        "actions": "Actions for {{name}}",
+        "resetPassword": "Reset password",
+        "delete": "Delete user"
+      },
+      "create": {
+        "open": "Add user",
+        "title": "Add user",
+        "passwordNote": "You choose the password and pass it on to the person. They can change it in the settings afterwards.",
+        "success": "User added."
+      },
+      "edit": {
+        "title": "Edit user",
+        "roleChangeNote": "After this change the person has to sign in again.",
+        "success": "Changes saved."
+      },
+      "delete": {
+        "title": "Delete user?",
+        "description": "{{name}} ({{username}}) is permanently deleted with all activities, bicycles, gadgets, tags, Events and Body-Stats. This cannot be undone.",
+        "confirm": "Delete",
+        "success": "User deleted."
+      },
+      "reset": {
+        "title": "Reset password for {{name}}",
+        "newPassword": "New password",
+        "note": "The person is signed out on all devices. Sessions that are still open end within minutes.",
+        "selfNote": "You are resetting your own password. You are signed out on all devices and sign in again with the new password.",
+        "submit": "Reset",
+        "success": "Password reset."
+      },
+      "errors": {
+        "usernameTaken": "This username is already taken.",
+        "usernameSpaces": "The username must not contain spaces.",
+        "lastAdmin": "At least one administrator must remain.",
+        "ownRole": "You cannot change your own role.",
+        "saveFailed": "Saving failed. Please try again."
+      }
     },
     "routeError": {
       "title": "Something went wrong",

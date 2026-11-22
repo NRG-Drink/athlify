@@ -249,6 +249,26 @@ In short:
   first invalid field, and the server's English messages are never shown;
   the field and error code select the translated text.
 
+## Admin screens
+
+- **Entry.** Administration is a rare task, so its entry lives in the user
+  menu under "Einstellungen" and only administrators see it. The primary
+  navigation keeps the data areas.
+- **No access.** A role-gated route shows `NoAccessPage` inside the shell
+  ("Kein Zugriff", a short reason and a link back to the Dashboard), like Not
+  Found, and fires no query.
+- **List.** A `Page` with a `DataTable`. A list the server returns in a fixed
+  order sets `sortable: false` on every column instead of offering a sort that
+  does not exist. Editing is the row; the "⋯" menu holds the other actions.
+  The signed-in administrator's row carries "(du)".
+- **Role badge.** Administrator is a `brand` `subtle` badge, Benutzer a
+  `bg.muted` badge with `fg.muted` text; the label is real text, not colour
+  alone.
+- **Password setting.** A dialog that sets another person's password follows
+  the "Account forms" rules (`type="password"`, `autoComplete="new-password"`,
+  never prefilled) and states the consequence before the click ("Die Person
+  wird auf allen Geräten abgemeldet.").
+
 ## Components to reuse
 
 Before designing something new, check whether one of these already covers it

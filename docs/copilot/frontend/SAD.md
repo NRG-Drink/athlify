@@ -57,7 +57,10 @@ is the first list slice with editing. The Activities page lists activities
 from the backend connection, applies URL-backed filters, loads additional
 pages on demand and adds, edits, duplicates and deletes activities in a form
 dialog. The Settings page lets the signed-in user edit their own profile,
-language and password. Dashboard, Garage and Events remain placeholders.
+language and password. Administrators manage users (list, create, edit, set
+a new password, delete with a confirmation) on `/admin/users`, reached from the User Menu; other users see a
+"no access" page ([design system](DESIGN-SYSTEM.md)). Dashboard, Garage and
+Events remain placeholders.
 
 ```text
 src/frontend/athlify/src/
@@ -134,9 +137,11 @@ view are shown inside the layout through the route `errorElement`
 | `/body-stats` | Body-Stats (domain page; `?metric=`, `?from=` and `?to=` select the view)                 | Primary Navigation |
 | `/events`     | Events (placeholder)                                                                      | Primary Navigation |
 | `/settings`   | Settings: profile, language, password                                                     | User Menu          |
+| `/admin/users` | User management (Administrators only; others see the "no access" page)                  | User Menu (Admin)  |
 | any other     | Not Found page                                                                            | –                  |
 
-There is no Administration entry until the backend exposes user roles.
+The Administration entry in the User Menu is shown when `useAuth().hasRole('Admin')` is true;
+the route also guards itself (`AdminRoute`), and the server enforces the role on every request.
 
 The login route and all app routes check the backend session through
 `POST /auth/refresh`. A `401` means the session is absent or expired; other

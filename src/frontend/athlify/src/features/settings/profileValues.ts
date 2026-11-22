@@ -11,13 +11,20 @@ export interface ProfileValues {
 
 export type ProfileErrors = Partial<Record<'firstName' | 'lastName', string>>
 
+/** The error text of a first or last name, or undefined when it is acceptable. Shared with the admin user form. */
+export function validateName(value: string, t: TFunction): string | undefined {
+  const trimmed = value.trim()
+  if (trimmed === '') return t('form.errors.required')
+  if (trimmed.length > MAX_NAME_LENGTH)
+    return t('settings.errors.tooLong', { max: MAX_NAME_LENGTH })
+  return undefined
+}
+
 export function validateProfile(values: ProfileValues, t: TFunction): ProfileErrors {
   const errors: ProfileErrors = {}
   for (const field of ['firstName', 'lastName'] as const) {
-    const value = values[field].trim()
-    if (value === '') errors[field] = t('form.errors.required')
-    else if (value.length > MAX_NAME_LENGTH)
-      errors[field] = t('settings.errors.tooLong', { max: MAX_NAME_LENGTH })
+    const error = validateName(values[field], t)
+    if (error) errors[field] = error
   }
   return errors
 }

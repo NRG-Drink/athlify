@@ -19,3 +19,9 @@ export function languageLabel(code: string): string {
   }
   return formatter.of(code) ?? code
 }
+
+/** Select options for the language fields of the settings and user forms. */
+export const LANGUAGE_OPTIONS = API_LANGUAGES.map((language) => ({
+  id: language,
+  label: languageLabel(toI18nLanguage(language)),
+}))
