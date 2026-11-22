@@ -28,6 +28,7 @@ TypeScript and Vite.
 | Routing                | `react-router-dom` v7 data mode (`createBrowserRouter`, nested app-layout route)                                                          | Proposed in [ADR-004](adr/ADR-004-react-router-data-mode.md)                                                                          |
 | Localization           | i18next with react-i18next (`de` default, `en` fallback)                                                                                  | Proposed in [ADR-003](adr/ADR-003-i18next-localization.md)                                                                            |
 | Icons                  | `react-icons` (Lucide set)                                                                                                                | Implemented                                                                                                                           |
+| Data grid              | AG Grid Community (`ag-grid-react`, `ag-grid-community`)                                                                                  | Implemented for Events                                                                                                                 |
 | Testing                | Vitest + React Testing Library + user-event in jsdom (`npm test`)                                                                         | Implemented                                                                                                                           |
 | Tooling                | ESLint 10 + typescript-eslint, Prettier; no git hooks                                                                                     | Implemented                                                                                                                           |
 | Backend contract       | Hot Chocolate GraphQL                                                                                                                     | Proposed in [shared ADR-001](../adr/ADR-001-graphql-api-contract.md); IDs follow [shared ADR-006](../adr/ADR-006-relay-global-ids.md) |
@@ -51,12 +52,13 @@ This document describes the technical context for frontend changes. The function
 
 The frontend is under `../../../src/frontend/athlify/`. It is a standalone
 npm package with its own `package.json` and `package-lock.json`. It is an app
-shell with two implemented domain slices: Body-Stats is the reference for
+shell with three implemented domain slices: Body-Stats is the reference for
 domain pages (see [Domain page pattern](#domain-page-pattern)), and Activities
-is the first list slice with editing. The Activities page lists activities
+and Events are list slices with editing. The Activities page lists activities
 from the backend connection, applies URL-backed filters, loads additional
 pages on demand and adds, edits, duplicates and deletes activities in a form
-dialog. Dashboard, Garage and Events remain placeholders.
+dialog. The Events page lists, creates, edits and deletes personal events, with
+URL-backed filters, sorting and saved views. Dashboard and Garage remain placeholders.
 
 ```text
 src/frontend/athlify/src/
@@ -79,8 +81,9 @@ src/frontend/athlify/src/
 └── index.css         # Tailwind import only
 ```
 
-The App Layout and routing are implemented. Dashboard, Garage, Events and
-Settings render placeholder pages. The `/activities` view is a
+The App Layout and routing are implemented. Dashboard, Garage and Settings
+render placeholder pages. The `/events` view is a
+backend-backed domain page for managing events. The `/activities` view is a
 domain page backed by the GraphQL API; its type, bicycle, wind and tag
 filters are checklists of ticked values, kept in the URL as repeated parameters, operated from the column headers and its list uses Relay cursor pagination (50 per page, "load more"). The
 `/body-stats` view is a domain page backed by the GraphQL API. State management
@@ -127,7 +130,7 @@ view are shown inside the layout through the route `errorElement`
 | `/activities` | Activities (list with URL filters and pagination; add, edit, duplicate, delete)           | Primary Navigation |
 | `/garage`     | Garage (placeholder)                                                                      | Primary Navigation |
 | `/body-stats` | Body-Stats (domain page; `?metric=`, `?from=` and `?to=` select the view)                 | Primary Navigation |
-| `/events`     | Events (placeholder)                                                                      | Primary Navigation |
+| `/events`     | Events (personal event grid with filters, sorting and saved views)                         | Primary Navigation |
 | `/settings`   | Settings (placeholder)                                                                    | User Menu          |
 | any other     | Not Found page                                                                            | –                  |
 

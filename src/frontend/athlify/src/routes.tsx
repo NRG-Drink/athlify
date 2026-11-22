@@ -6,6 +6,7 @@ import { PlaceholderPage } from './app/PlaceholderPage'
 import { AuthenticatedAppLayout, LoginRoute } from './features/auth/AuthRoutes'
 import { ActivitiesPage } from './features/activities/ActivitiesPage'
 import { BodyStatsPage } from './features/body-stats/BodyStatsPage'
+import { EventsPage } from './features/events/EventsPage'
 import { primaryNavItems, type NavItemId } from './navigation/navItems'
 import { paths } from './navigation/paths'
 
@@ -33,7 +34,7 @@ export const routes: RouteObject[] = [
       { path: paths.activities, element: <ActivitiesPage /> },
       { path: paths.garage, element: areaPlaceholder('garage') },
       { path: paths.bodyStats, element: <BodyStatsPage /> },
-      { path: paths.events, element: areaPlaceholder('events') },
+      { path: paths.events, element: <EventsPage /> },
       {
         path: paths.settings,
         element: (
