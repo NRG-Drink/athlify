@@ -22,10 +22,9 @@ import {
   type ActivityFormValues,
 } from './activityForm'
 import { activityInputFromCellChange } from './activityCellEdit'
-import {
-  type ActivitySort,
-} from './activityQuery'
-import { ActivitiesTable, type ActivityRow } from './ActivitiesTable'
+import { type ActivitySort } from './activityQuery'
+import { ActivitiesTable } from './ActivitiesTable'
+import type { ActivityRow } from './ActivitiesGridTypes'
 import { ActivitiesGridControls } from './ActivitiesGridControls'
 import { useActivityMutations } from './useActivityMutations'
 import { useCreateTag } from './useCreateTag'
@@ -139,10 +138,7 @@ function ActivitiesContent({ fetchKey }: ContentProps) {
   const { searchParams, replaceParams, refreshing } = useParamsRefresh()
   const pageState = useActivitiesPageState(searchParams, replaceParams)
   const { query } = pageState
-  const variables = useMemo(
-    () => ({ first: PAGE_SIZE, ...activityQueryVariables(query) }),
-    [query],
-  )
+  const variables = useMemo(() => ({ first: PAGE_SIZE, ...activityQueryVariables(query) }), [query])
   const queryData = useLazyLoadQuery<ActivitiesPageQuery>(pageQuery, variables, {
     fetchKey,
     fetchPolicy: 'store-and-network',
@@ -272,7 +268,9 @@ function ActivitiesContent({ fetchKey }: ContentProps) {
         toaster.create({
           type: 'error',
           title: t(
-            result ? 'activities.edit.errors.validationFailed' : 'activities.edit.errors.saveFailed',
+            result
+              ? 'activities.edit.errors.validationFailed'
+              : 'activities.edit.errors.saveFailed',
           ),
           description: result?.error,
         })
@@ -321,25 +319,26 @@ function ActivitiesContent({ fetchKey }: ContentProps) {
     Boolean(query.quickFilter || query.fromFilter || query.toFilter)
 
   const emptyMessage = useMemo(
-    () => filtered ? (
-      <PageEmptyState
-        icon={LuBike}
-        title={t('activities.empty.filteredTitle')}
-        message={t('activities.empty.filteredMessage')}
-        action={
-          <Button onClick={pageState.filters.onResetFilters}>
-            <LuRotateCcw aria-hidden />
-            {t('activities.filters.reset')}
-          </Button>
-        }
-      />
-    ) : (
-      <PageEmptyState
-        icon={LuBike}
-        title={t('activities.empty.title')}
-        message={t('activities.empty.message')}
-      />
-    ),
+    () =>
+      filtered ? (
+        <PageEmptyState
+          icon={LuBike}
+          title={t('activities.empty.filteredTitle')}
+          message={t('activities.empty.filteredMessage')}
+          action={
+            <Button onClick={pageState.filters.onResetFilters}>
+              <LuRotateCcw aria-hidden />
+              {t('activities.filters.reset')}
+            </Button>
+          }
+        />
+      ) : (
+        <PageEmptyState
+          icon={LuBike}
+          title={t('activities.empty.title')}
+          message={t('activities.empty.message')}
+        />
+      ),
     [filtered, pageState.filters.onResetFilters, t],
   )
 

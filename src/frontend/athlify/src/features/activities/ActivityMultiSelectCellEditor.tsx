@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { LuPlus } from 'react-icons/lu'
 import { MAX_TAG_LENGTH } from './activityForm'
 import type { FilterOption } from './activityFilters'
-import type { ActivityRow } from './ActivitiesTable'
+import type { ActivityRow } from './ActivitiesGridTypes'
 
 type Props = CustomCellEditorProps<ActivityRow, string[]> & {
   options: readonly FilterOption[]

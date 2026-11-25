@@ -1,7 +1,7 @@
 import { useGridFilter, type CustomFilterProps } from 'ag-grid-react'
 import { Checklist } from '../../components/Checklist'
 import type { FilterOption } from './activityFilters'
-import type { ActivityRow } from './ActivitiesTable'
+import type { ActivityRow } from './ActivitiesGridTypes'
 
 type ActivityListFilterModel = { values: string[] }
 
