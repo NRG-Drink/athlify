@@ -1,9 +1,12 @@
 import '@testing-library/jest-dom/vitest'
-import { cleanup } from '@testing-library/react'
+import { cleanup, configure } from '@testing-library/react'
 import { afterEach, beforeEach, vi } from 'vitest'
 import i18n from 'i18next'
 import '../i18n'
 import { toaster } from '../components/ui/toaster'
+
+// Coverage instrumentation and parallel workers make async UI slower than the 1 s default of waitFor.
+configure({ asyncUtilTimeout: 10000 })
 
 // jsdom lacks these browser APIs; next-themes and Ark UI (Chakra) call them.
 if (!window.matchMedia) {

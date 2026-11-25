@@ -29,6 +29,9 @@ export default defineConfig({
   },
   test: {
     globals: true,
+    testTimeout: 15_000,
+    // A fixed pool keeps the suite stable: one worker per core spawned 40+ workers on a big machine and starved the rest.
+    maxWorkers: 4,
     coverage: {
       provider: 'v8', // Use 'v8' for built-in coverage
       reporter: ['text', 'json', 'html'], // Formats for the coverage report
