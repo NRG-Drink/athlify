@@ -15,7 +15,7 @@ public class DbSeederTests
         await using var context = CreateContext(ownerId);
         await AddUserAsync(context, ownerId);
 
-        var seeder = new DbSeeder();
+        var seeder = new DbSeeder(new MergeMembership());
         seeder.Seed(context, ownerId);
         var firstActivityIds = await context.Activities
             .IgnoreQueryFilters()
@@ -83,9 +83,8 @@ public class DbSeederTests
         });
         await context.SaveChangesAsync();
 
-        new DbSeeder().Seed(context, ownerId);
+        new DbSeeder(new MergeMembership()).Seed(context, ownerId);
 
-        // The one existing activity plus the full seed.
         await Assert.That(await context.Activities.IgnoreQueryFilters().CountAsync(a => a.UserId == ownerId))
             .IsEqualTo(1 + DbSeeder.BaseActivityCount + DbSeeder.ExtraActivityCount);
         await Assert.That(await context.Activities.IgnoreQueryFilters()
@@ -99,7 +98,7 @@ public class DbSeederTests
         await using var context = CreateContext(ownerId);
         await AddUserAsync(context, ownerId);
 
-        var seeder = new DbSeeder();
+        var seeder = new DbSeeder(new MergeMembership());
         seeder.Seed(context, ownerId);
         var deleted = await context.BodyStats.IgnoreQueryFilters()
             .Where(b => b.UserId == ownerId)
@@ -125,7 +124,7 @@ public class DbSeederTests
         context.SeedMarkers.Add(new SeedMarker { UserId = ownerId, Key = DbSeeder.BodyStatsSeedKey });
         await context.SaveChangesAsync();
 
-        new DbSeeder().Seed(context, ownerId);
+        new DbSeeder(new MergeMembership()).Seed(context, ownerId);
 
         await Assert.That(await context.BodyStats.IgnoreQueryFilters().CountAsync(b => b.UserId == ownerId))
             .IsEqualTo(0);
@@ -147,7 +146,7 @@ public class DbSeederTests
         }));
         await context.SaveChangesAsync();
 
-        new DbSeeder().Seed(context, ownerId);
+        new DbSeeder(new MergeMembership()).Seed(context, ownerId);
 
         var bodyStats = await context.BodyStats.IgnoreQueryFilters().Where(b => b.UserId == ownerId).ToListAsync();
         await Assert.That(bodyStats).Count().IsEqualTo(365);

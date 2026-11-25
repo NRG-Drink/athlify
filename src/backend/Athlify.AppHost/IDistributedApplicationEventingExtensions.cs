@@ -5,9 +5,6 @@ namespace Athlify.AppHost;
 
 public static class IDistributedApplicationEventingExtensions
 {
-    /// <summary>
-    /// Opens the specified resource in the default web browser after the resources have been created.
-    /// </summary>
     public static IDistributedApplicationBuilder OpenInBrowserAfterCreated(
         this IDistributedApplicationBuilder builder,
         string name,

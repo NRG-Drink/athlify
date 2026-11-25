@@ -16,7 +16,6 @@ public interface ITokenService
     TokenResponse GenerateAccessToken(User dbUser);
     Task<TokenResponse> GenerateRefreshTokenAsync(User user, string ip);
     Task RevokeTokenFamily(Guid familyId, string ip, RefreshToken.RevokeReason reason = RefreshToken.RevokeReason.ReuseDetected);
-    /// <summary>Marks the user's active tokens revoked without saving; the caller commits.</summary>
     Task RevokeAllForUserAsync(
         int userId,
         string ip,
@@ -99,10 +98,6 @@ public class TokenService(
                 .SetProperty(t => t.ReasonRevoked, reason));
     }
 
-    /// <summary>
-    /// Marks every active token of the user as revoked on the tracked context; the caller saves, so the revocation
-    /// commits together with the caller's other changes. Refresh tokens carry no owner filter, so the user is explicit.
-    /// </summary>
     public async Task RevokeAllForUserAsync(
         int userId,
         string ip,
@@ -128,7 +123,6 @@ public class TokenService(
             ?? throw new UnauthorizedAccessException("Refresh token not found.");
         var cookieHash = hashService.HashToken(cookieToken);
         var storedToken = await db.RefreshTokens.AsNoTracking().FirstOrDefaultAsync(t => t.TokenHash == cookieHash)
-            // Unknown token → forged/garbage → plain rejection
             ?? throw new UnauthorizedAccessException("Refresh token not found in database.");
 
         var user = await db.Users
@@ -152,7 +146,6 @@ public class TokenService(
         RefreshToken stored,
         RefreshToken newRefreshToken)
     {
-        // https://learn.microsoft.com/en-gb/ef/core/miscellaneous/connection-resiliency
         var strategy = db.Database.CreateExecutionStrategy();
         return await strategy.ExecuteAsync(async () =>
         {

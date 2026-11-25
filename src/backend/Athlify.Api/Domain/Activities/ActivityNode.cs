@@ -6,9 +6,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Athlify.Api.Domain.Activities;
 
-public static class ActivityNode
+public sealed class ActivityNode
 {
-    public static Task<Activity?> GetAsync(
+    public Task<Activity?> GetAsync(
         [ID<Activity>] int id,
         QueryContext<Activity> query,
         AthlifyDbContext db,

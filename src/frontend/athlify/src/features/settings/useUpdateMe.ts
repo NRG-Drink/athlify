@@ -7,6 +7,8 @@ import { toPasswordChangeInput, type PasswordValues } from './passwordValues'
 import { toProfileInput, type ProfileValues } from './profileValues'
 import {
   mapUpdateMeErrors,
+  relayErrorsOf,
+  translateFieldErrors,
   type GraphQLErrorLike,
   type MappedErrors,
 } from './settingsErrors'
@@ -30,12 +32,6 @@ interface Callbacks {
   onSuccess?: () => void
 }
 
-/** Relay reports a response without data (a failed non-null mutation) through `onError`, with the GraphQL errors in `source`. */
-function errorsOf(error: Error): readonly GraphQLErrorLike[] {
-  const source = (error as { source?: { errors?: readonly GraphQLErrorLike[] } }).source
-  return source?.errors ?? []
-}
-
 /**
  * The self-service `updateMe` mutation for the Settings page: one function per form. Server messages
  * are never shown; field errors come back as i18n keys, everything else as a generic toast.
@@ -46,8 +42,9 @@ export function useUpdateMe() {
   const [commit, isSaving] = useMutation<useUpdateMeMutation>(mutation)
 
   const failed = (errors: readonly GraphQLErrorLike[], { onFieldErrors }: Callbacks) => {
-    const { fieldErrors, general } = mapUpdateMeErrors(errors)
-    onFieldErrors(fieldErrors)
+    const mapped = mapUpdateMeErrors(errors)
+    onFieldErrors(translateFieldErrors(t, mapped))
+    const { general, fieldErrors } = mapped
     if (general || Object.keys(fieldErrors).length === 0) {
       toaster.create({ type: 'error', title: t('settings.errors.saveFailed') })
     }
@@ -63,7 +60,7 @@ export function useUpdateMe() {
         }
         callbacks.onSuccess?.()
       },
-      onError: (error) => failed(errorsOf(error), callbacks),
+      onError: (error) => failed(relayErrorsOf(error), callbacks),
     })
 
   /** Saves name and language; the language applies to the UI immediately. */

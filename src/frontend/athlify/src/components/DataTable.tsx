@@ -61,9 +61,10 @@ export interface DataTableProps<T extends object> {
   /**
    * The order of `data`, which the server already applied (a paged list cannot be sorted on the
    * client). The rows are rendered as they are; a header click reports the next order instead.
+   * Without `sort` and `onSortChange` no header sorts (for lists the server orders on its own).
    */
-  sort: ListSort
-  onSortChange: (sort: ListSort) => void
+  sort?: ListSort
+  onSortChange?: (sort: ListSort) => void
   /** Visually hidden table title for assistive technology. */
   caption: string
   /** Header text (visually hidden) of the row-actions column. */
@@ -165,7 +166,8 @@ export function DataTable<T extends object>({
   const { t } = useTranslation()
   /** Current direction and click handler of a header; `toggle` is undefined when it cannot sort. */
   const sortStateOf = (column: DataTableColumn<T>) => {
-    if (column.sortable === false) return { sorted: false as const, toggle: undefined }
+    if (column.sortable === false || !sort || !onSortChange)
+      return { sorted: false as const, toggle: undefined }
     const sorted = sort.column === column.id ? (sort.desc ? 'desc' : 'asc') : false
     // Every sortable column is a date or a number, where the largest or newest is what you look for.
     return { sorted, toggle: () => onSortChange({ column: column.id, desc: sorted !== 'desc' }) }

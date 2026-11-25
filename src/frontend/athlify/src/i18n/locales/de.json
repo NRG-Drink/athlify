@@ -7,7 +7,8 @@
       "garage": "Garage",
       "bodyStats": "Body-Stats",
       "events": "Events",
-      "settings": "Einstellungen"
+      "settings": "Einstellungen",
+      "adminUsers": "Benutzerverwaltung"
     },
     "layout": {
       "skipToContent": "Zum Inhalt springen",
@@ -52,6 +53,8 @@
       "minutes": "Minuten",
       "errors": {
         "required": "Pflichtfeld.",
+        "passwordTooShort": "Das Passwort braucht mindestens {{min}} Zeichen.",
+        "passwordTooLong": "Das Passwort darf höchstens {{max}} Zeichen lang sein.",
         "number": "Bitte eine Zahl eingeben.",
         "positive": "Bitte einen Wert grösser als 0 eingeben.",
         "percentage": "Bitte einen Wert zwischen 0 und 100 eingeben.",
@@ -85,6 +88,75 @@
       "title": "Seite nicht gefunden",
       "message": "Diese Seite existiert nicht oder wurde verschoben.",
       "backToDashboard": "Zurück zum Dashboard"
+    },
+    "noAccess": {
+      "title": "Kein Zugriff",
+      "message": "Dieser Bereich ist nur für Administratoren."
+    },
+    "adminUsers": {
+      "title": "Benutzerverwaltung",
+      "loadFailed": "Die Benutzer konnten nicht geladen werden.",
+      "resultCount_one": "{{count}} Benutzer",
+      "resultCount_other": "{{count}} Benutzer",
+      "you": "(du)",
+      "columns": {
+        "name": "Name",
+        "username": "Benutzername",
+        "language": "Sprache",
+        "role": "Rolle"
+      },
+      "roles": {
+        "USER": "Benutzer",
+        "ADMIN": "Administrator"
+      },
+      "fields": {
+        "username": "Benutzername",
+        "firstName": "Vorname",
+        "lastName": "Nachname",
+        "language": "Sprache",
+        "role": "Rolle",
+        "password": "Passwort"
+      },
+      "ownRoleNote": "Du kannst deine eigene Rolle nicht ändern.",
+      "row": {
+        "actionsColumn": "Aktionen",
+        "edit": "Benutzer {{name}} bearbeiten",
+        "actions": "Aktionen für {{name}}",
+        "resetPassword": "Passwort zurücksetzen",
+        "delete": "Benutzer löschen"
+      },
+      "create": {
+        "open": "Benutzer anlegen",
+        "title": "Benutzer anlegen",
+        "passwordNote": "Du legst das Passwort fest und gibst es der Person weiter. Sie kann es danach in den Einstellungen ändern.",
+        "success": "Benutzer angelegt."
+      },
+      "edit": {
+        "title": "Benutzer bearbeiten",
+        "roleChangeNote": "Nach der Änderung muss sich die Person neu anmelden.",
+        "success": "Änderungen gespeichert."
+      },
+      "delete": {
+        "title": "Benutzer löschen?",
+        "description": "{{name}} ({{username}}) wird mit allen Aktivitäten, Velos, Gadgets, Tags, Events und Body-Stats endgültig gelöscht. Das lässt sich nicht rückgängig machen.",
+        "confirm": "Löschen",
+        "success": "Benutzer gelöscht."
+      },
+      "reset": {
+        "title": "Passwort für {{name}} zurücksetzen",
+        "newPassword": "Neues Passwort",
+        "note": "Die Person wird auf allen Geräten abgemeldet. Noch geöffnete Sitzungen enden innerhalb weniger Minuten.",
+        "selfNote": "Du setzt dein eigenes Passwort zurück. Du wirst auf allen Geräten abgemeldet und meldest dich mit dem neuen Passwort wieder an.",
+        "submit": "Zurücksetzen",
+        "success": "Passwort zurückgesetzt."
+      },
+      "errors": {
+        "usernameTaken": "Dieser Benutzername ist schon vergeben.",
+        "usernameSpaces": "Der Benutzername darf keine Leerzeichen enthalten.",
+        "lastAdmin": "Es muss mindestens ein Administrator bleiben.",
+        "ownRole": "Du kannst deine eigene Rolle nicht ändern.",
+        "saveFailed": "Speichern fehlgeschlagen. Bitte versuche es nochmals."
+      }
     },
     "routeError": {
       "title": "Etwas ist schiefgelaufen",

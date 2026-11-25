@@ -135,6 +135,7 @@ type Query {
     )
     @cost(weight: "10")
   me: User! @cost(weight: "10")
+  users: [User!]! @cost(weight: "10")
   vehicles(
     "Returns the first _n_ elements from the list."
     first: Int
@@ -184,6 +185,11 @@ type Mutation {
   updateTag(id: ID!, tag: TagInput!): Tag @cost(weight: "10")
   deleteTag(id: ID!): ID @cost(weight: "10")
   updateMe(input: UpdateMeInput!): User! @cost(weight: "10")
+  createUser(input: CreateUserInput!): User! @cost(weight: "10")
+  updateUser(id: ID!, input: UpdateUserInput!): User! @cost(weight: "10")
+  resetUserPassword(id: ID!, input: ResetUserPasswordInput!): User!
+    @cost(weight: "10")
+  deleteUser(id: ID!): ID! @cost(weight: "10")
   createMaintenanceCycle(maintenanceCycle: MaintenanceCycleInput!): MaintenanceCycle!
     @cost(weight: "10")
   updateMaintenanceCycle(id: ID!, maintenanceCycle: MaintenanceCycleInput!): MaintenanceCycle
@@ -675,6 +681,15 @@ input DecimalOperationFilterInput {
   nlte: Decimal @cost(weight: "10")
 }
 
+input CreateUserInput {
+  username: String!
+  firstName: String!
+  lastName: String!
+  language: Language
+  role: UserRole
+  password: String!
+}
+
 input EventFilterInput {
   and: [EventFilterInput!]
   or: [EventFilterInput!]
@@ -951,6 +966,10 @@ input TagFilterInput {
   modifiedAt: DateTimeOperationFilterInput
 }
 
+input ResetUserPasswordInput {
+  newPassword: String!
+}
+
 input TagInput {
   name: String!
 }
@@ -961,6 +980,13 @@ input TagSortInput {
   uid: SortEnumType @cost(weight: "10")
   createdAt: SortEnumType @cost(weight: "10")
   modifiedAt: SortEnumType @cost(weight: "10")
+}
+
+input UpdateUserInput {
+  firstName: String
+  lastName: String
+  language: Language
+  role: UserRole
 }
 
 input UpdateMeInput {

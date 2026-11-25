@@ -6,14 +6,14 @@ using Microsoft.EntityFrameworkCore;
 namespace Athlify.Api.Domain.Body;
 
 [MutationType]
-public static partial class BodyStatsMutation
+public sealed partial class BodyStatsMutation(BodyStatsValidation bodyStatsValidation)
 {
-    public static async Task<BodyStats> AddBodyStats(
+    public async Task<BodyStats> AddBodyStats(
         BodyStatsInput bodyStats,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
-        BodyStatsValidation.ThrowIfInvalid(bodyStats);
+        bodyStatsValidation.ThrowIfInvalid(bodyStats);
 
         var created = new BodyStats();
         ApplyFields(created, bodyStats);
@@ -22,13 +22,13 @@ public static partial class BodyStatsMutation
         return created;
     }
 
-    public static async Task<BodyStats?> UpdateBodyStats(
+    public async Task<BodyStats?> UpdateBodyStats(
         [ID<BodyStats>] int id,
         BodyStatsInput bodyStats,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
-        BodyStatsValidation.ThrowIfInvalid(bodyStats);
+        bodyStatsValidation.ThrowIfInvalid(bodyStats);
 
         var existing = await db.BodyStats
             .FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
@@ -43,7 +43,7 @@ public static partial class BodyStatsMutation
     }
 
     [ID<BodyStats>]
-    public static async Task<int?> DeleteBodyStats(
+    public async Task<int?> DeleteBodyStats(
         [ID<BodyStats>] int id,
         AthlifyDbContext db,
         CancellationToken cancellationToken)

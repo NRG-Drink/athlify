@@ -11,7 +11,10 @@ import {
   toProfileInput,
   validateProfile,
 } from '../../../features/settings/profileValues'
-import { mapUpdateMeErrors } from '../../../features/settings/settingsErrors'
+import {
+  mapUpdateMeErrors,
+  translateFieldErrors,
+} from '../../../features/settings/settingsErrors'
 
 const t = i18n.t.bind(i18n) as TFunction
 
@@ -56,8 +59,17 @@ describe('validatePassword', () => {
   })
 
   it('reports a mismatching confirmation', () => {
-    const errors = validatePassword({ currentPassword: 'a', newPassword: 'b', confirmation: 'c' }, t)
+    const errors = validatePassword(
+      { currentPassword: 'a', newPassword: 'neues-passwort', confirmation: 'anderes-passwort' },
+      t,
+    )
     expect(errors).toEqual({ confirmation: 'Die Passwörter stimmen nicht überein.' })
+  })
+
+  it('leaves the length rule to the server, whose limits are configured there', () => {
+    expect(
+      validatePassword({ currentPassword: 'a', newPassword: 'kurz', confirmation: 'kurz' }, t),
+    ).toEqual({})
   })
 
   it('never sends the confirmation', () => {
@@ -78,6 +90,7 @@ describe('mapUpdateMeErrors', () => {
       ]),
     ).toEqual({
       fieldErrors: { currentPassword: 'settings.errors.currentPasswordIncorrect' },
+      fieldValues: {},
       general: false,
     })
   })
@@ -100,6 +113,44 @@ describe('mapUpdateMeErrors', () => {
     expect(result.general).toBe(false)
   })
 
+  it('shows the length rule the server names, not "required"', () => {
+    const result = mapUpdateMeErrors([
+      {
+        message: 'newPassword must be at least 8 characters long.',
+        extensions: { code: 'VALIDATION_ERROR', field: 'newPassword', rule: 'PASSWORD_TOO_SHORT' },
+      },
+    ])
+    expect(result.fieldErrors).toEqual({ newPassword: 'form.errors.passwordTooShort' })
+  })
+
+  it('passes the configured limit of a rule as interpolation values', () => {
+    const result = mapUpdateMeErrors([
+      {
+        message: 'newPassword must be at least 8 characters long.',
+        extensions: {
+          code: 'VALIDATION_ERROR',
+          field: 'newPassword',
+          rule: 'PASSWORD_TOO_SHORT',
+          minLength: 12,
+        },
+      },
+    ])
+    expect(result.fieldValues).toEqual({ newPassword: { min: 12 } })
+    expect(translateFieldErrors(t, result)).toEqual({
+      newPassword: 'Das Passwort braucht mindestens 12 Zeichen.',
+    })
+  })
+
+  it('reads an unknown rule as required', () => {
+    const result = mapUpdateMeErrors([
+      {
+        message: 'x',
+        extensions: { code: 'VALIDATION_ERROR', field: 'newPassword', rule: 'toString' },
+      },
+    ])
+    expect(result.fieldErrors).toEqual({ newPassword: 'form.errors.required' })
+  })
+
   it('flags unknown errors as general', () => {
     expect(mapUpdateMeErrors([{ message: 'boom' }]).general).toBe(true)
   })
@@ -107,11 +158,17 @@ describe('mapUpdateMeErrors', () => {
 
 describe('confirmationMismatch', () => {
   it('is false while the confirmation is empty or equal', () => {
-    expect(confirmationMismatch({ currentPassword: '', newPassword: 'abc', confirmation: '' })).toBe(false)
-    expect(confirmationMismatch({ currentPassword: '', newPassword: 'abc', confirmation: 'abc' })).toBe(false)
+    expect(
+      confirmationMismatch({ currentPassword: '', newPassword: 'abc', confirmation: '' }),
+    ).toBe(false)
+    expect(
+      confirmationMismatch({ currentPassword: '', newPassword: 'abc', confirmation: 'abc' }),
+    ).toBe(false)
   })
 
   it('is true as soon as the confirmation differs, also from a partial entry', () => {
-    expect(confirmationMismatch({ currentPassword: '', newPassword: 'abc', confirmation: 'ab' })).toBe(true)
+    expect(
+      confirmationMismatch({ currentPassword: '', newPassword: 'abc', confirmation: 'ab' }),
+    ).toBe(true)
   })
 })

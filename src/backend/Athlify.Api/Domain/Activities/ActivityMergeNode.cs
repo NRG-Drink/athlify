@@ -6,9 +6,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Athlify.Api.Domain.Activities;
 
-public static class ActivityMergeNode
+public sealed class ActivityMergeNode
 {
-    public static Task<ActivityMerge?> GetAsync(
+    public Task<ActivityMerge?> GetAsync(
         [ID<ActivityMerge>] int id,
         QueryContext<ActivityMerge> query,
         AthlifyDbContext db,

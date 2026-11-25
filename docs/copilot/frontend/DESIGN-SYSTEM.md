@@ -249,6 +249,29 @@ In short:
   first invalid field, and the server's English messages are never shown;
   the field and error code select the translated text.
 
+## Admin screens
+
+- **Entry.** Administration is a rare task, so its entry lives in the user
+  menu under "Einstellungen" and only administrators see it. The primary
+  navigation keeps the data areas.
+- **No access.** A role-gated route shows `NoAccessPage` inside the shell
+  ("Kein Zugriff", a short reason and a link back to the Dashboard), like Not
+  Found, and fires no query.
+- **List.** An `AgGridTable`, the same wrapper as the Events grid, with plain
+  column definitions and the client row model. The list has no header sort
+  (`sortable: false`), because the server orders it. Editing is a click on any
+  cell except the "⋯" column; the name cell's button names the action for
+  assistive technology. The "⋯" menu holds reset and delete. The
+  signed-in administrator's row carries "(du)". On narrow screens the username
+  and language columns are hidden, and the count line sits below the grid.
+- **Role badge.** Administrator is a `brand` `subtle` badge, Benutzer a
+  `bg.muted` badge with `fg.muted` text; the label is real text, not colour
+  alone.
+- **Password setting.** A dialog that sets another person's password follows
+  the "Account forms" rules (`type="password"`, `autoComplete="new-password"`,
+  never prefilled) and states the consequence before the click ("Die Person
+  wird auf allen Geräten abgemeldet.").
+
 ## Components to reuse
 
 Before designing something new, check whether one of these already covers it

@@ -1,7 +1,7 @@
 import { Button, Field, Input, Stack, Text } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { SelectField } from '../../components/SelectField'
-import { API_LANGUAGES, languageLabel, toI18nLanguage } from '../../i18n/languages'
+import { LANGUAGE_OPTIONS } from '../../i18n/languages'
 import { SettingsPanel } from './SettingsPanel'
 import {
   isProfileDirty,
@@ -18,11 +18,6 @@ interface ProfileFormProps {
   saved: ProfileValues
 }
 
-const languageOptions = API_LANGUAGES.map((language) => ({
-  id: language,
-  label: languageLabel(toI18nLanguage(language)),
-}))
-
 export function ProfileForm({ username, saved }: ProfileFormProps) {
   const { t } = useTranslation()
   const { saveProfile, isSaving } = useUpdateMe()
@@ -35,8 +30,8 @@ export function ProfileForm({ username, saved }: ProfileFormProps) {
     saveProfile(draft, {
       onFieldErrors: (fieldErrors) =>
         setErrors({
-          firstName: fieldErrors.firstName && t(fieldErrors.firstName),
-          lastName: fieldErrors.lastName && t(fieldErrors.lastName),
+          firstName: fieldErrors.firstName,
+          lastName: fieldErrors.lastName,
         }),
       onSuccess: () => setErrors({}),
     }),
@@ -80,7 +75,7 @@ export function ProfileForm({ username, saved }: ProfileFormProps) {
             label={t('settings.profile.language')}
             value={values.language}
             onChange={(language) => language && setValues((v) => ({ ...v, language }))}
-            options={languageOptions}
+            options={LANGUAGE_OPTIONS}
           />
 
           <Button

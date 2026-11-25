@@ -28,6 +28,20 @@ describe('UserMenu', () => {
     expect(menu.getByRole('button', { name: 'Farbmodus wechseln' })).toBeInTheDocument()
   })
 
+  test('offers user management to administrators only', async () => {
+    const { panel } = await openUserMenu({ hasRole: (role) => role === 'Admin' })
+    expect(within(panel).getByRole('link', { name: 'Benutzerverwaltung' })).toHaveAttribute(
+      'href',
+      paths.adminUsers,
+    )
+  })
+
+  test('hides user management from regular users', async () => {
+    const { panel } = await openUserMenu({ hasRole: (role) => role === 'User' })
+    expect(within(panel).getByRole('link', { name: 'Einstellungen' })).toBeInTheDocument()
+    expect(within(panel).queryByRole('link', { name: 'Benutzerverwaltung' })).not.toBeInTheDocument()
+  })
+
   test('settings link navigates and closes the menu', async () => {
     const { panel, router, user } = await openUserMenu()
     await user.click(within(panel).getByRole('link', { name: 'Einstellungen' }))

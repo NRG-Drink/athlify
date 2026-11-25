@@ -19,12 +19,12 @@ public record EquipmentInput
 }
 
 /// <summary>Server-side validation of <see cref="EquipmentInput"/>.</summary>
-public static class EquipmentValidation
+public sealed class EquipmentValidation
 {
     public const int MaxNameLength = 100;
     public const int MaxDescriptionLength = 2000;
 
-    public static void ThrowIfInvalid(EquipmentInput input)
+    public void ThrowIfInvalid(EquipmentInput input)
     {
         var errors = new ValidationErrors();
         errors.Text(input.Brand, "Brand", MaxNameLength, required: true);
@@ -39,8 +39,7 @@ public static class EquipmentValidation
         errors.ThrowIfAny();
     }
 
-    /// <summary>Copies the shared fields; the links (tags and so on) are applied by the caller.</summary>
-    public static void Apply(Equipment target, EquipmentInput input)
+    public void Apply(Equipment target, EquipmentInput input)
     {
         target.Brand = input.Brand.Trim();
         target.Model = input.Model.Trim();

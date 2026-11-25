@@ -7,31 +7,30 @@ using Microsoft.EntityFrameworkCore;
 namespace Athlify.Api.Domain.Activities;
 
 [MutationType]
-public static partial class ActivityMutation
+public sealed partial class ActivityMutation(ActivityValidation activityValidation, MergeMembership mergeMembership, ActivityNode activityNode)
 {
-    public static async Task<Activity> CreateActivity(
+    public async Task<Activity> CreateActivity(
         ActivityInput activity,
         QueryContext<Activity> query,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
-        ActivityValidation.ThrowIfInvalid(activity, DateTime.UtcNow);
+        activityValidation.ThrowIfInvalid(activity, DateTime.UtcNow);
         var created = new Activity();
         await ApplyAsync(created, activity, db, cancellationToken);
         db.Activities.Add(created);
         await db.SaveChangesAsync(cancellationToken);
-        return (await ActivityNode.GetAsync(created.Id, query, db, cancellationToken))!;
+        return (await activityNode.GetAsync(created.Id, query, db, cancellationToken))!;
     }
 
-    /// <summary>Updates the editable fields; source, Strava id and calculated values stay server-owned.</summary>
-    public static async Task<Activity?> UpdateActivity(
+    public async Task<Activity?> UpdateActivity(
         [ID<Activity>] int id,
         ActivityInput activity,
         QueryContext<Activity> query,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
-        ActivityValidation.ThrowIfInvalid(activity, DateTime.UtcNow);
+        activityValidation.ThrowIfInvalid(activity, DateTime.UtcNow);
         var existing = await LoadWithMergeAsync(db, id, cancellationToken);
         if (existing is null)
         {
@@ -41,19 +40,15 @@ public static partial class ActivityMutation
         await ApplyAsync(existing, activity, db, cancellationToken);
         if (existing.Merge is not null)
         {
-            MergeMembership.Refresh(existing.Merge, db);
+            mergeMembership.Refresh(existing.Merge, db);
         }
 
         await db.SaveChangesAsync(cancellationToken);
-        return await ActivityNode.GetAsync(id, query, db, cancellationToken);
+        return await activityNode.GetAsync(id, query, db, cancellationToken);
     }
 
-    /// <summary>
-    /// Soft delete: the activity keeps its data and links but disappears from every view. A merge left with
-    /// fewer than two active activities is dissolved.
-    /// </summary>
     [ID<Activity>]
-    public static async Task<int?> DeleteActivity(
+    public async Task<int?> DeleteActivity(
         [ID<Activity>] int id,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
@@ -67,14 +62,13 @@ public static partial class ActivityMutation
         existing.DeletedAt = DateTime.UtcNow;
         if (existing.Merge is not null)
         {
-            MergeMembership.Refresh(existing.Merge, db);
+            mergeMembership.Refresh(existing.Merge, db);
         }
 
         await db.SaveChangesAsync(cancellationToken);
         return id;
     }
 
-    /// <summary>An active activity with its links and, if merged, the merge with all its members.</summary>
     private static Task<Activity?> LoadWithMergeAsync(AthlifyDbContext db, int id, CancellationToken cancellationToken) =>
         db.Activities
             .IgnoreQueryFilters([AthlifyDbContext.NotDeletedFilter])

@@ -28,7 +28,7 @@ TypeScript and Vite.
 | Routing                | `react-router-dom` v7 data mode (`createBrowserRouter`, nested app-layout route)                                                          | Proposed in [ADR-004](adr/ADR-004-react-router-data-mode.md)                                                                          |
 | Localization           | i18next with react-i18next (`de` default, `en` fallback)                                                                                  | Proposed in [ADR-003](adr/ADR-003-i18next-localization.md)                                                                            |
 | Icons                  | `react-icons` (Lucide set)                                                                                                                | Implemented                                                                                                                           |
-| Data grid              | AG Grid Community (`ag-grid-react`, `ag-grid-community`)                                                                                  | Implemented for Events                                                                                                                 |
+| Data grid              | AG Grid Community (`ag-grid-react`, `ag-grid-community`)                                                                                  | Implemented for Events and user management                                                                                                        |
 | Testing                | Vitest + React Testing Library + user-event in jsdom (`npm test`)                                                                         | Implemented                                                                                                                           |
 | Tooling                | ESLint 10 + typescript-eslint, Prettier; no git hooks                                                                                     | Implemented                                                                                                                           |
 | Backend contract       | Hot Chocolate GraphQL                                                                                                                     | Proposed in [shared ADR-001](../adr/ADR-001-graphql-api-contract.md); IDs follow [shared ADR-006](../adr/ADR-006-relay-global-ids.md) |
@@ -58,9 +58,11 @@ and Events are list slices with editing. The Activities page lists activities
 from the backend connection, applies URL-backed filters, loads additional
 pages on demand and adds, edits, duplicates and deletes activities in a form
 dialog. The Settings page lets the signed-in user edit their own profile,
-language and password. The Events page lists, creates, edits and deletes personal
-events, with URL-backed filters, sorting and saved views. Dashboard and Garage
-remain placeholders.
+language and password. Administrators manage users (list, create, edit, set
+a new password, delete with a confirmation) on `/admin/users`, reached from the User Menu; other users see a
+"no access" page ([design system](DESIGN-SYSTEM.md)). The Events page lists,
+creates, edits and deletes personal events, with URL-backed filters, sorting and
+saved views. Dashboard and Garage remain placeholders.
 
 ```text
 src/frontend/athlify/src/
@@ -138,9 +140,11 @@ view are shown inside the layout through the route `errorElement`
 | `/body-stats` | Body-Stats (domain page; `?metric=`, `?from=` and `?to=` select the view)                 | Primary Navigation |
 | `/events`     | Events (personal event grid with filters, sorting and saved views)                         | Primary Navigation |
 | `/settings`   | Settings: profile, language, password                                                     | User Menu          |
+| `/admin/users` | User management (Administrators only; others see the "no access" page)                  | User Menu (Admin)  |
 | any other     | Not Found page                                                                            | –                  |
 
-There is no Administration entry until the backend exposes user roles.
+The Administration entry in the User Menu is shown when `useAuth().hasRole('Admin')` is true;
+the route also guards itself (`AdminRoute`), and the server enforces the role on every request.
 
 The login route and all app routes check the backend session through
 `POST /auth/refresh`. A `401` means the session is absent or expired; other

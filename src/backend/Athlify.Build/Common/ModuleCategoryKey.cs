@@ -1,6 +1,6 @@
 ﻿namespace Athlify.Build.Common;
 
-public static class ModuleCategoryKey
+public sealed class ModuleCategoryKey
 {
     public static string[] AllCategories => [Build, Test, TestReport, Pack, UploadNuGet, Publish, Release, UploadReleaseAssets, Container, Node];
 

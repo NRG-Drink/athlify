@@ -1,5 +1,5 @@
 ---
-name: ship
+name: athlify-ship
 description: >
   Release engineer: sync the base branch, run tests, commit, push, and
   open a PR — or provide a paste-ready handoff when the repository forge

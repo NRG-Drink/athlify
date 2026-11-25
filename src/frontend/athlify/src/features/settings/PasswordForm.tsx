@@ -52,8 +52,8 @@ export function PasswordForm() {
     changePassword(draft, {
       onFieldErrors: (fieldErrors) =>
         setErrors({
-          currentPassword: fieldErrors.currentPassword && t(fieldErrors.currentPassword),
-          newPassword: fieldErrors.newPassword && t(fieldErrors.newPassword),
+          currentPassword: fieldErrors.currentPassword,
+          newPassword: fieldErrors.newPassword,
         }),
       onSuccess: () => {
         setErrors({})

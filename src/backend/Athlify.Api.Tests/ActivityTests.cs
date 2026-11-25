@@ -204,8 +204,6 @@ public class ActivityTests : WebApiTestBase
         await Assert.That(second.GetProperty("pageInfo").GetProperty("hasNextPage").GetBoolean()).IsFalse();
     }
 
-    // The Activities page sorts on the server with the id as the last key, so equal values that span a
-    // page boundary are neither skipped nor repeated, and the order holds for the whole list, not one page.
     [Test]
     public async Task ListSortsByDistanceAcrossPagesWithoutSkippingOrRepeating()
     {
@@ -245,9 +243,6 @@ public class ActivityTests : WebApiTestBase
         await Assert.That(distances.SequenceEqual(distances.OrderByDescending(d => d))).IsTrue();
     }
 
-    // The cost limit is checked statically from the query shape, so one activity is enough. This is the
-    // query of the frontend's Activities page (a page of 50 with a period filter, an order, the count, vehicle,
-    // gadgets and tags, plus the filter options).
     [Test]
     public async Task ActivitiesPageQueryStaysWithinTheCostLimit()
     {

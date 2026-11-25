@@ -7,7 +7,6 @@ public interface IHashService
 {
     string HashPassword(string password);
 
-    /// <summary>Compares in constant time; <c>false</c> when the account has no password hash.</summary>
     bool VerifyPassword(string password, string? storedHash);
 
     string HashToken(string token);
@@ -24,7 +23,6 @@ public class HashService : IHashService
 
     public bool VerifyPassword(string password, string? storedHash)
     {
-        // Hash before the null check so an unknown account costs the same as a wrong password.
         var inputBytes = Encoding.UTF8.GetBytes(HashPassword(password));
         if (storedHash is null)
         {

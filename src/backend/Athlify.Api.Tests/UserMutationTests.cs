@@ -108,7 +108,7 @@ public class UserMutationTests : WebApiTestBase
 
         var root = await PostAsync(client, UpdateMe, new
         {
-            input = new { firstName = new string('a', UserMutation.MaxNameLength + 1) },
+            input = new { firstName = new string('a', UpdateMeValidation.MaxNameLength + 1) },
         });
 
         await AssertValidationErrorAsync(root, "firstName");
@@ -226,6 +226,22 @@ public class UserMutationTests : WebApiTestBase
     }
 
     [Test]
+    public async Task ChangePasswordRejectsNewPasswordShorterThanTheAdminRule()
+    {
+        var client = await CreateUserClientAsync();
+        await SetPasswordAsync("luca@example.com", "old-secret");
+
+        var root = await PostAsync(client, UpdateMe, new
+        {
+            input = new { passwordChange = new { currentPassword = "old-secret", newPassword = "short" } },
+        });
+
+        await AssertValidationErrorAsync(root, "newPassword");
+        var stored = await GetUserAsync("luca@example.com");
+        await Assert.That(Hasher.VerifyPassword("old-secret", stored.PasswordHash)).IsTrue();
+    }
+
+    [Test]
     public async Task PasswordIsNeverReturnedOrStoredInPlainText()
     {
         var client = await CreateUserClientAsync();
@@ -241,58 +257,5 @@ public class UserMutationTests : WebApiTestBase
         var stored = await GetUserAsync("luca@example.com");
         await Assert.That(stored.PasswordHash).IsNotEqualTo("new-secret");
         await Assert.That(stored.PasswordHash).IsNotNull();
-    }
-
-    private static async Task AssertValidationErrorAsync(JsonElement root, string field)
-    {
-        await Assert.That(ErrorCodes(root)).Contains(DomainErrors.ValidationCode);
-        var fields = root.GetProperty("errors").EnumerateArray()
-            .Select(e => e.GetProperty("extensions").TryGetProperty("field", out var f) ? f.GetString() : null);
-        await Assert.That(fields).Contains(field);
-    }
-
-    private async Task<User> GetUserAsync(string username)
-    {
-        await using var scope = Factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
-        return await db.Users.IgnoreQueryFilters([AthlifyDbContext.OwnerFilter]).AsNoTracking()
-            .SingleAsync(u => u.Username == username);
-    }
-
-    private async Task<int> SetPasswordAsync(string username, string password)
-    {
-        await using var scope = Factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
-        var user = await db.Users.IgnoreQueryFilters([AthlifyDbContext.OwnerFilter]).SingleAsync(u => u.Username == username);
-        user.PasswordHash = Hasher.HashPassword(password);
-        await db.SaveChangesAsync();
-        return user.Id;
-    }
-
-    private async Task AddRefreshTokensAsync(int userId, int count)
-    {
-        await using var scope = Factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
-        for (var i = 0; i < count; i++)
-        {
-            db.RefreshTokens.Add(new RefreshToken
-            {
-                UserId = userId,
-                TokenHash = Guid.NewGuid().ToString("N"),
-                FamilyId = Guid.NewGuid(),
-                Created = DateTime.UtcNow,
-                CreatedByIp = "127.0.0.1",
-                ExpiresAt = DateTime.UtcNow.AddDays(7),
-            });
-        }
-
-        await db.SaveChangesAsync();
-    }
-
-    private async Task<List<RefreshToken>> GetRefreshTokensAsync(int userId)
-    {
-        await using var scope = Factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
-        return await db.RefreshTokens.IgnoreQueryFilters().AsNoTracking().Where(t => t.UserId == userId).ToListAsync();
     }
 }
