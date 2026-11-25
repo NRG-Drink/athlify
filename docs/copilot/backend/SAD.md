@@ -94,7 +94,14 @@ src/backend/
   startup ([ADR-009](../adr/ADR-009-ownership-query-filters.md)).
 - Activities are soft deleted (`NotDeleted` filter). `averageSpeed` and the
   merge totals are calculated by the domain code and stored.
-- Validation rejects invalid input with `VALIDATION_ERROR`; a missing user
+- `updateMe` (`Domain/Users/UserMutation.cs`) is the self-service mutation for
+  first name, last name, language and password. A field left out stays
+  unchanged. The target is always `ICurrentUser`; the input has no id, role or
+  username. A password change verifies the current password
+  (`CURRENT_PASSWORD_INCORRECT`) and revokes all refresh tokens of the user in
+  the same `SaveChanges`.
+- Validation rejects invalid input with `VALIDATION_ERROR`, with the input
+  field in `extensions.field` where one applies; a missing user
   gives `NOT_AUTHENTICATED`. Every rule is checked in application code; the
   database constraints are a backstop that the InMemory tests do not cover.
 - At startup the API applies pending migrations and provisions the
