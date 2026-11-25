@@ -24,6 +24,8 @@ Avoid static classes. Use one only when it is really necessary, such as an
 extension method container, which C# requires to be static. Everything else
 (resolvers, services, validators, helpers, nodes) is an instance class, and
 classes with dependencies receive them through dependency injection.
+HotChocolate split object type classes (`[ObjectType<T>]` with a partial
+`Configure` method) must be static; HotChocolate reports HC0081 otherwise.
 
 ## Documentation / README
 
