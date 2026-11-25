@@ -1,6 +1,6 @@
 ﻿namespace Athlify.Build.Common;
 
-public static class NotInParallelKey
+public sealed class NotInParallelKey
 {
     public const string Node = "Node";
     public const string Container = "Container";

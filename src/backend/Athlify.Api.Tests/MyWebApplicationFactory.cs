@@ -48,7 +48,7 @@ public abstract class WebApiTestBase : WebApplicationTest<MyWebApplicationFactor
     {
         await using var scope = Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
-        return await AdminUsers.All(db).AsNoTracking().SingleAsync(u => u.Username == username);
+        return await Factory.Services.GetRequiredService<AdminUsers>().All(db).AsNoTracking().SingleAsync(u => u.Username == username);
     }
 
     /// <summary>Gives the user a password and returns their id.</summary>
@@ -56,8 +56,8 @@ public abstract class WebApiTestBase : WebApplicationTest<MyWebApplicationFactor
     {
         await using var scope = Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
-        var user = await AdminUsers.All(db).SingleAsync(u => u.Username == username);
-        user.PasswordHash = new HashService().HashPassword(password);
+        var user = await Factory.Services.GetRequiredService<AdminUsers>().All(db).SingleAsync(u => u.Username == username);
+        user.PasswordHash = scope.ServiceProvider.GetRequiredService<IHashService>().HashPassword(password);
         await db.SaveChangesAsync();
         return user.Id;
     }

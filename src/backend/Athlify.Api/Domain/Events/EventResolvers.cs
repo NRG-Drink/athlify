@@ -8,14 +8,14 @@ using Microsoft.EntityFrameworkCore;
 namespace Athlify.Api.Domain.Events;
 
 [QueryType]
-public static partial class EventQuery
+public sealed partial class EventQuery
 {
     private static readonly Func<SortDefinition<Event>, SortDefinition<Event>> DefaultOrder =
         sort => sort.AddDescending(e => e.StartDate).AddDescending(e => e.Id);
 
     [UseFiltering]
     [UseSorting]
-    public static async Task<PageConnection<Event>> GetEvents(
+    public async Task<PageConnection<Event>> GetEvents(
         PagingArguments pagingArgs,
         QueryContext<Event> query,
         AthlifyDbContext db,
@@ -29,30 +29,30 @@ public static partial class EventQuery
 }
 
 [MutationType]
-public static partial class EventMutation
+public sealed partial class EventMutation(EventValidation eventValidation, EventNode eventNode)
 {
-    public static async Task<Event> CreateEvent(
+    public async Task<Event> CreateEvent(
         EventInput @event,
         QueryContext<Event> query,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
-        EventValidation.ThrowIfInvalid(@event);
+        eventValidation.ThrowIfInvalid(@event);
         var created = new Event();
         await ApplyAsync(created, @event, db, cancellationToken);
         db.Events.Add(created);
         await db.SaveChangesAsync(cancellationToken);
-        return (await EventNode.GetAsync(created.Id, query, db, cancellationToken))!;
+        return (await eventNode.GetAsync(created.Id, query, db, cancellationToken))!;
     }
 
-    public static async Task<Event?> UpdateEvent(
+    public async Task<Event?> UpdateEvent(
         [ID<Event>] int id,
         EventInput @event,
         QueryContext<Event> query,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
-        EventValidation.ThrowIfInvalid(@event);
+        eventValidation.ThrowIfInvalid(@event);
         var existing = await db.Events.Include(e => e.Tags).FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
         if (existing is null)
         {
@@ -61,11 +61,11 @@ public static partial class EventMutation
 
         await ApplyAsync(existing, @event, db, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
-        return await EventNode.GetAsync(id, query, db, cancellationToken);
+        return await eventNode.GetAsync(id, query, db, cancellationToken);
     }
 
     [ID<Event>]
-    public static async Task<int?> DeleteEvent(
+    public async Task<int?> DeleteEvent(
         [ID<Event>] int id,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
@@ -95,9 +95,9 @@ public static partial class EventMutation
     }
 }
 
-public static class EventNode
+public sealed class EventNode
 {
-    public static Task<Event?> GetAsync(
+    public Task<Event?> GetAsync(
         [ID<Event>] int id,
         QueryContext<Event> query,
         AthlifyDbContext db,

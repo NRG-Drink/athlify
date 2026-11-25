@@ -9,14 +9,14 @@ using Npgsql;
 namespace Athlify.Api.Domain.Tags;
 
 [QueryType]
-public static partial class TagQuery
+public sealed partial class TagQuery
 {
     private static readonly Func<SortDefinition<Tag>, SortDefinition<Tag>> DefaultOrder =
         sort => sort.AddAscending(t => t.Name).AddAscending(t => t.Id);
 
     [UseFiltering]
     [UseSorting]
-    public static async Task<PageConnection<Tag>> GetTags(
+    public async Task<PageConnection<Tag>> GetTags(
         PagingArguments pagingArgs,
         QueryContext<Tag> query,
         AthlifyDbContext db,
@@ -30,9 +30,9 @@ public static partial class TagQuery
 }
 
 [MutationType]
-public static partial class TagMutation
+public sealed partial class TagMutation(TagValidation tagValidation)
 {
-    public static async Task<Tag> CreateTag(
+    public async Task<Tag> CreateTag(
         TagInput tag,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
@@ -45,7 +45,7 @@ public static partial class TagMutation
         return created;
     }
 
-    public static async Task<Tag?> UpdateTag(
+    public async Task<Tag?> UpdateTag(
         [ID<Tag>] int id,
         TagInput tag,
         AthlifyDbContext db,
@@ -65,7 +65,7 @@ public static partial class TagMutation
     }
 
     [ID<Tag>]
-    public static async Task<int?> DeleteTag(
+    public async Task<int?> DeleteTag(
         [ID<Tag>] int id,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
@@ -91,9 +91,9 @@ public static partial class TagMutation
         return id;
     }
 
-    private static async Task ThrowIfInvalidAsync(TagInput tag, int? id, AthlifyDbContext db, CancellationToken cancellationToken)
+    private async Task ThrowIfInvalidAsync(TagInput tag, int? id, AthlifyDbContext db, CancellationToken cancellationToken)
     {
-        TagValidation.ThrowIfInvalid(tag);
+        tagValidation.ThrowIfInvalid(tag);
 
         var normalized = Tag.Normalize(tag.Name);
         if (await db.Tags.AnyAsync(t => t.NormalizedName == normalized && t.Id != id, cancellationToken))
@@ -102,7 +102,7 @@ public static partial class TagMutation
         }
     }
 
-    private static async Task SaveAsync(AthlifyDbContext db, CancellationToken cancellationToken)
+    private async Task SaveAsync(AthlifyDbContext db, CancellationToken cancellationToken)
     {
         try
         {
@@ -115,8 +115,8 @@ public static partial class TagMutation
     }
 }
 
-public static class TagNode
+public sealed class TagNode
 {
-    public static async Task<Tag?> GetAsync([ID<Tag>] int id, AthlifyDbContext db, CancellationToken cancellationToken) =>
+    public async Task<Tag?> GetAsync([ID<Tag>] int id, AthlifyDbContext db, CancellationToken cancellationToken) =>
         await db.Tags.FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
 }

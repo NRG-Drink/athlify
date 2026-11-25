@@ -3,11 +3,11 @@ using Athlify.Api.Domain.Common;
 namespace Athlify.Api.Domain.Body;
 
 /// <summary>Server-side validation of <see cref="BodyStatsInput"/>; the frontend validation is only feedback.</summary>
-public static class BodyStatsValidation
+public sealed class BodyStatsValidation
 {
     public const int MaxCommentLength = 2000;
 
-    public static void ThrowIfInvalid(BodyStatsInput input)
+    public void ThrowIfInvalid(BodyStatsInput input)
     {
         var errors = new ValidationErrors();
         errors.AddIf(!(input.Weight > 0), "Weight must be greater than 0.");

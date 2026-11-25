@@ -3,11 +3,11 @@ using Athlify.Api.Domain.Common;
 
 namespace Athlify.Api.Domain.Users;
 
-public static class UpdateMeValidation
+public sealed class UpdateMeValidation(PasswordPolicy passwordPolicy)
 {
     public const int MaxNameLength = 100;
 
-    public static void ThrowIfInvalid(UpdateMeInput input, PasswordPolicy passwordPolicy)
+    public void ThrowIfInvalid(UpdateMeInput input)
     {
         var errors = new ValidationErrors();
         if (input.FirstName is not null) errors.Text(input.FirstName, "firstName", MaxNameLength, required: true);

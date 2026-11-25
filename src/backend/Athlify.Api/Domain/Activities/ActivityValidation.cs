@@ -2,13 +2,13 @@ using Athlify.Api.Domain.Common;
 
 namespace Athlify.Api.Domain.Activities;
 
-public static class ActivityValidation
+public sealed class ActivityValidation
 {
     public const int MaxDescriptionLength = 2000;
     public const int MinHeartRate = 20;
     public const int MaxHeartRate = 250;
 
-    public static void ThrowIfInvalid(ActivityInput input, DateTime now)
+    public void ThrowIfInvalid(ActivityInput input, DateTime now)
     {
         var errors = new ValidationErrors();
         errors.AddIf(input.Time <= 0, "Time must be greater than 0.");

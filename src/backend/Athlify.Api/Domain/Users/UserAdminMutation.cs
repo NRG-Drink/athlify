@@ -10,22 +10,25 @@ using Npgsql;
 namespace Athlify.Api.Domain.Users;
 
 [MutationType]
-public static partial class UserAdminMutation
+public sealed partial class UserAdminMutation(
+    AdminUsers adminUsers,
+    UserAdminRules userAdminRules,
+    UserAdminValidation userAdminValidation,
+    UserDataDeletion userDataDeletion)
 {
     [Authorize(Roles = [nameof(UserRole.Admin)])]
-    public static async Task<User> CreateUser(
+    public async Task<User> CreateUser(
         CreateUserInput input,
         ICurrentUser currentUser,
         AthlifyDbContext db,
         IHashService hashService,
-        PasswordPolicy passwordPolicy,
         CancellationToken cancellationToken)
     {
-        await AdminUsers.RequireAdminAsync(currentUser, db, cancellationToken);
-        UserAdminValidation.ThrowIfInvalid(input, passwordPolicy);
+        await adminUsers.RequireAdminAsync(currentUser, db, cancellationToken);
+        userAdminValidation.ThrowIfInvalid(input);
 
         var username = input.Username.Trim();
-        if (await AdminUsers.All(db).AnyAsync(u => u.Username == username, cancellationToken))
+        if (await UsernameTakenAsync(db, username, cancellationToken))
         {
             throw DomainErrors.UsernameTaken();
         }
@@ -41,7 +44,6 @@ public static partial class UserAdminMutation
         };
         db.Users.Add(user);
 
-        // A concurrent create of the same username passes the check above and fails on the unique index.
         try
         {
             await db.SaveChangesAsync(cancellationToken);
@@ -49,7 +51,7 @@ public static partial class UserAdminMutation
         catch (DbUpdateException)
         {
             db.ChangeTracker.Clear();
-            if (await AdminUsers.All(db).AnyAsync(u => u.Username == username, cancellationToken))
+            if (await UsernameTakenAsync(db, username, cancellationToken))
             {
                 throw DomainErrors.UsernameTaken();
             }
@@ -61,7 +63,7 @@ public static partial class UserAdminMutation
     }
 
     [Authorize(Roles = [nameof(UserRole.Admin)])]
-    public static async Task<User> UpdateUser(
+    public async Task<User> UpdateUser(
         [ID<User>] int id,
         UpdateUserInput input,
         ICurrentUser currentUser,
@@ -75,14 +77,14 @@ public static partial class UserAdminMutation
 
         return await InSerializableTransactionAsync(db, async () =>
         {
-            var caller = await AdminUsers.RequireAdminAsync(currentUser, db, cancellationToken);
-            UserAdminValidation.ThrowIfInvalid(input);
+            var caller = await adminUsers.RequireAdminAsync(currentUser, db, cancellationToken);
+            userAdminValidation.ThrowIfInvalid(input);
             var target = await FindAsync(db, id, cancellationToken);
 
             if (input.Role is { } newRole && newRole != target.Role)
             {
-                var adminCount = await AdminUsers.All(db).CountAsync(u => u.Role == UserRole.Admin, cancellationToken);
-                UserAdminRules.CheckRoleChange(caller.Id, target, newRole, adminCount);
+                var adminCount = await adminUsers.All(db).CountAsync(u => u.Role == UserRole.Admin, cancellationToken);
+                userAdminRules.CheckRoleChange(caller.Id, target, newRole, adminCount);
                 target.Role = newRole;
                 await tokenService.RevokeAllForUserAsync(
                     target.Id, clientIp, RefreshToken.RevokeReason.RoleChanged, cancellationToken);
@@ -101,7 +103,7 @@ public static partial class UserAdminMutation
     }
 
     [Authorize(Roles = [nameof(UserRole.Admin)])]
-    public static async Task<User> ResetUserPassword(
+    public async Task<User> ResetUserPassword(
         [ID<User>] int id,
         ResetUserPasswordInput input,
         ICurrentUser currentUser,
@@ -110,11 +112,10 @@ public static partial class UserAdminMutation
         ITokenService tokenService,
         ICookieService cookieService,
         IHttpContextAccessor httpContextAccessor,
-        PasswordPolicy passwordPolicy,
         CancellationToken cancellationToken)
     {
-        await AdminUsers.RequireAdminAsync(currentUser, db, cancellationToken);
-        UserAdminValidation.ThrowIfInvalid(input, passwordPolicy);
+        await adminUsers.RequireAdminAsync(currentUser, db, cancellationToken);
+        userAdminValidation.ThrowIfInvalid(input);
 
         var target = await FindAsync(db, id, cancellationToken);
         target.PasswordHash = hashService.HashPassword(input.NewPassword);
@@ -129,7 +130,7 @@ public static partial class UserAdminMutation
 
     [ID<User>]
     [Authorize(Roles = [nameof(UserRole.Admin)])]
-    public static async Task<int> DeleteUser(
+    public async Task<int> DeleteUser(
         [ID<User>] int id,
         ICurrentUser currentUser,
         AthlifyDbContext db,
@@ -137,11 +138,11 @@ public static partial class UserAdminMutation
     {
         return await InSerializableTransactionAsync(db, async () =>
         {
-            var caller = await AdminUsers.RequireAdminAsync(currentUser, db, cancellationToken);
-            UserAdminRules.CheckDelete(caller.Id, id);
+            var caller = await adminUsers.RequireAdminAsync(currentUser, db, cancellationToken);
+            userAdminRules.CheckDelete(caller.Id, id);
             var target = await FindAsync(db, id, cancellationToken);
 
-            await UserDataDeletion.RemoveAsync(db, target, cancellationToken);
+            await userDataDeletion.RemoveAsync(db, target, cancellationToken);
             await db.SaveChangesAsync(cancellationToken);
             return id;
         }, cancellationToken);
@@ -149,9 +150,6 @@ public static partial class UserAdminMutation
 
     private const int MaxSerializationAttempts = 3;
 
-    // PostgreSQL serializable: the admin check and the last-administrator count run inside the transaction, and a
-    // serialization failure is retried against the committed state. The retrying execution strategy of Aspnet
-    // (EnrichNpgsqlDbContext) requires the whole transaction to run inside it.
     private static Task<T> InSerializableTransactionAsync<T>(
         AthlifyDbContext db,
         Func<Task<T>> work,
@@ -179,7 +177,10 @@ public static partial class UserAdminMutation
         (exception as PostgresException ?? exception.InnerException as PostgresException)?.SqlState
             == PostgresErrorCodes.SerializationFailure;
 
-    private static async Task<User> FindAsync(AthlifyDbContext db, int id, CancellationToken cancellationToken) =>
-        await AdminUsers.All(db).FirstOrDefaultAsync(u => u.Id == id, cancellationToken)
+    private Task<bool> UsernameTakenAsync(AthlifyDbContext db, string username, CancellationToken cancellationToken) =>
+        adminUsers.All(db).AnyAsync(u => u.Username == username, cancellationToken);
+
+    private async Task<User> FindAsync(AthlifyDbContext db, int id, CancellationToken cancellationToken) =>
+        await adminUsers.All(db).FirstOrDefaultAsync(u => u.Id == id, cancellationToken)
             ?? throw DomainErrors.Validation("The user was not found.");
 }

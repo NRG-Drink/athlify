@@ -3,7 +3,7 @@
 /// <summary>
 /// RIDs according to https://learn.microsoft.com/en-us/dotnet/core/rid-catalog#known-rids
 /// </summary>
-public static class DotNetRidCatalog
+public sealed class DotNetRidCatalog
 {
     public class Windows
     {

@@ -8,14 +8,14 @@ using Microsoft.EntityFrameworkCore;
 namespace Athlify.Api.Domain.Vehicles;
 
 [QueryType]
-public static partial class VehicleQuery
+public sealed partial class VehicleQuery
 {
     private static readonly Func<SortDefinition<Vehicle>, SortDefinition<Vehicle>> DefaultOrder =
         sort => sort.AddAscending(v => v.Brand).AddAscending(v => v.Model).AddAscending(v => v.Id);
 
     [UseFiltering]
     [UseSorting]
-    public static async Task<PageConnection<Vehicle>> GetVehicles(
+    public async Task<PageConnection<Vehicle>> GetVehicles(
         PagingArguments pagingArgs,
         QueryContext<Vehicle> query,
         AthlifyDbContext db,
@@ -29,30 +29,30 @@ public static partial class VehicleQuery
 }
 
 [MutationType]
-public static partial class VehicleMutation
+public sealed partial class VehicleMutation(EquipmentValidation equipmentValidation, VehicleNode vehicleNode)
 {
-    public static async Task<Vehicle> CreateVehicle(
+    public async Task<Vehicle> CreateVehicle(
         VehicleInput vehicle,
         QueryContext<Vehicle> query,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
-        EquipmentValidation.ThrowIfInvalid(vehicle);
+        equipmentValidation.ThrowIfInvalid(vehicle);
         var created = new Vehicle();
         await ApplyAsync(created, vehicle, db, cancellationToken);
         db.Vehicles.Add(created);
         await db.SaveChangesAsync(cancellationToken);
-        return (await VehicleNode.GetAsync(created.Id, query, db, cancellationToken))!;
+        return (await vehicleNode.GetAsync(created.Id, query, db, cancellationToken))!;
     }
 
-    public static async Task<Vehicle?> UpdateVehicle(
+    public async Task<Vehicle?> UpdateVehicle(
         [ID<Vehicle>] int id,
         VehicleInput vehicle,
         QueryContext<Vehicle> query,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
-        EquipmentValidation.ThrowIfInvalid(vehicle);
+        equipmentValidation.ThrowIfInvalid(vehicle);
         var existing = await db.Vehicles.Include(v => v.Tags).FirstOrDefaultAsync(v => v.Id == id, cancellationToken);
         if (existing is null)
         {
@@ -61,11 +61,11 @@ public static partial class VehicleMutation
 
         await ApplyAsync(existing, vehicle, db, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
-        return await VehicleNode.GetAsync(id, query, db, cancellationToken);
+        return await vehicleNode.GetAsync(id, query, db, cancellationToken);
     }
 
     [ID<Vehicle>]
-    public static async Task<int?> DeleteVehicle(
+    public async Task<int?> DeleteVehicle(
         [ID<Vehicle>] int id,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
@@ -95,18 +95,18 @@ public static partial class VehicleMutation
         return id;
     }
 
-    private static async Task ApplyAsync(Vehicle target, VehicleInput input, AthlifyDbContext db, CancellationToken cancellationToken)
+    private async Task ApplyAsync(Vehicle target, VehicleInput input, AthlifyDbContext db, CancellationToken cancellationToken)
     {
         var tags = await Links.LoadAllAsync(db.Tags, input.TagIds, "Tag", cancellationToken);
 
-        EquipmentValidation.Apply(target, input);
+        equipmentValidation.Apply(target, input);
         Links.ReplaceWith(target.Tags, tags);
     }
 }
 
-public static class VehicleNode
+public sealed class VehicleNode
 {
-    public static Task<Vehicle?> GetAsync(
+    public Task<Vehicle?> GetAsync(
         [ID<Vehicle>] int id,
         QueryContext<Vehicle> query,
         AthlifyDbContext db,

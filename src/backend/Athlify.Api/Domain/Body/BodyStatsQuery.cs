@@ -7,9 +7,9 @@ using Microsoft.EntityFrameworkCore;
 namespace Athlify.Api.Domain.Body;
 
 [QueryType]
-public static partial class BodyStatsQuery
+public sealed partial class BodyStatsQuery
 {
-    public static async Task<BodyStats?> GetBodyStatsById(
+    public async Task<BodyStats?> GetBodyStatsById(
         [ID<BodyStats>] int id,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
@@ -25,7 +25,7 @@ public static partial class BodyStatsQuery
 
     [UseFiltering]
     [UseSorting]
-    public static async Task<PageConnection<BodyStats>> GetBodyStats(
+    public async Task<PageConnection<BodyStats>> GetBodyStats(
         PagingArguments pagingArgs,
         QueryContext<BodyStats> query,
         AthlifyDbContext db,

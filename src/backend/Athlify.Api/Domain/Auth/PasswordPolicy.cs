@@ -30,7 +30,6 @@ public sealed class PasswordPolicy
         }
     }
 
-    // The extension values let the client word the message with the configured limit.
     public void Check(ValidationErrors errors, string? password, string field)
     {
         if (string.IsNullOrWhiteSpace(password))

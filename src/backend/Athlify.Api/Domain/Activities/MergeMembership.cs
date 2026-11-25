@@ -9,18 +9,18 @@ namespace Athlify.Api.Domain.Activities;
 /// Every method works on a merge loaded with <see cref="LoadAsync"/>, so one <c>SaveChanges</c> stores the
 /// membership, the totals and a possible dissolution together.
 /// </summary>
-public static class MergeMembership
+public sealed class MergeMembership
 {
     public const int MinimumMembers = 2;
     public const int MaxNameLength = 100;
 
-    public static Task<ActivityMerge?> LoadAsync(AthlifyDbContext db, int mergeId, CancellationToken cancellationToken) =>
+    public Task<ActivityMerge?> LoadAsync(AthlifyDbContext db, int mergeId, CancellationToken cancellationToken) =>
         db.ActivityMerges
             .IgnoreQueryFilters([AthlifyDbContext.NotDeletedFilter])
             .Include(m => m.Activities)
             .FirstOrDefaultAsync(m => m.Id == mergeId, cancellationToken);
 
-    public static bool Refresh(ActivityMerge merge, AthlifyDbContext db)
+    public bool Refresh(ActivityMerge merge, AthlifyDbContext db)
     {
         var active = merge.Activities.Where(a => a.DeletedAt is null).ToList();
         if (active.Count < MinimumMembers)
@@ -37,7 +37,7 @@ public static class MergeMembership
         return true;
     }
 
-    public static void ThrowIfMergedElsewhere(IEnumerable<Activity> activities, int? mergeId)
+    public void ThrowIfMergedElsewhere(IEnumerable<Activity> activities, int? mergeId)
     {
         if (activities.Any(a => a.MergeId is not null && a.MergeId != mergeId))
         {

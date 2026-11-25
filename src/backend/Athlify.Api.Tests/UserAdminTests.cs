@@ -333,7 +333,7 @@ public class UserAdminTests : WebApiTestBase
         await using (var scope = Factory.Services.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
-            db.Users.Remove(await AdminUsers.All(db).SingleAsync(u => u.Username == Luca));
+            db.Users.Remove(await Factory.Services.GetRequiredService<AdminUsers>().All(db).SingleAsync(u => u.Username == Luca));
             await db.SaveChangesAsync();
         }
 
@@ -530,8 +530,8 @@ public class UserAdminTests : WebApiTestBase
     {
         var target = new User { Id = 2, Role = UserRole.Admin };
 
-        UserAdminRules.CheckRoleChange(callerId: 1, target, UserRole.Admin, adminCount: 1);
-        UserAdminRules.CheckRoleChange(callerId: 1, target, UserRole.User, adminCount: 2);
+        Factory.Services.GetRequiredService<UserAdminRules>().CheckRoleChange(callerId: 1, target, UserRole.Admin, adminCount: 1);
+        Factory.Services.GetRequiredService<UserAdminRules>().CheckRoleChange(callerId: 1, target, UserRole.User, adminCount: 2);
 
         await Assert.That(target.Role).IsEqualTo(UserRole.Admin);
     }
@@ -543,9 +543,9 @@ public class UserAdminTests : WebApiTestBase
         var last = new User { Id = 2, Role = UserRole.Admin };
 
         var own = Assert.Throws<GraphQLException>(() =>
-            UserAdminRules.CheckRoleChange(callerId: 1, self, UserRole.User, adminCount: 2));
+            Factory.Services.GetRequiredService<UserAdminRules>().CheckRoleChange(callerId: 1, self, UserRole.User, adminCount: 2));
         var lastAdmin = Assert.Throws<GraphQLException>(() =>
-            UserAdminRules.CheckRoleChange(callerId: 1, last, UserRole.User, adminCount: 1));
+            Factory.Services.GetRequiredService<UserAdminRules>().CheckRoleChange(callerId: 1, last, UserRole.User, adminCount: 1));
 
         await Assert.That(own.Errors[0].Code).IsEqualTo(DomainErrors.CannotChangeOwnRoleCode);
         await Assert.That(lastAdmin.Errors[0].Code).IsEqualTo(DomainErrors.LastAdminCode);
@@ -556,7 +556,7 @@ public class UserAdminTests : WebApiTestBase
     {
         await using var scope = Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
-        return await AdminUsers.All(db).CountAsync(u => u.Username == username);
+        return await Factory.Services.GetRequiredService<AdminUsers>().All(db).CountAsync(u => u.Username == username);
     }
 
     private async Task SeedDataAsync(int userId, bool softDeleted = false)

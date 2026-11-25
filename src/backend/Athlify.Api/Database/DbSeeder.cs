@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Athlify.Api.Database;
 
-public class DbSeeder : IDbSeeder
+public sealed class DbSeeder(MergeMembership mergeMembership) : IDbSeeder
 {
     private const int SampleDays = 365;
     public const string BodyStatsSeedKey = "body-stats-v1";
@@ -22,7 +22,7 @@ public class DbSeeder : IDbSeeder
         SeedOnce(context, ownerId, MoreActivitiesSeedKey, () => AddMoreActivities(context, ownerId));
     }
 
-    private static void SeedOnce(AthlifyDbContext context, int ownerId, string key, Action addFixture)
+    private void SeedOnce(AthlifyDbContext context, int ownerId, string key, Action addFixture)
     {
         var alreadySeeded = context.SeedMarkers
             .IgnoreQueryFilters()
@@ -37,7 +37,7 @@ public class DbSeeder : IDbSeeder
         context.SaveChanges();
     }
 
-    private static void AddBodyStats(AthlifyDbContext context, int ownerId)
+    private void AddBodyStats(AthlifyDbContext context, int ownerId)
     {
         var existingDates = context.BodyStats
             .IgnoreQueryFilters([AthlifyDbContext.OwnerFilter])
@@ -69,7 +69,7 @@ public class DbSeeder : IDbSeeder
         };
     }
 
-    private static void AddActivities(AthlifyDbContext context, int ownerId)
+    private void AddActivities(AthlifyDbContext context, int ownerId)
     {
         var activities = AddActivityRange(context, ownerId, 0, BaseActivityCount);
 
@@ -79,11 +79,11 @@ public class DbSeeder : IDbSeeder
             Name = "Weekend double",
             Activities = activities.Take(2).ToList(),
         };
-        MergeMembership.Refresh(merge, context);
+        mergeMembership.Refresh(merge, context);
         context.ActivityMerges.Add(merge);
     }
 
-    private static void AddMoreActivities(AthlifyDbContext context, int ownerId)
+    private void AddMoreActivities(AthlifyDbContext context, int ownerId)
     {
         AddActivityRange(context, ownerId, BaseActivityCount, ExtraActivityCount);
     }

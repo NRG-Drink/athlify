@@ -1,9 +1,9 @@
 namespace Athlify.Api.Database;
 
 /// <summary>Decides at startup whether sample data is written.</summary>
-public static class DbSeeding
+public sealed class DbSeeding
 {
-    public static void RunIfEnabled(SeedOptions options, IHostEnvironment environment, ILogger logger, Action seed)
+    public void RunIfEnabled(SeedOptions options, IHostEnvironment environment, ILogger logger, Action seed)
     {
         if (!options.Enabled)
         {

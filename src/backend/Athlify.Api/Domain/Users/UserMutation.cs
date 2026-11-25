@@ -6,9 +6,9 @@ using Microsoft.EntityFrameworkCore;
 namespace Athlify.Api.Domain.Users;
 
 [MutationType]
-public static partial class UserMutation
+public sealed partial class UserMutation(UpdateMeValidation updateMeValidation)
 {
-    public static async Task<User> UpdateMe(
+    public async Task<User> UpdateMe(
         UpdateMeInput input,
         ICurrentUser currentUser,
         AthlifyDbContext db,
@@ -16,11 +16,10 @@ public static partial class UserMutation
         ITokenService tokenService,
         ICookieService cookieService,
         IHttpContextAccessor httpContextAccessor,
-        PasswordPolicy passwordPolicy,
         CancellationToken cancellationToken)
     {
         var userId = currentUser.UserId ?? throw DomainErrors.NotAuthenticated();
-        UpdateMeValidation.ThrowIfInvalid(input, passwordPolicy);
+        updateMeValidation.ThrowIfInvalid(input);
 
         var user = await db.Users.SingleAsync(u => u.Id == userId, cancellationToken);
 
@@ -40,7 +39,6 @@ public static partial class UserMutation
         if (change is not null)
         {
             user.PasswordHash = hashService.HashPassword(change.NewPassword);
-            // Marked here, saved below: the new hash and the revocation commit together or not at all.
             await tokenService.RevokeAllForUserAsync(
                 userId, cookieService.GetClientIp(httpContextAccessor), RefreshToken.RevokeReason.PasswordChanged,
                 cancellationToken);

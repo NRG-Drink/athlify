@@ -185,7 +185,7 @@ public class UserAdminPostgresTests
         await using var scope = factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
         await db.Database.EnsureCreatedAsync();
-        await AdminUsers.All(db)
+        await factory.Services.GetRequiredService<AdminUsers>().All(db)
             .Where(u => u.Role == UserRole.Admin)
             .ExecuteUpdateAsync(s => s.SetProperty(u => u.Role, UserRole.User));
     }
@@ -211,7 +211,7 @@ public class UserAdminPostgresTests
     {
         await using var scope = factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
-        return await AdminUsers.All(db)
+        return await factory.Services.GetRequiredService<AdminUsers>().All(db)
             .CountAsync(u => u.Role == UserRole.Admin);
     }
 }

@@ -1,6 +1,13 @@
-using System.Reflection;
 using Athlify.Api.Database;
+using Athlify.Api.Domain.Activities;
+using Athlify.Api.Domain.Auth;
+using Athlify.Api.Domain.Body;
 using Athlify.Api.Domain.Common;
+using Athlify.Api.Domain.Events;
+using Athlify.Api.Domain.Gadgets;
+using Athlify.Api.Domain.Strava;
+using Athlify.Api.Domain.Tags;
+using Athlify.Api.Domain.Vehicles;
 using Microsoft.EntityFrameworkCore;
 
 namespace Athlify.Api.Domain.Users;
@@ -9,22 +16,36 @@ namespace Athlify.Api.Domain.Users;
 /// Removes a user together with everything they own. PostgreSQL would cascade through the foreign keys, but the
 /// endpoint tests run on InMemory, which has no foreign-key actions, so the owned records are removed explicitly
 /// in the same <c>SaveChanges</c> (see the backend learnings). Every entity that implements <see cref="IOwned"/>
-/// is found through the model, so a new owned entity is covered without touching this class.
+/// must be listed in <see cref="OwnedEntityTypes"/>; a test fails when the model has one that is missing.
 /// </summary>
-public static class UserDataDeletion
+public sealed class UserDataDeletion
 {
-    private static readonly MethodInfo RemoveOwnedMethod =
-        typeof(UserDataDeletion).GetMethod(nameof(RemoveOwnedAsync), BindingFlags.NonPublic | BindingFlags.Static)!;
+    public static readonly Type[] OwnedEntityTypes =
+    [
+        typeof(Activity),
+        typeof(ActivityMerge),
+        typeof(RefreshToken),
+        typeof(BodyStats),
+        typeof(Event),
+        typeof(StravaConnection),
+        typeof(Tag),
+        typeof(Vehicle),
+        typeof(Gadget),
+        typeof(MaintenanceCycle),
+    ];
 
-    public static async Task RemoveAsync(AthlifyDbContext db, User user, CancellationToken cancellationToken)
+    public async Task RemoveAsync(AthlifyDbContext db, User user, CancellationToken cancellationToken)
     {
-        var ownedTypes = db.Model.GetEntityTypes()
-            .Select(t => t.ClrType)
-            .Where(type => !type.IsAbstract && typeof(IOwned).IsAssignableFrom(type));
-        foreach (var type in ownedTypes)
-        {
-            await (Task)RemoveOwnedMethod.MakeGenericMethod(type).Invoke(null, [db, user.Id, cancellationToken])!;
-        }
+        await RemoveOwnedAsync<Activity>(db, user.Id, cancellationToken);
+        await RemoveOwnedAsync<ActivityMerge>(db, user.Id, cancellationToken);
+        await RemoveOwnedAsync<RefreshToken>(db, user.Id, cancellationToken);
+        await RemoveOwnedAsync<BodyStats>(db, user.Id, cancellationToken);
+        await RemoveOwnedAsync<Event>(db, user.Id, cancellationToken);
+        await RemoveOwnedAsync<StravaConnection>(db, user.Id, cancellationToken);
+        await RemoveOwnedAsync<Tag>(db, user.Id, cancellationToken);
+        await RemoveOwnedAsync<Vehicle>(db, user.Id, cancellationToken);
+        await RemoveOwnedAsync<Gadget>(db, user.Id, cancellationToken);
+        await RemoveOwnedAsync<MaintenanceCycle>(db, user.Id, cancellationToken);
 
         db.SeedMarkers.RemoveRange(await db.SeedMarkers
             .IgnoreQueryFilters()

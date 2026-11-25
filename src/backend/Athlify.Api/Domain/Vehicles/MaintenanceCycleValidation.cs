@@ -3,12 +3,12 @@ using Athlify.Api.Domain.Common;
 namespace Athlify.Api.Domain.Vehicles;
 
 /// <summary>Server-side validation of <see cref="MaintenanceCycleInput"/>.</summary>
-public static class MaintenanceCycleValidation
+public sealed class MaintenanceCycleValidation
 {
     public const int MaxNameLength = 100;
     public const int MaxDescriptionLength = 2000;
 
-    public static void ThrowIfInvalid(MaintenanceCycleInput input)
+    public void ThrowIfInvalid(MaintenanceCycleInput input)
     {
         var errors = new ValidationErrors();
         errors.AddIf((input.VehicleId is null) == (input.GadgetId is null),

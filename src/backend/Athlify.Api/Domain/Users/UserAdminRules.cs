@@ -2,9 +2,10 @@ using Athlify.Api.Domain.Common;
 
 namespace Athlify.Api.Domain.Users;
 
-public static class UserAdminRules
+/// <summary>Invariants of user management that do not depend on the database.</summary>
+public sealed class UserAdminRules
 {
-    public static void CheckDelete(int callerId, int targetId)
+    public void CheckDelete(int callerId, int targetId)
     {
         if (targetId == callerId)
         {
@@ -12,7 +13,7 @@ public static class UserAdminRules
         }
     }
 
-    public static void CheckRoleChange(int callerId, User target, UserRole newRole, int adminCount)
+    public void CheckRoleChange(int callerId, User target, UserRole newRole, int adminCount)
     {
         if (newRole == target.Role)
         {

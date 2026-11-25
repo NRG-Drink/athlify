@@ -3,11 +3,11 @@ using Athlify.Api.Domain.Common;
 
 namespace Athlify.Api.Domain.Users;
 
-public static class UserAdminValidation
+public sealed class UserAdminValidation(PasswordPolicy passwordPolicy)
 {
     public const int MaxUsernameLength = 100;
 
-    public static void ThrowIfInvalid(CreateUserInput input, PasswordPolicy passwordPolicy)
+    public void ThrowIfInvalid(CreateUserInput input)
     {
         var errors = new ValidationErrors();
         errors.Text(input.Username, "username", MaxUsernameLength, required: true);
@@ -22,7 +22,7 @@ public static class UserAdminValidation
         errors.ThrowIfAny();
     }
 
-    public static void ThrowIfInvalid(UpdateUserInput input)
+    public void ThrowIfInvalid(UpdateUserInput input)
     {
         var errors = new ValidationErrors();
         if (input.FirstName is not null)
@@ -38,7 +38,7 @@ public static class UserAdminValidation
         errors.ThrowIfAny();
     }
 
-    public static void ThrowIfInvalid(ResetUserPasswordInput input, PasswordPolicy passwordPolicy)
+    public void ThrowIfInvalid(ResetUserPasswordInput input)
     {
         var errors = new ValidationErrors();
         passwordPolicy.Check(errors, input.NewPassword, "newPassword");

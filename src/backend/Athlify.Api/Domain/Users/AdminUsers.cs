@@ -5,13 +5,13 @@ using Microsoft.EntityFrameworkCore;
 namespace Athlify.Api.Domain.Users;
 
 // The only place where user management looks at other users. It opts out of the owner filter (ADR-009) for User only.
-public static class AdminUsers
+// It reads the role from the database, not the token, so a demoted administrator loses access at once.
+public sealed class AdminUsers
 {
-    public static IQueryable<User> All(AthlifyDbContext db) =>
+    public IQueryable<User> All(AthlifyDbContext db) =>
         db.Users.IgnoreQueryFilters([AthlifyDbContext.OwnerFilter]);
 
-    // Reads the role from the database, not the token: a demoted administrator loses access at once (ADR-013).
-    public static async Task<User> RequireAdminAsync(
+    public async Task<User> RequireAdminAsync(
         ICurrentUser currentUser,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
