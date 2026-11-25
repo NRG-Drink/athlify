@@ -8,67 +8,6 @@ using Npgsql;
 
 namespace Athlify.Api.Domain.Users;
 
-/// <summary>A new account. The administrator chooses the initial password and hands it over.</summary>
-public record CreateUserInput(
-    string Username,
-    string FirstName,
-    string LastName,
-    Language? Language,
-    UserRole? Role,
-    string Password);
-
-/// <summary>A field that is left out stays unchanged. The username is the login key and cannot be changed.</summary>
-public record UpdateUserInput(
-    string? FirstName,
-    string? LastName,
-    Language? Language,
-    UserRole? Role);
-
-public record ResetUserPasswordInput(string NewPassword);
-
-public static class UserAdminValidation
-{
-    public const int MaxUsernameLength = 100;
-
-    public static void ThrowIfInvalid(CreateUserInput input)
-    {
-        var errors = new ValidationErrors();
-        errors.Text(input.Username, "username", MaxUsernameLength, required: true);
-        if (input.Username.Trim().Any(char.IsWhiteSpace))
-        {
-            errors.Add("username must not contain spaces.", "username");
-        }
-
-        errors.Text(input.FirstName, "firstName", UpdateMeValidation.MaxNameLength, required: true);
-        errors.Text(input.LastName, "lastName", UpdateMeValidation.MaxNameLength, required: true);
-        PasswordPolicy.Check(errors, input.Password, "password");
-        errors.ThrowIfAny();
-    }
-
-    public static void ThrowIfInvalid(UpdateUserInput input)
-    {
-        var errors = new ValidationErrors();
-        if (input.FirstName is not null)
-        {
-            errors.Text(input.FirstName, "firstName", UpdateMeValidation.MaxNameLength, required: true);
-        }
-
-        if (input.LastName is not null)
-        {
-            errors.Text(input.LastName, "lastName", UpdateMeValidation.MaxNameLength, required: true);
-        }
-
-        errors.ThrowIfAny();
-    }
-
-    public static void ThrowIfInvalid(ResetUserPasswordInput input)
-    {
-        var errors = new ValidationErrors();
-        PasswordPolicy.Check(errors, input.NewPassword, "newPassword");
-        errors.ThrowIfAny();
-    }
-}
-
 [MutationType]
 public static partial class UserAdminMutation
 {
@@ -77,10 +16,11 @@ public static partial class UserAdminMutation
         ICurrentUser currentUser,
         AthlifyDbContext db,
         IHashService hashService,
+        PasswordPolicy passwordPolicy,
         CancellationToken cancellationToken)
     {
         await AdminUsers.RequireAdminAsync(currentUser, db, cancellationToken);
-        UserAdminValidation.ThrowIfInvalid(input);
+        UserAdminValidation.ThrowIfInvalid(input, passwordPolicy);
 
         var username = input.Username.Trim();
         if (await AdminUsers.All(db).AnyAsync(u => u.Username == username, cancellationToken))
@@ -99,6 +39,7 @@ public static partial class UserAdminMutation
         };
         db.Users.Add(user);
 
+        // A concurrent create of the same username passes the check above and fails on the unique index.
         try
         {
             await db.SaveChangesAsync(cancellationToken);
@@ -156,35 +97,6 @@ public static partial class UserAdminMutation
         }, cancellationToken);
     }
 
-    private const int MaxSerializationAttempts = 3;
-
-    private static Task<T> InSerializableTransactionAsync<T>(
-        AthlifyDbContext db,
-        Func<Task<T>> work,
-        CancellationToken cancellationToken) =>
-        db.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
-        {
-            for (var attempt = 1; ; attempt++)
-            {
-                db.ChangeTracker.Clear();
-                try
-                {
-                    await using var transaction =
-                        await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
-                    var result = await work();
-                    await transaction.CommitAsync(cancellationToken);
-                    return result;
-                }
-                catch (Exception exception) when (attempt < MaxSerializationAttempts && IsSerializationFailure(exception))
-                {
-                }
-            }
-        });
-
-    private static bool IsSerializationFailure(Exception exception) =>
-        (exception as PostgresException ?? exception.InnerException as PostgresException)?.SqlState
-            == PostgresErrorCodes.SerializationFailure;
-
     public static async Task<User> ResetUserPassword(
         [ID<User>] int id,
         ResetUserPasswordInput input,
@@ -194,10 +106,11 @@ public static partial class UserAdminMutation
         ITokenService tokenService,
         ICookieService cookieService,
         IHttpContextAccessor httpContextAccessor,
+        PasswordPolicy passwordPolicy,
         CancellationToken cancellationToken)
     {
         await AdminUsers.RequireAdminAsync(currentUser, db, cancellationToken);
-        UserAdminValidation.ThrowIfInvalid(input);
+        UserAdminValidation.ThrowIfInvalid(input, passwordPolicy);
 
         var target = await FindAsync(db, id, cancellationToken);
         target.PasswordHash = hashService.HashPassword(input.NewPassword);
@@ -228,6 +141,38 @@ public static partial class UserAdminMutation
             return id;
         }, cancellationToken);
     }
+
+    private const int MaxSerializationAttempts = 3;
+
+    // PostgreSQL serializable: the admin check and the last-administrator count run inside the transaction, and a
+    // serialization failure is retried against the committed state. The retrying execution strategy of Aspnet
+    // (EnrichNpgsqlDbContext) requires the whole transaction to run inside it.
+    private static Task<T> InSerializableTransactionAsync<T>(
+        AthlifyDbContext db,
+        Func<Task<T>> work,
+        CancellationToken cancellationToken) =>
+        db.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
+        {
+            for (var attempt = 1; ; attempt++)
+            {
+                db.ChangeTracker.Clear();
+                try
+                {
+                    await using var transaction =
+                        await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+                    var result = await work();
+                    await transaction.CommitAsync(cancellationToken);
+                    return result;
+                }
+                catch (Exception exception) when (attempt < MaxSerializationAttempts && IsSerializationFailure(exception))
+                {
+                }
+            }
+        });
+
+    private static bool IsSerializationFailure(Exception exception) =>
+        (exception as PostgresException ?? exception.InnerException as PostgresException)?.SqlState
+            == PostgresErrorCodes.SerializationFailure;
 
     private static async Task<User> FindAsync(AthlifyDbContext db, int id, CancellationToken cancellationToken) =>
         await AdminUsers.All(db).FirstOrDefaultAsync(u => u.Id == id, cancellationToken)

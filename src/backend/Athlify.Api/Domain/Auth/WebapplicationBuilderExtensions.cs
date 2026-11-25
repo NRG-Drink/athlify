@@ -19,6 +19,8 @@ public static class WebapplicationBuilderExtensions
 
         builder.Services
             .Configure<JwtOptions>(jwtConfigSection)
+            .Configure<PasswordPolicyOptions>(builder.Configuration.GetSection(PasswordPolicyOptions.SectionName))
+            .AddSingleton<PasswordPolicy>()
             .AddScoped<ITokenService, TokenService>()
             .AddScoped<ICookieService, CookieService>()
             .AddScoped<IHashService, HashService>()

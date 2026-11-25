@@ -13,6 +13,7 @@ repository. Never commit credentials or tokens.
 | Database | `Program.cs` | PostgreSQL through `AddDbContext` + `EnrichNpgsqlDbContext` (connection `postgres-db`, provided by the Aspire AppHost); pending EF Core migrations from `Database/Migrations/` are applied at startup. Endpoint tests swap in EF Core InMemory |
 | Development user | `Athlify:DevelopmentUser` (`Email`, `FirstName`, `LastName`) | Until authentication exists, every request acts as this Administrator, created at startup if missing. Defaults: `admin@athlify.local`, `Athlify`, `Admin` |
 | Seeding | `Athlify:Seed:Enabled` (`Database/SeedOptions.cs`, `DbSeeding.cs`, `DbSeeder.cs`) | Off by default; `appsettings.Development.json` turns it on. Environment variable `Athlify__Seed__Enabled` (`true`/`false`). When on, sample Body-Stats and Activities are written for the development user once, guarded by the `body-stats-v1` and `activities-v1` seed markers. Outside `Development` this logs a warning |
+| Password policy | `PasswordPolicy:MinLength` and `PasswordPolicy:MaxLength` (`Domain/Auth/PasswordPolicy.cs`), in `appsettings.json` | 8 and 200 characters. The same rule applies to a password chosen in the settings and one set by an administrator. Environment variables `PasswordPolicy__MinLength` and `PasswordPolicy__MaxLength` override it; the frontend reads the limit from the API error, so it needs no setting |
 | GraphQL limits | `Program.cs` | Pages of at most 200 (default 100); query cost limits raised to 10,000 |
 
 Standard ASP.NET Core configuration precedence applies. Environment

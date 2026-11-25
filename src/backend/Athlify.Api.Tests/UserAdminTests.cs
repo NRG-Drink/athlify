@@ -190,7 +190,7 @@ public class UserAdminTests : WebApiTestBase
     {
         var admin = await CreateUserClientAsync(Admin, UserRole.Admin);
 
-        var root = await PostAsync(admin, CreateUser, new { input = NewUser("mia", new string('x', PasswordPolicy.MaxLength + 1)) });
+        var root = await PostAsync(admin, CreateUser, new { input = NewUser("mia", new string('x', new PasswordPolicyOptions().MaxLength + 1)) });
 
         await AssertRuleAsync(root, "password", PasswordPolicy.TooLongRule);
     }

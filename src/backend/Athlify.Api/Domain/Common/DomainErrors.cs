@@ -51,15 +51,15 @@ public sealed class ValidationErrors
     public void Add(string message) =>
         _errors.Add(ErrorBuilder.New().SetMessage(message).SetCode(DomainErrors.ValidationCode).Build());
 
-    public void Add(string message, string field) => Add(message, field, rule: null);
-
-    public void Add(string message, string field, string? rule)
+    // Extra extensions carry values a client needs to word the rule, such as the limit that was broken.
+    public void Add(string message, string field, string? rule = null, params (string Name, object Value)[] extensions)
     {
         var error = ErrorBuilder.New()
             .SetMessage(message)
             .SetCode(DomainErrors.ValidationCode)
             .SetExtension("field", field);
         if (rule is not null) error.SetExtension("rule", rule);
+        foreach (var (name, value) in extensions) error.SetExtension(name, value);
         _errors.Add(error.Build());
     }
 

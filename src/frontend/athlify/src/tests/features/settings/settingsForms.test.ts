@@ -11,7 +11,10 @@ import {
   toProfileInput,
   validateProfile,
 } from '../../../features/settings/profileValues'
-import { mapUpdateMeErrors } from '../../../features/settings/settingsErrors'
+import {
+  mapUpdateMeErrors,
+  translateFieldErrors,
+} from '../../../features/settings/settingsErrors'
 
 const t = i18n.t.bind(i18n) as TFunction
 
@@ -63,16 +66,10 @@ describe('validatePassword', () => {
     expect(errors).toEqual({ confirmation: 'Die Passwörter stimmen nicht überein.' })
   })
 
-  it('applies the server rule to the new password: at least 8 and at most 200 characters', () => {
+  it('leaves the length rule to the server, whose limits are configured there', () => {
     expect(
       validatePassword({ currentPassword: 'a', newPassword: 'kurz', confirmation: 'kurz' }, t),
-    ).toEqual({ newPassword: 'Das Passwort braucht mindestens 8 Zeichen.' })
-    expect(
-      validatePassword(
-        { currentPassword: 'a', newPassword: 'x'.repeat(201), confirmation: 'x'.repeat(201) },
-        t,
-      ),
-    ).toEqual({ newPassword: 'Das Passwort darf höchstens 200 Zeichen lang sein.' })
+    ).toEqual({})
   })
 
   it('never sends the confirmation', () => {
@@ -93,6 +90,7 @@ describe('mapUpdateMeErrors', () => {
       ]),
     ).toEqual({
       fieldErrors: { currentPassword: 'settings.errors.currentPasswordIncorrect' },
+      fieldValues: {},
       general: false,
     })
   })
@@ -123,6 +121,24 @@ describe('mapUpdateMeErrors', () => {
       },
     ])
     expect(result.fieldErrors).toEqual({ newPassword: 'form.errors.passwordTooShort' })
+  })
+
+  it('passes the configured limit of a rule as interpolation values', () => {
+    const result = mapUpdateMeErrors([
+      {
+        message: 'newPassword must be at least 8 characters long.',
+        extensions: {
+          code: 'VALIDATION_ERROR',
+          field: 'newPassword',
+          rule: 'PASSWORD_TOO_SHORT',
+          minLength: 12,
+        },
+      },
+    ])
+    expect(result.fieldValues).toEqual({ newPassword: { min: 12 } })
+    expect(translateFieldErrors(t, result)).toEqual({
+      newPassword: 'Das Passwort braucht mindestens 12 Zeichen.',
+    })
   })
 
   it('reads an unknown rule as required', () => {

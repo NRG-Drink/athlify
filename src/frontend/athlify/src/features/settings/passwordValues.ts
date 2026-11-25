@@ -19,29 +19,19 @@ export function confirmationMismatch(values: PasswordValues): boolean {
   return values.confirmation !== '' && values.confirmation !== values.newPassword
 }
 
-export const MIN_PASSWORD_LENGTH = 8
-export const MAX_PASSWORD_LENGTH = 200
-
-/** Interpolation values of the length messages, so a server-side rejection reads like the client's own check. */
-export const passwordLimits = { min: MIN_PASSWORD_LENGTH, max: MAX_PASSWORD_LENGTH }
-
 /** The `extensions.rule` values of the server's password policy and the message each one shows. */
 export const PASSWORD_RULE_KEYS = {
   PASSWORD_TOO_SHORT: 'form.errors.passwordTooShort',
   PASSWORD_TOO_LONG: 'form.errors.passwordTooLong',
 } as const
 
-/** The error text of a new password, or undefined when it is acceptable. Same rule as the server's `PasswordPolicy`. */
+/** The error text of a new password that is empty, or undefined. The length rule is the server's (its limits are configured there). */
 export function newPasswordError(password: string, t: TFunction): string | undefined {
   if (password.trim() === '') return t('form.errors.required')
-  if (password.length < MIN_PASSWORD_LENGTH)
-    return t(PASSWORD_RULE_KEYS.PASSWORD_TOO_SHORT, passwordLimits)
-  if (password.length > MAX_PASSWORD_LENGTH)
-    return t(PASSWORD_RULE_KEYS.PASSWORD_TOO_LONG, passwordLimits)
   return undefined
 }
 
-/** The confirmation is checked on the client only; the new password follows the rule of `newPasswordError`. */
+/** The confirmation is checked on the client only; the new password is checked by the server's policy. */
 export function validatePassword(values: PasswordValues, t: TFunction): PasswordErrors {
   const errors: PasswordErrors = {}
   if (values.currentPassword === '') errors.currentPassword = t('form.errors.required')

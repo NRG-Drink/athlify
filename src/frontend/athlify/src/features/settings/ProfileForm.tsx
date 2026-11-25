@@ -30,8 +30,8 @@ export function ProfileForm({ username, saved }: ProfileFormProps) {
     saveProfile(draft, {
       onFieldErrors: (fieldErrors) =>
         setErrors({
-          firstName: fieldErrors.firstName && t(fieldErrors.firstName),
-          lastName: fieldErrors.lastName && t(fieldErrors.lastName),
+          firstName: fieldErrors.firstName,
+          lastName: fieldErrors.lastName,
         }),
       onSuccess: () => setErrors({}),
     }),

@@ -8,6 +8,7 @@ import { toProfileInput, type ProfileValues } from './profileValues'
 import {
   mapUpdateMeErrors,
   relayErrorsOf,
+  translateFieldErrors,
   type GraphQLErrorLike,
   type MappedErrors,
 } from './settingsErrors'
@@ -41,8 +42,9 @@ export function useUpdateMe() {
   const [commit, isSaving] = useMutation<useUpdateMeMutation>(mutation)
 
   const failed = (errors: readonly GraphQLErrorLike[], { onFieldErrors }: Callbacks) => {
-    const { fieldErrors, general } = mapUpdateMeErrors(errors)
-    onFieldErrors(fieldErrors)
+    const mapped = mapUpdateMeErrors(errors)
+    onFieldErrors(translateFieldErrors(t, mapped))
+    const { general, fieldErrors } = mapped
     if (general || Object.keys(fieldErrors).length === 0) {
       toaster.create({ type: 'error', title: t('settings.errors.saveFailed') })
     }

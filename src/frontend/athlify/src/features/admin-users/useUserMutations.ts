@@ -1,8 +1,11 @@
 import { graphql, useMutation } from 'react-relay'
 import { useTranslation } from 'react-i18next'
 import { toaster } from '../../components/ui/toaster'
-import { passwordLimits } from '../settings/passwordValues'
-import { relayErrorsOf, type GraphQLErrorLike } from '../settings/settingsErrors'
+import {
+  relayErrorsOf,
+  translateFieldErrors,
+  type GraphQLErrorLike,
+} from '../settings/settingsErrors'
 import { mapAdminUserErrors, type MappedAdminErrors } from './adminUserErrors'
 import type { useUserMutationsDeleteMutation } from './__generated__/useUserMutationsDeleteMutation.graphql'
 import type { useUserMutationsCreateMutation } from './__generated__/useUserMutationsCreateMutation.graphql'
@@ -64,12 +67,9 @@ export function useUserMutations() {
   const [commitDelete, isDeleting] = useMutation<useUserMutationsDeleteMutation>(deleteMutation)
 
   const failed = (errors: readonly GraphQLErrorLike[], { onFieldErrors }: Callbacks) => {
-    const { fieldErrors, general } = mapAdminUserErrors(errors)
-    onFieldErrors?.(
-      Object.fromEntries(
-        Object.entries(fieldErrors).map(([field, key]) => [field, t(key, passwordLimits)]),
-      ),
-    )
+    const mapped = mapAdminUserErrors(errors)
+    const { general, fieldErrors } = mapped
+    onFieldErrors?.(translateFieldErrors(t, mapped))
     if (general || Object.keys(fieldErrors).length === 0) {
       toaster.create({ type: 'error', title: t('adminUsers.errors.saveFailed') })
     }

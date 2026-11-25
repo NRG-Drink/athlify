@@ -119,7 +119,7 @@ describe('AdminUsersPage', () => {
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     })
 
-    it('blocks missing fields and a short password without sending a request', async () => {
+    it('blocks missing fields without sending a request', async () => {
       const { user, calls } = renderPage(() => okQuery())
 
       await user.click(await screen.findByRole('button', { name: 'Benutzer anlegen' }))
@@ -128,7 +128,6 @@ describe('AdminUsersPage', () => {
       await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
 
       expect(await within(dialog).findAllByText('Pflichtfeld.')).toHaveLength(3)
-      expect(within(dialog).getByText('Das Passwort braucht mindestens 8 Zeichen.')).toBeVisible()
       expect(within(dialog).getByLabelText(/Benutzername/)).toHaveFocus()
       expect(calls(CREATE)).toHaveLength(0)
     })
@@ -318,18 +317,33 @@ describe('AdminUsersPage', () => {
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     })
 
-    it('blocks a short password without sending a request', async () => {
-      const { user, calls } = renderPage(() => okQuery())
+    it('shows the length limit the server names for a short password', async () => {
+      const { user } = renderPage((operation) =>
+        operation === RESET
+          ? {
+              data: null,
+              errors: [
+                {
+                  message: 'server text',
+                  extensions: {
+                    code: 'VALIDATION_ERROR',
+                    field: 'newPassword',
+                    rule: 'PASSWORD_TOO_SHORT',
+                    minLength: 12,
+                  },
+                },
+              ],
+            }
+          : okQuery(),
+      )
 
       const dialog = await openReset(user)
       await user.type(within(dialog).getByLabelText(/Neues Passwort/), 'short')
       await user.click(within(dialog).getByRole('button', { name: 'Zurücksetzen' }))
 
       expect(
-        await within(dialog).findByText('Das Passwort braucht mindestens 8 Zeichen.'),
+        await within(dialog).findByText('Das Passwort braucht mindestens 12 Zeichen.'),
       ).toBeVisible()
-      expect(within(dialog).getByLabelText(/Neues Passwort/)).toHaveFocus()
-      expect(calls(RESET)).toHaveLength(0)
     })
   })
 

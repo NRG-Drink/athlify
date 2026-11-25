@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next'
 import { PASSWORD_RULE_KEYS } from './passwordValues'
 
 export interface GraphQLErrorLike {
@@ -9,9 +10,14 @@ const FIELDS = ['firstName', 'lastName', 'currentPassword', 'newPassword'] as co
 
 type SettingsField = (typeof FIELDS)[number]
 
+/** Extensions that carry a configured limit, and the interpolation name the message uses for it. */
+const LIMIT_EXTENSIONS = { minLength: 'min', maxLength: 'max' } as const
+
 export interface MappedFieldErrors<F extends string> {
   /** i18n key per field. */
   fieldErrors: Partial<Record<F, string>>
+  /** Interpolation values per field, e.g. `{ min: 8 }` for a password that is too short. */
+  fieldValues: Partial<Record<F, Record<string, number>>>
   /** True when at least one error could not be tied to a field (show a generic toast). */
   general: boolean
 }
@@ -42,6 +48,7 @@ export function mapFieldErrors<F extends string>(
   byRule: Readonly<Record<string, string>> = {},
 ): MappedFieldErrors<F> {
   const fieldErrors: Partial<Record<F, string>> = {}
+  const fieldValues: Partial<Record<F, Record<string, number>>> = {}
   let general = false
   for (const error of errors) {
     const { code, field, rule } = error.extensions ?? {}
@@ -49,12 +56,29 @@ export function mapFieldErrors<F extends string>(
     if (known) {
       fieldErrors[known.field] = known.key
     } else if (code === 'VALIDATION_ERROR' && fields.some((f) => f === field)) {
-      fieldErrors[field as F] = ownValue(byRule, rule) ?? 'form.errors.required'
+      const target = field as F
+      fieldErrors[target] = ownValue(byRule, rule) ?? 'form.errors.required'
+      for (const [extension, name] of Object.entries(LIMIT_EXTENSIONS)) {
+        const limit = error.extensions?.[extension]
+        if (typeof limit === 'number') fieldValues[target] = { ...fieldValues[target], [name]: limit }
+      }
     } else {
       general = true
     }
   }
-  return { fieldErrors, general }
+  return { fieldErrors, fieldValues, general }
+}
+
+/** Translates the keys of a mapped result, with their interpolation values. */
+export function translateFieldErrors<F extends string>(
+  t: TFunction,
+  { fieldErrors, fieldValues }: MappedFieldErrors<F>,
+): Partial<Record<F, string>> {
+  const translated: Partial<Record<F, string>> = {}
+  for (const field of Object.keys(fieldErrors) as F[]) {
+    translated[field] = t(fieldErrors[field] ?? '', fieldValues[field])
+  }
+  return translated
 }
 
 /** Maps the `updateMe` errors. */
