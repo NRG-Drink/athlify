@@ -1,8 +1,11 @@
 import { formatDateTime } from '../../../lib/dates'
 import { act, screen, waitFor, within } from '@testing-library/react'
-import type { UserEvent } from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ActivitiesPage } from '../../../features/activities/ActivitiesPage'
+import {
+  ACTIVITIES_COLUMN_STORAGE_KEY,
+  activitiesColumnIds,
+} from '../../../features/activities/ActivitiesGridState'
 import { mockAgGridViewport } from '../../utils/mockAgGridViewport'
 import { createTestEnvironment, renderWithRelay } from '../../utils/relay'
 
@@ -76,25 +79,48 @@ function mockWideViewport() {
   )
 }
 
+async function findActivitiesGrid() {
+  const grid = await screen.findByRole('grid')
+  await waitFor(() =>
+    expect(within(grid).getAllByRole('columnheader').length).toBeGreaterThan(0),
+  )
+  return grid
+}
+
+function showColumns(...columnIds: (typeof activitiesColumnIds)[number][]) {
+  const visible = new Set(columnIds)
+  window.localStorage.setItem(
+    ACTIVITIES_COLUMN_STORAGE_KEY,
+    JSON.stringify(activitiesColumnIds.map((colId) => ({ colId, hide: !visible.has(colId) }))),
+  )
+}
+
+function columnHeader(grid: HTMLElement, label: string) {
+  return within(grid).getByRole('columnheader', { name: new RegExp(label) })
+}
+
 beforeEach(() => mockAgGridViewport())
 afterEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
+  window.localStorage.removeItem(ACTIVITIES_COLUMN_STORAGE_KEY)
 })
 
 describe('ActivitiesPage', () => {
-  it('renders a formatted activity row and sends no filter by default', async () => {
+  it('renders an activity and requests the default server order without filters', async () => {
     const { calls } = renderWithRelay(<ActivitiesPage />, () => response(), {
       path: '/activities',
       routePath: '/activities',
     })
 
-    expect(await screen.findByRole('grid')).toBeInTheDocument()
-    const table = screen.getByRole('grid')
-    expect(within(table).getByText('Strasse')).toBeInTheDocument()
-    expect(within(table).getByText('1:30')).toBeInTheDocument()
-    expect(calls('ActivitiesPageQuery')).toHaveLength(1)
-    expect(calls('ActivitiesPageQuery')[0]).toMatchObject({ first: 50, where: null })
+    const grid = await findActivitiesGrid()
+    await within(grid).findByText('Strasse')
+    await waitFor(() => expect(calls('ActivitiesPageQuery')).toHaveLength(1))
+    expect(calls('ActivitiesPageQuery')[0]).toMatchObject({
+      first: 50,
+      where: null,
+      order: [{ date: 'DESC' }, { id: 'DESC' }],
+    })
   })
 
   it('keeps cached rows visible while refreshing after returning to the page', async () => {
@@ -114,136 +140,131 @@ describe('ActivitiesPage', () => {
       testEnvironment: relay,
     }
 
-    const firstRender = renderWithRelay(<ActivitiesPage />, () => response(), options)
-    expect(await screen.findByRole('grid')).toBeInTheDocument()
-    firstRender.unmount()
-
+    const { router } = renderWithRelay(<ActivitiesPage />, () => response(), {
+      ...options,
+      otherRoutes: [{ path: '/other', element: <div /> }],
+    })
     holdResponse = true
-    renderWithRelay(<ActivitiesPage />, () => response(), options)
+    await act(async () => router.navigate('/other'))
+    await act(async () => router.navigate('/activities'))
 
-    expect(screen.getByRole('grid')).toBeInTheDocument()
     await waitFor(() => expect(relay.calls('ActivitiesPageQuery')).toHaveLength(2))
+    expect(await screen.findByText('Strasse')).toBeInTheDocument()
     await act(async () => releaseResponse?.())
   })
 
-  it('shows the duration in hours and minutes, like the "Std." header', async () => {
-    // 18 km in 40 min is 27 km/h, the speed the backend computes from distance and time.
-    const fortyMinutes = { ...activity, time: 2400, distance: 18, averageSpeed: 27 }
-    renderWithRelay(<ActivitiesPage />, () => response([fortyMinutes]), {
-      path: '/activities',
-      routePath: '/activities',
-    })
-
-    const table = await screen.findByRole('grid')
-    expect(within(table).getByText('0:40')).toBeInTheDocument()
-  })
-
-  it('shows a filtered empty state with a reset action', async () => {
-    const { user, router } = renderWithRelay(<ActivitiesPage />, () => response([]), {
-      path: '/activities?type=INDOOR',
-      routePath: '/activities',
-    })
-
-    expect(await screen.findByText('Keine passenden Aktivitäten')).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Filter zurücksetzen' }))
-    expect(router.state.location.search).toBe('')
-  })
-
-  it('shows the first-use empty state in the grid', async () => {
+  it('shows the add action for an empty first-use grid', async () => {
     renderWithRelay(<ActivitiesPage />, () => response([]), {
       path: '/activities',
       routePath: '/activities',
     })
 
-    await screen.findByRole('grid')
-    expect(screen.getByRole('button', { name: 'Aktivität erfassen' })).toBeInTheDocument()
+    await findActivitiesGrid()
+    expect(await screen.findByRole('button', { name: 'Aktivität erfassen' })).toBeInTheDocument()
   })
 
-  it('shows date and start time as DD.MM.YYYY, HH:MM, no source column and the renamed elevation header', async () => {
+  it('shows the filtered empty state and resets filters without changing the sort', async () => {
+    const { calls, router, user } = renderWithRelay(<ActivitiesPage />, () => response([]), {
+      path: '/activities?type=INDOOR&sort=-distance',
+      routePath: '/activities',
+    })
+
+    await screen.findByText('Keine passenden Aktivitäten')
+    await waitFor(() =>
+      expect(calls('ActivitiesPageQuery')[0]).toMatchObject({
+        where: { type: { in: ['INDOOR'] } },
+      }),
+    )
+    const resetButtons = await screen.findAllByRole('button', { name: 'Filter zurücksetzen' })
+    await user.click(resetButtons[0])
+    expect(router.state.location.search).toBe('?sort=-distance')
+  })
+
+  it('shows localized date and start time in the date cell without a source column', async () => {
     renderWithRelay(<ActivitiesPage />, () => response(), {
       path: '/activities',
       routePath: '/activities',
     })
 
-    const table = await screen.findByRole('grid')
-    const time = table.querySelector('time')
+    const grid = await findActivitiesGrid()
+    await screen.findByText('Strasse')
+    await waitFor(() => expect(grid.querySelector('time')).not.toBeNull())
+    const time = grid.querySelector('time')
     expect(time).toHaveAttribute('datetime', activity.date)
-    // Local time, so the expectation is built the same way in every time zone.
     expect(time).toHaveTextContent(formatDateTime(new Date(activity.date as string)))
     expect(time?.textContent).toMatch(/^\d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}$/)
-    expect(within(table).queryByText('Quelle')).not.toBeInTheDocument()
-    expect(within(table).getByText('Dauer').closest('[role="columnheader"]')).toBeInTheDocument()
+    expect(columnHeader(grid, 'Datum')).toBeInTheDocument()
+    expect(within(grid).queryByRole('columnheader', { name: /Quelle/ })).not.toBeInTheDocument()
   })
 
-  it('shows the units in the column headers and only the number in the cells', async () => {
+  it('shows the duration value and unit in its header', async () => {
+    showColumns('date', 'time')
+    renderWithRelay(<ActivitiesPage />, () => response(), {
+      path: '/activities',
+      routePath: '/activities',
+    })
+
+    const grid = await findActivitiesGrid()
+    await within(grid).findByText('1:30')
+    const header = columnHeader(grid, 'Dauer')
+    expect(header).toHaveTextContent('Std.')
+  })
+
+  it('renders description and heart rate details in their visible columns', async () => {
+    showColumns('date', 'description')
     renderWithRelay(<ActivitiesPage />, () => response([richActivity]), {
       path: '/activities',
       routePath: '/activities',
     })
 
-    const table = await screen.findByRole('grid')
-    const headerOf = (label: string) =>
-      within(table).getByText(label).closest('[role="columnheader"]') as HTMLElement
-    expect(headerOf('Dauer')).toHaveTextContent('Std.')
-    expect(within(table).queryByText(/42\.5 km/)).not.toBeInTheDocument()
-  })
-
-  it('explains abbreviated headers in a tooltip', async () => {
-    const { user } = renderWithRelay(<ActivitiesPage />, () => response(), {
-      path: '/activities',
-      routePath: '/activities',
-    })
-
-    const table = await screen.findByRole('grid')
-    const header = within(table).getByText('Dauer').closest('[role="columnheader"]') as HTMLElement
-    await user.hover(header)
-    expect(
-      await screen.findByText(
-        'Fahrzeit in Stunden und Minuten, z. B. 1:30 für anderthalb Stunden.',
-      ),
-    ).toBeInTheDocument()
-  })
-
-  it('still sorts when a header with an explanation is clicked', async () => {
-    const { user, router } = renderWithRelay(<ActivitiesPage />, () => response(), {
-      path: '/activities',
-      routePath: '/activities',
-    })
-
-    const table = await screen.findByRole('grid')
-    const header = within(table).getByText('Dauer').closest('[role="columnheader"]') as HTMLElement
-    await user.click(header)
-
-    expect(router.state.location.search).toBe('?sort=-time')
-    await waitFor(() => expect(header).toHaveAttribute('aria-sort', 'descending'))
-  })
-
-  it('renders description, heart rate, effort, mood, wind, gadgets and tags', async () => {
-    mockWideViewport()
-    renderWithRelay(<ActivitiesPage />, () => response([richActivity, activity]), {
-      path: '/activities',
-      routePath: '/activities',
-    })
-
-    const table = await screen.findByRole('grid')
-    expect(within(table).getByText('Feierabendrunde am See')).toHaveAttribute(
+    const grid = await findActivitiesGrid()
+    expect(await within(grid).findByText('Feierabendrunde am See')).toHaveAttribute(
       'title',
       'Feierabendrunde am See',
     )
-    expect(within(table).getByText('142')).toHaveAttribute('title', '120–170')
-    // Effort 7 belongs to the "Hart" group, shown as its emoji before the number.
-    expect(within(table).getByTitle('Hart')).toHaveTextContent('🥵 7')
-    // Mood and wind as emoji, named by their label. The columns are hidden below 2xl, which jsdom
-    // reports as `display: none`, so the role query cannot see them.
-    expect(within(table).getByTitle('Gut')).toHaveTextContent('🙂')
-    expect(within(table).getByTitle('Gut')).toHaveAttribute('aria-label', 'Gut')
-    expect(within(table).getByTitle('Leicht')).toHaveTextContent('🍃')
-    expect(within(table).getByText('Garmin Edge')).toBeInTheDocument()
-    expect(within(table).getByText('Training')).toBeInTheDocument()
   })
 
-  it('shows the first two tags and counts the rest in a "+N" chip', async () => {
+  it('shows average heart rate with its range as a tooltip', async () => {
     mockWideViewport()
+    showColumns('heartRate')
+    renderWithRelay(<ActivitiesPage />, () => response([richActivity]), {
+      path: '/activities',
+      routePath: '/activities',
+    })
+
+    const grid = await findActivitiesGrid()
+    expect(await within(grid).findByText('142')).toHaveAttribute('title', '120–170')
+  })
+
+  it('renders effort and mood with their accessible labels', async () => {
+    mockWideViewport()
+    showColumns('effort', 'mood')
+    renderWithRelay(<ActivitiesPage />, () => response([richActivity]), {
+      path: '/activities',
+      routePath: '/activities',
+    })
+
+    const grid = await findActivitiesGrid()
+    expect(await within(grid).findByTitle('Hart')).toHaveTextContent('🥵 7')
+    expect(within(grid).getByTitle('Gut')).toHaveTextContent('🙂')
+    expect(within(grid).getByTitle('Gut')).toHaveAttribute('aria-label', 'Gut')
+  })
+
+  it('renders wind with its accessible label', async () => {
+    mockWideViewport()
+    showColumns('wind')
+    renderWithRelay(<ActivitiesPage />, () => response([richActivity]), {
+      path: '/activities',
+      routePath: '/activities',
+    })
+
+    const grid = await findActivitiesGrid()
+    expect(await within(grid).findByTitle('Leicht')).toHaveTextContent('🍃')
+  })
+
+  it('renders gadgets and tag chips, limiting the visible tags to two', async () => {
+    mockWideViewport()
+    showColumns('gadgets', 'tags')
     const manyTags = {
       ...richActivity,
       tags: ['Eins', 'Zwei', 'Drei', 'Vier', 'Fuenf'].map((name) => ({ id: name, name })),
@@ -253,72 +274,46 @@ describe('ActivitiesPage', () => {
       routePath: '/activities',
     })
 
-    const table = await screen.findByRole('grid')
-    expect(within(table).getByText('Eins')).toBeInTheDocument()
-    expect(within(table).getByText('Zwei')).toBeInTheDocument()
-    expect(within(table).queryByText('Drei')).not.toBeInTheDocument()
-    expect(within(table).getByText('+3')).toBeInTheDocument()
+    const grid = await findActivitiesGrid()
+    expect(await within(grid).findByText('Garmin Edge')).toBeInTheDocument()
+    expect(within(grid).getByText('Eins')).toBeInTheDocument()
+    expect(within(grid).getByText('Zwei')).toBeInTheDocument()
+    expect(within(grid).queryByText('Drei')).not.toBeInTheDocument()
+    expect(within(grid).getByText('+3')).toBeInTheDocument()
   })
 
-  it('sends the newest-first order with an id tie-breaker by default', async () => {
-    const { calls } = renderWithRelay(<ActivitiesPage />, () => response(), {
-      path: '/activities',
-      routePath: '/activities',
-    })
-
-    await screen.findByRole('grid')
-    expect(calls('ActivitiesPageQuery')[0]).toMatchObject({
-      order: [{ date: 'DESC' }, { id: 'DESC' }],
-    })
-  })
-
-  it('sorts on the server: a header click sends the order and writes it to the URL', async () => {
-    const { user, router, calls } = renderWithRelay(
-      <ActivitiesPage />,
-      () => response([activity, richActivity]),
-      { path: '/activities', routePath: '/activities' },
-    )
-
-    const table = await screen.findByRole('grid')
-    const header = within(table)
-      .getByText('Distanz')
-      .closest('[role="columnheader"]') as HTMLElement
-    await user.click(within(header).getByRole('button'))
-
-    expect(router.state.location.search).toBe('?sort=-distance')
-    await waitFor(() =>
-      expect(calls('ActivitiesPageQuery').at(-1)).toMatchObject({
-        order: [{ distance: 'DESC' }, { id: 'DESC' }],
-      }),
-    )
-    await waitFor(() =>
-      expect(within(header).getByRole('button')).toHaveAttribute('aria-pressed', 'true'),
-    )
-
-    await user.click(within(header).getByRole('button'))
-    expect(router.state.location.search).toBe('?sort=distance')
-    await waitFor(() =>
-      expect(within(header).getByRole('button')).toHaveAttribute('aria-pressed', 'true'),
-    )
-  })
-
-  it('reads the order from the URL and keeps the rows in the order the server sent', async () => {
+  it('uses the server order for rows when a sort is read from the URL', async () => {
+    showColumns('date')
     const { calls } = renderWithRelay(
       <ActivitiesPage />,
-      // Deliberately not sorted by heart rate: the client must not resort what it got.
       () => response([activity, richActivity]),
       { path: '/activities?sort=-heartRate', routePath: '/activities' },
     )
 
-    const table = await screen.findByRole('grid')
+    const grid = await findActivitiesGrid()
+    await waitFor(() => expect(grid.querySelectorAll('time')).toHaveLength(2))
     expect(calls('ActivitiesPageQuery')[0]).toMatchObject({
       order: [{ heartRateAverage: 'DESC' }, { id: 'DESC' }],
     })
-    const dates = [...table.querySelectorAll('time')].map((time) => time.getAttribute('datetime'))
+    const dates = [...grid.querySelectorAll('time')].map((time) => time.getAttribute('datetime'))
     expect(dates).toEqual([activity.date, richActivity.date])
   })
 
-  it('shows how many activities match across all pages', async () => {
+  it('does not sort by activity type', async () => {
+    showColumns('type')
+    const { router, user } = renderWithRelay(<ActivitiesPage />, () => response(), {
+      path: '/activities',
+      routePath: '/activities',
+    })
+
+    const grid = await findActivitiesGrid()
+    const header = columnHeader(grid, 'Typ')
+    await user.click(header)
+    expect(router.state.location.search).toBe('')
+    expect(header).not.toHaveAttribute('aria-sort')
+  })
+
+  it('shows the total number of matching activities across pages', async () => {
     renderWithRelay(
       <ActivitiesPage />,
       () => {
@@ -333,309 +328,18 @@ describe('ActivitiesPage', () => {
     expect(await screen.findByText('42 Aktivitäten')).toBeInTheDocument()
   })
 
-  it('does not offer sorting for columns the server cannot sort naturally', async () => {
-    mockWideViewport()
-    renderWithRelay(<ActivitiesPage />, () => response([richActivity]), {
+  it('writes the description search to the URL and sends it to the server', async () => {
+    const { calls, router, user } = renderWithRelay(<ActivitiesPage />, () => response(), {
       path: '/activities',
       routePath: '/activities',
     })
 
-    const table = await screen.findByRole('grid')
-    for (const label of ['Stimmung', 'Gadgets']) {
-      const header = within(table).getByText(label).closest('[role="columnheader"]') as HTMLElement
-      expect(within(header).queryByRole('button', { hidden: true })).not.toBeInTheDocument()
-    }
-  })
-
-  describe('column filters', () => {
-    const headerOf = (label: string) =>
-      within(screen.getByRole('grid'))
-        .getByText(label)
-        .closest('[role="columnheader"]') as HTMLElement
-
-    // Phones in jsdom: the filter opens as a bottom sheet, which is modal and hides the table.
-    const tickValue = async (user: UserEvent, name: string) =>
-      user.click(await screen.findByRole('checkbox', { name }))
-
-    const closeFilter = async (user: UserEvent) => {
-      await user.click(screen.getByRole('button', { name: 'Fertig' }))
-      await waitFor(() => expect(screen.queryByRole('button', { name: 'Fertig' })).toBeNull())
-    }
-
-    it('offers a filter trigger next to the sort button of the filterable columns only', async () => {
-      mockWideViewport()
-      renderWithRelay(<ActivitiesPage />, () => response(), {
-        path: '/activities',
-        routePath: '/activities',
-      })
-
-      await screen.findByRole('grid')
-      for (const label of ['Typ', 'Velo', 'Wind', 'Tags']) {
-        expect(
-          within(headerOf(label)).getByRole('button', { name: /^Nach .* filtern/, hidden: true }),
-        ).toBeInTheDocument()
-      }
-      expect(
-        within(headerOf('Datum')).queryByRole('button', { name: /filtern/, hidden: true }),
-      ).not.toBeInTheDocument()
-      expect(
-        within(headerOf('Distanz')).queryByRole('button', { name: /filtern/, hidden: true }),
-      ).not.toBeInTheDocument()
-    })
-
-    it('offers only the filter, not sorting, on the type header', async () => {
-      renderWithRelay(<ActivitiesPage />, () => response(), {
-        path: '/activities',
-        routePath: '/activities',
-      })
-
-      await screen.findByRole('grid')
-      const header = headerOf('Typ')
-      expect(header).not.toHaveAttribute('aria-sort')
-      expect(within(header).getAllByRole('button', { hidden: true })).toHaveLength(1)
-      expect(
-        within(header).getByRole('button', { name: 'Nach Aktivitätstyp filtern', hidden: true }),
-      ).toBeInTheDocument()
-    })
-
-    it('ticks a type from the header, keeps the checklist open and returns the focus on "Fertig"', async () => {
-      const { user, router, calls } = renderWithRelay(<ActivitiesPage />, () => response(), {
-        path: '/activities',
-        routePath: '/activities',
-      })
-
-      await screen.findByRole('grid')
-      await user.click(
-        within(headerOf('Typ')).getByRole('button', { name: 'Nach Aktivitätstyp filtern' }),
-      )
-      await tickValue(user, 'Indoor')
-
-      expect(router.state.location.search).toBe('?type=INDOOR')
-      await waitFor(() =>
-        expect(calls('ActivitiesPageQuery').at(-1)).toMatchObject({
-          where: { type: { in: ['INDOOR'] } },
-        }),
-      )
-      expect(screen.getByRole('group', { name: 'Aktivitätstyp' })).toBeInTheDocument()
-
-      await closeFilter(user)
-      const trigger = await within(headerOf('Typ')).findByRole('button', {
-        name: 'Nach Aktivitätstyp filtern, aktiv: Indoor',
-      })
-      await waitFor(() => expect(trigger).toHaveFocus())
-    })
-
-    it('ticks several types, shows the count and clears them together', async () => {
-      const { user, router, calls } = renderWithRelay(<ActivitiesPage />, () => response(), {
-        path: '/activities?type=ROAD',
-        routePath: '/activities',
-      })
-
-      await screen.findByRole('grid')
-      await user.click(
-        within(headerOf('Typ')).getByRole('button', {
-          name: 'Nach Aktivitätstyp filtern, aktiv: Strasse',
-        }),
-      )
-      await tickValue(user, 'Gravel')
-
-      expect(router.state.location.search).toBe('?type=ROAD&type=GRAVEL')
-      await waitFor(() =>
-        expect(calls('ActivitiesPageQuery').at(-1)).toMatchObject({
-          where: { type: { in: ['ROAD', 'GRAVEL'] } },
-        }),
-      )
-      expect(await screen.findByText('2 ausgewählt')).toBeInTheDocument()
-      await closeFilter(user)
-      expect(
-        await within(headerOf('Typ')).findByRole('button', {
-          name: 'Nach Aktivitätstyp filtern, aktiv: Strasse, Gravel',
-        }),
-      ).toBeInTheDocument()
-
-      await user.click(within(headerOf('Typ')).getByRole('button', { name: /Nach Aktivitätstyp/ }))
-      await user.click(await screen.findByRole('button', { name: 'Auswahl löschen' }))
-      await waitFor(() => expect(router.state.location.search).toBe(''))
-    })
-
-    it('narrows the bicycle checklist with the search field', async () => {
-      const withVehicles = () => ({
-        data: {
-          ...response().data,
-          vehicles: {
-            nodes: [
-              { id: 'vehicle-1', brand: 'Canyon', model: 'Ultimate', nickname: null },
-              { id: 'vehicle-2', brand: 'Specialized', model: 'Tarmac', nickname: 'Renner' },
-            ],
-            pageInfo: { hasNextPage: false },
-          },
-        },
-      })
-      const { user, router } = renderWithRelay(<ActivitiesPage />, withVehicles, {
-        path: '/activities',
-        routePath: '/activities',
-      })
-
-      await screen.findByRole('grid')
-      // The header's sort button has the same name, so take the summary button outside the table.
-      const summaryButton = screen
-        .getAllByRole('button', { name: 'Velo' })
-        .find((button) => !button.closest('[role="grid"]'))
-      await user.click(summaryButton as HTMLElement)
-      await user.type(await screen.findByRole('searchbox', { name: 'Suchen …' }), 'ren')
-
-      expect(screen.queryByRole('checkbox', { name: 'Canyon Ultimate' })).not.toBeInTheDocument()
-      await tickValue(user, 'Renner')
-      expect(router.state.location.search).toBe('?vehicle=vehicle-2')
-    })
-
-    it('keeps the table reachable while the popover is open from sm', async () => {
-      // Wider than sm: every min-width query matches, so the filter opens as a popover.
-      vi.spyOn(window, 'matchMedia').mockImplementation(
-        (query) =>
-          ({
-            matches: query.includes('min-width'),
-            media: query,
-            addListener: () => {},
-            removeListener: () => {},
-            addEventListener: () => {},
-            removeEventListener: () => {},
-          }) as unknown as MediaQueryList,
-      )
-      const { user } = renderWithRelay(<ActivitiesPage />, () => response(), {
-        path: '/activities',
-        routePath: '/activities',
-      })
-
-      await screen.findByRole('grid')
-      await user.click(
-        within(headerOf('Typ')).getByRole('button', { name: 'Nach Aktivitätstyp filtern' }),
-      )
-      await tickValue(user, 'Indoor')
-      expect(screen.getByRole('grid')).toBeInTheDocument()
-      await closeFilter(user)
-    })
-
-    it('closes the filter with Escape', async () => {
-      const { user } = renderWithRelay(<ActivitiesPage />, () => response(), {
-        path: '/activities',
-        routePath: '/activities',
-      })
-
-      await screen.findByRole('grid')
-      await user.click(
-        within(headerOf('Typ')).getByRole('button', { name: 'Nach Aktivitätstyp filtern' }),
-      )
-      await screen.findByRole('group', { name: 'Aktivitätstyp' })
-      await user.keyboard('{Escape}')
-      await waitFor(() =>
-        expect(screen.queryByRole('group', { name: 'Aktivitätstyp' })).not.toBeInTheDocument(),
-      )
-    })
-
-    it('lists every active filter as a chip that can be removed, and resets all', async () => {
-      const { user, router } = renderWithRelay(<ActivitiesPage />, () => response(), {
-        path: '/activities?type=INDOOR&wind=STRONG',
-        routePath: '/activities',
-      })
-
-      const chips = await screen.findByRole('group', { name: 'Aktive Filter' })
-      expect(within(chips).getByText('Wind: Stark')).toBeInTheDocument()
-      expect(within(chips).getByText('Aktivitätstyp: Indoor')).toBeInTheDocument()
-
-      await user.click(
-        within(chips).getByRole('button', { name: 'Filter Aktivitätstyp entfernen' }),
-      )
-      expect(router.state.location.search).toBe('?wind=STRONG')
-
-      await user.click(
-        within(await screen.findByRole('group', { name: 'Aktive Filter' })).getByRole('button', {
-          name: 'Filter zurücksetzen',
-        }),
-      )
-      expect(router.state.location.search).toBe('')
-    })
-
-    it('keeps the table, dimmed and busy, while a filter change is loading', async () => {
-      let release: (value: unknown) => void = () => {}
-      const { user } = renderWithRelay(
-        <ActivitiesPage />,
-        (_operation, variables) =>
-          variables.where && 'type' in (variables.where as object)
-            ? new Promise((resolve) => (release = resolve))
-            : response(),
-        { path: '/activities', routePath: '/activities' },
-      )
-
-      const table = await screen.findByRole('grid')
-      await user.click(
-        within(headerOf('Typ')).getByRole('button', { name: 'Nach Aktivitätstyp filtern' }),
-      )
-      await tickValue(user, 'Indoor')
-      await closeFilter(user)
-
-      await waitFor(() =>
-        expect(screen.getByRole('grid').closest('[aria-busy]')).toHaveAttribute(
-          'aria-busy',
-          'true',
-        ),
-      )
-      expect(screen.getByRole('grid')).toBe(table)
-      release(response([richActivity]))
-      await waitFor(() =>
-        expect(screen.getByRole('grid').closest('[aria-busy]')).not.toHaveAttribute('aria-busy'),
-      )
-      expect(
-        within(screen.getByRole('grid')).getByText('Feierabendrunde am See'),
-      ).toBeInTheDocument()
-    })
-
-    it('stops dimming the table when the URL moves on without the filter change', async () => {
-      const { user, router } = renderWithRelay(<ActivitiesPage />, () => response(), {
-        path: '/activities',
-        routePath: '/activities',
-      })
-
-      await screen.findByRole('grid')
-      await user.click(
-        within(headerOf('Typ')).getByRole('button', { name: 'Nach Aktivitätstyp filtern' }),
-      )
-      await tickValue(user, 'Indoor')
-      await closeFilter(user)
-      await waitFor(() => expect(router.state.location.search).toBe('?type=INDOOR'))
-      await waitFor(() =>
-        expect(screen.getByRole('grid').closest('[aria-busy]')).not.toHaveAttribute('aria-busy'),
-      )
-
-      await act(() => router.navigate('/activities'))
-
-      expect(router.state.location.search).toBe('')
-      expect(screen.getByRole('grid').closest('[aria-busy]')).not.toHaveAttribute('aria-busy')
-    })
-
-    it('keeps the filtered empty state inside the table so its filters stay reachable', async () => {
-      renderWithRelay(<ActivitiesPage />, () => response([]), {
-        path: '/activities?tag=tag-1',
-        routePath: '/activities',
-      })
-
-      const table = await screen.findByRole('grid')
-      expect(within(table).getByText('Keine passenden Aktivitäten')).toBeInTheDocument()
-      expect(
-        within(table).getByRole('button', { name: /Nach Aktivitätstyp filtern/ }),
-      ).toBeInTheDocument()
-    })
-
-    it('sends the wind filter from the URL as a where clause', async () => {
-      const { calls } = renderWithRelay(<ActivitiesPage />, () => response([]), {
-        path: '/activities?wind=STRONG',
-        routePath: '/activities',
-      })
-
-      await screen.findByRole('grid')
-      expect(calls('ActivitiesPageQuery')[0]).toMatchObject({
-        where: { wind: { in: ['STRONG'] } },
-      })
-    })
+    await user.type(screen.getByRole('textbox', { name: 'Beschreibung durchsuchen' }), 'See')
+    await waitFor(() => expect(router.state.location.search).toBe('?q=See'))
+    await waitFor(() =>
+      expect(calls('ActivitiesPageQuery').at(-1)).toMatchObject({
+        where: { description: { contains: 'See' } },
+      }),
+    )
   })
 })

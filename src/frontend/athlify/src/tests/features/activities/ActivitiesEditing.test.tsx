@@ -1,6 +1,10 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ActivitiesPage } from '../../../features/activities/ActivitiesPage'
+import {
+  ACTIVITIES_COLUMN_STORAGE_KEY,
+  activitiesColumnIds,
+} from '../../../features/activities/ActivitiesGridState'
 import { formatDate } from '../../../lib/dates'
 import { mockAgGridViewport } from '../../utils/mockAgGridViewport'
 import { renderWithRelay } from '../../utils/relay'
@@ -9,6 +13,7 @@ beforeEach(() => mockAgGridViewport())
 afterEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
+  window.localStorage.removeItem(ACTIVITIES_COLUMN_STORAGE_KEY)
 })
 
 const QUERY = 'ActivitiesPageQuery'
@@ -16,7 +21,6 @@ const MORE = 'ActivitiesPageMoreQuery'
 const CREATE = 'useActivityMutationsCreateMutation'
 const UPDATE = 'useActivityMutationsUpdateMutation'
 const DELETE = 'useActivityMutationsDeleteMutation'
-const CREATE_TAG = 'useCreateTagMutation'
 
 type Activity = Record<string, unknown> & { id: string }
 
@@ -88,6 +92,20 @@ const query = (nodes: Activity[]) => ({
     },
   },
 })
+
+function mockWideViewport() {
+  vi.spyOn(window, 'matchMedia').mockImplementation(
+    (query) =>
+      ({
+        matches: query.includes('min-width'),
+        media: query,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }) as unknown as MediaQueryList,
+  )
+}
 
 type Handler = Parameters<typeof renderWithRelay>[1]
 
@@ -173,6 +191,59 @@ describe('ActivitiesPage editing', () => {
     })
   })
 
+  describe('inline editing', () => {
+    it('refetches server-filtered rows after an edit no longer matches', async () => {
+      mockWideViewport()
+      window.localStorage.setItem(
+        ACTIVITIES_COLUMN_STORAGE_KEY,
+        JSON.stringify(
+          activitiesColumnIds.map((colId) => ({ colId, hide: colId !== 'description' })),
+        ),
+      )
+      const { user, calls, router } = page(
+        (operation) => {
+          if (operation === UPDATE) {
+            return {
+              data: { updateActivity: { ...base, description: 'No longer matching' } },
+            }
+          }
+          if (operation === MORE) return { data: list([]) }
+          return operation === QUERY ? query([base]) : undefined
+        },
+        '/activities?q=Feierabendrunde',
+      )
+
+      await screen.findByText('Feierabendrunde')
+      const descriptionCell = within(table()).getByRole('gridcell', { name: 'Feierabendrunde' })
+      descriptionCell.focus()
+      await user.keyboard('{Enter}')
+      const editors = await screen.findAllByDisplayValue('Feierabendrunde')
+      const editor = editors.at(-1)!
+      await user.clear(editor)
+      await user.type(editor, 'No longer matching{Enter}')
+
+      await waitFor(() => {
+        expect(calls(UPDATE)).toHaveLength(1)
+        expect(calls(MORE)).toHaveLength(1)
+      })
+      expect(calls(UPDATE)[0]).toMatchObject({
+        id: 'activity-1',
+        input: {
+          description: 'No longer matching',
+          time: 5400,
+          distance: 42.5,
+          type: 'ROAD',
+        },
+      })
+      expect(calls(MORE)[0]).toMatchObject({
+        where: { description: { contains: 'Feierabendrunde' } },
+      })
+      expect(router.state.location.search).toBe('?q=Feierabendrunde')
+      expect(await screen.findByText('Keine passenden Aktivitäten')).toBeInTheDocument()
+      expect(screen.queryByText('Feierabendrunde')).not.toBeInTheDocument()
+    })
+  })
+
   describe('deleting', () => {
     it('asks first, removes the row, lowers the count and does not reload the list', async () => {
       const { user, calls } = page((operation) =>
@@ -250,161 +321,6 @@ describe('ActivitiesPage editing', () => {
       expect(await screen.findByRole('grid')).toBeInTheDocument()
       expect(rowCount()).toBe(0)
       expect(screen.getByRole('button', { name: 'Aktivität erfassen' })).toBeInTheDocument()
-    })
-  })
-
-  describe.skip('legacy edit form behavior', () => {
-    it('edits through the pencil with the values prefilled and updates the row in place', async () => {
-      const { user, calls } = page((operation) =>
-        operation === UPDATE
-          ? { data: { updateActivity: { ...base, distance: 50 } } }
-          : okQuery(operation),
-      )
-      await user.click(await activityCell('2026-10-16T08:00:00Z'))
-      const dialog = await screen.findByRole('dialog', { name: 'Aktivität bearbeiten' })
-      expect(within(dialog).getByLabelText(/^Dauer/)).toHaveValue('1:30')
-      const distance = within(dialog).getByLabelText(/^Distanz/)
-      expect(distance).toHaveValue('42.5')
-
-      await user.clear(distance)
-      await user.type(distance, '50')
-      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
-
-      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
-      expect(calls(UPDATE)[0]).toMatchObject({
-        id: 'activity-1',
-        input: { distance: 50, time: 5400, type: 'ROAD', description: 'Feierabendrunde' },
-      })
-      expect(await within(table()).findByText('50.0')).toBeInTheDocument()
-      expect(await screen.findByText('Aktivität aktualisiert.')).toBeInTheDocument()
-      expect(calls(MORE)).toHaveLength(0)
-    })
-
-    it('has only "Abbrechen" to leave, and a click beside the dialog discards without asking', async () => {
-      const { user, calls } = page(okQuery)
-      await user.click(await activityCell('2026-10-16T08:00:00Z'))
-      const dialog = await screen.findByRole('dialog', { name: 'Aktivität bearbeiten' })
-      expect(within(dialog).getAllByRole('button', { name: 'Abbrechen' })).toHaveLength(1)
-      await user.type(within(dialog).getByLabelText(/^Distanz/), '9')
-
-      // The modal sets `pointer-events: none` around the content, which user-event refuses to click
-      // through; Zag closes on the pointerdown outside the content.
-      const beside = document.querySelector('[data-scope="dialog"][data-part="positioner"]')
-      fireEvent.pointerDown(beside as HTMLElement)
-      fireEvent.pointerUp(beside as HTMLElement)
-      fireEvent.click(beside as HTMLElement)
-
-      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
-      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
-      expect(calls(UPDATE)).toHaveLength(0)
-    })
-
-    it('opens the editor by clicking a row, with the details open when they hold a value', async () => {
-      const { user } = page(okQuery)
-      await screen.findByRole('grid')
-      await user.click(within(table()).getByText(/^14\.10\.2026/))
-
-      const dialog = await screen.findByRole('dialog', { name: 'Aktivität bearbeiten' })
-      expect(within(dialog).getByRole('button', { name: 'Weitere Details' })).toHaveAttribute(
-        'aria-expanded',
-        'true',
-      )
-      expect(within(dialog).getByLabelText(/^Ø/)).toHaveValue('142')
-      expect(within(dialog).getByLabelText(/^Velo/)).toHaveValue('vehicle-1')
-    })
-
-    it('shows calculated values read-only, marked with *, and "—" when missing', async () => {
-      const { user } = page(okQuery)
-      await user.click(await activityCell('2026-10-16T08:00:00Z'))
-      const dialog = await screen.findByRole('dialog')
-
-      expect(within(dialog).getByText('Ø Geschwindigkeit*')).toBeInTheDocument()
-      expect(within(dialog).getByText('28.3 km/h')).toBeInTheDocument()
-      expect(within(dialog).getByText('TSS*').nextElementSibling).toHaveTextContent('—')
-      expect(within(dialog).getByText('Manuell')).toBeInTheDocument()
-      expect(within(dialog).getByText('* Wird automatisch berechnet.')).toBeInTheDocument()
-      expect(within(dialog).queryByRole('textbox', { name: /Geschwindigkeit|TSS/ })).toBeNull()
-    })
-
-    it('blocks saving with errors under the fields and sends nothing', async () => {
-      const { user, calls } = page(okQuery)
-      await user.click(await activityCell('2026-10-16T08:00:00Z'))
-      const dialog = await screen.findByRole('dialog')
-      await user.clear(within(dialog).getByLabelText(/^Dauer/))
-      await user.type(within(dialog).getByLabelText(/^Distanz/), 'x')
-      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
-
-      expect(await within(dialog).findByText('Pflichtfeld.')).toBeInTheDocument()
-      expect(within(dialog).getByText('Bitte eine Zahl eingeben.')).toBeInTheDocument()
-      expect(calls(UPDATE)).toHaveLength(0)
-    })
-
-    it('opens the details when an error is inside them', async () => {
-      const { user } = page(okQuery)
-      await user.click(await activityCell('2026-10-16T08:00:00Z'))
-      const dialog = await screen.findByRole('dialog')
-      const details = within(dialog).getByRole('button', { name: 'Weitere Details' })
-      expect(details).toHaveAttribute('aria-expanded', 'false')
-      await user.click(details)
-      await user.type(within(dialog).getByLabelText('Min'), '300')
-      await user.click(details)
-      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
-
-      await waitFor(() => expect(details).toHaveAttribute('aria-expanded', 'true'))
-      expect(
-        within(dialog).getByText('Bitte einen Wert zwischen 20 und 250 eingeben.'),
-      ).toBeInTheDocument()
-    })
-
-    it('removes an activity that no longer exists on the server and tells the user', async () => {
-      const { user } = page((operation) =>
-        operation === UPDATE ? { data: { updateActivity: null } } : okQuery(operation),
-      )
-      await user.click(await activityCell('2026-10-16T08:00:00Z'))
-      await user.click(
-        within(await screen.findByRole('dialog')).getByRole('button', { name: 'Speichern' }),
-      )
-
-      expect(await screen.findByText('Diese Aktivität existiert nicht mehr.')).toBeInTheDocument()
-      await waitFor(() => expect(rowCount()).toBe(1))
-      expect(screen.getByText('1 Aktivität')).toBeInTheDocument()
-      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
-    })
-
-    it('keeps the row when the server rejects the change', async () => {
-      const { user } = page((operation) =>
-        operation === UPDATE
-          ? { data: { updateActivity: null }, errors: [{ message: 'Invalid' }] }
-          : okQuery(operation),
-      )
-      await user.click(await activityCell('2026-10-16T08:00:00Z'))
-      await user.click(
-        within(await screen.findByRole('dialog')).getByRole('button', { name: 'Speichern' }),
-      )
-
-      expect(
-        await screen.findByText('Speichern fehlgeschlagen. Bitte versuche es nochmals.'),
-      ).toBeInTheDocument()
-      expect(screen.getByRole('dialog')).toBeInTheDocument()
-      expect(rowCount()).toBe(2)
-    })
-
-    it('keeps the dialog and its values when saving fails', async () => {
-      const { user } = page((operation) =>
-        operation === UPDATE ? Promise.reject(new Error('offline')) : okQuery(operation),
-      )
-      await user.click(await activityCell('2026-10-16T08:00:00Z'))
-      const dialog = await screen.findByRole('dialog')
-      const distance = within(dialog).getByLabelText(/^Distanz/)
-      await user.clear(distance)
-      await user.type(distance, '77')
-      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
-
-      expect(
-        await screen.findByText('Speichern fehlgeschlagen. Bitte versuche es nochmals.'),
-      ).toBeInTheDocument()
-      expect(screen.getByRole('dialog')).toBeInTheDocument()
-      expect(within(screen.getByRole('dialog')).getByLabelText(/^Distanz/)).toHaveValue('77')
     })
   })
 
@@ -563,133 +479,4 @@ describe('ActivitiesPage editing', () => {
     })
   })
 
-  describe.skip('legacy detail-form behavior', () => {
-    const openDetails = async (user: ReturnType<typeof page>['user']) => {
-      await user.click(await activityCell('2026-10-16T08:00:00Z'))
-      const dialog = await screen.findByRole('dialog', { name: 'Aktivität bearbeiten' })
-      await user.click(within(dialog).getByRole('button', { name: 'Weitere Details' }))
-      return dialog
-    }
-
-    // Many interactions in one flow; under a full parallel run it can pass the default 5 s.
-    it('sets effort with a slider, mood and wind with emoji buttons and tags as chips', async () => {
-      const { user, calls } = page((operation) => {
-        if (operation === CREATE_TAG)
-          return { data: { createTag: { __typename: 'Tag', id: 'tag-2', name: 'Hügel' } } }
-        if (operation === UPDATE) return { data: { updateActivity: base } }
-        return okQuery(operation)
-      })
-      const dialog = await openDetails(user)
-
-      // Without an effort the slider rests at the far left.
-      const slider = within(dialog).getByRole('slider', { name: 'Anstrengung' })
-      expect(slider).toHaveAttribute('aria-valuenow', '0')
-      expect(slider).toHaveAttribute('aria-valuetext', 'Keine Angabe')
-      slider.focus()
-      await user.keyboard('{End}{ArrowLeft}{ArrowLeft}{ArrowLeft}{ArrowLeft}')
-      expect(within(dialog).getByText('6/10 · Mittel')).toBeInTheDocument()
-      expect(slider).toHaveAttribute('aria-valuetext', '6/10 · Mittel')
-      // The group's emoji pops out above the thumb.
-      expect(slider).toHaveTextContent('😅')
-
-      const good = within(dialog).getByRole('button', { name: 'Gut' })
-      await user.click(good)
-      expect(good).toHaveAttribute('aria-pressed', 'true')
-      await user.click(within(dialog).getByRole('button', { name: 'Stark' }))
-
-      await user.click(within(dialog).getByRole('button', { name: 'Wahoo Elemnt' }))
-      await user.click(within(dialog).getByRole('button', { name: 'Intervall' }))
-      await user.click(within(dialog).getByRole('button', { name: 'Neuer Tag' }))
-      const name = await within(dialog).findByRole('textbox', { name: 'Name des Tags' })
-      await waitFor(() => expect(name).toHaveFocus())
-      await user.type(name, 'Hügel{Enter}')
-      expect(await screen.findByText('Tag «Hügel» erstellt.')).toBeInTheDocument()
-      expect(calls(CREATE_TAG)).toEqual([{ input: { name: 'Hügel' } }])
-      expect(within(dialog).getByRole('button', { name: 'Hügel' })).toHaveAttribute(
-        'aria-pressed',
-        'true',
-      )
-      await waitFor(() =>
-        expect(
-          within(dialog).queryByRole('textbox', { name: 'Name des Tags' }),
-        ).not.toBeInTheDocument(),
-      )
-      // Enter created the tag, it did not save the activity.
-      expect(calls(UPDATE)).toHaveLength(0)
-
-      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
-      await waitFor(() => expect(calls(UPDATE)).toHaveLength(1))
-      expect(calls(UPDATE)[0]).toMatchObject({
-        input: {
-          effort: 6,
-          mood: 'GOOD',
-          wind: 'STRONG',
-          gadgetIds: ['gadget-1'],
-          tagIds: ['tag-1', 'tag-2'],
-        },
-      })
-    }, 15_000)
-
-    it('clears the effort at the far left and a choice when it is pressed again', async () => {
-      const { user, calls } = page((operation) =>
-        operation === UPDATE ? { data: { updateActivity: base } } : okQuery(operation),
-      )
-      const dialog = await openDetails(user)
-      const slider = within(dialog).getByRole('slider', { name: 'Anstrengung' })
-      slider.focus()
-      await user.keyboard('{ArrowRight}{ArrowRight}{Home}')
-      expect(slider).toHaveAttribute('aria-valuetext', 'Keine Angabe')
-
-      const calm = within(dialog).getByRole('button', { name: 'Windstill' })
-      await user.click(calm)
-      await user.click(calm)
-      expect(calm).toHaveAttribute('aria-pressed', 'false')
-
-      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
-      await waitFor(() => expect(calls(UPDATE)).toHaveLength(1))
-      expect(calls(UPDATE)[0]).toMatchObject({ input: { effort: null, wind: null } })
-    })
-
-    it('tells how many details are filled while they are folded', async () => {
-      const { user } = page(okQuery)
-      await user.click(await activityCell('2026-10-14T08:00:00Z'))
-      const dialog = await screen.findByRole('dialog', { name: 'Aktivität bearbeiten' })
-      const trigger = within(dialog).getByRole('button', { name: 'Weitere Details' })
-      expect(trigger).toHaveAttribute('aria-expanded', 'true')
-
-      await user.click(trigger)
-      expect(trigger).toHaveAttribute('aria-expanded', 'false')
-      expect(trigger).toHaveTextContent('Weitere Details· 1 Angabe')
-    })
-
-    it('says so when there are no gadgets yet', async () => {
-      const { user } = page((operation) => {
-        const result = okQuery(operation)
-        return (
-          result && {
-            data: { ...result.data, gadgets: { nodes: [], pageInfo: { hasNextPage: false } } },
-          }
-        )
-      })
-      const dialog = await openDetails(user)
-      expect(within(dialog).getByText('Noch keine Gadgets erfasst.')).toBeInTheDocument()
-    })
-
-    it('ticks an existing tag instead of creating it again', async () => {
-      const { user, calls } = page(okQuery)
-      const dialog = await openDetails(user)
-      await user.click(within(dialog).getByRole('button', { name: 'Neuer Tag' }))
-      await user.type(
-        await within(dialog).findByRole('textbox', { name: 'Name des Tags' }),
-        'intervall',
-      )
-      await user.click(within(dialog).getByRole('button', { name: 'Erstellen' }))
-
-      expect(within(dialog).getByRole('button', { name: 'Intervall' })).toHaveAttribute(
-        'aria-pressed',
-        'true',
-      )
-      expect(calls(CREATE_TAG)).toHaveLength(0)
-    })
-  })
 })

@@ -9,6 +9,7 @@ import {
   type ActivityQuery,
   type ActivitySort,
 } from './activityQuery'
+import { setActivityFilterValues, type ActivityFilterKey } from './activityFilters'
 import {
   ACTIVITIES_COLUMN_STORAGE_KEY,
   ACTIVITIES_VIEWS_STORAGE_KEY,
@@ -136,6 +137,14 @@ export function useActivitiesPageState(
     },
     [changeQuery, currentQuery],
   )
+  const onActivityFilterChange = useCallback(
+    (key: ActivityFilterKey, values: string[]) =>
+      changeQuery({
+        ...currentQuery,
+        filters: setActivityFilterValues(currentQuery.filters, key, values),
+      }),
+    [changeQuery, currentQuery],
+  )
 
   const selectedViewId =
     viewStore.views.find(
@@ -143,7 +152,8 @@ export function useActivitiesPageState(
         stableStringify(
           applyActivityQuery(new URLSearchParams(), view.query).toString(),
         ) ===
-        stableStringify(applyActivityQuery(new URLSearchParams(), currentQuery).toString()),
+        stableStringify(applyActivityQuery(new URLSearchParams(), currentQuery).toString()) &&
+        stableStringify(view.columns) === stableStringify(columnState),
     )?.id ?? ''
 
   const persistSavedViews = useCallback((views: ActivitiesSavedView[]) => {
@@ -202,12 +212,14 @@ export function useActivitiesPageState(
       quickFilter,
       fromFilter: query.fromFilter,
       toFilter: query.toFilter,
+      activityFilters: currentQuery.filters,
       onQuickFilterChange,
       onFromFilterChange,
       onToFilterChange,
       onFilterYearToDate,
       onResetFilters,
       onResetTable,
+      onActivityFilterChange,
     },
     views: {
       items: viewStore.views,

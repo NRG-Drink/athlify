@@ -1,7 +1,12 @@
 import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { localDateKey } from '../../../lib/period'
+import {
+  ACTIVITIES_VIEWS_STORAGE_KEY,
+  serializeActivitiesSavedViews,
+} from '../../../features/activities/ActivitiesGridState'
 import { useActivitiesPageState } from '../../../features/activities/useActivitiesPageState'
+import { defaultActivitySort } from '../../../features/activities/activityQuery'
 
 describe('Activities page state', () => {
   it('sets the inclusive year-to-date range through today', () => {
@@ -52,5 +57,39 @@ describe('Activities page state', () => {
     expect(next.get('q')).toBeNull()
     expect(next.get('sort')).toBeNull()
     expect(next.get('tab')).toBe('history')
+  })
+
+  it('distinguishes saved views with the same query and different column layouts', () => {
+    const query = {
+      filters: {},
+      gridFilters: {},
+      quickFilter: '',
+      fromFilter: '',
+      toFilter: '',
+      sort: defaultActivitySort,
+    }
+    const views = [
+      {
+        id: 'date-view',
+        name: 'Date view',
+        query,
+        columns: [{ colId: 'date', width: 180 }],
+      },
+      {
+        id: 'distance-view',
+        name: 'Distance view',
+        query,
+        columns: [{ colId: 'distance', width: 120 }],
+      },
+    ]
+    window.localStorage.setItem(ACTIVITIES_VIEWS_STORAGE_KEY, serializeActivitiesSavedViews(views))
+
+    const { result } = renderHook(() =>
+      useActivitiesPageState(new URLSearchParams(), vi.fn()),
+    )
+
+    act(() => result.current.onColumnStateChange(views[1].columns))
+
+    expect(result.current.views.selectedId).toBe('distance-view')
   })
 })
