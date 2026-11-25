@@ -1,8 +1,9 @@
 import { Button, Stack } from '@chakra-ui/react'
+import type { CellValueChangedEvent } from 'ag-grid-community'
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { graphql, useLazyLoadQuery, usePaginationFragment } from 'react-relay'
 import { useTranslation } from 'react-i18next'
-import { LuBike, LuPlus, LuRotateCcw } from 'react-icons/lu'
+import { LuBike, LuRotateCcw } from 'react-icons/lu'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { Page, PageEmptyState } from '../../components/Page'
 import { toaster } from '../../components/ui/toaster'
@@ -12,25 +13,24 @@ import { QueryBoundary } from '../../components/QueryBoundary'
 import { useFetchKey } from '../../relay/useFetchKey'
 import { useLoadMore } from '../../relay/useLoadMore'
 import { useParamsRefresh } from '../../relay/useParamsRefresh'
+import type { FilterOption } from './activityFilters'
 import {
-  activeActivityFilterKeys,
-  type ActivityFilters,
-  type FilterOption,
-} from './activityFilters'
-import { activityToValues, newActivityValues, type ActivityFormInput } from './activityForm'
+  activityToValues,
+  newActivityValues,
+  type ActivityFormInput,
+} from './activityForm'
+import { activityInputFromCellChange } from './activityCellEdit'
 import { ActivityFormDialog } from './ActivityFormDialog'
 import {
-  activityQueryVariables,
-  applyActivityQuery,
-  parseActivityQuery,
-  type ActivityQuery,
   type ActivitySort,
 } from './activityQuery'
-import { ActivitiesFilterSummary } from './ActivitiesFilterSummary'
 import { ActivitiesTable, type ActivityRow } from './ActivitiesTable'
+import { ActivitiesGridControls } from './ActivitiesGridControls'
 import { useActivityMutations } from './useActivityMutations'
 import { useCreateTag } from './useCreateTag'
 import { enumLabel, vehicleLabel } from './activityFormatting'
+import { useActivitiesPageState } from './useActivitiesPageState'
+import { activityQueryVariables } from './activityQuery'
 import type { ActivitiesPage_list$key } from './__generated__/ActivitiesPage_list.graphql'
 import type { ActivitiesPageQuery } from './__generated__/ActivitiesPageQuery.graphql'
 import type { ActivitiesPageMoreQuery } from './__generated__/ActivitiesPageMoreQuery.graphql'
@@ -137,12 +137,11 @@ function withChoices(options: readonly FilterOption[], current: readonly FilterO
   return missing.length > 0 ? [...options, ...missing] : options
 }
 
-/** Which form is open; duplicate and edit start from a row. */
+/** Which form is open; duplication starts from a row. */
 type Dialog =
   | { kind: 'closed' }
   | { kind: 'create' }
   | { kind: 'duplicate'; row: ActivityRow }
-  | { kind: 'edit'; row: ActivityRow }
 
 interface ContentProps {
   fetchKey: number
@@ -154,9 +153,12 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
   const { t } = useTranslation()
   const format = useFormat()
   const { searchParams, replaceParams, refreshing } = useParamsRefresh()
-  const query = useMemo(() => parseActivityQuery(searchParams), [searchParams])
-  const { filters, sort } = query
-  const variables = useMemo(() => ({ first: PAGE_SIZE, ...activityQueryVariables(query) }), [query])
+  const pageState = useActivitiesPageState(searchParams, replaceParams)
+  const { query } = pageState
+  const variables = useMemo(
+    () => ({ first: PAGE_SIZE, ...activityQueryVariables(query) }),
+    [query],
+  )
   const queryData = useLazyLoadQuery<ActivitiesPageQuery>(pageQuery, variables, {
     fetchKey,
     fetchPolicy: 'store-and-network',
@@ -167,6 +169,7 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
   >(listFragment, queryData)
   const [isRefetching, startRefetch] = useTransition()
   const [deleting, setDeleting] = useState<ActivityRow | null>(null)
+  const [pinnedActivity, setPinnedActivity] = useState<ActivityRow | null>(null)
   const countRef = useRef<HTMLParagraphElement>(null)
   // Set when the confirmed delete went through: the row and its menu are gone, so the focus moves
   // to the count line instead of returning to the menu button.
@@ -193,29 +196,16 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
     isLoadingNext,
     PAGE_SIZE,
   )
+  const onPageGridStateChange = pageState.onGridStateChange
 
-  const changeQuery = useCallback(
-    (next: ActivityQuery) => {
+  const onGridStateChange = useCallback(
+    (model: Record<string, unknown>, sort: ActivitySort) => {
       setLoadMoreError(false)
-      replaceParams(applyActivityQuery(searchParams, next))
+      onPageGridStateChange(model, sort)
     },
-    [searchParams, replaceParams, setLoadMoreError],
+    [onPageGridStateChange, setLoadMoreError],
   )
-  const changeFilters = useCallback(
-    (next: ActivityFilters) => changeQuery({ ...query, filters: next }),
-    [changeQuery, query],
-  )
-  const changeSort = useCallback(
-    (next: ActivitySort) => changeQuery({ ...query, sort: next }),
-    [changeQuery, query],
-  )
-
-  const resetFilters = useCallback(() => changeFilters({}), [changeFilters])
   const closeDialog = () => onDialogChange({ kind: 'closed' })
-  const edit = useCallback(
-    (row: ActivityRow) => onDialogChange({ kind: 'edit', row }),
-    [onDialogChange],
-  )
   const duplicate = useCallback(
     (row: ActivityRow) => onDialogChange({ kind: 'duplicate', row }),
     [onDialogChange],
@@ -243,26 +233,69 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
    * count is now, so the list is loaded again, as far as it was loaded. The transition keeps the
    * current rows (dimmed) until the new ones are there.
    */
-  const created = () => {
+  const created = (row: ActivityRow) => {
     closeDialog()
+    setPinnedActivity(row)
     countBeforeCreate.current = totalCount
     startRefetch(() => {
       refetch(
-        { first: Math.max(PAGE_SIZE, activities.length + 1) },
+        {
+          after: null,
+          first: Math.max(PAGE_SIZE, activities.length + 1),
+          ...activityQueryVariables(query),
+        },
         { fetchPolicy: 'network-only' },
       )
     })
   }
 
-  const save = (input: ActivityFormInput) => {
-    if (dialog.kind === 'edit') mutations.update(dialog.row.id, input, { onSuccess: closeDialog })
-    else mutations.create(input, { onSuccess: created })
-  }
+  const save = (input: ActivityFormInput) => mutations.create(input, { onSuccess: created })
+
+  const onCellValueChanged = useCallback(
+    (event: CellValueChangedEvent<ActivityRow>) => {
+      const { data: row, oldValue, newValue, node, column } = event
+      if (!row || oldValue === newValue) return
+
+      const field = column.getColId()
+      const restoreCell = () => node.setDataValue(field, oldValue)
+      const result = activityInputFromCellChange(row, field, newValue, t)
+      if (!result || 'error' in result) {
+        restoreCell()
+        toaster.create({
+          type: 'error',
+          title: t(
+            result ? 'activities.edit.errors.validationFailed' : 'activities.edit.errors.saveFailed',
+          ),
+          description: result?.error,
+        })
+        return
+      }
+
+      mutations.update(row.id, result.input, {
+        onSuccess: (updated) => {
+          setPinnedActivity((current) => (current?.id === updated.id ? updated : current))
+          startRefetch(() => {
+            refetch(
+              {
+                after: null,
+                first: Math.max(PAGE_SIZE, activities.length),
+                ...activityQueryVariables(query),
+              },
+              { fetchPolicy: 'network-only' },
+            )
+          })
+        },
+        onFailure: restoreCell,
+      })
+    },
+    [activities.length, mutations, query, refetch, startRefetch, t],
+  )
+  const togglePinnedActivity = useCallback((row: ActivityRow) => {
+    setPinnedActivity((current) => (current?.id === row.id ? null : row))
+  }, [])
 
   const initialValues = useMemo(() => {
     switch (dialog.kind) {
-      case 'edit':
-        return activityToValues(dialog.row)
       case 'duplicate':
         return activityToValues(dialog.row, { asCopy: true })
       default:
@@ -290,24 +323,33 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
     }
   }, [dialog, latest, vehicles, gadgets, tags, hasMoreGadgets, hasMoreTags])
 
+  const filtered =
+    Object.keys(query.filters).length > 0 ||
+    Object.keys(query.gridFilters).length > 0 ||
+    Boolean(query.quickFilter || query.fromFilter || query.toFilter)
+
   const emptyMessage = useMemo(
-    () => (
+    () => filtered ? (
       <PageEmptyState
         icon={LuBike}
         title={t('activities.empty.filteredTitle')}
         message={t('activities.empty.filteredMessage')}
         action={
-          <Button onClick={resetFilters}>
+          <Button onClick={pageState.filters.onResetFilters}>
             <LuRotateCcw aria-hidden />
             {t('activities.filters.reset')}
           </Button>
         }
       />
+    ) : (
+      <PageEmptyState
+        icon={LuBike}
+        title={t('activities.empty.title')}
+        message={t('activities.empty.message')}
+      />
     ),
-    [t, resetFilters],
+    [filtered, pageState.filters.onResetFilters, t],
   )
-
-  const filtered = activeActivityFilterKeys(filters).length > 0
 
   const dialogs = (
     <>
@@ -316,15 +358,6 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
         onOpenChange={(open) => !open && closeDialog()}
         mode={dialog.kind === 'closed' ? 'create' : dialog.kind}
         initialValues={initialValues}
-        calculated={
-          dialog.kind === 'edit'
-            ? {
-                averageSpeed: dialog.row.averageSpeed,
-                tss: dialog.row.tss,
-                source: dialog.row.source,
-              }
-            : undefined
-        }
         options={formChoices}
         busy={mutations.isSaving}
         onSave={save}
@@ -343,6 +376,7 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
           mutations.remove(deleting.id, {
             onSettled: (removed) => {
               deleted.current = removed
+              if (removed && deleting?.id === pinnedActivity?.id) setPinnedActivity(null)
               setDeleting(null)
             },
           })
@@ -353,54 +387,38 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
     </>
   )
 
-  // Without filters an empty list is the first-use state: nothing to filter, so no table.
-  if (activities.length === 0 && !filtered) {
-    return (
-      <>
-        <PageEmptyState
-          icon={LuBike}
-          title={t('activities.empty.title')}
-          message={t('activities.empty.message')}
-          action={
-            <Button onClick={() => onDialogChange({ kind: 'create' })}>
-              <LuPlus aria-hidden />
-              {t('activities.empty.action')}
-            </Button>
-          }
-        />
-        {dialogs}
-      </>
-    )
-  }
-
   return (
     <Stack gap="6">
-      <ActivitiesFilterSummary
-        value={filters}
-        vehicles={vehicles}
-        tags={tags}
-        hasMoreVehicles={hasMoreVehicles}
-        hasMoreTags={hasMoreTags}
-        onChange={changeFilters}
-        onReset={resetFilters}
-      />
+      <ActivitiesGridControls filters={pageState.filters} views={pageState.views} />
       <ActivitiesTable
         entries={activities}
         hasNextPage={hasNext}
         isLoadingNext={isLoadingNext}
         loadMoreError={loadMoreError}
         onLoadMore={loadMore}
-        filters={filters}
+        filterModel={pageState.filterModel}
         vehicles={vehicles}
+        vehicleRecords={queryData.vehicles?.nodes ?? []}
+        gadgets={gadgets}
+        gadgetRecords={queryData.gadgets?.nodes ?? []}
         tags={tags}
+        tagRecords={queryData.tags?.nodes ?? []}
         hasMoreVehicles={hasMoreVehicles}
+        hasMoreGadgets={hasMoreGadgets}
         hasMoreTags={hasMoreTags}
-        onFiltersChange={changeFilters}
-        sort={sort}
-        onSortChange={changeSort}
+        sort={query.sort}
+        onGridStateChange={onGridStateChange}
         totalCount={totalCount}
         busy={refreshing || isRefetching}
-        onEdit={edit}
+        columnState={pageState.columnState}
+        resetTableVersion={pageState.resetTableVersion}
+        onColumnStateChange={pageState.onColumnStateChange}
+        pinnedActivity={pinnedActivity}
+        onTogglePin={togglePinnedActivity}
+        onCreateActivity={() => onDialogChange({ kind: 'create' })}
+        isCreating={mutations.isCreating}
+        isUpdating={mutations.isUpdating}
+        onCellValueChanged={onCellValueChanged}
         onDuplicate={duplicate}
         onDelete={confirmDelete}
         countRef={countRef}
@@ -417,15 +435,7 @@ export function ActivitiesPage() {
   const [dialog, setDialog] = useState<Dialog>({ kind: 'closed' })
 
   return (
-    <Page
-      title={t('nav.activities')}
-      actions={
-        <Button onClick={() => setDialog({ kind: 'create' })}>
-          <LuPlus aria-hidden />
-          {t('activities.add.open')}
-        </Button>
-      }
-    >
+    <Page title={t('nav.activities')}>
       <QueryBoundary
         onRetry={retry}
         fallback={<DataTableSkeleton />}

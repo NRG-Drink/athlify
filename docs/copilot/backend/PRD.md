@@ -48,7 +48,7 @@ The backend provides the reliable data and domain-logic contract for the fronten
 - manage gadgets;
 - manage Body-Stats across multiple measurement points;
 - manage Events such as accidents, injuries, repairs, breaks and goals;
-- display Activities as a list, detail form and calendar with weekly summary;
+- display Activities in a table with direct cell editing and in a calendar with weekly summary; add and duplicate activities through forms;
 - merge activities without losing the original activities;
 - German and English for central interfaces.
 

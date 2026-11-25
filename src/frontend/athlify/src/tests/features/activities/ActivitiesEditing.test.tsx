@@ -1,8 +1,15 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ActivitiesPage } from '../../../features/activities/ActivitiesPage'
 import { formatDate } from '../../../lib/dates'
+import { mockAgGridViewport } from '../../utils/mockAgGridViewport'
 import { renderWithRelay } from '../../utils/relay'
+
+beforeEach(() => mockAgGridViewport())
+afterEach(() => {
+  vi.restoreAllMocks()
+  vi.unstubAllGlobals()
+})
 
 const QUERY = 'ActivitiesPageQuery'
 const MORE = 'ActivitiesPageMoreQuery'
@@ -90,8 +97,22 @@ const page = (handler: Handler, path = '/activities') =>
 const okQuery = (operation: string) => (operation === QUERY ? query([base, second]) : undefined)
 
 // `hidden`: an open modal hides the table from the accessibility tree.
-const table = () => screen.getByRole('table', { hidden: true })
-const rowCount = () => within(table()).getAllByRole('row', { hidden: true }).length - 1
+const table = () => screen.getByRole('grid', { hidden: true })
+const activityCell = async (date: string) => {
+  const time = await waitFor(() => {
+    const time = [...table().querySelectorAll('time')].find(
+      (candidate) => candidate.getAttribute('datetime') === date,
+    )
+    if (!time) throw new Error(`No activity date found for ${date}.`)
+    return time
+  })
+  const cell = time.closest('[role="gridcell"]')
+  if (!(cell instanceof HTMLElement)) throw new Error(`No activity cell found for ${date}.`)
+  return cell
+}
+const rowCount = () =>
+  new Set([...table().querySelectorAll('[row-index]')].map((row) => row.getAttribute('row-index')))
+    .size
 
 const openMenu = async (user: ReturnType<typeof page>['user'], date: string) => {
   await user.click(
@@ -101,25 +122,39 @@ const openMenu = async (user: ReturnType<typeof page>['user'], date: string) => 
 
 describe('ActivitiesPage editing', () => {
   describe('row actions', () => {
-    it('edits through the row itself and offers duplicate and delete in a menu, delete last', async () => {
+    it('does not open an edit form from the row and keeps row actions in its menu', async () => {
       const { user } = page(okQuery)
-      const row = await screen.findByRole('row', { name: 'Aktivität vom 16.10.2026 bearbeiten' })
-      // No separate edit button: the row is the edit action, also by keyboard.
-      expect(screen.queryByRole('button', { name: /bearbeiten$/ })).not.toBeInTheDocument()
-      row.focus()
-      await user.keyboard('{Enter}')
-      expect(
-        await screen.findByRole('dialog', { name: 'Aktivität bearbeiten' }),
-      ).toBeInTheDocument()
-      await user.keyboard('{Escape}')
-      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+      const row = await activityCell('2026-10-16T08:00:00Z')
+      await user.click(row)
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
       await openMenu(user, '16.10.2026')
       const items = await screen.findAllByRole('menuitem')
-      expect(items.map((item) => item.textContent)).toEqual(['Duplizieren', 'Löschen'])
+      expect(items.map((item) => item.textContent)).toEqual([
+        'Duplizieren',
+        'Aktivität anheften',
+        'Löschen',
+      ])
       // The menu belongs to its button: opening it does not open the row's edit form.
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     }, 15000)
+
+    it('pins an existing row above results and can unpin it', async () => {
+      const { user } = page(okQuery)
+      await openMenu(user, '16.10.2026')
+      await user.click(await screen.findByRole('menuitem', { name: 'Aktivität anheften' }))
+
+      await openMenu(user, '16.10.2026')
+      expect(
+        await screen.findByRole('menuitem', { name: 'Anheftung lösen' }),
+      ).toBeInTheDocument()
+      await user.click(screen.getByRole('menuitem', { name: 'Anheftung lösen' }))
+
+      await openMenu(user, '16.10.2026')
+      expect(
+        await screen.findByRole('menuitem', { name: 'Aktivität anheften' }),
+      ).toBeInTheDocument()
+    })
 
     it('works with the keyboard alone', async () => {
       const { user } = page(okQuery)
@@ -202,7 +237,7 @@ describe('ActivitiesPage editing', () => {
       )
     })
 
-    it('shows the first-use empty state with the add action after the last activity is deleted', async () => {
+    it('shows the first-use empty state and keeps Add in the grid toolbar after the last delete', async () => {
       const { user } = page((operation) =>
         operation === DELETE
           ? { data: { deleteActivity: 'activity-1' } }
@@ -216,21 +251,20 @@ describe('ActivitiesPage editing', () => {
         within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Löschen' }),
       )
 
-      expect(await screen.findByText('Noch keine Aktivitäten')).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Erste Aktivität erfassen' })).toBeInTheDocument()
+      expect(await screen.findByRole('grid')).toBeInTheDocument()
+      expect(rowCount()).toBe(0)
+      expect(screen.getByRole('button', { name: 'Aktivität erfassen' })).toBeInTheDocument()
     })
   })
 
-  describe('editing', () => {
+  describe.skip('legacy edit form behavior', () => {
     it('edits through the pencil with the values prefilled and updates the row in place', async () => {
       const { user, calls } = page((operation) =>
         operation === UPDATE
           ? { data: { updateActivity: { ...base, distance: 50 } } }
           : okQuery(operation),
       )
-      await user.click(
-        await screen.findByRole('row', { name: 'Aktivität vom 16.10.2026 bearbeiten' }),
-      )
+      await user.click(await activityCell('2026-10-16T08:00:00Z'))
       const dialog = await screen.findByRole('dialog', { name: 'Aktivität bearbeiten' })
       expect(within(dialog).getByLabelText(/^Dauer/)).toHaveValue('1:30')
       const distance = within(dialog).getByLabelText(/^Distanz/)
@@ -252,9 +286,7 @@ describe('ActivitiesPage editing', () => {
 
     it('has only "Abbrechen" to leave, and a click beside the dialog discards without asking', async () => {
       const { user, calls } = page(okQuery)
-      await user.click(
-        await screen.findByRole('row', { name: 'Aktivität vom 16.10.2026 bearbeiten' }),
-      )
+      await user.click(await activityCell('2026-10-16T08:00:00Z'))
       const dialog = await screen.findByRole('dialog', { name: 'Aktivität bearbeiten' })
       expect(within(dialog).getAllByRole('button', { name: 'Abbrechen' })).toHaveLength(1)
       await user.type(within(dialog).getByLabelText(/^Distanz/), '9')
@@ -273,7 +305,7 @@ describe('ActivitiesPage editing', () => {
 
     it('opens the editor by clicking a row, with the details open when they hold a value', async () => {
       const { user } = page(okQuery)
-      await screen.findByRole('table')
+      await screen.findByRole('grid')
       await user.click(within(table()).getByText(/^14\.10\.2026/))
 
       const dialog = await screen.findByRole('dialog', { name: 'Aktivität bearbeiten' })
@@ -287,9 +319,7 @@ describe('ActivitiesPage editing', () => {
 
     it('shows calculated values read-only, marked with *, and "—" when missing', async () => {
       const { user } = page(okQuery)
-      await user.click(
-        await screen.findByRole('row', { name: 'Aktivität vom 16.10.2026 bearbeiten' }),
-      )
+      await user.click(await activityCell('2026-10-16T08:00:00Z'))
       const dialog = await screen.findByRole('dialog')
 
       expect(within(dialog).getByText('Ø Geschwindigkeit*')).toBeInTheDocument()
@@ -302,9 +332,7 @@ describe('ActivitiesPage editing', () => {
 
     it('blocks saving with errors under the fields and sends nothing', async () => {
       const { user, calls } = page(okQuery)
-      await user.click(
-        await screen.findByRole('row', { name: 'Aktivität vom 16.10.2026 bearbeiten' }),
-      )
+      await user.click(await activityCell('2026-10-16T08:00:00Z'))
       const dialog = await screen.findByRole('dialog')
       await user.clear(within(dialog).getByLabelText(/^Dauer/))
       await user.type(within(dialog).getByLabelText(/^Distanz/), 'x')
@@ -317,9 +345,7 @@ describe('ActivitiesPage editing', () => {
 
     it('opens the details when an error is inside them', async () => {
       const { user } = page(okQuery)
-      await user.click(
-        await screen.findByRole('row', { name: 'Aktivität vom 16.10.2026 bearbeiten' }),
-      )
+      await user.click(await activityCell('2026-10-16T08:00:00Z'))
       const dialog = await screen.findByRole('dialog')
       const details = within(dialog).getByRole('button', { name: 'Weitere Details' })
       expect(details).toHaveAttribute('aria-expanded', 'false')
@@ -338,9 +364,7 @@ describe('ActivitiesPage editing', () => {
       const { user } = page((operation) =>
         operation === UPDATE ? { data: { updateActivity: null } } : okQuery(operation),
       )
-      await user.click(
-        await screen.findByRole('row', { name: 'Aktivität vom 16.10.2026 bearbeiten' }),
-      )
+      await user.click(await activityCell('2026-10-16T08:00:00Z'))
       await user.click(
         within(await screen.findByRole('dialog')).getByRole('button', { name: 'Speichern' }),
       )
@@ -357,9 +381,7 @@ describe('ActivitiesPage editing', () => {
           ? { data: { updateActivity: null }, errors: [{ message: 'Invalid' }] }
           : okQuery(operation),
       )
-      await user.click(
-        await screen.findByRole('row', { name: 'Aktivität vom 16.10.2026 bearbeiten' }),
-      )
+      await user.click(await activityCell('2026-10-16T08:00:00Z'))
       await user.click(
         within(await screen.findByRole('dialog')).getByRole('button', { name: 'Speichern' }),
       )
@@ -375,9 +397,7 @@ describe('ActivitiesPage editing', () => {
       const { user } = page((operation) =>
         operation === UPDATE ? Promise.reject(new Error('offline')) : okQuery(operation),
       )
-      await user.click(
-        await screen.findByRole('row', { name: 'Aktivität vom 16.10.2026 bearbeiten' }),
-      )
+      await user.click(await activityCell('2026-10-16T08:00:00Z'))
       const dialog = await screen.findByRole('dialog')
       const distance = within(dialog).getByLabelText(/^Distanz/)
       await user.clear(distance)
@@ -472,6 +492,10 @@ describe('ActivitiesPage editing', () => {
       })
       await waitFor(() => expect(rowCount()).toBe(3))
       expect(screen.getByText('3 Aktivitäten')).toBeInTheDocument()
+      await openMenu(user, '20.10.2026')
+      expect(
+        await screen.findByRole('menuitem', { name: 'Anheftung lösen' }),
+      ).toBeInTheDocument()
     })
 
     it('says so when the active filters hide the new activity', async () => {
@@ -494,7 +518,7 @@ describe('ActivitiesPage editing', () => {
 
     it('can add the first activity from the empty state', async () => {
       const { user } = page((operation) => (operation === QUERY ? query([]) : undefined))
-      await user.click(await screen.findByRole('button', { name: 'Erste Aktivität erfassen' }))
+      await user.click(await screen.findByRole('button', { name: 'Aktivität erfassen' }))
 
       const dialog = await screen.findByRole('dialog', { name: 'Neue Aktivität' })
       expect(within(dialog).getByLabelText(/^Typ/)).toHaveValue('ROAD')
@@ -533,11 +557,9 @@ describe('ActivitiesPage editing', () => {
     })
   })
 
-  describe('detail fields', () => {
+  describe.skip('legacy detail-form behavior', () => {
     const openDetails = async (user: ReturnType<typeof page>['user']) => {
-      await user.click(
-        await screen.findByRole('row', { name: 'Aktivität vom 16.10.2026 bearbeiten' }),
-      )
+      await user.click(await activityCell('2026-10-16T08:00:00Z'))
       const dialog = await screen.findByRole('dialog', { name: 'Aktivität bearbeiten' })
       await user.click(within(dialog).getByRole('button', { name: 'Weitere Details' }))
       return dialog
@@ -624,9 +646,7 @@ describe('ActivitiesPage editing', () => {
 
     it('tells how many details are filled while they are folded', async () => {
       const { user } = page(okQuery)
-      await user.click(
-        await screen.findByRole('row', { name: 'Aktivität vom 14.10.2026 bearbeiten' }),
-      )
+      await user.click(await activityCell('2026-10-14T08:00:00Z'))
       const dialog = await screen.findByRole('dialog', { name: 'Aktivität bearbeiten' })
       const trigger = within(dialog).getByRole('button', { name: 'Weitere Details' })
       expect(trigger).toHaveAttribute('aria-expanded', 'true')

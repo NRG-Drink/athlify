@@ -124,7 +124,7 @@ The filters apply to the displayed metrics, charts, activity trends and Events. 
 
 ### 3.3 Activity management
 
-The Activities page provides complete management of cycling activities. It offers a list or table view, a detail view as a form and a calendar view with a weekly summary similar to TrainingPeaks. Activities can be imported from Strava, created manually, viewed, filtered, edited, deleted and merged.
+The Activities page provides complete management of cycling activities. It offers a table with direct cell editing and a calendar view with a weekly summary similar to TrainingPeaks. Activities can be imported from Strava, created manually, viewed, filtered by description, date range and activity attributes, sorted, edited, deleted and merged. The list supports saved views and temporarily pinning an activity above the current results.
 
 The Activities page contains a visible **Strava sync button**. The button starts synchronization directly from activity management. The last synchronization time and any error status are displayed alongside it.
 
@@ -146,7 +146,7 @@ An activity contains, from a domain perspective:
 - effort, from 1 to 10; and
 - wind conditions, from calm to stormy.
 
-Some values are maintained or calculated automatically by the application and are marked with `*` in the edit form. These values cannot be edited directly.
+Some values are maintained or calculated automatically by the application and are marked with `*`. These values cannot be edited directly.
 
 Supported activity types include road bike, mountain bike, gravel and indoor cycling or trainer rides. Activities from other sports are not required. For imported Strava activities, locally maintained additional information may be edited. Deleted activities remain excluded from the active overview and must not reappear as active activities during a later synchronization.
 
@@ -339,7 +339,7 @@ The user enters the date, type, distance, duration and other details. The activi
 
 ### UC-06 Edit or delete activity
 
-The user opens an existing activity and edits available details or deletes the entry. The list and Dashboard are updated.
+The user edits available fields directly in the activity table or deletes the entry from its row actions. The list and Dashboard are updated.
 
 ### UC-07 Manage Garage
 
@@ -452,24 +452,20 @@ The wireframes show the domain views of the application. They do not prescribe a
 └────────────────────────────────────────────────────┘
 ```
 
-### 8.4 Activity detail and edit form
+### 8.4 Activity table editing
 
 ```text
-┌────────────────────────────────────────────────────┐
-│ Edit activity                           [Save]       │
-├────────────────────────────────────────────────────┤
-│ Date [____]       Type [Indoor/Outdoor ▼]           │
-│ Bicycle [_______] Gadgets [________]               │
-│ Time [____]       Distance [____]                  │
-│ Average speed* [____]                              │
-│ Elevation [____]   TSS* [____]                     │
-│ Heart rate Min. [__] Max. [__] Avg. [__]            │
-│ Mood [________]    Effort [____]                   │
-│ Wind [________]    Tags [________]                 │
-│ Description [_______________________________]       │
-│ Some values are calculated automatically            │
-└────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│ Activities     [Filters] [Views] [Reset] [Columns] [+]   │
+├──────────────────────────────────────────────────────────┤
+│ Date       Type      Duration   Distance   Bicycle  ...   │
+│ 24.07.26   Road      1:15       42         Road bike ...  │
+│ 22.07.26   Indoor    0:40        8         —        ...  │
+└──────────────────────────────────────────────────────────┘
 ```
+
+Users edit supported values directly in their cells. Add and duplicate actions
+continue to use forms; calculated and system-managed fields are not editable.
 
 ### 8.5 Activity calendar
 

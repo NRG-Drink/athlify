@@ -120,6 +120,49 @@
         "active": "Aktive Filter",
         "remove": "Filter {{filter}} entfernen"
       },
+      "controls": {
+        "title": "Aktivitäten filtern",
+        "quickFilter": "Beschreibung durchsuchen",
+        "fromFilter": "Von",
+        "toFilter": "Bis",
+        "filterActions": "Filteraktionen",
+        "filterYtd": "Seit Jahresbeginn",
+        "resetFilters": "Filter zurücksetzen",
+        "resetTable": "Tabelle zurücksetzen",
+        "invalidDate": "Bitte ein gültiges Datum eingeben."
+      },
+      "views": {
+        "select": "Gespeicherte Ansicht auswählen",
+        "choose": "Ansicht auswählen",
+        "saveCurrent": "Aktuelle Ansicht speichern",
+        "name": "Name der Ansicht",
+        "duplicateName": "Eine Ansicht mit diesem Namen gibt es bereits.",
+        "save": "Ansicht speichern",
+        "delete": "Ansicht löschen",
+        "storageFailed": "Ansichten konnten nicht im Browser gespeichert werden."
+      },
+      "columnPicker": {
+        "open": "Spalten",
+        "label": "Spalten auswählen"
+      },
+      "gridFilter": {
+        "none": "Kein Filter",
+        "options": {
+          "equals": "Ist gleich",
+          "notEqual": "Ist nicht gleich",
+          "contains": "Enthält",
+          "notContains": "Enthält nicht",
+          "startsWith": "Beginnt mit",
+          "endsWith": "Endet mit",
+          "blank": "Leer",
+          "notBlank": "Nicht leer",
+          "lessThan": "Kleiner als",
+          "greaterThan": "Grösser als",
+          "inRange": "Zwischen",
+          "before": "Vor",
+          "after": "Nach"
+        }
+      },
       "types": {
         "ROAD": "Strasse",
         "MOUNTAIN": "Mountainbike",
@@ -148,6 +191,8 @@
         "speed": "Ø Geschwindigkeit",
         "tss": "TSS",
         "heartRate": "Ø Herzfrequenz",
+        "heartRateMin": "Min. Herzfrequenz",
+        "heartRateMax": "Max. Herzfrequenz",
         "effort": "Anstrengung",
         "mood": "Stimmung",
         "wind": "Wind",
@@ -157,10 +202,17 @@
       "table": {
         "caption": "Aktivitäten"
       },
+      "sort": {
+        "ariaLabel": "{{column}}, {{direction}}",
+        "ascending": "aufsteigend sortiert",
+        "descending": "absteigend sortiert",
+        "unsorted": "nicht sortiert"
+      },
       "moreTags": "+{{count}}",
       "resultCount_one": "{{count}} Aktivität",
       "resultCount_other": "{{count}} Aktivitäten",
       "loadMore": "Weitere Aktivitäten laden",
+      "loadingMore": "Weitere Aktivitäten werden geladen …",
       "loadMoreFailed": "Weitere Aktivitäten konnten nicht geladen werden.",
       "loadFailed": "Aktivitäten konnten nicht geladen werden.",
       "empty": {
@@ -207,7 +259,9 @@
         "title": "Aktivität bearbeiten",
         "success": "Aktivität aktualisiert.",
         "errors": {
-          "notFound": "Diese Aktivität existiert nicht mehr."
+          "notFound": "Diese Aktivität existiert nicht mehr.",
+          "saveFailed": "Aktivität konnte nicht gespeichert werden. Bitte versuche es nochmals.",
+          "validationFailed": "Dieser Wert ist für die Aktivität ungültig."
         }
       },
       "delete": {
@@ -225,6 +279,10 @@
         "actionsColumn": "Aktionen",
         "edit": "Aktivität vom {{date}} bearbeiten",
         "more": "Weitere Aktionen für die Aktivität vom {{date}}"
+      },
+      "pin": {
+        "action": "Aktivität anheften",
+        "unpin": "Anheftung lösen"
       },
       "form": {
         "date": "Datum und Startzeit",
