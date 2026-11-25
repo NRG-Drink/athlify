@@ -2,6 +2,7 @@ using System.Data;
 using Athlify.Api.Database;
 using Athlify.Api.Domain.Auth;
 using Athlify.Api.Domain.Common;
+using HotChocolate.Authorization;
 using HotChocolate.Types.Relay;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -11,6 +12,7 @@ namespace Athlify.Api.Domain.Users;
 [MutationType]
 public static partial class UserAdminMutation
 {
+    [Authorize(Roles = [nameof(UserRole.Admin)])]
     public static async Task<User> CreateUser(
         CreateUserInput input,
         ICurrentUser currentUser,
@@ -58,6 +60,7 @@ public static partial class UserAdminMutation
         return user;
     }
 
+    [Authorize(Roles = [nameof(UserRole.Admin)])]
     public static async Task<User> UpdateUser(
         [ID<User>] int id,
         UpdateUserInput input,
@@ -97,6 +100,7 @@ public static partial class UserAdminMutation
         }, cancellationToken);
     }
 
+    [Authorize(Roles = [nameof(UserRole.Admin)])]
     public static async Task<User> ResetUserPassword(
         [ID<User>] int id,
         ResetUserPasswordInput input,
@@ -124,6 +128,7 @@ public static partial class UserAdminMutation
     }
 
     [ID<User>]
+    [Authorize(Roles = [nameof(UserRole.Admin)])]
     public static async Task<int> DeleteUser(
         [ID<User>] int id,
         ICurrentUser currentUser,

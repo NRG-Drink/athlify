@@ -106,8 +106,9 @@ src/backend/
   ([ADR-013](adr/ADR-013-admin-user-management.md)). `AdminUsers.All` is the
   single place that ignores the `Owner` filter, for `User` only;
   `AdminUsers.RequireAdminAsync` reads the caller's role from the database and
-  rejects others with `FORBIDDEN`. The username cannot be changed after
-  creation. Every new password, set by an Administrator or changed through `updateMe`, is 8 to 200 characters long (`Domain/Auth/PasswordPolicy.cs`). Rules: an
+  rejects others with `FORBIDDEN`; the `[Authorize(Roles)]` attribute on the same
+  operations refuses a token without the Admin claim first (`AUTH_NOT_AUTHORIZED`). The username cannot be changed after
+  creation. Every new password, set by an Administrator or changed through `updateMe`, is checked by `PasswordPolicy` (`Domain/Auth/PasswordPolicy.cs`): 8 to 200 characters by default, configured under `PasswordPolicy`, and the limit is returned with the error. Rules: an
   Administrator cannot change their own role (`CANNOT_CHANGE_OWN_ROLE`), the
   last Administrator cannot be demoted (`LAST_ADMIN`), a duplicate username is
   `USERNAME_TAKEN`. A role change revokes the target's refresh tokens

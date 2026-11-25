@@ -12,7 +12,8 @@ Administrators must list, create and edit other users' accounts
 than the signed-in one behind the `Owner` query filter. The role is also a claim
 in the access token, which lives for 60 minutes, so a demoted administrator
 would keep administrator rights until the token expires. The endpoint tests
-authenticate through `ICurrentUser` and do not issue tokens.
+authenticate through `ICurrentUser` and do not issue tokens; they send the role
+with a test authentication scheme (`TestAuthHandler`).
 
 ## Options Considered
 
@@ -37,7 +38,7 @@ authenticate through `ICurrentUser` and do not issue tokens.
 
 ## Decision
 
-**Chosen**: Option 1.
+**Chosen**: Option 1, with the declarative role attribute as a first gate.
 
 `AdminUsers.All(db)` is the only place in user management that ignores the
 `Owner` filter for `User`. System flows (login, token refresh, seeding) also
@@ -45,6 +46,11 @@ ignore it for `User`, for their own lookups. `AdminUsers.RequireAdminAsync` load
 non-administrators with `FORBIDDEN`. A role change revokes the target's refresh
 tokens (`RoleChanged`), an administrator cannot change their own role, and the
 last administrator cannot be demoted.
+
+The operations also carry `[Authorize(Roles = [nameof(UserRole.Admin)])]`, so a token
+without the Admin claim is refused with `AUTH_NOT_AUTHORIZED` before any resolver runs.
+The attribute reads the token, so it cannot see a demotion: the database check still
+decides for a stale token and answers `FORBIDDEN`.
 
 ## Consequences
 

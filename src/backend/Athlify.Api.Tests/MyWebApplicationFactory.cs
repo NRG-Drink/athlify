@@ -1,6 +1,7 @@
 ﻿using Athlify.Api.Database;
 using Athlify.Api.Domain.Auth;
 using Athlify.Api.Domain.Users;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,10 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using System.Security.Claims;
+using System.Text.Encodings.Web;
 using TUnit.AspNetCore;
 using TUnit.AspNetCore.Extensions;
 
@@ -34,6 +39,7 @@ public abstract class WebApiTestBase : WebApplicationTest<MyWebApplicationFactor
 
         var client = Factory.CreateClient();
         client.DefaultRequestHeaders.Add(TestCurrentUser.Header, userId.ToString());
+        client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, role.ToString());
         return client;
     }
 
@@ -113,6 +119,13 @@ public class MyWebApplicationFactory : TestWebApplicationFactory<Program>
             ConfigureDatabase(services);
             services.RemoveAll<ICurrentUser>();
             services.AddScoped<ICurrentUser, TestCurrentUser>();
+            services.AddAuthentication(options =>
+                {
+                    options.DefaultScheme = TestAuthHandler.SchemeName;
+                    options.DefaultAuthenticateScheme = TestAuthHandler.SchemeName;
+                    options.DefaultChallengeScheme = TestAuthHandler.SchemeName;
+                })
+                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { });
         });
 
         base.ConfigureWebHost(builder);
@@ -161,4 +174,37 @@ public class TestCurrentUser(IHttpContextAccessor httpContextAccessor) : ICurren
         && int.TryParse(value[0], out var id)
             ? id
             : throw Athlify.Api.Domain.Common.DomainErrors.NotAuthenticated();
-}   
+}
+
+/// <summary>
+/// Signs in the request with the role the test sends in <see cref="RoleHeader"/>, like a token would. The role is
+/// what the token claims, which can be stale: the handler does not read the database.
+/// </summary>
+public class TestAuthHandler(
+    IOptionsMonitor<AuthenticationSchemeOptions> options,
+    ILoggerFactory logger,
+    UrlEncoder encoder) : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
+{
+    public const string SchemeName = "Test";
+    public const string RoleHeader = "X-Test-User-Role";
+
+    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+    {
+        if (!Request.Headers.TryGetValue(TestCurrentUser.Header, out var userId))
+        {
+            return Task.FromResult(AuthenticateResult.NoResult());
+        }
+
+        var role = Request.Headers.TryGetValue(RoleHeader, out var roleValue)
+            ? roleValue.ToString()
+            : nameof(UserRole.User);
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+            new Claim(ClaimTypes.Role, role),
+        };
+        var identity = new ClaimsIdentity(claims, SchemeName, ClaimTypes.Name, ClaimTypes.Role);
+        return Task.FromResult(AuthenticateResult.Success(
+            new AuthenticationTicket(new ClaimsPrincipal(identity), SchemeName)));
+    }
+}

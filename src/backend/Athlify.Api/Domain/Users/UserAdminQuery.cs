@@ -1,4 +1,5 @@
 using Athlify.Api.Database;
+using HotChocolate.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace Athlify.Api.Domain.Users;
@@ -6,6 +7,7 @@ namespace Athlify.Api.Domain.Users;
 [QueryType]
 public static partial class UserAdminQuery
 {
+    [Authorize(Roles = [nameof(UserRole.Admin)])]
     public static async Task<List<User>> GetUsers(
         ICurrentUser currentUser,
         AthlifyDbContext db,

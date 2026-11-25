@@ -19,6 +19,10 @@ public class UserAdminTests : WebApiTestBase
     private const string Admin = "admin@example.com";
     private const string Luca = "luca@example.com";
 
+    // Codes of the role gate (HotChocolate authorization), as opposed to the domain codes of the database check.
+    private const string NotAuthorizedCode = "AUTH_NOT_AUTHORIZED";
+    private const string NotAuthenticatedCode = "AUTH_NOT_AUTHENTICATED";
+
     private const string UsersQuery = "query { users { id username firstName lastName language role } }";
 
     private const string CreateUser = """
@@ -73,7 +77,7 @@ public class UserAdminTests : WebApiTestBase
 
         var root = await PostAsync(client, UsersQuery);
 
-        await Assert.That(ErrorCodes(root)).Contains(DomainErrors.ForbiddenCode);
+        await Assert.That(ErrorCodes(root)).Contains(NotAuthorizedCode);
     }
 
     [Test]
@@ -81,7 +85,7 @@ public class UserAdminTests : WebApiTestBase
     {
         var root = await PostAsync(Factory.CreateClient(), UsersQuery);
 
-        await Assert.That(ErrorCodes(root)).Contains(DomainErrors.NotAuthenticatedCode);
+        await Assert.That(ErrorCodes(root)).Contains(NotAuthenticatedCode);
     }
 
     [Test]
@@ -453,7 +457,7 @@ public class UserAdminTests : WebApiTestBase
 
         var root = await PostAsync(luca, DeleteUser, new { id = adminId });
 
-        await Assert.That(ErrorCodes(root)).Contains(DomainErrors.ForbiddenCode);
+        await Assert.That(ErrorCodes(root)).Contains(NotAuthorizedCode);
         await Assert.That(await CountUsersAsync(Admin)).IsEqualTo(1);
     }
 
@@ -482,9 +486,9 @@ public class UserAdminTests : WebApiTestBase
         var update = await PostAsync(luca, UpdateUser, new { id = adminId, input = new { firstName = "Hacked", role = "USER" } });
         var reset = await PostAsync(luca, ResetPassword, new { id = adminId, input = new { newPassword = "hacked-pass" } });
 
-        await Assert.That(ErrorCodes(create)).Contains(DomainErrors.ForbiddenCode);
-        await Assert.That(ErrorCodes(update)).Contains(DomainErrors.ForbiddenCode);
-        await Assert.That(ErrorCodes(reset)).Contains(DomainErrors.ForbiddenCode);
+        await Assert.That(ErrorCodes(create)).Contains(NotAuthorizedCode);
+        await Assert.That(ErrorCodes(update)).Contains(NotAuthorizedCode);
+        await Assert.That(ErrorCodes(reset)).Contains(NotAuthorizedCode);
         var after = await GetUserAsync(Admin);
         await Assert.That(after.FirstName).IsEqualTo(before.FirstName);
         await Assert.That(after.Role).IsEqualTo(UserRole.Admin);
@@ -584,5 +588,24 @@ public class UserAdminTests : WebApiTestBase
             + await db.Vehicles.IgnoreQueryFilters().CountAsync(e => e.UserId == userId)
             + await db.Activities.IgnoreQueryFilters().CountAsync(e => e.UserId == userId)
             + await db.SeedMarkers.IgnoreQueryFilters().CountAsync(e => e.UserId == userId);
+    }
+
+    [Test]
+    public async Task CreateUserNeedsSignInBeforeTheRoleCheck()
+    {
+        var root = await PostAsync(Factory.CreateClient(), CreateUser, new { input = NewUser() });
+
+        await Assert.That(ErrorCodes(root)).Contains(NotAuthenticatedCode);
+    }
+
+    [Test]
+    public async Task ShortPasswordNamesTheConfiguredMinimum()
+    {
+        var admin = await CreateUserClientAsync(Admin, UserRole.Admin);
+
+        var root = await PostAsync(admin, CreateUser, new { input = NewUser("mia", "short") });
+
+        var extensions = root.GetProperty("errors").EnumerateArray().Single().GetProperty("extensions");
+        await Assert.That(extensions.GetProperty("minLength").GetInt32()).IsEqualTo(new PasswordPolicyOptions().MinLength);
     }
 }
