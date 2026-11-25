@@ -225,6 +225,30 @@ In short:
   button: "Abbrechen", Escape or a click beside the dialog discard the
   input without a confirmation question.
 
+## Account forms (Settings)
+
+- **Panels.** A form page that is not a list groups its forms in panels:
+  `bg.panel`, `borderWidth="1px"`, `l3`, padding `6`, an `h2` heading in the
+  `heading` font. Two columns from md, stacked below; each panel has one
+  primary `brand` button, full width on phones, and `alignSelf="start"` so
+  panels of different height do not stretch.
+- **Independent forms.** Every panel saves on its own; a failure or a wrong
+  value in one never blocks the other. The save button stays disabled until
+  the form differs from the saved values (profile) or is complete
+  (password).
+- **Side effects before the click.** A consequence the user would not guess
+  is stated in a `fg.muted` note above the button ("Nach dem Ändern meldest
+  du dich auf allen Geräten neu an."), not discovered afterwards.
+- **Password fields** are `type="password"` with `autoComplete`
+  (`current-password` / `new-password`), are never prefilled and are cleared
+  after a successful change. The confirmation is checked on the client and
+  never sent.
+- **Read-only identity.** The username is a labelled text row, not a
+  disabled input.
+- **Errors** sit under their field (`Field.ErrorText`), focus moves to the
+  first invalid field, and the server's English messages are never shown;
+  the field and error code select the translated text.
+
 ## Components to reuse
 
 Before designing something new, check whether one of these already covers it

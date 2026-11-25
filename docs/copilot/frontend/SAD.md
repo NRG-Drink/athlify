@@ -57,8 +57,10 @@ domain pages (see [Domain page pattern](#domain-page-pattern)), and Activities
 and Events are list slices with editing. The Activities page lists activities
 from the backend connection, applies URL-backed filters, loads additional
 pages on demand and adds, edits, duplicates and deletes activities in a form
-dialog. The Events page lists, creates, edits and deletes personal events, with
-URL-backed filters, sorting and saved views. Dashboard and Garage remain placeholders.
+dialog. The Settings page lets the signed-in user edit their own profile,
+language and password. The Events page lists, creates, edits and deletes personal
+events, with URL-backed filters, sorting and saved views. Dashboard and Garage
+remain placeholders.
 
 ```text
 src/frontend/athlify/src/
@@ -77,13 +79,17 @@ src/frontend/athlify/src/
 ├── tests/            # all Vitest tests, mirroring src/ (plus setup.ts and utils/)
 ├── hooks/            # shared hooks (empty)
 ├── types/            # shared types (empty)
-├── i18n/             # i18next setup, de/en locale resources and useFormat
+├── i18n/             # i18next setup, de/en locale resources, useFormat and language helpers
 └── index.css         # Tailwind import only
 ```
 
-The App Layout and routing are implemented. Dashboard, Garage and Settings
-render placeholder pages. The `/events` view is a
-backend-backed domain page for managing events. The `/activities` view is a
+The App Layout and routing are implemented. Dashboard and Garage render
+placeholder pages. The `/events` view is a backend-backed domain page for
+managing events. The `/settings` view is a form page (two panels, Profile and
+Password) backed by `me` and the self-service `updateMe` mutation: a profile save
+switches the UI language at once, a password change signs the user out (the
+backend revokes all refresh tokens), and the account language is applied at the
+start of every session by `AuthAndRelayProvider`. The `/activities` view is a
 domain page backed by the GraphQL API; its type, bicycle, wind and tag
 filters are checklists of ticked values, kept in the URL as repeated parameters, operated from the column headers and its list uses Relay cursor pagination (50 per page, "load more"). The
 `/body-stats` view is a domain page backed by the GraphQL API. State management
@@ -118,7 +124,7 @@ All views render inside the App Layout (`src/layouts/AppLayout.tsx`): a skip
 link, a sticky header with the brand, the Primary Navigation and the User
 Menu, and the `main` content area. Below the `md` breakpoint the Primary
 Navigation moves into a drawer opened by a menu button. The User Menu holds
-Settings, the language switcher and the color-mode toggle. Render errors of a
+Settings and the color-mode toggle. Render errors of a
 view are shown inside the layout through the route `errorElement`
 ([ADR-004](adr/ADR-004-react-router-data-mode.md)).
 
@@ -131,7 +137,7 @@ view are shown inside the layout through the route `errorElement`
 | `/garage`     | Garage (placeholder)                                                                      | Primary Navigation |
 | `/body-stats` | Body-Stats (domain page; `?metric=`, `?from=` and `?to=` select the view)                 | Primary Navigation |
 | `/events`     | Events (personal event grid with filters, sorting and saved views)                         | Primary Navigation |
-| `/settings`   | Settings (placeholder)                                                                    | User Menu          |
+| `/settings`   | Settings: profile, language, password                                                     | User Menu          |
 | any other     | Not Found page                                                                            | –                  |
 
 There is no Administration entry until the backend exposes user roles.

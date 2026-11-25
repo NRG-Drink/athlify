@@ -55,7 +55,7 @@ If a requirement is not supported by these sources, do not invent a function. Do
 The frontend is under `../../../src/frontend/athlify/`. It uses React 19,
 TypeScript, Vite, Chakra UI v3, Tailwind CSS v4, react-router-dom and
 i18next. It provides the App Layout (header with Primary Navigation, User
-Menu with sign-out, language switcher and color mode, mobile drawer), the `Page` frame,
+Menu with sign-out and color mode, mobile drawer), the `Page` frame,
 the "Night Ride" theme in `src/theme/`
 ([ADR-005](adr/ADR-005-theme-tokens.md)), plus the Body-Stats domain page
 ([ADR-007](adr/ADR-007-domain-page-pattern.md)): summary tiles, a chart of the
@@ -65,8 +65,9 @@ entry with the newest date. The Activities page is a list backed by
 the `activities` connection, with period, type, bicycle and tag filters stored
 in the URL and cursor-based "load more" pagination; activities are added,
 edited, duplicated and deleted in a form dialog
-([ADR-012](adr/ADR-012-store-updates-for-server-sorted-lists.md)). Dashboard, Garage and
-Settings remain placeholders. The Events page uses the backend API to list,
+([ADR-012](adr/ADR-012-store-updates-for-server-sorted-lists.md)). Dashboard and Garage
+remain placeholders. The Settings page lets the signed-in user edit their own
+profile, language and password. The Events page uses the backend API to list,
 create, edit and delete personal events, with URL-backed filters and saved
 views. The backend is under `../../../src/backend/`. See
 [`SAD.md`](SAD.md) for the folder layout and open decisions. Do not present

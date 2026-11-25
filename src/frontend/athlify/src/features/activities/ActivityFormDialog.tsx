@@ -5,7 +5,6 @@ import {
   Field,
   Fieldset,
   Grid,
-  NativeSelect,
   SimpleGrid,
   Stack,
   Text,
@@ -17,6 +16,7 @@ import { LuChevronRight } from 'react-icons/lu'
 import { DateTimeField } from '../../components/DateTimeField'
 import { FormDialog } from '../../components/FormDialog'
 import { NumberField } from '../../components/NumberField'
+import { SelectField } from '../../components/SelectField'
 import { useFormat } from '../../i18n/useFormat'
 import {
   countDetails,
@@ -80,47 +80,6 @@ const titleKey = {
   duplicate: 'activities.duplicate.title',
   edit: 'activities.edit.title',
 } as const
-
-interface SelectProps<T extends string> {
-  label: string
-  value: T | ''
-  onChange: (value: T | '') => void
-  /** Label of the empty choice; without it a value is required. */
-  emptyLabel?: string
-  options: readonly (FilterOption & { id: T })[]
-  error?: string
-}
-
-function SelectField<T extends string>({
-  label,
-  value,
-  onChange,
-  emptyLabel,
-  options,
-  error,
-}: SelectProps<T>) {
-  return (
-    <Field.Root invalid={!!error} required={emptyLabel === undefined}>
-      <Field.Label>{label}</Field.Label>
-      <NativeSelect.Root>
-        {/* The options are exactly the values of T, and '' only when emptyLabel offers it. */}
-        <NativeSelect.Field
-          value={value}
-          onChange={(event) => onChange(event.target.value as T | '')}
-        >
-          {emptyLabel !== undefined && <option value="">{emptyLabel}</option>}
-          {options.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.label}
-            </option>
-          ))}
-        </NativeSelect.Field>
-        <NativeSelect.Indicator />
-      </NativeSelect.Root>
-      <Field.ErrorText>{error}</Field.ErrorText>
-    </Field.Root>
-  )
-}
 
 export function ActivityFormDialog({
   open,
