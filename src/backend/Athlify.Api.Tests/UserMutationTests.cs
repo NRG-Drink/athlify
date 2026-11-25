@@ -108,7 +108,7 @@ public class UserMutationTests : WebApiTestBase
 
         var root = await PostAsync(client, UpdateMe, new
         {
-            input = new { firstName = new string('a', UpdateMeValidation.MaxNameLength + 1) },
+            input = new { firstName = new string('a', UserMutation.MaxNameLength + 1) },
         });
 
         await AssertValidationErrorAsync(root, "firstName");

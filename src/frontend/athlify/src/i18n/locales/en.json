@@ -386,6 +386,90 @@
       "loadMore": "Load more measurements",
       "loadMoreFailed": "More measurements could not be loaded."
     },
+    "events": {
+      "controls": { "title": "Filter events" },
+        "gridFilter": {
+          "none": "No filter",
+          "options": {
+            "equals": "Equals",
+            "notEqual": "Does not equal",
+            "contains": "Contains",
+            "notContains": "Does not contain",
+            "startsWith": "Begins with",
+            "endsWith": "Ends with",
+            "blank": "Blank",
+            "notBlank": "Not blank",
+            "lessThan": "Less than",
+            "greaterThan": "Greater than",
+            "inRange": "Between",
+            "before": "Before",
+            "after": "After"
+          }
+        },
+      "filterYtd": "This year",
+      "filterActions": "Filter actions",
+      "resetFilters": "Reset filters",
+      "quickFilter": "Search events",
+      "fromFilter": "From",
+      "toFilter": "To",
+      "filter": { "invalidDate": "Enter a valid date." },
+      "views": {
+        "select": "Saved views",
+        "choose": "Choose a view",
+        "saveCurrent": "Save view",
+        "name": "View name",
+        "duplicateName": "A view with this name already exists.",
+        "save": "Save",
+        "delete": "Delete view",
+        "storageFailed": "Views could not be saved or loaded."
+      },
+      "resetTable": "Reset table",
+      "resultCount_one": "{{count}} event",
+      "resultCount_other": "{{count}} events",
+      "add": {
+        "open": "Add event",
+        "defaultName": "New event",
+        "success": "Event added.",
+        "failed": "Could not add event."
+      },
+      "columnPicker": { "open": "Columns", "label": "Choose columns" },
+      "columns": {
+        "actions": "Actions",
+        "id": "ID",
+        "name": "Name",
+        "startDate": "From",
+        "endDate": "To",
+        "type": "Type",
+        "tags": "Tags",
+        "description": "Description"
+      },
+      "types": {
+        "CRASH": "Crash",
+        "INJURY": "Injury",
+        "ILLNESS": "Illness",
+        "REPAIR": "Repair",
+        "BREAK": "Break",
+        "GOAL": "Goal",
+        "OTHER": "Other"
+      },
+      "typeFilter": { "ariaLabel": "Filter by event type", "selectAll": "Select all" },
+      "pin": {
+        "pinRow": "Pin event",
+        "unpinRow": "Unpin event"
+      },
+      "delete": {
+        "action": "Delete",
+        "success": "Event deleted.",
+        "failed": "Could not delete event."
+      },
+      "edit": {
+        "saved": "Event saved.",
+        "saveFailed": "Could not save event."
+      },
+      "emptyValue": "—",
+      "loadFailed": "Events could not be loaded.",
+      "table": { "caption": "Events" }
+    },
     "checklist": {
       "search": "Search …",
       "noMatches": "No matches.",
