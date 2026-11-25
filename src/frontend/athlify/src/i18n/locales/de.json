@@ -245,6 +245,7 @@
       "add": {
         "open": "Aktivität erfassen",
         "title": "Neue Aktivität",
+        "defaultDescription": "Neue Aktivität",
         "success": "Aktivität gespeichert.",
         "hiddenByFilters": "Aktivität gespeichert. Die aktiven Filter blenden sie aus.",
         "errors": {
@@ -253,7 +254,8 @@
       },
       "duplicate": {
         "action": "Duplizieren",
-        "title": "Aktivität duplizieren"
+        "title": "Aktivität duplizieren",
+        "copySuffix": "(Kopie)"
       },
       "edit": {
         "title": "Aktivität bearbeiten",

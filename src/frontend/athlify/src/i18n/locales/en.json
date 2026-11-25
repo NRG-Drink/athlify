@@ -245,6 +245,7 @@
       "add": {
         "open": "Add activity",
         "title": "New activity",
+        "defaultDescription": "New Activity",
         "success": "Activity saved.",
         "hiddenByFilters": "Activity saved. The active filters hide it.",
         "errors": {
@@ -253,7 +254,8 @@
       },
       "duplicate": {
         "action": "Duplicate",
-        "title": "Duplicate activity"
+        "title": "Duplicate activity",
+        "copySuffix": "(copy)"
       },
       "edit": {
         "title": "Edit activity",

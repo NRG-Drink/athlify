@@ -82,4 +82,20 @@ describe('Activities grid state', () => {
       ]),
     ).toBe('[{"colId":"date","width":180}]')
   })
+
+  it('keeps restored activity actions first and left-pinned', () => {
+    const restored = parseActivitiesColumnState(
+      JSON.stringify([
+        { colId: 'date', width: 180, pinned: 'left' },
+        { colId: 'actions', width: 70, pinned: 'right' },
+        { colId: 'distance', width: 120 },
+      ]),
+    )
+
+    expect(restored).toEqual([
+      { colId: 'actions', width: 70, pinned: 'left' },
+      { colId: 'date', width: 180, pinned: 'left' },
+      { colId: 'distance', width: 120 },
+    ])
+  })
 })

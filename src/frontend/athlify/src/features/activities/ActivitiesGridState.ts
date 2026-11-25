@@ -49,7 +49,7 @@ export function parseActivitiesColumnState(raw: string | null): ActivitiesColumn
 
 export function parseActivitiesColumnStateValue(parsed: unknown): ActivitiesColumnState[] {
   if (!Array.isArray(parsed)) return []
-  return parsed.flatMap((item): ActivitiesColumnState[] => {
+  const columns = parsed.flatMap((item): ActivitiesColumnState[] => {
     if (
       !isRecord(item) ||
       typeof item.colId !== 'string' ||
@@ -67,6 +67,9 @@ export function parseActivitiesColumnStateValue(parsed: unknown): ActivitiesColu
     }
     return [state]
   })
+  const actions = columns.find(({ colId }) => colId === 'actions')
+  if (!actions) return columns
+  return [{ ...actions, pinned: 'left' }, ...columns.filter(({ colId }) => colId !== 'actions')]
 }
 
 export function serializeActivitiesColumnState(columns: ActivitiesColumnState[]): string {

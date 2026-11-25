@@ -32,17 +32,22 @@ the merge UI and Strava synchronization are not implemented yet.
   clears filters, restores the default sort and column layout, and leaves saved
   views intact. The grid loads further cursor pages automatically when the user
   scrolls to the end; a failed page load offers an explicit retry.
-- A user can temporarily pin one activity above the filtered results. A newly
-  created activity is pinned while the server refreshes the sorted and filtered
-  list; the user can also pin an existing row. Unpinning removes it from the
-  pinned area without changing the server-owned list.
+- A user can temporarily pin multiple activities above the filtered results.
+  Newly created activities are pinned while the server refreshes the sorted and
+  filtered list; the user can also pin existing rows. Unpinning removes only
+  that activity from the pinned area without changing the server-owned list.
 - Table cells are directly editable for every functional input field,
   including date and start time, tags, gadgets and minimum/average/maximum
-  heart rate. Calculated and system-managed values remain read-only. Add and
-  duplicate still use forms; "Add activity" starts from the type and bicycle
-  of the most recent activity. A "⋯" menu duplicates an activity with the
-  current date or deletes it after a confirmation that warns when it belongs
-  to a merge.
+  heart rate. Calculated and system-managed values remain read-only. "Add
+  activity" immediately creates a row with the most recent activity type (or
+  ROAD), the current date and time, a one-minute duration, zero distance and a
+  localized "New Activity" description.
+  The row is pinned while the user completes it through inline cell editing.
+  Duplicate immediately creates a pinned copy with the source values and the
+  current date and time, appending a localized copy marker to the description
+  (or using the marker alone when the source has no description). Tags can be
+  created from a small popover in the tags cell editor. Delete requires
+  confirmation and warns when the activity belongs to a merge.
 - Calendar view with weekly summary inspired by TrainingPeaks.
 - Full CRUD for manual and synchronized activities.
 - Visible Strava sync button on the Activities page.
@@ -50,7 +55,7 @@ the merge UI and Strava synchronization are not implemented yet.
 
 ## Editability
 
-All functional input fields are editable unless they are calculated or system-managed. System and calculated fields are marked with `*` and displayed as read-only in the form.
+All functional input fields are editable unless they are calculated or system-managed. System and calculated fields are marked with `*` and remain read-only wherever they are displayed.
 
 Non-editable fields:
 

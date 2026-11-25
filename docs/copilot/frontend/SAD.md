@@ -59,8 +59,9 @@ from the backend connection in AG Grid, applies URL-backed external and
 column filters and multi-column server sorting, automatically loads cursor
 pages while scrolling, edits supported values directly in cells, and adds,
 duplicates and deletes activities through their respective flows.
-Browser-local saved views include filters, sorting and column layout; a newly
-created activity can remain temporarily pinned above the current results. The
+Browser-local saved views include filters, sorting and column layout; newly
+created activities and any existing rows the user pins can remain temporarily
+above the current results at the same time. The
 Events page lists, creates, edits and deletes personal
 events, with URL-backed filters, sorting and saved views. Dashboard and Garage
 remain placeholders.
@@ -92,7 +93,8 @@ backend-backed domain page for managing events. The `/activities` view is a
 domain page backed by the GraphQL API; its type, bicycle, wind and tag
 filters are checklists of ticked values, kept in the URL as repeated parameters and exposed through
 the AG Grid filter menus. The table uses Relay cursor pagination (50 per page, "load more") and
-direct cell editing for supported input fields; add and duplicate retain their forms. The
+direct cell editing for supported input fields; add and duplicate create pinned
+rows immediately for inline completion. The
 `/body-stats` view is a domain page backed by the GraphQL API. State management
 beyond the Relay store
 and the Tailwind/Chakra boundary are still open decisions. Record them as ADRs
@@ -112,7 +114,7 @@ The domain areas are implemented as independent views or clearly separated UI mo
 
 1. Login and user account
 2. Dashboard
-3. Activities with an editable list, add/duplicate forms and calendar
+3. Activities with an editable list, immediate add/duplicate and calendar
 4. Garage with bicycles and gadgets
 5. Body-Stats
 6. Events
@@ -213,7 +215,8 @@ reference is `src/features/body-stats/`.
   visibility, order, width and pinning are also saved locally. Reset Filters
   preserves sort and layout, while Reset Table restores defaults. A newly
   created Activity is temporarily pinned above the server results until
-  unpinned. The shared `GridColumnPicker` provides visibility controls on both
+  unpinned. Users can also pin multiple existing rows and unpin them
+  independently. The shared `GridColumnPicker` provides visibility controls on both
   grid pages. `AgGridTable` owns the accessible region, busy state and theme;
   each domain grid retains its own columns, renderers, filters and row actions.
 - **Dialogs:** `FormDialog` (a bottom sheet on phones) and `ConfirmDialog`

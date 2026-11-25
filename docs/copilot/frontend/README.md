@@ -66,8 +66,8 @@ entry with the newest date. The Activities page is an AG Grid backed by the
 multi-column server sorting, browser-local saved views, configurable columns,
 separate filter/table resets and automatic cursor pagination while scrolling.
 New activities are temporarily pinned above current results; input values are
-edited directly in their grid cells, while add and duplicate use forms and
-delete uses a confirmation
+edited directly in their grid cells, while add and duplicate create pinned
+rows for inline completion; delete uses a confirmation
 ([ADR-012](adr/ADR-012-store-updates-for-server-sorted-lists.md)). Dashboard, Garage and
 Settings remain placeholders. The Events page uses the backend API to list,
 create, edit and delete personal events, with URL-backed filters and saved

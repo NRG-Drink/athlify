@@ -2,9 +2,6 @@ import {
   Box,
   Button,
   Flex,
-  IconButton,
-  Menu,
-  Portal,
   Tag,
   Text,
   useBreakpointValue,
@@ -31,7 +28,6 @@ import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import {
   LuCopy,
-  LuEllipsis,
   LuPlus,
   LuPin,
   LuPinOff,
@@ -166,68 +162,6 @@ function TagChips({ row }: { row: ActivityRow }) {
   )
 }
 
-interface RowActionsProps {
-  row: ActivityRow
-  /** Accessible name of the menu button; it names the row. */
-  label: string
-  labels: { duplicate: string; delete: string; pin: string; unpin: string }
-  pinned: boolean
-  onDuplicate: (row: ActivityRow) => void
-  onDelete: (row: ActivityRow) => void
-  onTogglePin: (row: ActivityRow) => void
-}
-
-/**
- * Duplicate and the destructive delete (last) in a menu. It gets its texts as props, so a row adds
- * no hooks of its own.
- */
-function RowActions({
-  row,
-  label,
-  labels,
-  pinned,
-  onDuplicate,
-  onDelete,
-  onTogglePin,
-}: RowActionsProps) {
-  return (
-    <Menu.Root positioning={{ placement: 'bottom-end' }}>
-      <Menu.Trigger asChild>
-        <IconButton variant="ghost" size="sm" color="fg.muted" aria-label={label}>
-          <LuEllipsis />
-        </IconButton>
-      </Menu.Trigger>
-      <Portal>
-        <Menu.Positioner>
-          {/* Portals leave the app's brand palette, so the menu sets it again. */}
-          <Menu.Content colorPalette="brand">
-            {/* onClick, not onSelect: in the page tests onSelect never fired (see frontend
-                LEARNINGS); Enter on a highlighted item clicks it, so the keyboard works too. */}
-            <Menu.Item value="duplicate" onClick={() => onDuplicate(row)}>
-              <LuCopy aria-hidden />
-              {labels.duplicate}
-            </Menu.Item>
-            <Menu.Item value="pin" onClick={() => onTogglePin(row)}>
-              {pinned ? <LuPinOff aria-hidden /> : <LuPin aria-hidden />}
-              {pinned ? labels.unpin : labels.pin}
-            </Menu.Item>
-            <Menu.Separator />
-            <Menu.Item
-              value="delete"
-              color="fg.error"
-              _highlighted={{ bg: 'bg.error' }}
-              onClick={() => onDelete(row)}
-            >
-              <LuTrash2 aria-hidden />
-              {labels.delete}
-            </Menu.Item>
-          </Menu.Content>
-        </Menu.Positioner>
-      </Portal>
-    </Menu.Root>
-  )
-}
-
 /**
  * A mood or wind as its emoji; the label is its accessible name and tooltip. A value without an emoji
  * (newer than this client) shows its label, and a missing one "—".
@@ -282,6 +216,8 @@ interface ActivitiesTableProps {
   gadgetRecords: readonly ActivityRow['gadgets'][number][]
   tags: readonly FilterOption[]
   tagRecords: readonly ActivityRow['tags'][number][]
+  onCreateTag: (name: string, onCreated: (id: string) => void) => void
+  isCreatingTag: boolean
   hasMoreVehicles: boolean
   hasMoreGadgets: boolean
   hasMoreTags: boolean
@@ -291,7 +227,7 @@ interface ActivitiesTableProps {
   columnState: ActivitiesColumnState[]
   resetTableVersion: number
   onColumnStateChange: (columns: ActivitiesColumnState[]) => void
-  pinnedActivity: ActivityRow | null
+  pinnedActivities: ActivityRow[]
   onTogglePin: (row: ActivityRow) => void
   /** Number of activities matching the filters, across all pages. */
   totalCount: number
@@ -323,6 +259,8 @@ export const ActivitiesTable = memo(function ActivitiesTable({
   gadgetRecords,
   tags,
   tagRecords,
+  onCreateTag,
+  isCreatingTag,
   hasMoreVehicles,
   hasMoreGadgets,
   hasMoreTags,
@@ -331,7 +269,7 @@ export const ActivitiesTable = memo(function ActivitiesTable({
   columnState,
   resetTableVersion,
   onColumnStateChange,
-  pinnedActivity,
+  pinnedActivities,
   onTogglePin,
   totalCount,
   busy,
@@ -352,16 +290,11 @@ export const ActivitiesTable = memo(function ActivitiesTable({
   const [gridApi, setGridApi] = useState<GridApi<ActivityRow> | null>(null)
   const [visibleColumns, setVisibleColumns] = useState<string[]>([...activitiesColumnIds])
   const applyingUrlState = useRef(false)
-  const actionLabels = useMemo(
-    () => ({
-      duplicate: t('activities.duplicate.action'),
-      delete: t('activities.delete.action'),
-      pin: t('activities.pin.action'),
-      unpin: t('activities.pin.unpin'),
-    }),
-    [t],
-  )
   const rows = useFragment(tableFragment, entries)
+  const pinnedActivityIds = useMemo(
+    () => new Set(pinnedActivities.map((activity) => activity.id)),
+    [pinnedActivities],
+  )
   const filterOptions = useMemo(
     () => ({
       type: enumOptions(t, 'types', activityTypes),
@@ -413,6 +346,58 @@ export const ActivitiesTable = memo(function ActivitiesTable({
   )
   const columnDefs = useMemo<ColDef<ActivityRow>[]>(() => {
     return [
+      {
+        colId: 'actions',
+        headerName: t('activities.row.actionsColumn'),
+        width: 120,
+        minWidth: 120,
+        maxWidth: 120,
+        pinned: 'left',
+        sortable: false,
+        filter: false,
+        suppressHeaderMenuButton: true,
+        cellRenderer: ({ data }: ICellRendererParams<ActivityRow>) => {
+          if (!data) return null
+          const pinned = pinnedActivityIds.has(data.id)
+
+          return (
+            <Box
+              display="grid"
+              gridTemplateColumns="max-content max-content max-content"
+              alignItems="center"
+              justifyContent="center"
+              gap="1"
+            >
+              <Button
+                size="xs"
+                variant="ghost"
+                aria-label={t('activities.duplicate.action')}
+                onClick={() => onDuplicate(data)}
+              >
+                <LuCopy aria-hidden />
+              </Button>
+              <Button
+                size="xs"
+                variant="ghost"
+                aria-label={t(pinned ? 'activities.pin.unpin' : 'activities.pin.action')}
+                aria-pressed={pinned}
+                onClick={() => onTogglePin(data)}
+              >
+                {pinned ? <LuPinOff aria-hidden /> : <LuPin aria-hidden />}
+              </Button>
+              <Button
+                size="xs"
+                variant="ghost"
+                colorPalette="red"
+                aria-label={t('activities.delete.action')}
+                onClick={() => onDelete(data)}
+              >
+                <LuTrash2 aria-hidden />
+              </Button>
+            </Box>
+          )
+        },
+      },
       {
         colId: 'date',
         field: 'date',
@@ -779,36 +764,14 @@ export const ActivitiesTable = memo(function ActivitiesTable({
         cellEditorParams: ({ data }: { data?: ActivityRow }) => ({
           options: selectionOptions(tagRecords, data?.tags ?? [], ({ name }) => name),
           label: t('activities.columns.tags'),
+          onCreateTag,
+          isCreatingTag,
         }),
         cellRenderer: ({ data }: ICellRendererParams<ActivityRow>) =>
           data ? <TagChips row={data} /> : null,
       },
-      {
-        colId: 'actions',
-        headerName: t('activities.row.actionsColumn'),
-        width: 70,
-        minWidth: 70,
-        maxWidth: 70,
-        pinned: 'right',
-        sortable: false,
-        filter: false,
-        suppressHeaderMenuButton: true,
-        cellRenderer: ({ data }: ICellRendererParams<ActivityRow>) =>
-          data ? (
-            <RowActions
-              row={data}
-              label={t('activities.row.more', { date: format.date(data.date) })}
-              labels={actionLabels}
-              pinned={pinnedActivity?.id === data.id}
-              onDuplicate={onDuplicate}
-              onDelete={onDelete}
-              onTogglePin={onTogglePin}
-            />
-          ) : null,
-      },
     ]
   }, [
-    actionLabels,
     checklistFilterParams,
     dateFilterParams,
     format,
@@ -818,13 +781,15 @@ export const ActivitiesTable = memo(function ActivitiesTable({
     onDelete,
     onDuplicate,
     onTogglePin,
-    pinnedActivity,
+    pinnedActivityIds,
     show2xl,
     showLg,
     showMd,
     textFilterParams,
     t,
     tagRecords,
+    onCreateTag,
+    isCreatingTag,
     vehicleRecords,
   ])
 
@@ -970,7 +935,7 @@ export const ActivitiesTable = memo(function ActivitiesTable({
         height="clamp(24rem, calc(100dvh - 22rem), 48rem)"
         busy={busy}
         rowData={rows
-          .filter((row) => row.id !== pinnedActivity?.id)
+          .filter((row) => !pinnedActivityIds.has(row.id))
           .map((row) => ({ ...row }))}
         columnDefs={columnDefs}
         headerHeight={48}
@@ -982,7 +947,11 @@ export const ActivitiesTable = memo(function ActivitiesTable({
           minWidth: 100,
         }}
         getRowId={({ data }) => data?.id ?? ''}
-        pinnedTopRowData={pinnedActivity ? [{ ...pinnedActivity }] : undefined}
+        pinnedTopRowData={
+          pinnedActivities.length > 0
+            ? pinnedActivities.map((activity) => ({ ...activity }))
+            : undefined
+        }
         noRowsOverlayComponent={ActivityEmptyOverlay}
         noRowsOverlayComponentParams={{ emptyMessage }}
         localeText={{

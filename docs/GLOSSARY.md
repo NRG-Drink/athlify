@@ -174,8 +174,9 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
     current browser user; it is not shared or synchronized to another device.
 
   **Pinned Activity** — A temporary Activities-grid row shown above the
-    server-filtered results. A user can pin one activity at a time and unpin it;
-    creation pins the new activity until it is unpinned or replaced.
+    server-filtered results. Users can pin multiple activities at once and
+    unpin them independently; creation pins the new activity until it is
+    unpinned.
 
 **Chart aggregation** — The display resolution applied to the selected
   Body-Stats chart metric: no aggregation, or daily, weekly, monthly or yearly

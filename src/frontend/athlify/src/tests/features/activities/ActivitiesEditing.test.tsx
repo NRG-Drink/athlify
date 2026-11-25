@@ -99,76 +99,77 @@ const okQuery = (operation: string) => (operation === QUERY ? query([base, secon
 // `hidden`: an open modal hides the table from the accessibility tree.
 const table = () => screen.getByRole('grid', { hidden: true })
 const activityCell = async (date: string) => {
-  const time = await waitFor(() => {
+  return waitFor(() => {
     const time = [...table().querySelectorAll('time')].find(
       (candidate) => candidate.getAttribute('datetime') === date,
     )
     if (!time) throw new Error(`No activity date found for ${date}.`)
-    return time
+    const cell = time.closest('[role="gridcell"]')
+    if (!(cell instanceof HTMLElement)) throw new Error(`No activity cell found for ${date}.`)
+    return cell
   })
-  const cell = time.closest('[role="gridcell"]')
-  if (!(cell instanceof HTMLElement)) throw new Error(`No activity cell found for ${date}.`)
-  return cell
 }
 const rowCount = () =>
   new Set([...table().querySelectorAll('[row-index]')].map((row) => row.getAttribute('row-index')))
     .size
 
-const openMenu = async (user: ReturnType<typeof page>['user'], date: string) => {
-  await user.click(
-    await screen.findByRole('button', { name: `Weitere Aktionen für die Aktivität vom ${date}` }),
+const findRowActionButton = (date: string, name: string) => {
+  const time = [...table().querySelectorAll('time')].find((candidate) =>
+    candidate.textContent?.includes(date),
   )
+  if (!time) throw new Error(`No activity date found for ${date}.`)
+  const row = time.closest('[row-index]')
+  if (!(row instanceof HTMLElement)) throw new Error(`No activity row found for ${date}.`)
+  return within(row).getByRole('button', { name })
 }
+const rowActionButton = (date: string, name: string) =>
+  waitFor(() => findRowActionButton(date, name))
+const expectRowAction = (date: string, name: string) =>
+  waitFor(() => expect(findRowActionButton(date, name).isConnected).toBe(true))
+const clickRowAction = (date: string, name: string) =>
+  waitFor(() => fireEvent.click(findRowActionButton(date, name)))
 
 describe('ActivitiesPage editing', () => {
   describe('row actions', () => {
-    it('does not open an edit form from the row and keeps row actions in its menu', async () => {
+    it('does not open an edit form from the row and exposes row actions as buttons', async () => {
       const { user } = page(okQuery)
       const row = await activityCell('2026-10-16T08:00:00Z')
       await user.click(row)
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
-      await openMenu(user, '16.10.2026')
-      const items = await screen.findAllByRole('menuitem')
-      expect(items.map((item) => item.textContent)).toEqual([
-        'Duplizieren',
-        'Aktivität anheften',
-        'Löschen',
-      ])
-      // The menu belongs to its button: opening it does not open the row's edit form.
+      expect(await rowActionButton('16.10.2026', 'Duplizieren')).toBeInTheDocument()
+      expect(await rowActionButton('16.10.2026', 'Aktivität anheften')).toBeInTheDocument()
+      expect(await rowActionButton('16.10.2026', 'Löschen')).toBeInTheDocument()
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     }, 15000)
 
-    it('pins an existing row above results and can unpin it', async () => {
-      const { user } = page(okQuery)
-      await openMenu(user, '16.10.2026')
-      await user.click(await screen.findByRole('menuitem', { name: 'Aktivität anheften' }))
+    it('pins multiple existing rows above results and can unpin them independently', async () => {
+      page(okQuery)
+      await clickRowAction('16.10.2026', 'Aktivität anheften')
+      await clickRowAction('14.10.2026', 'Aktivität anheften')
 
-      await openMenu(user, '16.10.2026')
-      expect(
-        await screen.findByRole('menuitem', { name: 'Anheftung lösen' }),
-      ).toBeInTheDocument()
-      await user.click(screen.getByRole('menuitem', { name: 'Anheftung lösen' }))
+      await expectRowAction('16.10.2026', 'Anheftung lösen')
+      await expectRowAction('14.10.2026', 'Anheftung lösen')
 
-      await openMenu(user, '16.10.2026')
-      expect(
-        await screen.findByRole('menuitem', { name: 'Aktivität anheften' }),
-      ).toBeInTheDocument()
+      await clickRowAction('16.10.2026', 'Anheftung lösen')
+      await expectRowAction('14.10.2026', 'Anheftung lösen')
+      await clickRowAction('14.10.2026', 'Anheftung lösen')
+
+      await expectRowAction('16.10.2026', 'Aktivität anheften')
+      await expectRowAction('14.10.2026', 'Aktivität anheften')
     })
 
     it('works with the keyboard alone', async () => {
       const { user } = page(okQuery)
-      const trigger = await screen.findByRole('button', {
-        name: 'Weitere Aktionen für die Aktivität vom 16.10.2026',
+      await waitFor(async () => {
+        const dialog = screen.queryByRole('alertdialog', { name: 'Aktivität löschen?' })
+        if (dialog) return dialog
+        const button = findRowActionButton('16.10.2026', 'Löschen')
+        expect(button.isConnected).toBe(true)
+        button.focus()
+        expect(button).toHaveFocus()
       })
-      trigger.focus()
       await user.keyboard('{Enter}')
-      await screen.findAllByRole('menuitem')
-      await user.keyboard('{End}{Enter}')
-
-      expect(
-        await screen.findByRole('alertdialog', { name: 'Aktivität löschen?' }),
-      ).toBeInTheDocument()
     })
   })
 
@@ -177,8 +178,7 @@ describe('ActivitiesPage editing', () => {
       const { user, calls } = page((operation) =>
         operation === DELETE ? { data: { deleteActivity: 'activity-1' } } : okQuery(operation),
       )
-      await openMenu(user, '16.10.2026')
-      await user.click(await screen.findByRole('menuitem', { name: 'Löschen' }))
+      await clickRowAction('16.10.2026', 'Löschen')
 
       const confirm = await screen.findByRole('alertdialog', { name: 'Aktivität löschen?' })
       expect(confirm).toHaveTextContent(
@@ -202,8 +202,7 @@ describe('ActivitiesPage editing', () => {
           ? { data: { deleteActivity: null }, errors: [{ message: 'Failed' }] }
           : okQuery(operation),
       )
-      await openMenu(user, '16.10.2026')
-      await user.click(await screen.findByRole('menuitem', { name: 'Löschen' }))
+      await clickRowAction('16.10.2026', 'Löschen')
       const confirm = await screen.findByRole('alertdialog')
       await user.click(within(confirm).getByRole('button', { name: 'Löschen' }))
 
@@ -214,8 +213,7 @@ describe('ActivitiesPage editing', () => {
 
     it('keeps the activity when cancelled', async () => {
       const { user, calls } = page(okQuery)
-      await openMenu(user, '16.10.2026')
-      await user.click(await screen.findByRole('menuitem', { name: 'Löschen' }))
+      await clickRowAction('16.10.2026', 'Löschen')
       const confirm = await screen.findByRole('alertdialog')
 
       await user.click(within(confirm).getByRole('button', { name: 'Abbrechen' }))
@@ -226,9 +224,8 @@ describe('ActivitiesPage editing', () => {
     })
 
     it('warns that a merge may be dissolved and names the type when there is no description', async () => {
-      const { user } = page(okQuery)
-      await openMenu(user, '14.10.2026')
-      await user.click(await screen.findByRole('menuitem', { name: 'Löschen' }))
+      page(okQuery)
+      await clickRowAction('14.10.2026', 'Löschen')
 
       const confirm = await screen.findByRole('alertdialog')
       expect(confirm).toHaveTextContent('Die Aktivität vom 14.10.2026 (Gravel)')
@@ -245,8 +242,7 @@ describe('ActivitiesPage editing', () => {
             ? query([base])
             : undefined,
       )
-      await openMenu(user, '16.10.2026')
-      await user.click(await screen.findByRole('menuitem', { name: 'Löschen' }))
+      await clickRowAction('16.10.2026', 'Löschen')
       await user.click(
         within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Löschen' }),
       )
@@ -430,56 +426,41 @@ describe('ActivitiesPage editing', () => {
       return okQuery(operation)
     }
 
-    const fillRequired = async (user: ReturnType<typeof page>['user'], dialog: HTMLElement) => {
-      await user.type(within(dialog).getByLabelText(/^Dauer/), '1.00')
-      await user.type(within(dialog).getByLabelText(/^Distanz/), '30')
-      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
-    }
-
-    it('starts with type and bicycle of the latest activity', async () => {
-      const latestFirst = (operation: string) =>
-        operation === QUERY ? query([second, base]) : undefined
-      const { user } = page(latestFirst)
-      await user.click(await screen.findByRole('button', { name: 'Aktivität erfassen' }))
-
-      const dialog = await screen.findByRole('dialog', { name: 'Neue Aktivität' })
-      expect(within(dialog).getByLabelText(/^Typ/)).toHaveValue('GRAVEL')
-      expect(within(dialog).getByLabelText(/^Velo/)).toHaveValue('vehicle-1')
-      expect(within(dialog).getByLabelText(/^Dauer/)).toHaveValue('')
-      expect(within(dialog).getByRole('button', { name: 'Weitere Details' })).toHaveAttribute(
-        'aria-expanded',
-        'false',
+    it('creates with minimal valid values and the latest type, then pins the row', async () => {
+      const { user, calls } = page((operation) =>
+        operation === QUERY
+          ? query([second, base])
+          : operation === CREATE
+            ? { data: { createActivity: created } }
+            : operation === MORE
+              ? { data: list([created, second, base]) }
+              : undefined,
       )
-      expect(within(dialog).queryByText('Berechnet')).not.toBeInTheDocument()
-    })
-
-    it('keeps an invalid typed date and reports it instead of replacing it', async () => {
-      const { user, calls } = page(creating)
       await user.click(await screen.findByRole('button', { name: 'Aktivität erfassen' }))
-      const dialog = await screen.findByRole('dialog')
-      const date = within(dialog).getByRole('textbox', { name: 'Datum' })
-      await user.clear(date)
-      await user.type(date, '32.13.2026')
-      await fillRequired(user, dialog)
 
-      expect(date).toHaveValue('32.13.2026')
-      expect(
-        within(dialog).getByText('Bitte im Format TT.MM.JJJJ, HH:MM eingeben.'),
-      ).toBeInTheDocument()
-      expect(calls(CREATE)).toHaveLength(0)
+      await waitFor(() => expect(calls(CREATE)).toHaveLength(1))
+      expect(calls(CREATE)[0].input).toMatchObject({
+        type: 'GRAVEL',
+        time: 60,
+        distance: 0,
+        vehicleId: null,
+        gadgetIds: [],
+        tagIds: [],
+      })
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+      expect(await rowActionButton('20.10.2026', 'Anheftung lösen')).toBeInTheDocument()
     })
 
-    it('saves, then reloads the list as far as it was loaded, keeping filter and order', async () => {
+    it('creates immediately, then reloads the list as far as it was loaded, keeping filter and order', async () => {
       const { user, calls } = page(creating, '/activities?sort=-distance')
       await user.click(await screen.findByRole('button', { name: 'Aktivität erfassen' }))
-      const dialog = await screen.findByRole('dialog')
-      await fillRequired(user, dialog)
 
       await waitFor(() => expect(calls(CREATE)).toHaveLength(1))
       expect(calls(CREATE)[0].input).toMatchObject({
         type: 'ROAD',
-        time: 3600,
-        distance: 30,
+        time: 60,
+        distance: 0,
+        description: 'Neue Aktivität',
         vehicleId: null,
         gadgetIds: [],
         tagIds: [],
@@ -492,9 +473,8 @@ describe('ActivitiesPage editing', () => {
       })
       await waitFor(() => expect(rowCount()).toBe(3))
       expect(screen.getByText('3 Aktivitäten')).toBeInTheDocument()
-      await openMenu(user, '20.10.2026')
       expect(
-        await screen.findByRole('menuitem', { name: 'Anheftung lösen' }),
+        await rowActionButton('20.10.2026', 'Anheftung lösen'),
       ).toBeInTheDocument()
     })
 
@@ -504,9 +484,6 @@ describe('ActivitiesPage editing', () => {
         operation === MORE ? { data: list([base, second]) } : creating(operation)
       const { user, calls, router } = page(hiding, '/activities?type=GRAVEL')
       await user.click(await screen.findByRole('button', { name: 'Aktivität erfassen' }))
-      const dialog = await screen.findByRole('dialog')
-      await user.selectOptions(within(dialog).getByLabelText(/^Typ/), 'INDOOR')
-      await fillRequired(user, dialog)
 
       expect(
         await screen.findByText('Aktivität gespeichert. Die aktiven Filter blenden sie aus.'),
@@ -517,43 +494,72 @@ describe('ActivitiesPage editing', () => {
     })
 
     it('can add the first activity from the empty state', async () => {
-      const { user } = page((operation) => (operation === QUERY ? query([]) : undefined))
+      const { user, calls } = page((operation) =>
+        operation === QUERY
+          ? query([])
+          : operation === CREATE
+            ? { data: { createActivity: created } }
+            : operation === MORE
+              ? { data: list([created]) }
+              : undefined,
+      )
       await user.click(await screen.findByRole('button', { name: 'Aktivität erfassen' }))
 
-      const dialog = await screen.findByRole('dialog', { name: 'Neue Aktivität' })
-      expect(within(dialog).getByLabelText(/^Typ/)).toHaveValue('ROAD')
-      expect(within(dialog).getByLabelText(/^Velo/)).toHaveValue('')
+      await waitFor(() => expect(calls(CREATE)).toHaveLength(1))
+      expect(calls(CREATE)[0].input).toMatchObject({
+        type: 'ROAD',
+        time: 60,
+        distance: 0,
+        vehicleId: null,
+      })
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     })
   })
 
   describe('duplicating', () => {
-    it('opens a new activity with the values of the row and the current date', async () => {
-      const { user, calls } = page((operation) =>
+    it('creates immediately from the row values with the current date', async () => {
+      const { calls } = page((operation) =>
         operation === CREATE
           ? { data: { createActivity: { ...second, id: 'activity-3' } } }
           : operation === MORE
             ? { data: list([base, second]) }
             : okQuery(operation),
       )
-      await openMenu(user, '14.10.2026')
-      await user.click(await screen.findByRole('menuitem', { name: 'Duplizieren' }))
-
-      const dialog = await screen.findByRole('dialog', { name: 'Aktivität duplizieren' })
-      expect(within(dialog).getByLabelText(/^Typ/)).toHaveValue('GRAVEL')
-      expect(within(dialog).getByLabelText(/^Dauer/)).toHaveValue('1:30')
-      // The copy gets today's date; the date field shows DD.MM.YYYY.
-      expect(within(dialog).getByRole('textbox', { name: 'Datum' })).toHaveValue(
-        formatDate(new Date()),
-      )
-
-      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
-      await waitFor(() => expect(calls(CREATE)).toHaveLength(1))
+      await waitFor(() => {
+        if (calls(CREATE).length > 0) return
+        const time = [...table().querySelectorAll('time')].find((candidate) =>
+          candidate.textContent?.includes('14.10.2026'),
+        )
+        const row = time?.closest('[row-index]')
+        if (!(row instanceof HTMLElement)) throw new Error('The copied activity row is not attached.')
+        fireEvent.click(within(row).getByRole('button', { name: 'Duplizieren' }))
+        expect(calls(CREATE)).toHaveLength(1)
+      })
       expect(calls(CREATE)[0].input).toMatchObject({
         type: 'GRAVEL',
+        time: 5400,
+        distance: 42.5,
+        description: '(Kopie)',
         heartRateAverage: 142,
         vehicleId: 'vehicle-1',
       })
+      expect(formatDate(new Date(calls(CREATE)[0].input.date))).toBe(formatDate(new Date()))
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
       expect(calls(UPDATE)).toHaveLength(0)
+    })
+
+    it('appends a copy suffix to an existing description', async () => {
+      const { calls } = page((operation) =>
+        operation === CREATE
+          ? { data: { createActivity: { ...base, id: 'activity-3' } } }
+          : operation === MORE
+            ? { data: list([base, second]) }
+            : okQuery(operation),
+      )
+      await clickRowAction('16.10.2026', 'Duplizieren')
+
+      await waitFor(() => expect(calls(CREATE)).toHaveLength(1))
+      expect(calls(CREATE)[0].input.description).toBe('Feierabendrunde (Kopie)')
     })
   })
 

@@ -17,10 +17,11 @@ import type { FilterOption } from './activityFilters'
 import {
   activityToValues,
   newActivityValues,
-  type ActivityFormInput,
+  toInput,
+  validate,
+  type ActivityFormValues,
 } from './activityForm'
 import { activityInputFromCellChange } from './activityCellEdit'
-import { ActivityFormDialog } from './ActivityFormDialog'
 import {
   type ActivitySort,
 } from './activityQuery'
@@ -103,7 +104,7 @@ const listFragment = graphql`
         endCursor
       }
     }
-    # The most recent activity regardless of filters: a new one starts with its type and bicycle.
+    # The most recent activity regardless of filters: a new one starts with its type.
     latest: activities(first: 1, order: [{ date: DESC }, { id: DESC }]) {
       nodes {
         id
@@ -128,28 +129,11 @@ const tagOptions = (
   items: readonly { id: string; name: string }[] | null | undefined,
 ): FilterOption[] => items?.map((tag) => ({ id: tag.id, label: tag.name })) ?? []
 
-/**
- * The loaded choices plus those of the activity in the form. A bicycle, gadget or tag beyond the
- * first 200 choices then still shows its name and is kept when saving.
- */
-function withChoices(options: readonly FilterOption[], current: readonly FilterOption[]) {
-  const missing = current.filter((item) => !options.some((option) => option.id === item.id))
-  return missing.length > 0 ? [...options, ...missing] : options
-}
-
-/** Which form is open; duplication starts from a row. */
-type Dialog =
-  | { kind: 'closed' }
-  | { kind: 'create' }
-  | { kind: 'duplicate'; row: ActivityRow }
-
 interface ContentProps {
   fetchKey: number
-  dialog: Dialog
-  onDialogChange: (dialog: Dialog) => void
 }
 
-function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
+function ActivitiesContent({ fetchKey }: ContentProps) {
   const { t } = useTranslation()
   const format = useFormat()
   const { searchParams, replaceParams, refreshing } = useParamsRefresh()
@@ -169,15 +153,15 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
   >(listFragment, queryData)
   const [isRefetching, startRefetch] = useTransition()
   const [deleting, setDeleting] = useState<ActivityRow | null>(null)
-  const [pinnedActivity, setPinnedActivity] = useState<ActivityRow | null>(null)
+  const [pinnedActivities, setPinnedActivities] = useState<ActivityRow[]>([])
   const countRef = useRef<HTMLParagraphElement>(null)
-  // Set when the confirmed delete went through: the row and its menu are gone, so the focus moves
-  // to the count line instead of returning to the menu button.
+  // Set when the confirmed delete went through: the row and its actions are gone, so the focus moves
+  // to the count line instead of returning to a removed action button.
   const deleted = useRef(false)
   // `totalCount` before a create; the refetch after it tells whether the filters show the new one.
   const countBeforeCreate = useRef<number | null>(null)
   const mutations = useActivityMutations(data.activities.__id)
-  const { createTag, isCreating: isCreatingTag } = useCreateTag(queryData.tags?.__id)
+  const tagMutation = useCreateTag(queryData.tags?.__id)
 
   const activities = useMemo(
     () => data.activities?.edges?.map((edge) => edge.node) ?? [],
@@ -205,11 +189,6 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
     },
     [onPageGridStateChange, setLoadMoreError],
   )
-  const closeDialog = () => onDialogChange({ kind: 'closed' })
-  const duplicate = useCallback(
-    (row: ActivityRow) => onDialogChange({ kind: 'duplicate', row }),
-    [onDialogChange],
-  )
   const confirmDelete = useCallback((row: ActivityRow) => {
     deleted.current = false
     setDeleting(row)
@@ -234,8 +213,7 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
    * current rows (dimmed) until the new ones are there.
    */
   const created = (row: ActivityRow) => {
-    closeDialog()
-    setPinnedActivity(row)
+    setPinnedActivities((current) => [...current.filter((activity) => activity.id !== row.id), row])
     countBeforeCreate.current = totalCount
     startRefetch(() => {
       refetch(
@@ -249,7 +227,37 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
     })
   }
 
-  const save = (input: ActivityFormInput) => mutations.create(input, { onSuccess: created })
+  const createFromValues = (values: ActivityFormValues) => {
+    const error = Object.values(validate(values, t)).find((message) => message !== undefined)
+    if (error) {
+      toaster.create({
+        type: 'error',
+        title: t('activities.add.errors.saveFailed'),
+        description: error,
+      })
+      return
+    }
+
+    mutations.create(toInput(values), { onSuccess: created })
+  }
+
+  const createActivity = () => {
+    createFromValues({
+      ...newActivityValues({ type: latest?.type }),
+      duration: '0:01',
+      distance: '0',
+      description: t('activities.add.defaultDescription'),
+    })
+  }
+
+  const duplicate = (row: ActivityRow) => {
+    const values = activityToValues(row, { asCopy: true })
+    const copySuffix = t('activities.duplicate.copySuffix')
+    createFromValues({
+      ...values,
+      description: [values.description.trim(), copySuffix].filter(Boolean).join(' '),
+    })
+  }
 
   const onCellValueChanged = useCallback(
     (event: CellValueChangedEvent<ActivityRow>) => {
@@ -273,7 +281,9 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
 
       mutations.update(row.id, result.input, {
         onSuccess: (updated) => {
-          setPinnedActivity((current) => (current?.id === updated.id ? updated : current))
+          setPinnedActivities((current) =>
+            current.map((activity) => (activity.id === updated.id ? updated : activity)),
+          )
           startRefetch(() => {
             refetch(
               {
@@ -291,17 +301,12 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
     [activities.length, mutations, query, refetch, startRefetch, t],
   )
   const togglePinnedActivity = useCallback((row: ActivityRow) => {
-    setPinnedActivity((current) => (current?.id === row.id ? null : row))
+    setPinnedActivities((current) =>
+      current.some((activity) => activity.id === row.id)
+        ? current.filter((activity) => activity.id !== row.id)
+        : [...current, row],
+    )
   }, [])
-
-  const initialValues = useMemo(() => {
-    switch (dialog.kind) {
-      case 'duplicate':
-        return activityToValues(dialog.row, { asCopy: true })
-      default:
-        return newActivityValues({ type: latest?.type, vehicleId: latest?.vehicle?.id })
-    }
-  }, [dialog, latest])
 
   const deleteDescription = (row: ActivityRow) =>
     t('activities.delete.description', {
@@ -309,19 +314,6 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
       date: format.date(row.date),
       name: row.description || enumLabel(t, 'types', row.type),
     })
-
-  // The bicycle, gadgets and tags of the activity in the form, with their names.
-  const formChoices = useMemo(() => {
-    const row = dialog.kind === 'closed' || dialog.kind === 'create' ? undefined : dialog.row
-    const vehicle = row ? row.vehicle : latest?.vehicle
-    return {
-      vehicles: withChoices(vehicles, equipmentOptions(vehicle ? [vehicle] : [])),
-      gadgets: withChoices(gadgets, equipmentOptions(row?.gadgets)),
-      tags: withChoices(tags, tagOptions(row?.tags)),
-      hasMoreGadgets,
-      hasMoreTags,
-    }
-  }, [dialog, latest, vehicles, gadgets, tags, hasMoreGadgets, hasMoreTags])
 
   const filtered =
     Object.keys(query.filters).length > 0 ||
@@ -351,40 +343,30 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
     [filtered, pageState.filters.onResetFilters, t],
   )
 
-  const dialogs = (
-    <>
-      <ActivityFormDialog
-        open={dialog.kind !== 'closed'}
-        onOpenChange={(open) => !open && closeDialog()}
-        mode={dialog.kind === 'closed' ? 'create' : dialog.kind}
-        initialValues={initialValues}
-        options={formChoices}
-        busy={mutations.isSaving}
-        onSave={save}
-        onCreateTag={createTag}
-        creatingTag={isCreatingTag}
-      />
-      <ConfirmDialog
-        open={deleting !== null}
-        onOpenChange={(open) => !open && setDeleting(null)}
-        title={t('activities.delete.title')}
-        description={deleting ? deleteDescription(deleting) : ''}
-        confirmLabel={t('activities.delete.confirm')}
-        busy={mutations.isDeleting}
-        onConfirm={() =>
-          deleting &&
-          mutations.remove(deleting.id, {
-            onSettled: (removed) => {
-              deleted.current = removed
-              if (removed && deleting?.id === pinnedActivity?.id) setPinnedActivity(null)
-              setDeleting(null)
-            },
-          })
-        }
-        // Without a delete (cancel, error) the focus returns to the menu button.
-        finalFocusEl={() => (deleted.current ? countRef.current : null)}
-      />
-    </>
+  const deleteDialog = (
+    <ConfirmDialog
+      open={deleting !== null}
+      onOpenChange={(open) => !open && setDeleting(null)}
+      title={t('activities.delete.title')}
+      description={deleting ? deleteDescription(deleting) : ''}
+      confirmLabel={t('activities.delete.confirm')}
+      busy={mutations.isDeleting}
+      onConfirm={() =>
+        deleting &&
+        mutations.remove(deleting.id, {
+          onSettled: (removed) => {
+            deleted.current = removed
+            if (removed) {
+              setPinnedActivities((current) =>
+                current.filter((activity) => activity.id !== deleting.id),
+              )
+            }
+            setDeleting(null)
+          },
+        })
+      }
+      finalFocusEl={() => (deleted.current ? countRef.current : null)}
+    />
   )
 
   return (
@@ -403,6 +385,8 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
         gadgetRecords={queryData.gadgets?.nodes ?? []}
         tags={tags}
         tagRecords={queryData.tags?.nodes ?? []}
+        onCreateTag={tagMutation.createTag}
+        isCreatingTag={tagMutation.isCreating}
         hasMoreVehicles={hasMoreVehicles}
         hasMoreGadgets={hasMoreGadgets}
         hasMoreTags={hasMoreTags}
@@ -413,9 +397,9 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
         columnState={pageState.columnState}
         resetTableVersion={pageState.resetTableVersion}
         onColumnStateChange={pageState.onColumnStateChange}
-        pinnedActivity={pinnedActivity}
+        pinnedActivities={pinnedActivities}
         onTogglePin={togglePinnedActivity}
-        onCreateActivity={() => onDialogChange({ kind: 'create' })}
+        onCreateActivity={createActivity}
         isCreating={mutations.isCreating}
         isUpdating={mutations.isUpdating}
         onCellValueChanged={onCellValueChanged}
@@ -424,7 +408,7 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
         countRef={countRef}
         emptyMessage={emptyMessage}
       />
-      {dialogs}
+      {deleteDialog}
     </Stack>
   )
 }
@@ -432,7 +416,6 @@ function ActivitiesContent({ fetchKey, dialog, onDialogChange }: ContentProps) {
 export function ActivitiesPage() {
   const { t } = useTranslation()
   const [fetchKey, retry] = useFetchKey()
-  const [dialog, setDialog] = useState<Dialog>({ kind: 'closed' })
 
   return (
     <Page title={t('nav.activities')}>
@@ -441,7 +424,7 @@ export function ActivitiesPage() {
         fallback={<DataTableSkeleton />}
         errorMessage={t('activities.loadFailed')}
       >
-        <ActivitiesContent fetchKey={fetchKey} dialog={dialog} onDialogChange={setDialog} />
+        <ActivitiesContent fetchKey={fetchKey} />
       </QueryBoundary>
     </Page>
   )

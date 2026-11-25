@@ -124,7 +124,7 @@ The filters apply to the displayed metrics, charts, activity trends and Events. 
 
 ### 3.3 Activity management
 
-The Activities page provides complete management of cycling activities. It offers a table with direct cell editing and a calendar view with a weekly summary similar to TrainingPeaks. Activities can be imported from Strava, created manually, viewed, filtered by description, date range and activity attributes, sorted, edited, deleted and merged. The list supports saved views and temporarily pinning an activity above the current results.
+The Activities page provides complete management of cycling activities. It offers a table with direct cell editing and a calendar view with a weekly summary similar to TrainingPeaks. Activities can be imported from Strava, created manually, viewed, filtered by description, date range and activity attributes, sorted, edited, deleted and merged. The list supports saved views and temporarily pinning activities above the current results.
 
 The Activities page contains a visible **Strava sync button**. The button starts synchronization directly from activity management. The last synchronization time and any error status are displayed alongside it.
 
@@ -464,8 +464,12 @@ The wireframes show the domain views of the application. They do not prescribe a
 └──────────────────────────────────────────────────────────┘
 ```
 
-Users edit supported values directly in their cells. Add and duplicate actions
-continue to use forms; calculated and system-managed fields are not editable.
+Users edit supported values directly in their cells. Add immediately creates a
+row with valid minimum values, a localized default description and pins it for
+inline completion. Duplicate immediately creates a pinned copy with the source
+values and the current date and time, appending a localized copy marker to its
+description (including when the source description is empty). Calculated and
+system-managed fields are not editable.
 
 ### 8.5 Activity calendar
 
