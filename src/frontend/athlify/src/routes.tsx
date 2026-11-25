@@ -5,8 +5,11 @@ import { RouteErrorPage } from './app/RouteErrorPage'
 import { PlaceholderPage } from './app/PlaceholderPage'
 import { AuthenticatedAppLayout, LoginRoute } from './features/auth/AuthRoutes'
 import { ActivitiesPage } from './features/activities/ActivitiesPage'
+import { AdminRoute } from './features/admin-users/AdminRoute'
+import { AdminUsersPage } from './features/admin-users/AdminUsersPage'
 import { BodyStatsPage } from './features/body-stats/BodyStatsPage'
 import { EventsPage } from './features/events/EventsPage'
+import { SettingsPage } from './features/settings/SettingsPage'
 import { primaryNavItems, type NavItemId } from './navigation/navItems'
 import { paths } from './navigation/paths'
 
@@ -35,14 +38,13 @@ export const routes: RouteObject[] = [
       { path: paths.garage, element: areaPlaceholder('garage') },
       { path: paths.bodyStats, element: <BodyStatsPage /> },
       { path: paths.events, element: <EventsPage /> },
+      { path: paths.settings, element: <SettingsPage /> },
       {
-        path: paths.settings,
+        path: paths.adminUsers,
         element: (
-          <PlaceholderPage
-            titleKey="nav.settings"
-            messageKey="placeholder.settings"
-            icon={LuSettings}
-          />
+          <AdminRoute>
+            <AdminUsersPage />
+          </AdminRoute>
         ),
       },
       { path: '*', element: <NotFoundPage /> },

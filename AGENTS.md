@@ -12,6 +12,21 @@ pull request titles and descriptions must not contain "Generated with …"
 footers or other AI credits. This applies to every agent and skill and
 overrides any default attribution a tool suggests.
 
+## Code conventions
+
+Write a code comment only when the thing it describes is not logic: a type,
+a property or field, an enum member, a constant, a configuration option or a
+command to run. Give it a short `<summary>` or one line. Do not comment logic
+(methods, constructors, branches, queries, rules or lambdas): name the code
+so it reads on its own, and remove comments that restate what the code does.
+
+Avoid static classes. Use one only when it is really necessary, such as an
+extension method container, which C# requires to be static. Everything else
+(resolvers, services, validators, helpers, nodes) is an instance class, and
+classes with dependencies receive them through dependency injection.
+HotChocolate split object type classes (`[ObjectType<T>]` with a partial
+`Configure` method) must be static; HotChocolate reports HC0081 otherwise.
+
 ## Documentation / README
 
 When asked to update README.md, follow the section structure/style of the

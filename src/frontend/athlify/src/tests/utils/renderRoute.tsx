@@ -7,7 +7,7 @@ import { ChakraProviderAthlify } from '../../components/ui/ChakraProviderAthlify
 import { routes as appRoutes } from '../../routes'
 import { createTestEnvironment } from './relay'
 
-const defaultAuth: AuthContextValue = {
+export const defaultAuth: AuthContextValue = {
   isLoggedIn: true,
   login: async () => {},
   logout: async () => {},

@@ -205,6 +205,53 @@ In short:
   button: "Abbrechen", Escape or a click beside the dialog discard the
   input without a confirmation question.
 
+## Account forms (Settings)
+
+- **Panels.** A form page that is not a list groups its forms in panels:
+  `bg.panel`, `borderWidth="1px"`, `l3`, padding `6`, an `h2` heading in the
+  `heading` font. Two columns from md, stacked below; each panel has one
+  primary `brand` button, full width on phones, and `alignSelf="start"` so
+  panels of different height do not stretch.
+- **Independent forms.** Every panel saves on its own; a failure or a wrong
+  value in one never blocks the other. The save button stays disabled until
+  the form differs from the saved values (profile) or is complete
+  (password).
+- **Side effects before the click.** A consequence the user would not guess
+  is stated in a `fg.muted` note above the button ("Nach dem Ändern meldest
+  du dich auf allen Geräten neu an."), not discovered afterwards.
+- **Password fields** are `type="password"` with `autoComplete`
+  (`current-password` / `new-password`), are never prefilled and are cleared
+  after a successful change. The confirmation is checked on the client and
+  never sent.
+- **Read-only identity.** The username is a labelled text row, not a
+  disabled input.
+- **Errors** sit under their field (`Field.ErrorText`), focus moves to the
+  first invalid field, and the server's English messages are never shown;
+  the field and error code select the translated text.
+
+## Admin screens
+
+- **Entry.** Administration is a rare task, so its entry lives in the user
+  menu under "Einstellungen" and only administrators see it. The primary
+  navigation keeps the data areas.
+- **No access.** A role-gated route shows `NoAccessPage` inside the shell
+  ("Kein Zugriff", a short reason and a link back to the Dashboard), like Not
+  Found, and fires no query.
+- **List.** An `AgGridTable`, the same wrapper as the Events grid, with plain
+  column definitions and the client row model. The list has no header sort
+  (`sortable: false`), because the server orders it. Editing is a click on any
+  cell except the "⋯" column; the name cell's button names the action for
+  assistive technology. The "⋯" menu holds reset and delete. The
+  signed-in administrator's row carries "(du)". On narrow screens the username
+  and language columns are hidden, and the count line sits below the grid.
+- **Role badge.** Administrator is a `brand` `subtle` badge, Benutzer a
+  `bg.muted` badge with `fg.muted` text; the label is real text, not colour
+  alone.
+- **Password setting.** A dialog that sets another person's password follows
+  the "Account forms" rules (`type="password"`, `autoComplete="new-password"`,
+  never prefilled) and states the consequence before the click ("Die Person
+  wird auf allen Geräten abgemeldet.").
+
 ## Components to reuse
 
 Before designing something new, check whether one of these already covers it
@@ -226,6 +273,18 @@ Before designing something new, check whether one of these already covers it
 | Chakra `Collapsible` | Folds rarely used form fields under "Weitere Details". |
 | `PrimaryNav`, `MobileNav`, `UserMenu`, `AppHeader` | Shell navigation with the indicator bar. |
 | `BrandMark` | The logo mark with the `volt` gradient. |
+| `AgGridTable` (`components/ag-grid/`) | The AG Grid wrapper used by the Events grid and the admin user list. Its theme follows the app color mode through `gridThemeFor` (`components/ag-grid/gridTheme.ts`). |
+
+## Grids
+
+- `AgGridTable` takes its colours from the semantic tokens in `gridTheme.ts`,
+  never from AG Grid's defaults: panel background (`bg.panel`), hovered row
+  (`bg.muted`), selected row (`brand.subtle`), text (`fg`), header text
+  (`fg.muted`, semibold), hairline `border`, accent `brand.solid`, and the
+  `l3` wrapper radius. Both modes follow the same mapping.
+- The grid does not add its own focused-row styling. Row colours come only from
+  the hover and selected mappings above, unlike `DataTable`, which marks a
+  focused row with a muted background and a brand indicator bar.
 
 ## Iconography and brand mark
 

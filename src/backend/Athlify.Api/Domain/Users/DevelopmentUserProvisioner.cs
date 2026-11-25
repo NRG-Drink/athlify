@@ -16,14 +16,13 @@ public record DevelopmentUserOptions
 }
 
 /// <summary>Creates the development Administrator once and returns its id.</summary>
-public static class DevelopmentUserProvisioner
+public sealed class DevelopmentUserProvisioner(IHashService hashService)
 {
-    public static async Task<int> EnsureAsync(
+    public async Task<int> EnsureAsync(
         AthlifyDbContext db,
         DevelopmentUserOptions options,
         CancellationToken cancellationToken = default)
     {
-        // No user is signed in during startup, so the owner filter must not run.
         var existing = await db.Users
             .IgnoreQueryFilters([AthlifyDbContext.OwnerFilter])
             .FirstOrDefaultAsync(u => u.Username == options.Username, cancellationToken);
@@ -32,7 +31,6 @@ public static class DevelopmentUserProvisioner
             return existing.Id;
         }
 
-        var hashService = new HashService();
         var passwordHash = hashService.HashPassword(options.Password);
         var user = new User
         {

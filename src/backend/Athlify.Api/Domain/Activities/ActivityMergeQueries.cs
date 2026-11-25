@@ -6,14 +6,14 @@ using Microsoft.EntityFrameworkCore;
 namespace Athlify.Api.Domain.Activities;
 
 [QueryType]
-public static partial class ActivityMergeQuery
+public sealed partial class ActivityMergeQuery
 {
     private static readonly Func<SortDefinition<ActivityMerge>, SortDefinition<ActivityMerge>> DefaultOrder =
         sort => sort.AddDescending(m => m.CreatedAt).AddDescending(m => m.Id);
 
     [UseFiltering]
     [UseSorting]
-    public static async Task<PageConnection<ActivityMerge>> GetActivityMerges(
+    public async Task<PageConnection<ActivityMerge>> GetActivityMerges(
         PagingArguments pagingArgs,
         QueryContext<ActivityMerge> query,
         AthlifyDbContext db,

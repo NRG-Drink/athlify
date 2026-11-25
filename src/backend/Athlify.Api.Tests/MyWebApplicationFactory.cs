@@ -1,11 +1,18 @@
 ﻿using Athlify.Api.Database;
+using Athlify.Api.Domain.Auth;
 using Athlify.Api.Domain.Users;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using System.Security.Claims;
+using System.Text.Encodings.Web;
 using TUnit.AspNetCore;
 using TUnit.AspNetCore.Extensions;
 
@@ -32,7 +39,54 @@ public abstract class WebApiTestBase : WebApplicationTest<MyWebApplicationFactor
 
         var client = Factory.CreateClient();
         client.DefaultRequestHeaders.Add(TestCurrentUser.Header, userId.ToString());
+        client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, role.ToString());
         return client;
+    }
+
+    /// <summary>A user by username, read around the owner filter.</summary>
+    protected async Task<User> GetUserAsync(string username)
+    {
+        await using var scope = Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
+        return await Factory.Services.GetRequiredService<AdminUsers>().All(db).AsNoTracking().SingleAsync(u => u.Username == username);
+    }
+
+    /// <summary>Gives the user a password and returns their id.</summary>
+    protected async Task<int> SetPasswordAsync(string username, string password)
+    {
+        await using var scope = Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
+        var user = await Factory.Services.GetRequiredService<AdminUsers>().All(db).SingleAsync(u => u.Username == username);
+        user.PasswordHash = scope.ServiceProvider.GetRequiredService<IHashService>().HashPassword(password);
+        await db.SaveChangesAsync();
+        return user.Id;
+    }
+
+    protected async Task AddRefreshTokensAsync(int userId, int count)
+    {
+        await using var scope = Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
+        for (var i = 0; i < count; i++)
+        {
+            db.RefreshTokens.Add(new RefreshToken
+            {
+                UserId = userId,
+                TokenHash = Guid.NewGuid().ToString("N"),
+                FamilyId = Guid.NewGuid(),
+                Created = DateTime.UtcNow,
+                CreatedByIp = "127.0.0.1",
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
+            });
+        }
+
+        await db.SaveChangesAsync();
+    }
+
+    protected async Task<List<RefreshToken>> GetRefreshTokensAsync(int userId)
+    {
+        await using var scope = Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
+        return await db.RefreshTokens.IgnoreQueryFilters().AsNoTracking().Where(t => t.UserId == userId).ToListAsync();
     }
 }
 
@@ -62,16 +116,35 @@ public class MyWebApplicationFactory : TestWebApplicationFactory<Program>
         builder.ConfigureServices(services =>
         {
             services.ReplaceService<IDbSeeder, SeedNothing>();
-            UseInMemoryDatabase(services);
+            ConfigureDatabase(services);
             services.RemoveAll<ICurrentUser>();
             services.AddScoped<ICurrentUser, TestCurrentUser>();
+            services.AddAuthentication(options =>
+                {
+                    options.DefaultScheme = TestAuthHandler.SchemeName;
+                    options.DefaultAuthenticateScheme = TestAuthHandler.SchemeName;
+                    options.DefaultChallengeScheme = TestAuthHandler.SchemeName;
+                })
+                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { });
         });
 
         base.ConfigureWebHost(builder);
     }
 
-    // Each factory gets its own database so tests do not need a running PostgreSQL instance.
-    private static void UseInMemoryDatabase(IServiceCollection services)
+    /// <summary>Replaces the production database provider. The default is EF Core InMemory, which needs no server.</summary>
+    protected virtual void ConfigureDatabase(IServiceCollection services)
+    {
+        RemoveDbContextRegistrations(services);
+
+        var databaseName = $"athlify-tests-{Guid.NewGuid()}";
+        // InMemory ignores transactions; the serializable isolation of the role change is verified on PostgreSQL only
+        // (see PostgresWebApplicationFactory).
+        services.AddDbContext<AthlifyDbContext>(options => options
+            .UseInMemoryDatabase(databaseName)
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning)));
+    }
+
+    protected static void RemoveDbContextRegistrations(IServiceCollection services)
     {
         var registrations = services
             .Where(d => d.ServiceType == typeof(AthlifyDbContext)
@@ -81,9 +154,6 @@ public class MyWebApplicationFactory : TestWebApplicationFactory<Program>
         {
             services.Remove(registration);
         }
-
-        var databaseName = $"athlify-tests-{Guid.NewGuid()}";
-        services.AddDbContext<AthlifyDbContext>(options => options.UseInMemoryDatabase(databaseName));
     }
 }
 
@@ -104,4 +174,37 @@ public class TestCurrentUser(IHttpContextAccessor httpContextAccessor) : ICurren
         && int.TryParse(value[0], out var id)
             ? id
             : throw Athlify.Api.Domain.Common.DomainErrors.NotAuthenticated();
-}   
+}
+
+/// <summary>
+/// Signs in the request with the role the test sends in <see cref="RoleHeader"/>, like a token would. The role is
+/// what the token claims, which can be stale: the handler does not read the database.
+/// </summary>
+public class TestAuthHandler(
+    IOptionsMonitor<AuthenticationSchemeOptions> options,
+    ILoggerFactory logger,
+    UrlEncoder encoder) : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
+{
+    public const string SchemeName = "Test";
+    public const string RoleHeader = "X-Test-User-Role";
+
+    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+    {
+        if (!Request.Headers.TryGetValue(TestCurrentUser.Header, out var userId))
+        {
+            return Task.FromResult(AuthenticateResult.NoResult());
+        }
+
+        var role = Request.Headers.TryGetValue(RoleHeader, out var roleValue)
+            ? roleValue.ToString()
+            : nameof(UserRole.User);
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+            new Claim(ClaimTypes.Role, role),
+        };
+        var identity = new ClaimsIdentity(claims, SchemeName, ClaimTypes.Name, ClaimTypes.Role);
+        return Task.FromResult(AuthenticateResult.Success(
+            new AuthenticationTicket(new ClaimsPrincipal(identity), SchemeName)));
+    }
+}

@@ -5,12 +5,42 @@ public static class DomainErrors
 {
     public const string ValidationCode = "VALIDATION_ERROR";
     public const string NotAuthenticatedCode = "NOT_AUTHENTICATED";
+    public const string CurrentPasswordIncorrectCode = "CURRENT_PASSWORD_INCORRECT";
+    public const string ForbiddenCode = "FORBIDDEN";
+    public const string UsernameTakenCode = "USERNAME_TAKEN";
+    public const string LastAdminCode = "LAST_ADMIN";
+    public const string CannotChangeOwnRoleCode = "CANNOT_CHANGE_OWN_ROLE";
+    public const string CannotDeleteSelfCode = "CANNOT_DELETE_SELF";
 
     public static GraphQLException Validation(string message) =>
         new(ErrorBuilder.New().SetMessage(message).SetCode(ValidationCode).Build());
 
+    public static GraphQLException CurrentPasswordIncorrect() =>
+        WithField("The current password is incorrect.", CurrentPasswordIncorrectCode, "currentPassword");
+
+    public static GraphQLException Forbidden() =>
+        new(ErrorBuilder.New().SetMessage("Only administrators may do this.").SetCode(ForbiddenCode).Build());
+
+    public static GraphQLException UsernameTaken() =>
+        WithField("This username is already taken.", UsernameTakenCode, "username");
+
+    public static GraphQLException LastAdmin() =>
+        WithField("At least one administrator must remain.", LastAdminCode, "role");
+
+    public static GraphQLException CannotChangeOwnRole() =>
+        WithField("You cannot change your own role.", CannotChangeOwnRoleCode, "role");
+
+    public static GraphQLException CannotDeleteSelf() =>
+        new(ErrorBuilder.New()
+            .SetMessage("You cannot delete your own account.")
+            .SetCode(CannotDeleteSelfCode)
+            .Build());
+
     public static GraphQLException NotAuthenticated() =>
         new(ErrorBuilder.New().SetMessage("No user is signed in.").SetCode(NotAuthenticatedCode).Build());
+
+    private static GraphQLException WithField(string message, string code, string field) =>
+        new(ErrorBuilder.New().SetMessage(message).SetCode(code).SetExtension("field", field).Build());
 }
 
 /// <summary>Collects validation messages so that a client sees every problem of an input at once.</summary>
@@ -21,21 +51,31 @@ public sealed class ValidationErrors
     public void Add(string message) =>
         _errors.Add(ErrorBuilder.New().SetMessage(message).SetCode(DomainErrors.ValidationCode).Build());
 
+    public void Add(string message, string field, string? rule = null, params (string Name, object Value)[] extensions)
+    {
+        var error = ErrorBuilder.New()
+            .SetMessage(message)
+            .SetCode(DomainErrors.ValidationCode)
+            .SetExtension("field", field);
+        if (rule is not null) error.SetExtension("rule", rule);
+        foreach (var (name, value) in extensions) error.SetExtension(name, value);
+        _errors.Add(error.Build());
+    }
+
     public void AddIf(bool condition, string message)
     {
         if (condition) Add(message);
     }
 
-    /// <summary>Adds an error when a text is required but empty, or longer than <paramref name="maxLength"/>.</summary>
     public void Text(string? value, string field, int maxLength, bool required)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            AddIf(required, $"{field} is required.");
+            if (required) Add($"{field} is required.", field);
         }
         else if (value.Length > maxLength)
         {
-            Add($"{field} must not be longer than {maxLength} characters.");
+            Add($"{field} must not be longer than {maxLength} characters.", field);
         }
     }
 
@@ -47,7 +87,6 @@ public sealed class ValidationErrors
 
 public static class UtcDateTime
 {
-    /// <summary>Npgsql only writes UTC values to <c>timestamptz</c>; inputs with an offset are converted.</summary>
     public static DateTime Normalize(DateTime value) => value.Kind switch
     {
         DateTimeKind.Utc => value,

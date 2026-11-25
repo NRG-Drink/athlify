@@ -83,7 +83,6 @@ public abstract class AuthEndpointsTestsBase<T>(ITestFixture<T> fixture) where T
         bool isRevoked = true,
         RefreshToken.RevokeReason? lastRevokeReason = RefreshToken.RevokeReason.Logout)
     {
-        // Token Family Revocation: Check that all refresh tokens in the database are revoked and have a reason for revocation
         using var db = fixture.Factory.DbFactory();
         var oldTokenHash = HashService.HashToken(oldRefreshToken);
         var tokenFamilyId = db.RefreshTokens.FirstOrDefault(e => e.TokenHash == oldTokenHash)?.FamilyId;
@@ -115,12 +114,10 @@ public abstract class AuthEndpointsTestsBase<T>(ITestFixture<T> fixture) where T
     {
         await Assert.That(refreshResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
 
-        // Check that the Set-Cookie header is present and contains the refresh token cookie with the correct options
         var (newRefreshToken, newRefreshCookie) = await GetAndTestRefreshCookie(refreshResponse, isLogin);
         TestContext.Current!.StateBag.Items[$"RefreshToken"] = newRefreshToken;
         TestContext.Current!.StateBag.Items[$"RefreshCookie"] = newRefreshCookie;
 
-        //  Check that the response body contains a valid token and expiration date
         var content = await refreshResponse.Content.ReadAsStringAsync();
         var deserialised = await GetAndTestAccessToken(content);
         TestContext.Current!.StateBag.Items[$"AccessToken"] = deserialised.Token;

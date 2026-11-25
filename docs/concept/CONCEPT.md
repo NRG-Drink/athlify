@@ -282,14 +282,19 @@ development in context.
 ### 3.8 Settings and language
 
 The Settings page lets users manage their personal account information and
-application preferences. Users can update their personal details, change their
-preferred language and manage their Strava connection, including connecting,
-disconnecting and reviewing synchronization status.
+application preferences. Users can update their first and last name, change their
+preferred language and password, and manage their Strava connection, including
+connecting, disconnecting and reviewing synchronization status. The preferred
+language is stored in the account and applied whenever the user signs in. Changing
+the password signs the user out on all devices. Administrators additionally
+manage user accounts from the User Menu: they list, create and edit users (name,
+language, role), set a new password for a user, who is then signed out on all
+devices, and delete a user. Deleting removes the account and all of its data
+permanently, after a confirmation; nobody can delete their own account.
 
 The central interfaces, navigation, feedback messages and domain views are
 available in German and English. Changing the language applies consistently
-across the application and does not alter the user's personal data or
-preferences.
+across the application and does not alter the user's other personal data.
 
 ---
 

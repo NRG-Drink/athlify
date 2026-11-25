@@ -1,4 +1,5 @@
 using Athlify.Api.Database;
+using Athlify.Api.Domain;
 using Athlify.Api.Domain.Auth;
 using Athlify.Api.Domain.Users;
 using Microsoft.EntityFrameworkCore;
@@ -51,6 +52,8 @@ public partial class Program
         });
 
         builder.AddAuth();
+        builder.AddUserManagement();
+        builder.AddDomainServices();
         var app = builder.Build();
         app.UseAuth();
 
@@ -140,9 +143,10 @@ public partial class Program
             await db.Database.EnsureCreatedAsync();
         }
 
-        var developmentUserId = await DevelopmentUserProvisioner.EnsureAsync(db, developmentUserOptions);
+        var provisioner = scope.ServiceProvider.GetRequiredService<DevelopmentUserProvisioner>();
+        var developmentUserId = await provisioner.EnsureAsync(db, developmentUserOptions);
 
-        var seeder = new DbSeeder();
+        var seeder = scope.ServiceProvider.GetRequiredService<DbSeeder>();
         seeder.Seed(db, developmentUserId);
     }
 }

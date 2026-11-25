@@ -97,9 +97,11 @@ mood, effort, wind and Event type are decided; see
 ## Constraints
 
 - The frontend is an exploration app shell under `src/frontend/athlify/`.
-  Body-Stats and the Activities list (with add, edit, duplicate and delete)
-  use the backend. Events are also backend-backed and support listing,
-  creation, editing and deletion; Dashboard and Garage have no completed pages yet.
+  Body-Stats, the Activities list (with add, edit, duplicate and delete), the
+  Settings page (profile, language, password), Events (listing, creation,
+  editing and deletion) and the Administrator-only user management use the
+  backend; Dashboard and Garage have no completed pages yet.
+  pages yet.
 - The project remains limited to a realistic scope for a two-person student
   project.
 - Personal data must remain isolated to the logged-in user.

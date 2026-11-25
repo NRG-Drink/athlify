@@ -7,4 +7,5 @@ export const paths = {
   bodyStats: '/body-stats',
   events: '/events',
   settings: '/settings',
+  adminUsers: '/admin/users',
 } as const

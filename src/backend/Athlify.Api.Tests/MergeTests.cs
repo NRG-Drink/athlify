@@ -124,7 +124,6 @@ public class MergeTests : WebApiTestBase
 
         await Assert.That(IsNull((await DataAsync(client, Node, new { id = merge })).GetProperty("node"))).IsTrue();
         await Assert.That(IsNull(await MergeOfAsync(client, a))).IsTrue();
-        // The remaining activity can be merged again.
         var c = Id(await CreateActivityAsync(client));
         await Assert.That((await CreateMergeAsync(client, a, c)).GetProperty("activities").GetArrayLength()).IsEqualTo(2);
     }

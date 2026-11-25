@@ -1,14 +1,15 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { RelayEnvironmentProvider } from "react-relay";
+import { fetchQuery, graphql, RelayEnvironmentProvider } from "react-relay";
 import { authUrl, readAccessTokenResponse } from "./api";
-import { AuthContext } from "./context";
+import { AuthContext, type AuthContextValue } from "./context";
 import { authEvents } from "./events";
 import {
   clearRefreshFailure,
@@ -25,8 +26,19 @@ import {
 import { tokenStore } from "./tokenStore";
 import { createRelayEnvironment } from "../relay/environment";
 import { toaster } from "../components/ui/toaster";
+import { toI18nLanguage } from "../i18n/languages";
+import type { AuthAndRelayProviderAccountLanguageQuery } from "./__generated__/AuthAndRelayProviderAccountLanguageQuery.graphql";
 
 const SCHEDULED_REFRESH_BUFFER_MS = 60_000;
+
+const accountLanguageQuery = graphql`
+  query AuthAndRelayProviderAccountLanguageQuery {
+    me {
+      id
+      language
+    }
+  }
+`;
 
 function FullPageSpinner() {
   const { t } = useTranslation();
@@ -39,7 +51,7 @@ function FullPageSpinner() {
 }
 
 export function AuthAndRelayProvider({ children }: { children: ReactNode }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [environment, setEnvironment] = useState(createRelayEnvironment);
   const [sessionKey, setSessionKey] = useState(0);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -82,6 +94,26 @@ export function AuthAndRelayProvider({ children }: { children: ReactNode }) {
       active = false;
     };
   }, []);
+
+  // The account's language wins at the start of a session (after sign-in and after a reload). A
+  // failing request keeps the current language: the preference is a convenience, not a requirement.
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    let active = true;
+    fetchQuery<AuthAndRelayProviderAccountLanguageQuery>(
+      environment,
+      accountLanguageQuery,
+      {},
+    )
+      .toPromise()
+      .then((data) => {
+        if (active && data) void i18n.changeLanguage(toI18nLanguage(data.me.language));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [isLoggedIn, environment, i18n]);
 
   useEffect(() => {
     let active = true;
@@ -261,22 +293,25 @@ export function AuthAndRelayProvider({ children }: { children: ReactNode }) {
     if (logoutError) throw logoutError;
   }, []);
 
+  const authValue = useMemo<AuthContextValue>(
+    () => ({
+      isLoggedIn,
+      login,
+      logout,
+      isLoading,
+      bootstrapError,
+      hasRole: (role) => roles.includes(role),
+      userName,
+    }),
+    [isLoggedIn, login, logout, isLoading, bootstrapError, roles, userName],
+  );
+
   if (isBootstrapping) {
     return <FullPageSpinner />;
   }
 
   return (
-    <AuthContext.Provider
-      value={{
-        isLoggedIn,
-        login,
-        logout,
-        isLoading,
-        bootstrapError,
-        hasRole: (role) => roles.includes(role),
-        userName,
-      }}
-    >
+    <AuthContext.Provider value={authValue}>
       <RelayEnvironmentProvider key={sessionKey} environment={environment}>
         {children}
       </RelayEnvironmentProvider>

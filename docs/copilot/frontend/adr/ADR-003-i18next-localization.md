@@ -37,15 +37,15 @@ components.
 **Chosen**: Option 1 — i18next with react-i18next
 
 It covers both required languages with little setup and is already wired
-into the app and the language switcher.
+into the app and the language setting on the Settings page.
 
 ## Consequences
 
 ### Positive
 
 - Adding a language means adding one resource file and registering it in
-  `src/i18n/index.js`. The language switcher lists every registered
-  resource automatically.
+  `src/i18n/index.js`. The language select on the Settings page lists the languages of the API's
+  `Language` enum; a new language also needs an enum value there.
 
 ### Negative / Trade-offs
 

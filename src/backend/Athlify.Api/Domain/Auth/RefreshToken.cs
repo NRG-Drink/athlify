@@ -30,6 +30,8 @@ public class RefreshToken : Entity, IOwned
     {
         Rotated,
         ReuseDetected,
-        Logout
+        Logout,
+        PasswordChanged,
+        RoleChanged
     }
 }

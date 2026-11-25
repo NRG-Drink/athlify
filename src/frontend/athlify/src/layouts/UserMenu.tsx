@@ -1,17 +1,16 @@
 import { Button, Flex, IconButton, Popover, Portal, Separator, Stack, Text } from '@chakra-ui/react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { LuCircleUser, LuLogOut, LuSettings } from 'react-icons/lu'
+import { LuCircleUser, LuLogOut, LuSettings, LuUsers } from 'react-icons/lu'
 import { Link as RouterLink } from 'react-router-dom'
 import { useAuth } from '../auth/context'
 import DarkModeToggle from '../components/DarkModeToggle'
-import LanguageSwitcher from '../components/LanguageSwitcher'
 import { toaster } from '../components/ui/toaster'
 import { paths } from '../navigation/paths'
 
 export function UserMenu() {
   const { t } = useTranslation()
-  const { userName, logout } = useAuth()
+  const { userName, logout, hasRole } = useAuth()
   const [open, setOpen] = useState(false)
 
   const handleLogout = async () => {
@@ -60,11 +59,15 @@ export function UserMenu() {
                     {t('nav.settings')}
                   </RouterLink>
                 </Button>
+                {hasRole('Admin') && (
+                  <Button asChild variant="ghost" justifyContent="flex-start" size="sm">
+                    <RouterLink to={paths.adminUsers} onClick={() => setOpen(false)}>
+                      <LuUsers aria-hidden />
+                      {t('nav.adminUsers')}
+                    </RouterLink>
+                  </Button>
+                )}
                 <Separator my="1" />
-                <Flex align="center" justify="space-between" gap="3" px="3" py="1">
-                  <Text textStyle="sm">{t('layout.language')}</Text>
-                  <LanguageSwitcher />
-                </Flex>
                 <Flex align="center" justify="space-between" gap="3" px="3" py="1">
                   <Text textStyle="sm">{t('layout.colorMode')}</Text>
                   <DarkModeToggle />

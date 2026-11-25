@@ -1,14 +1,12 @@
 import { Box } from '@chakra-ui/react'
-import {
-  AllCommunityModule,
-  InfiniteRowModelModule,
-  ModuleRegistry,
-  colorSchemeDarkBlue,
-  themeQuartz,
-} from 'ag-grid-community'
+import { AllCommunityModule, InfiniteRowModelModule, ModuleRegistry } from 'ag-grid-community'
 import { AgGridProvider, AgGridReact, type AgGridReactProps } from 'ag-grid-react'
+import { useColorMode } from '../ui/color-mode'
+import { gridThemeFor } from './gridTheme'
 
-ModuleRegistry.registerModules([AllCommunityModule, InfiniteRowModelModule])
+const gridModules = [AllCommunityModule, InfiniteRowModelModule]
+
+ModuleRegistry.registerModules(gridModules)
 
 type AgGridTableProps<TData> = AgGridReactProps<TData> & {
   ariaLabel: string
@@ -17,8 +15,9 @@ type AgGridTableProps<TData> = AgGridReactProps<TData> & {
 }
 
 export function AgGridTable<TData>({ ariaLabel, height, busy, ...props }: AgGridTableProps<TData>) {
+  const { colorMode } = useColorMode()
   return (
-    <AgGridProvider modules={[AllCommunityModule, InfiniteRowModelModule]}>
+    <AgGridProvider modules={gridModules}>
       <Box
         role="region"
         height={height}
@@ -27,7 +26,7 @@ export function AgGridTable<TData>({ ariaLabel, height, busy, ...props }: AgGrid
         opacity={busy ? 0.6 : undefined}
         transition="opacity 0.15s"
       >
-        <AgGridReact<TData> {...props} theme={themeQuartz.withPart(colorSchemeDarkBlue)} />
+        <AgGridReact<TData> {...props} theme={gridThemeFor(colorMode ?? 'light')} />
       </Box>
     </AgGridProvider>
   )

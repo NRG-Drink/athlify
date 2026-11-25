@@ -9,24 +9,18 @@ namespace Athlify.Api.Domain.Activities;
 /// Every method works on a merge loaded with <see cref="LoadAsync"/>, so one <c>SaveChanges</c> stores the
 /// membership, the totals and a possible dissolution together.
 /// </summary>
-public static class MergeMembership
+public sealed class MergeMembership
 {
     public const int MinimumMembers = 2;
     public const int MaxNameLength = 100;
 
-    /// <summary>Loads a merge with every member, soft-deleted ones included.</summary>
-    public static Task<ActivityMerge?> LoadAsync(AthlifyDbContext db, int mergeId, CancellationToken cancellationToken) =>
+    public Task<ActivityMerge?> LoadAsync(AthlifyDbContext db, int mergeId, CancellationToken cancellationToken) =>
         db.ActivityMerges
             .IgnoreQueryFilters([AthlifyDbContext.NotDeletedFilter])
             .Include(m => m.Activities)
             .FirstOrDefaultAsync(m => m.Id == mergeId, cancellationToken);
 
-    /// <summary>
-    /// Recalculates the totals, or dissolves the merge when fewer than two active members remain: all
-    /// members, soft-deleted ones included, leave it and the merge is deleted. Returns <c>false</c> when it
-    /// was dissolved.
-    /// </summary>
-    public static bool Refresh(ActivityMerge merge, AthlifyDbContext db)
+    public bool Refresh(ActivityMerge merge, AthlifyDbContext db)
     {
         var active = merge.Activities.Where(a => a.DeletedAt is null).ToList();
         if (active.Count < MinimumMembers)
@@ -43,8 +37,7 @@ public static class MergeMembership
         return true;
     }
 
-    /// <summary>Rejects activities that are already part of another merge.</summary>
-    public static void ThrowIfMergedElsewhere(IEnumerable<Activity> activities, int? mergeId)
+    public void ThrowIfMergedElsewhere(IEnumerable<Activity> activities, int? mergeId)
     {
         if (activities.Any(a => a.MergeId is not null && a.MergeId != mergeId))
         {

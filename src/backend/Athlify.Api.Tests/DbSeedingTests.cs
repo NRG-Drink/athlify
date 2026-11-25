@@ -12,7 +12,7 @@ public class DbSeedingTests
     {
         var calls = 0;
 
-        DbSeeding.RunIfEnabled(new SeedOptions(), Environment(Environments.Development), new CapturingLogger(), () => calls++);
+        new DbSeeding().RunIfEnabled(new SeedOptions(), Environment(Environments.Development), new CapturingLogger(), () => calls++);
 
         await Assert.That(calls).IsEqualTo(0);
     }
@@ -22,7 +22,7 @@ public class DbSeedingTests
     {
         var calls = 0;
 
-        DbSeeding.RunIfEnabled(
+        new DbSeeding().RunIfEnabled(
             new SeedOptions { Enabled = true }, Environment(Environments.Development), new CapturingLogger(), () => calls++);
 
         await Assert.That(calls).IsEqualTo(1);
@@ -35,7 +35,7 @@ public class DbSeedingTests
     {
         var logger = new CapturingLogger();
 
-        DbSeeding.RunIfEnabled(new SeedOptions { Enabled = true }, Environment(environmentName), logger, () => { });
+        new DbSeeding().RunIfEnabled(new SeedOptions { Enabled = true }, Environment(environmentName), logger, () => { });
 
         await Assert.That(logger.Levels).IsEquivalentTo([expected]);
     }

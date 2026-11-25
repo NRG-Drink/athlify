@@ -16,6 +16,11 @@ public interface ITokenService
     TokenResponse GenerateAccessToken(User dbUser);
     Task<TokenResponse> GenerateRefreshTokenAsync(User user, string ip);
     Task RevokeTokenFamily(Guid familyId, string ip, RefreshToken.RevokeReason reason = RefreshToken.RevokeReason.ReuseDetected);
+    Task RevokeAllForUserAsync(
+        int userId,
+        string ip,
+        RefreshToken.RevokeReason reason,
+        CancellationToken cancellationToken = default);
     Task<(TokenResponse Token, User User)> RotateRefreshTokenOrThrow(HttpContext httpContext);
 }
 
@@ -93,6 +98,24 @@ public class TokenService(
                 .SetProperty(t => t.ReasonRevoked, reason));
     }
 
+    public async Task RevokeAllForUserAsync(
+        int userId,
+        string ip,
+        RefreshToken.RevokeReason reason,
+        CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.UtcNow;
+        var active = await db.RefreshTokens
+            .Where(t => t.UserId == userId && t.Revoked == null)
+            .ToListAsync(cancellationToken);
+        foreach (var token in active)
+        {
+            token.Revoked = now;
+            token.RevokedByIp = ip;
+            token.ReasonRevoked = reason;
+        }
+    }
+
     public async Task<(TokenResponse Token, User User)> RotateRefreshTokenOrThrow(HttpContext httpContext)
     {
         var ip = cookieService.GetIpAddress(httpContext);
@@ -100,7 +123,6 @@ public class TokenService(
             ?? throw new UnauthorizedAccessException("Refresh token not found.");
         var cookieHash = hashService.HashToken(cookieToken);
         var storedToken = await db.RefreshTokens.AsNoTracking().FirstOrDefaultAsync(t => t.TokenHash == cookieHash)
-            // Unknown token → forged/garbage → plain rejection
             ?? throw new UnauthorizedAccessException("Refresh token not found in database.");
 
         var user = await db.Users
@@ -124,7 +146,6 @@ public class TokenService(
         RefreshToken stored,
         RefreshToken newRefreshToken)
     {
-        // https://learn.microsoft.com/en-gb/ef/core/miscellaneous/connection-resiliency
         var strategy = db.Database.CreateExecutionStrategy();
         return await strategy.ExecuteAsync(async () =>
         {

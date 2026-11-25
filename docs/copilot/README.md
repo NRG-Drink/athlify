@@ -29,8 +29,9 @@ owner-scoped domain model under `src/backend/` (no authentication, Strava
 synchronization or Dashboard analyses yet) and a React/TypeScript frontend
 under `src/frontend/athlify/`. Body-Stats and the Activities list with AG Grid
 filters, server sorting, saved views, column layout, cursor scrolling and
-add/edit/duplicate/delete are implemented; the remaining areas are still
-placeholders. Do not present the implemented slices as completed product
+add/edit/duplicate/delete, the Settings page, the Events management page and the
+Administrator-only user management are implemented; Dashboard and Garage are
+still placeholders. Do not present the implemented slices as completed product
 functionality.
 
 ## Documentation map
@@ -113,9 +114,10 @@ src/
 - **Frontend**: Chakra UI, Tailwind CSS, react-router-dom and i18next app
   shell with the App Layout, a Body-Stats domain page, and an
   Activities grid with URL-backed filters and sorting, browser-local saved
-  views, cursor scrolling and add, edit, duplicate and delete. Dashboard,
-  Garage and Settings remain placeholders; Events has a backend-backed
-  management page. See
+  views, cursor scrolling and add, edit, duplicate and delete, a Settings page
+  for profile, language and password, a backend-backed Events management page
+  and Administrator-only user management. Dashboard and Garage remain
+  placeholders. See
   [`frontend/SAD.md`](frontend/SAD.md).
 - **Tooling**: the frontend is a standalone npm package with its own
   `package.json` and lockfile; the repository root has none. There are no

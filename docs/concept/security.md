@@ -16,6 +16,21 @@ development user, so the API must not be exposed beyond a local machine.
   permissions available to regular users and gain additional user-management
   permissions.
 - Check user ownership for every personal resource.
+- A signed-in user changes their own name, language and password only through
+  the self-service `updateMe` mutation. It takes no user id and cannot change
+  role or username. A password change requires the current password and
+  revokes all of the user's refresh tokens, so every device signs in again.
+- Administrators list, create and edit users (name, language, role) and set a
+  new password for a user. The administrator who sets a password knows it, so
+  the user should change it in the settings afterwards. The role is checked in
+  the database on every administration request, an administrator cannot change
+  their own role, and the last administrator cannot be demoted. A role change
+  or password reset revokes the user's refresh tokens. User management shows
+  accounts only and never grants access to another user's personal records.
+- Administrators can delete a user. This permanently removes the account and
+  all of its data (activities including deleted ones, bicycles, gadgets, tags,
+  Events, Body-Stats, Strava connection and sessions) and cannot be undone.
+  Nobody can delete their own account.
 
 ## Protection of personal data
 

@@ -1,3 +1,4 @@
+using Athlify.Api.Domain.Common;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -6,7 +7,6 @@ namespace Athlify.Api.Tests;
 /// <summary>A small GraphQL client shared by the endpoint tests.</summary>
 public static class GraphQl
 {
-    /// <summary>Posts a GraphQL document and returns the parsed response (the HTTP status is not asserted).</summary>
     public static async Task<JsonElement> PostAsync(HttpClient client, string query, object? variables = null)
     {
         var response = await client.PostAsJsonAsync("/graphql", new { query, variables });
@@ -14,7 +14,6 @@ public static class GraphQl
         return body!.RootElement.Clone();
     }
 
-    /// <summary>Posts a GraphQL document and fails the test if the response contains errors.</summary>
     public static async Task<JsonElement> DataAsync(HttpClient client, string query, object? variables = null)
     {
         var root = await PostAsync(client, query, variables);
@@ -26,7 +25,6 @@ public static class GraphQl
         return root.GetProperty("data");
     }
 
-    /// <summary>The <c>extensions.code</c> of every error in a response; empty when it has none.</summary>
     public static IReadOnlyList<string> ErrorCodes(JsonElement root) =>
         root.TryGetProperty("errors", out var errors)
             ? errors.EnumerateArray()
@@ -36,7 +34,20 @@ public static class GraphQl
                 .ToList()
             : [];
 
-    /// <summary>The nodes of a connection field, e.g. <c>Nodes(data, "activities")</c>.</summary>
+    public static async Task<string> GlobalIdAsync(HttpClient admin, string username)
+    {
+        var users = (await DataAsync(admin, "query { users { id username } }")).GetProperty("users").EnumerateArray();
+        return users.Single(u => u.GetProperty("username").GetString() == username).GetProperty("id").GetString()!;
+    }
+
+    public static async Task AssertValidationErrorAsync(JsonElement root, string field)
+    {
+        await Assert.That(ErrorCodes(root)).Contains(DomainErrors.ValidationCode);
+        var fields = root.GetProperty("errors").EnumerateArray()
+            .Select(e => e.GetProperty("extensions").TryGetProperty("field", out var f) ? f.GetString() : null);
+        await Assert.That(fields).Contains(field);
+    }
+
     public static IReadOnlyList<JsonElement> Nodes(JsonElement data, string field) =>
         data.GetProperty(field).GetProperty("nodes").EnumerateArray().ToList();
 

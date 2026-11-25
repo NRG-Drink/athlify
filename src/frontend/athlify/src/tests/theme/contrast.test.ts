@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { brand, gradientStops } from '../../theme/palette'
 import { semanticColors as c, type ModePair } from '../../theme/semantic'
-import { contrastRatio } from '../utils/contrast'
+import { compositeOver, contrastRatio } from '../utils/contrast'
 
 const modes = ['base', '_dark'] as const
 
@@ -33,7 +33,11 @@ describe('theme contrast', () => {
     expectContrast(c.brand.contrast, c.brand.solid, 4.5)
   })
 
-  const graphicTokens = { ...c.chart, 'brand.focusRing': c.brand.focusRing }
+  const graphicTokens = {
+    ...c.chart,
+    'brand.focusRing': c.brand.focusRing,
+    'brand.solid': c.brand.solid,
+  }
   for (const [name, token] of Object.entries(graphicTokens)) {
     it(`${name} on bg.panel reaches 3:1 in both modes`, () => {
       expectContrast(token, c.bg.panel, 3)
@@ -53,6 +57,19 @@ describe('theme contrast', () => {
     const lightTextValues = [c.fg.DEFAULT, c.fg.muted, c.brand.fg, c.spark.fg].map((t) => t.base)
     for (const value of lightTextValues) {
       expect(cyan).not.toContain(value)
+    }
+  })
+})
+
+describe('grid theme contrast', () => {
+  it('fg on the hovered row (bg.muted) reaches 4.5:1 in both modes', () => {
+    expectContrast(c.fg.DEFAULT, c.bg.muted, 4.5)
+  })
+
+  it('fg on the selected row (brand.subtle, composited over bg.panel) reaches 4.5:1 in both modes', () => {
+    for (const mode of modes) {
+      const selected = compositeOver(c.brand.subtle[mode], c.bg.panel[mode])
+      expect(contrastRatio(c.fg.DEFAULT[mode], selected), mode).toBeGreaterThanOrEqual(4.5)
     }
   })
 })

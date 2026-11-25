@@ -10,8 +10,8 @@ The frontend needs consistent, accessible building blocks for navigation,
 forms, tables, dialogs, feedback, charts and light/dark themes. Tailwind CSS
 v4 was set up first as the styling framework. Chakra UI v3 was then added
 (`@chakra-ui/react`, `@emotion/react`, `next-themes`), together with
-`@chakra-ui/charts` on top of Recharts. The language switcher and color-mode
-toggle already use Chakra components. A component system shapes every view,
+`@chakra-ui/charts` on top of Recharts. The color-mode
+toggle already uses Chakra components. A component system shapes every view,
 so switching later means rewriting most UI code.
 
 ## Options Considered

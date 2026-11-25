@@ -5,7 +5,13 @@ import babel from '@rolldown/plugin-babel'
 
 // Aspire injects this via WithReference(api); it is not VITE_-prefixed, so it
 // stays server-side here instead of leaking into client bundles.
-const apiOrigin = process.env['services__cs-api__http__0'] ?? 'http://localhost:5095'
+// The fallback must be the API (5095, see launchSettings.json), never this dev server's
+// own port: a proxy that targets itself never answers, so /auth/refresh spins forever.
+const injectedApiOrigin = process.env['services__cs-api__http__0']
+const apiOrigin = injectedApiOrigin ?? 'http://localhost:5095'
+if (injectedApiOrigin === undefined) {
+  console.warn(`[vite] services__cs-api__http__0 is not set; proxying /auth and /graphql to ${apiOrigin}. Start through the AppHost to use the injected API endpoint.`)
+}
 
 export default defineConfig({
   plugins: [react(), babel({ plugins: ['relay'] }), tailwindcss()],
@@ -23,6 +29,9 @@ export default defineConfig({
   },
   test: {
     globals: true,
+    testTimeout: 15_000,
+    // A fixed pool keeps the suite stable: one worker per core spawned 40+ workers on a big machine and starved the rest.
+    maxWorkers: 4,
     coverage: {
       provider: 'v8', // Use 'v8' for built-in coverage
       reporter: ['text', 'json', 'html'], // Formats for the coverage report
