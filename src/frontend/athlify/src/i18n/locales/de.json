@@ -361,6 +361,90 @@
       "loadMore": "Weitere Messungen laden",
       "loadMoreFailed": "Weitere Messungen konnten nicht geladen werden."
     },
+    "events": {
+      "controls": { "title": "Events filtern" },
+        "gridFilter": {
+          "none": "Kein Filter",
+          "options": {
+            "equals": "Ist gleich",
+            "notEqual": "Ist nicht gleich",
+            "contains": "Enthält",
+            "notContains": "Enthält nicht",
+            "startsWith": "Beginnt mit",
+            "endsWith": "Endet mit",
+            "blank": "Leer",
+            "notBlank": "Nicht leer",
+            "lessThan": "Kleiner als",
+            "greaterThan": "Grösser als",
+            "inRange": "Zwischen",
+            "before": "Vor",
+            "after": "Nach"
+          }
+        },
+      "filterYtd": "Dieses Jahr",
+      "filterActions": "Filteraktionen",
+      "resetFilters": "Filter zurücksetzen",
+      "quickFilter": "Events durchsuchen",
+      "fromFilter": "Von",
+      "toFilter": "Bis",
+      "filter": { "invalidDate": "Bitte ein gültiges Datum eingeben." },
+      "views": {
+        "select": "Gespeicherte Ansichten",
+        "choose": "Ansicht auswählen",
+        "saveCurrent": "Ansicht speichern",
+        "name": "Name der Ansicht",
+        "duplicateName": "Eine Ansicht mit diesem Namen existiert bereits.",
+        "save": "Speichern",
+        "delete": "Ansicht löschen",
+        "storageFailed": "Ansichten konnten nicht gespeichert oder geladen werden."
+      },
+      "resetTable": "Tabelle zurücksetzen",
+      "resultCount_one": "{{count}} Event",
+      "resultCount_other": "{{count}} Events",
+      "add": {
+        "open": "Event hinzufügen",
+        "defaultName": "Neues Event",
+        "success": "Event hinzugefügt.",
+        "failed": "Event konnte nicht hinzugefügt werden."
+      },
+      "columnPicker": { "open": "Spalten", "label": "Spalten auswählen" },
+      "columns": {
+        "actions": "Aktionen",
+        "id": "ID",
+        "name": "Name",
+        "startDate": "Von",
+        "endDate": "Bis",
+        "type": "Typ",
+        "tags": "Tags",
+        "description": "Beschreibung"
+      },
+      "types": {
+        "CRASH": "Sturz",
+        "INJURY": "Verletzung",
+        "ILLNESS": "Krankheit",
+        "REPAIR": "Reparatur",
+        "BREAK": "Pause",
+        "GOAL": "Ziel",
+        "OTHER": "Sonstiges"
+      },
+      "typeFilter": { "ariaLabel": "Nach Eventtyp filtern", "selectAll": "Alle auswählen" },
+      "pin": {
+        "pinRow": "Event anheften",
+        "unpinRow": "Anheftung lösen"
+      },
+      "delete": {
+        "action": "Löschen",
+        "success": "Event gelöscht.",
+        "failed": "Event konnte nicht gelöscht werden."
+      },
+      "edit": {
+        "saved": "Event gespeichert.",
+        "saveFailed": "Event konnte nicht gespeichert werden."
+      },
+      "emptyValue": "—",
+      "loadFailed": "Events konnten nicht geladen werden.",
+      "table": { "caption": "Events" }
+    },
     "checklist": {
       "search": "Suchen …",
       "noMatches": "Keine Treffer.",

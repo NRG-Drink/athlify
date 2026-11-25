@@ -17,27 +17,11 @@ public record UpdateMeInput(
 
 public record PasswordChangeInput(string CurrentPassword, string NewPassword);
 
-public static class UpdateMeValidation
-{
-    public const int MaxNameLength = 100;
-
-    public static void ThrowIfInvalid(UpdateMeInput input)
-    {
-        var errors = new ValidationErrors();
-        if (input.FirstName is not null) errors.Text(input.FirstName, "firstName", MaxNameLength, required: true);
-        if (input.LastName is not null) errors.Text(input.LastName, "lastName", MaxNameLength, required: true);
-        if (input.PasswordChange is { } change && string.IsNullOrWhiteSpace(change.NewPassword))
-        {
-            errors.Add("newPassword is required.", "newPassword");
-        }
-
-        errors.ThrowIfAny();
-    }
-}
-
 [MutationType]
 public static partial class UserMutation
 {
+    public const int MaxNameLength = 100;
+
     /// <summary>
     /// Changes the signed-in user's own name, language and password. A password change needs the current password
     /// and revokes all refresh tokens, so every device has to sign in again.
@@ -53,7 +37,7 @@ public static partial class UserMutation
         CancellationToken cancellationToken)
     {
         var userId = currentUser.UserId ?? throw DomainErrors.NotAuthenticated();
-        UpdateMeValidation.ThrowIfInvalid(input);
+        ThrowIfInvalid(input);
 
         // The owner filter only finds the signed-in user.
         var user = await db.Users.SingleAsync(u => u.Id == userId, cancellationToken);
@@ -83,5 +67,18 @@ public static partial class UserMutation
 
         await db.SaveChangesAsync(cancellationToken);
         return user;
+    }
+
+    private static void ThrowIfInvalid(UpdateMeInput input)
+    {
+        var errors = new ValidationErrors();
+        if (input.FirstName is not null) errors.Text(input.FirstName, "firstName", MaxNameLength, required: true);
+        if (input.LastName is not null) errors.Text(input.LastName, "lastName", MaxNameLength, required: true);
+        if (input.PasswordChange is { } change && string.IsNullOrWhiteSpace(change.NewPassword))
+        {
+            errors.Add("newPassword is required.", "newPassword");
+        }
+
+        errors.ThrowIfAny();
     }
 }
