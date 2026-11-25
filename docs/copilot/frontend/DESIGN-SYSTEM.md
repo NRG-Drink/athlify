@@ -293,6 +293,18 @@ Before designing something new, check whether one of these already covers it
 | Chakra `Collapsible` | Folds rarely used form fields under "Weitere Details". |
 | `PrimaryNav`, `MobileNav`, `UserMenu`, `AppHeader` | Shell navigation with the indicator bar. |
 | `BrandMark` | The logo mark with the `volt` gradient. |
+| `AgGridTable` (`components/ag-grid/`) | The AG Grid wrapper used by the Events grid and the admin user list. Its theme follows the app color mode through `gridThemeFor` (`components/ag-grid/gridTheme.ts`). |
+
+## Grids
+
+- `AgGridTable` takes its colours from the semantic tokens in `gridTheme.ts`,
+  never from AG Grid's defaults: panel background (`bg.panel`), hovered row
+  (`bg.muted`), selected row (`brand.subtle`), text (`fg`), header text
+  (`fg.muted`, semibold), hairline `border`, accent `brand.solid`, and the
+  `l3` wrapper radius. Both modes follow the same mapping.
+- The grid does not add its own focused-row styling. Row colours come only from
+  the hover and selected mappings above, unlike `DataTable`, which marks a
+  focused row with a muted background and a brand indicator bar.
 
 ## Iconography and brand mark
 
