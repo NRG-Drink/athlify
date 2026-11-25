@@ -6,16 +6,11 @@ public interface ICookieService
     string RefreshTokenCookieName { get; }
 
     string GetIpAddress(HttpContext httpContext);
+    string GetClientIp(IHttpContextAccessor httpContextAccessor);
     string? GetRefreshTokenCookie(HttpContext http);
     void SetRefreshTokenCookie(HttpContext http, TokenResponse tokenResponse);
     void DeleteRefreshTokenCookie(HttpContext http);
     CookieOptions GetRefreshTokenCookieOptions(DateTime expiresAt);
-}
-
-public static class CookieServiceExtensions
-{
-    public static string GetClientIp(this ICookieService cookieService, IHttpContextAccessor httpContextAccessor) =>
-        httpContextAccessor.HttpContext is { } http ? cookieService.GetIpAddress(http) : "unknown";
 }
 
 public class CookieService : ICookieService
@@ -25,6 +20,9 @@ public class CookieService : ICookieService
 
     public string GetIpAddress(HttpContext httpContext)
         => httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+    public string GetClientIp(IHttpContextAccessor httpContextAccessor)
+        => httpContextAccessor.HttpContext is { } http ? GetIpAddress(http) : "unknown";
 
     public string? GetRefreshTokenCookie(HttpContext http)
         => http.Request.Cookies.TryGetValue(RefreshTokenCookieName, out var rt)
