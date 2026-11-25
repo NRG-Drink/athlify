@@ -257,10 +257,13 @@ In short:
 - **No access.** A role-gated route shows `NoAccessPage` inside the shell
   ("Kein Zugriff", a short reason and a link back to the Dashboard), like Not
   Found, and fires no query.
-- **List.** A `Page` with a `DataTable`. A list the server returns in a fixed
-  order sets `sortable: false` on every column instead of offering a sort that
-  does not exist. Editing is the row; the "⋯" menu holds the other actions.
-  The signed-in administrator's row carries "(du)".
+- **List.** An `AgGridTable`, the same wrapper as the Events grid, with plain
+  column definitions and the client row model. The list has no header sort
+  (`sortable: false`), because the server orders it. Editing is a click on any
+  cell except the "⋯" column; the name cell's button names the action for
+  assistive technology. The "⋯" menu holds reset and delete. The
+  signed-in administrator's row carries "(du)". On narrow screens the username
+  and language columns are hidden, and the count line sits below the grid.
 - **Role badge.** Administrator is a `brand` `subtle` badge, Benutzer a
   `bg.muted` badge with `fg.muted` text; the label is real text, not colour
   alone.

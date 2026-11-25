@@ -1,11 +1,18 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import i18n from 'i18next'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AuthContext, type AuthContextValue } from '../../../auth/context'
 import { AdminRoute } from '../../../features/admin-users/AdminRoute'
 import { AdminUsersPage } from '../../../features/admin-users/AdminUsersPage'
+import { mockGridViewport } from '../../utils/gridViewport'
 import { defaultAuth } from '../../utils/renderRoute'
 import { graphqlError, renderWithRelay, type Handler } from '../../utils/relay'
+
+beforeEach(() => mockGridViewport())
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.restoreAllMocks()
+})
 
 const QUERY = 'AdminUsersPageQuery'
 const CREATE = 'useUserMutationsCreateMutation'
@@ -62,12 +69,12 @@ describe('AdminUsersPage', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Benutzerverwaltung' }),
     ).toBeVisible()
-    const admins = await screen.findByRole('row', { name: /Anna Admin/ })
-    expect(within(admins).getByText('(du)')).toBeVisible()
-    expect(within(admins).getByText('Administrator')).toBeVisible()
-    const lucas = screen.getByRole('row', { name: /Luca Muster/ })
-    expect(within(lucas).getByText('Benutzer')).toBeVisible()
+    const admin = await screen.findByRole('button', { name: /Anna Admin bearbeiten/ })
+    expect(within(admin).getByText('(du)')).toBeVisible()
+    expect(screen.getByText('Administrator')).toBeVisible()
+    const lucas = screen.getByRole('button', { name: /Luca Muster bearbeiten/ })
     expect(within(lucas).queryByText('(du)')).not.toBeInTheDocument()
+    expect(screen.getByText('Benutzer')).toBeVisible()
     expect(screen.getByText('2 Benutzer')).toBeVisible()
   })
 
@@ -115,7 +122,7 @@ describe('AdminUsersPage', () => {
           },
         },
       ])
-      expect(await screen.findByRole('row', { name: /Mia Meier/ })).toBeVisible()
+      expect(await screen.findByRole('button', { name: /Mia Meier bearbeiten/ })).toBeVisible()
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     })
 
@@ -160,7 +167,9 @@ describe('AdminUsersPage', () => {
           : okQuery(),
       )
 
-      await user.click(await screen.findByRole('row', { name: 'Benutzer Luca Muster bearbeiten' }))
+      await user.click(
+        await screen.findByRole('button', { name: 'Benutzer Luca Muster bearbeiten' }),
+      )
       const dialog = await screen.findByRole('dialog', { name: 'Benutzer bearbeiten' })
       expect(within(dialog).getByText('luca')).toBeVisible()
       expect(within(dialog).queryByLabelText(/Passwort/)).not.toBeInTheDocument()
@@ -180,13 +189,13 @@ describe('AdminUsersPage', () => {
           input: { firstName: 'Lucas', lastName: 'Muster', language: 'DE', role: 'ADMIN' },
         },
       ])
-      expect(await screen.findByRole('row', { name: /Lucas Muster/ })).toBeVisible()
+      expect(await screen.findByRole('button', { name: /Lucas Muster bearbeiten/ })).toBeVisible()
     })
 
     it('does not let administrators change their own role', async () => {
       const { user } = renderPage(() => okQuery())
 
-      await user.click(await screen.findByRole('row', { name: /Anna Admin bearbeiten/ }))
+      await user.click(await screen.findByRole('button', { name: /Anna Admin bearbeiten/ }))
       const dialog = await screen.findByRole('dialog', { name: 'Benutzer bearbeiten' })
 
       expect(within(dialog).getByLabelText('Rolle')).toBeDisabled()
@@ -198,7 +207,7 @@ describe('AdminUsersPage', () => {
         operation === UPDATE ? { data: { updateUser: { ...admin, language: 'EN' } } } : okQuery(),
       )
 
-      await user.click(await screen.findByRole('row', { name: /Anna Admin bearbeiten/ }))
+      await user.click(await screen.findByRole('button', { name: /Anna Admin bearbeiten/ }))
       const dialog = await screen.findByRole('dialog', { name: 'Benutzer bearbeiten' })
       await user.selectOptions(within(dialog).getByLabelText('Sprache'), 'EN')
       await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
@@ -215,7 +224,7 @@ describe('AdminUsersPage', () => {
         operation === UPDATE ? { data: { updateUser: { ...luca, language: 'EN' } } } : okQuery(),
       )
 
-      await user.click(await screen.findByRole('row', { name: /Luca Muster bearbeiten/ }))
+      await user.click(await screen.findByRole('button', { name: /Luca Muster bearbeiten/ }))
       const dialog = await screen.findByRole('dialog', { name: 'Benutzer bearbeiten' })
       await user.selectOptions(within(dialog).getByLabelText('Sprache'), 'EN')
       await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
@@ -229,7 +238,7 @@ describe('AdminUsersPage', () => {
         operation === UPDATE ? graphqlError('LAST_ADMIN', 'role') : okQuery(),
       )
 
-      await user.click(await screen.findByRole('row', { name: /Luca Muster bearbeiten/ }))
+      await user.click(await screen.findByRole('button', { name: /Luca Muster bearbeiten/ }))
       const dialog = await screen.findByRole('dialog', { name: 'Benutzer bearbeiten' })
       await user.selectOptions(within(dialog).getByLabelText('Rolle'), 'ADMIN')
       await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
@@ -244,7 +253,7 @@ describe('AdminUsersPage', () => {
         operation === UPDATE ? graphqlError('FORBIDDEN') : okQuery(),
       )
 
-      await user.click(await screen.findByRole('row', { name: /Luca Muster bearbeiten/ }))
+      await user.click(await screen.findByRole('button', { name: /Luca Muster bearbeiten/ }))
       const dialog = await screen.findByRole('dialog', { name: 'Benutzer bearbeiten' })
       await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
 
@@ -370,7 +379,9 @@ describe('AdminUsersPage', () => {
       expect(await screen.findByText('Benutzer gelöscht.')).toBeVisible()
       expect(calls(DELETE)).toEqual([{ id: 'u-luca' }])
       await waitFor(() =>
-        expect(screen.queryByRole('row', { name: /Luca Muster/ })).not.toBeInTheDocument(),
+        expect(
+          screen.queryByRole('button', { name: /Luca Muster bearbeiten/ }),
+        ).not.toBeInTheDocument(),
       )
       expect(screen.getByText('1 Benutzer')).toBeVisible()
     })
@@ -384,7 +395,7 @@ describe('AdminUsersPage', () => {
       await user.click(within(dialog).getByRole('button', { name: 'Abbrechen' }))
 
       await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
-      expect(screen.getByRole('row', { name: /Luca Muster/ })).toBeVisible()
+      expect(screen.getByRole('button', { name: /Luca Muster bearbeiten/ })).toBeVisible()
       expect(calls(DELETE)).toHaveLength(0)
     })
 
@@ -415,7 +426,7 @@ describe('AdminUsersPage', () => {
       const open = screen.getByRole('alertdialog', { name: 'Benutzer löschen?' })
       expect(open).toBeVisible()
       await user.click(within(open).getByRole('button', { name: 'Abbrechen' }))
-      expect(await screen.findByRole('row', { name: /Luca Muster/ })).toBeVisible()
+      expect(await screen.findByRole('button', { name: /Luca Muster bearbeiten/ })).toBeVisible()
     })
   })
 })
