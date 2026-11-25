@@ -8,6 +8,7 @@ import { ActivitiesPage } from './features/activities/ActivitiesPage'
 import { AdminRoute } from './features/admin-users/AdminRoute'
 import { AdminUsersPage } from './features/admin-users/AdminUsersPage'
 import { BodyStatsPage } from './features/body-stats/BodyStatsPage'
+import { EventsPage } from './features/events/EventsPage'
 import { SettingsPage } from './features/settings/SettingsPage'
 import { primaryNavItems, type NavItemId } from './navigation/navItems'
 import { paths } from './navigation/paths'
@@ -36,7 +37,7 @@ export const routes: RouteObject[] = [
       { path: paths.activities, element: <ActivitiesPage /> },
       { path: paths.garage, element: areaPlaceholder('garage') },
       { path: paths.bodyStats, element: <BodyStatsPage /> },
-      { path: paths.events, element: areaPlaceholder('events') },
+      { path: paths.events, element: <EventsPage /> },
       { path: paths.settings, element: <SettingsPage /> },
       {
         path: paths.adminUsers,

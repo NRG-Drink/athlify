@@ -8,6 +8,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Bogus" Version="35.6.5" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.14" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.14" />
 		<PackageReference Include="TUnit" Version="1.81.16" />
@@ -35,6 +36,12 @@
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	  <None Update="AuthEndpoints\PasswordChange\appsettings.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="DatabaseSeeds\appsettings.example.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="DatabaseSeeds\appsettings.json" Condition="Exists('DatabaseSeeds\appsettings.json')">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	</ItemGroup>

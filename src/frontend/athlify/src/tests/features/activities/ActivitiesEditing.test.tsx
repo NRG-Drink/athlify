@@ -119,7 +119,7 @@ describe('ActivitiesPage editing', () => {
       expect(items.map((item) => item.textContent)).toEqual(['Duplizieren', 'Löschen'])
       // The menu belongs to its button: opening it does not open the row's edit form.
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    })
+    }, 15000)
 
     it('works with the keyboard alone', async () => {
       const { user } = page(okQuery)

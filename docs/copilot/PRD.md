@@ -74,9 +74,10 @@ Priorities (Must/Should/Could Have) are in the
   GraphQL API without authentication, Strava synchronization or Dashboard
   analyses; it is not the complete product.
 - The frontend app shell exists under `src/frontend/athlify/`. The Body-Stats
-  page, the Activities list (with add, edit, duplicate and delete) and the
-  Settings page (profile, language and password) and the Administrator-only
-  user management are implemented and talk to the backend; Dashboard, Garage and Events remain placeholders.
+  page, the Activities list (with add, edit, duplicate and delete), the Settings
+  page (profile, language and password), the Events management page and the
+  Administrator-only user management are implemented and talk to the backend;
+  Dashboard and Garage remain placeholders.
 - Personal data must remain isolated to the logged-in user.
 - The user interface is bilingual in German and English; documentation is
   English-only.
