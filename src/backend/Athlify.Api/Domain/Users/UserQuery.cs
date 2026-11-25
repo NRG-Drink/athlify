@@ -7,7 +7,6 @@ namespace Athlify.Api.Domain.Users;
 [QueryType]
 public static partial class UserQuery
 {
-    /// <summary>The signed-in user.</summary>
     public static async Task<User> GetMe(
         ICurrentUser currentUser,
         AthlifyDbContext db,

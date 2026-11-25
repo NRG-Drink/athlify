@@ -85,7 +85,6 @@ public class DbSeederTests
 
         new DbSeeder().Seed(context, ownerId);
 
-        // The one existing activity plus the full seed.
         await Assert.That(await context.Activities.IgnoreQueryFilters().CountAsync(a => a.UserId == ownerId))
             .IsEqualTo(1 + DbSeeder.BaseActivityCount + DbSeeder.ExtraActivityCount);
         await Assert.That(await context.Activities.IgnoreQueryFilters()

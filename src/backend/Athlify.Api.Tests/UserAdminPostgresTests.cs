@@ -37,13 +37,10 @@ public class UserAdminPostgresTests
         var adaId = await GlobalIdAsync(ada, "ada@example.com");
         var boId = await GlobalIdAsync(ada, "bo@example.com");
 
-        // Each administrator demotes the other: both count two administrators, so only serializability keeps one.
         var results = await Task.WhenAll(
             PostAsync(ada, UpdateUser, new { id = boId, input = new { role = "USER" } }),
             PostAsync(bo, UpdateUser, new { id = adaId, input = new { role = "USER" } }));
 
-        // The loser is retried against the committed state: it was demoted meanwhile (FORBIDDEN), or it still
-        // counts one administrator too few (LAST_ADMIN).
         var rejected = results.Count(root =>
             ErrorCodes(root).Intersect([DomainErrors.ForbiddenCode, DomainErrors.LastAdminCode]).Any());
         await Assert.That(rejected).IsEqualTo(1);
@@ -64,7 +61,6 @@ public class UserAdminPostgresTests
         var boId = await GlobalIdAsync(ada, "bo@example.com");
         const string deleteUser = "mutation($id: ID!) { deleteUser(id: $id) }";
 
-        // Each administrator deletes the other: both pass the administrator check, so only serializability keeps one.
         var results = await Task.WhenAll(
             PostAsync(ada, deleteUser, new { id = boId }),
             PostAsync(bo, deleteUser, new { id = adaId }));
@@ -115,13 +111,11 @@ public class UserAdminPostgresTests
         await Assert.That(root.TryGetProperty("errors", out _)).IsFalse();
         await Assert.That(await CountOwnedRowsAsync(factory, victimId)).IsEqualTo(0);
         await Assert.That(await CountOwnedRowsAsync(factory, survivorId)).IsGreaterThan(0);
-        // Both users were seeded alike, so exactly the victim's half of the join rows they added must be gone.
         var addedByUsers = joinRowsBefore - baselineJoinRows;
         await Assert.That(addedByUsers).IsGreaterThan(0);
         await Assert.That(await CountJoinRowsAsync(factory)).IsEqualTo(baselineJoinRows + addedByUsers / 2);
     }
 
-    /// <summary>Creates a user with records in every owned table, linked the way real data is (tags, vehicle, merge).</summary>
     private static async Task<int> SeedLinkedDataAsync(PostgresWebApplicationFactory factory, string username)
     {
         await using var scope = factory.Services.CreateAsyncScope();
@@ -158,7 +152,6 @@ public class UserAdminPostgresTests
         return user.Id;
     }
 
-    /// <summary>The user row plus every owned row of the user.</summary>
     private static async Task<int> CountOwnedRowsAsync(PostgresWebApplicationFactory factory, int userId)
     {
         await using var scope = factory.Services.CreateAsyncScope();
@@ -176,7 +169,6 @@ public class UserAdminPostgresTests
             + await db.RefreshTokens.IgnoreQueryFilters().CountAsync(e => e.UserId == userId);
     }
 
-    /// <summary>All rows of the join tables; the foreign keys cascade them when their owners are deleted.</summary>
     private static async Task<long> CountJoinRowsAsync(PostgresWebApplicationFactory factory)
     {
         await using var scope = factory.Services.CreateAsyncScope();
@@ -188,7 +180,6 @@ public class UserAdminPostgresTests
             """).SingleAsync();
     }
 
-    /// <summary>The development provisioner seeds an administrator at startup; the test needs exactly the two it creates.</summary>
     private static async Task DemoteSeededAdministratorsAsync(PostgresWebApplicationFactory factory)
     {
         await using var scope = factory.Services.CreateAsyncScope();

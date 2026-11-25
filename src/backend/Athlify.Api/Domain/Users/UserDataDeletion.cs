@@ -16,7 +16,6 @@ public static class UserDataDeletion
     private static readonly MethodInfo RemoveOwnedMethod =
         typeof(UserDataDeletion).GetMethod(nameof(RemoveOwnedAsync), BindingFlags.NonPublic | BindingFlags.Static)!;
 
-    /// <summary>Marks the user and all their records as deleted; the caller saves.</summary>
     public static async Task RemoveAsync(AthlifyDbContext db, User user, CancellationToken cancellationToken)
     {
         var ownedTypes = db.Model.GetEntityTypes()
@@ -27,7 +26,6 @@ public static class UserDataDeletion
             await (Task)RemoveOwnedMethod.MakeGenericMethod(type).Invoke(null, [db, user.Id, cancellationToken])!;
         }
 
-        // SeedMarker is not an Entity and has no IOwned, but it belongs to the user as well.
         db.SeedMarkers.RemoveRange(await db.SeedMarkers
             .IgnoreQueryFilters()
             .Where(m => m.UserId == user.Id)
@@ -39,7 +37,6 @@ public static class UserDataDeletion
     private static async Task RemoveOwnedAsync<T>(AthlifyDbContext db, int userId, CancellationToken cancellationToken)
         where T : class, IOwned
     {
-        // All filters off: soft-deleted activities belong to the user too.
         var rows = await db.Set<T>().IgnoreQueryFilters().Where(e => e.UserId == userId).ToListAsync(cancellationToken);
         db.RemoveRange(rows);
     }

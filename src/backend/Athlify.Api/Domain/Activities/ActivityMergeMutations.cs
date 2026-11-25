@@ -9,7 +9,6 @@ namespace Athlify.Api.Domain.Activities;
 [MutationType]
 public static partial class ActivityMergeMutation
 {
-    /// <summary>Merges at least two of the user's active activities that are not merged yet.</summary>
     public static async Task<ActivityMerge> CreateActivityMerge(
         string? name,
         [ID<Activity>] IReadOnlyList<int> activityIds,
@@ -80,10 +79,6 @@ public static partial class ActivityMergeMutation
         return await ActivityMergeNode.GetAsync(mergeId, query, db, cancellationToken);
     }
 
-    /// <summary>
-    /// Removes an activity from the merge. Returns <c>null</c> when the merge does not exist, or when it was
-    /// dissolved because fewer than two active activities remained.
-    /// </summary>
     public static async Task<ActivityMerge?> RemoveActivityFromMerge(
         [ID<ActivityMerge>] int mergeId,
         [ID<Activity>] int activityId,
@@ -106,7 +101,6 @@ public static partial class ActivityMergeMutation
         return kept ? await ActivityMergeNode.GetAsync(mergeId, query, db, cancellationToken) : null;
     }
 
-    /// <summary>Dissolves the merge; its activities remain unchanged.</summary>
     [ID<ActivityMerge>]
     public static async Task<int?> DeleteActivityMerge(
         [ID<ActivityMerge>] int id,

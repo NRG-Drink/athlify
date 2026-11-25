@@ -11,7 +11,6 @@ public static partial class ActivityQuery
     private static readonly Func<SortDefinition<Activity>, SortDefinition<Activity>> DefaultOrder =
         sort => sort.AddDescending(a => a.Date).AddDescending(a => a.Id);
 
-    /// <summary>Active activities, newest first; soft-deleted ones are never returned.</summary>
     [UseFiltering]
     [UseSorting]
     public static async Task<PageConnection<Activity>> GetActivities(

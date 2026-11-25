@@ -14,7 +14,6 @@ public static partial class TagQuery
     private static readonly Func<SortDefinition<Tag>, SortDefinition<Tag>> DefaultOrder =
         sort => sort.AddAscending(t => t.Name).AddAscending(t => t.Id);
 
-    /// <summary>The user's tags, alphabetically.</summary>
     [UseFiltering]
     [UseSorting]
     public static async Task<PageConnection<Tag>> GetTags(
@@ -65,14 +64,12 @@ public static partial class TagMutation
         return existing;
     }
 
-    /// <summary>Deletes the tag and its links; the tagged records remain.</summary>
     [ID<Tag>]
     public static async Task<int?> DeleteTag(
         [ID<Tag>] int id,
         AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
-        // Soft-deleted activities keep their links, so they are loaded too.
         var existing = await db.Tags
             .IgnoreQueryFilters([AthlifyDbContext.NotDeletedFilter])
             .Include(t => t.Activities)
@@ -105,14 +102,12 @@ public static partial class TagMutation
         }
     }
 
-    /// <summary>The unique index catches a duplicate that a concurrent request saved after the check.</summary>
     private static async Task SaveAsync(AthlifyDbContext db, CancellationToken cancellationToken)
     {
         try
         {
             await db.SaveChangesAsync(cancellationToken);
         }
-        // Only a unique violation (SQLSTATE 23505) is a duplicate name; other database errors must surface as they are.
         catch (DbUpdateException exception) when (exception.InnerException is PostgresException { SqlState: "23505" })
         {
             throw DomainErrors.Validation("A tag with this name already exists.");

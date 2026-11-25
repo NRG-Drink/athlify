@@ -23,7 +23,6 @@ public static partial class ActivityMutation
         return (await ActivityNode.GetAsync(created.Id, query, db, cancellationToken))!;
     }
 
-    /// <summary>Updates the editable fields; source, Strava id and calculated values stay server-owned.</summary>
     public static async Task<Activity?> UpdateActivity(
         [ID<Activity>] int id,
         ActivityInput activity,
@@ -48,10 +47,6 @@ public static partial class ActivityMutation
         return await ActivityNode.GetAsync(id, query, db, cancellationToken);
     }
 
-    /// <summary>
-    /// Soft delete: the activity keeps its data and links but disappears from every view. A merge left with
-    /// fewer than two active activities is dissolved.
-    /// </summary>
     [ID<Activity>]
     public static async Task<int?> DeleteActivity(
         [ID<Activity>] int id,
@@ -74,7 +69,6 @@ public static partial class ActivityMutation
         return id;
     }
 
-    /// <summary>An active activity with its links and, if merged, the merge with all its members.</summary>
     private static Task<Activity?> LoadWithMergeAsync(AthlifyDbContext db, int id, CancellationToken cancellationToken) =>
         db.Activities
             .IgnoreQueryFilters([AthlifyDbContext.NotDeletedFilter])

@@ -14,7 +14,6 @@ public interface ICookieService
 
 public static class CookieServiceExtensions
 {
-    /// <summary>The client address of the current request, or <c>"unknown"</c> outside of one.</summary>
     public static string GetClientIp(this ICookieService cookieService, IHttpContextAccessor httpContextAccessor) =>
         httpContextAccessor.HttpContext is { } http ? cookieService.GetIpAddress(http) : "unknown";
 }

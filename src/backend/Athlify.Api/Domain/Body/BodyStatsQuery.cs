@@ -20,14 +20,9 @@ public static partial class BodyStatsQuery
         return result;
     }
 
-    // The id is the tie-breaker, so the cursor is stable for measurements with the same date.
     private static readonly Func<SortDefinition<BodyStats>, SortDefinition<BodyStats>> DefaultOrder =
         sort => sort.AddDescending(b => b.Date).AddDescending(b => b.Id);
 
-    /// <summary>
-    /// Relay connection (cursor paging), newest first. A page of 200 stays well inside the query
-    /// cost limits; clients that need the whole history load further pages.
-    /// </summary>
     [UseFiltering]
     [UseSorting]
     public static async Task<PageConnection<BodyStats>> GetBodyStats(

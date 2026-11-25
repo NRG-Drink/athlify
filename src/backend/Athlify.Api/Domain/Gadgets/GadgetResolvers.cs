@@ -67,10 +67,6 @@ public static partial class GadgetMutation
         return await GadgetNode.GetAsync(id, query, db, cancellationToken);
     }
 
-    /// <summary>
-    /// Deletes the gadget with its maintenance cycles. Its links to activities (soft-deleted ones included),
-    /// bicycles and tags are removed; those records remain.
-    /// </summary>
     [ID<Gadget>]
     public static async Task<int?> DeleteGadget(
         [ID<Gadget>] int id,

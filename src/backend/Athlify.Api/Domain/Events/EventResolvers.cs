@@ -13,7 +13,6 @@ public static partial class EventQuery
     private static readonly Func<SortDefinition<Event>, SortDefinition<Event>> DefaultOrder =
         sort => sort.AddDescending(e => e.StartDate).AddDescending(e => e.Id);
 
-    /// <summary>The user's Events, latest start first.</summary>
     [UseFiltering]
     [UseSorting]
     public static async Task<PageConnection<Event>> GetEvents(
@@ -65,7 +64,6 @@ public static partial class EventMutation
         return await EventNode.GetAsync(id, query, db, cancellationToken);
     }
 
-    /// <summary>Deletes the Event and its tag links; the tags remain.</summary>
     [ID<Event>]
     public static async Task<int?> DeleteEvent(
         [ID<Event>] int id,

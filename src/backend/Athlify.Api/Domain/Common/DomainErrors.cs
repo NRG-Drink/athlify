@@ -51,13 +51,8 @@ public sealed class ValidationErrors
     public void Add(string message) =>
         _errors.Add(ErrorBuilder.New().SetMessage(message).SetCode(DomainErrors.ValidationCode).Build());
 
-    /// <summary>Adds an error that names the input field it belongs to, in <c>extensions.field</c>.</summary>
     public void Add(string message, string field) => Add(message, field, rule: null);
 
-    /// <summary>
-    /// Adds an error with the input field and the rule that failed, in <c>extensions.rule</c>, so a client can
-    /// show a matching message.
-    /// </summary>
     public void Add(string message, string field, string? rule)
     {
         var error = ErrorBuilder.New()
@@ -73,7 +68,6 @@ public sealed class ValidationErrors
         if (condition) Add(message);
     }
 
-    /// <summary>Adds an error when a text is required but empty, or longer than <paramref name="maxLength"/>.</summary>
     public void Text(string? value, string field, int maxLength, bool required)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -94,7 +88,6 @@ public sealed class ValidationErrors
 
 public static class UtcDateTime
 {
-    /// <summary>Npgsql only writes UTC values to <c>timestamptz</c>; inputs with an offset are converted.</summary>
     public static DateTime Normalize(DateTime value) => value.Kind switch
     {
         DateTimeKind.Utc => value,

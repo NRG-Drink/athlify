@@ -23,7 +23,6 @@ public static class DevelopmentUserProvisioner
         DevelopmentUserOptions options,
         CancellationToken cancellationToken = default)
     {
-        // No user is signed in during startup, so the owner filter must not run.
         var existing = await db.Users
             .IgnoreQueryFilters([AthlifyDbContext.OwnerFilter])
             .FirstOrDefaultAsync(u => u.Username == options.Username, cancellationToken);

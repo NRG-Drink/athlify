@@ -72,7 +72,6 @@ public static class UserAdminValidation
 [MutationType]
 public static partial class UserAdminMutation
 {
-    /// <summary>Creates an account. Administrators only.</summary>
     public static async Task<User> CreateUser(
         CreateUserInput input,
         ICurrentUser currentUser,
@@ -106,7 +105,6 @@ public static partial class UserAdminMutation
         }
         catch (DbUpdateException)
         {
-            // Lost a race against another create with the same username: the unique index caught it.
             db.ChangeTracker.Clear();
             if (await AdminUsers.All(db).AnyAsync(u => u.Username == username, cancellationToken))
             {
@@ -119,10 +117,6 @@ public static partial class UserAdminMutation
         return user;
     }
 
-    /// <summary>
-    /// Changes another user's (or the administrator's own) name, language and role. A role change signs the
-    /// user out everywhere, so the new role applies to their next access token.
-    /// </summary>
     public static async Task<User> UpdateUser(
         [ID<User>] int id,
         UpdateUserInput input,
@@ -135,7 +129,6 @@ public static partial class UserAdminMutation
     {
         var clientIp = cookieService.GetClientIp(httpContextAccessor);
 
-        // Serializable: two concurrent demotions that each count enough administrators must not both commit.
         return await InSerializableTransactionAsync(db, async () =>
         {
             var caller = await AdminUsers.RequireAdminAsync(currentUser, db, cancellationToken);
@@ -165,12 +158,6 @@ public static partial class UserAdminMutation
 
     private const int MaxSerializationAttempts = 3;
 
-    /// <summary>
-    /// Runs the work in one serializable transaction, inside the app's execution strategy (which retries transient
-    /// failures and refuses a transaction that code starts itself) and with a retry when PostgreSQL aborts one of
-    /// two conflicting transactions. Every attempt starts from the stored state, so the work reads its own
-    /// authorization and invariants again.
-    /// </summary>
     private static Task<T> InSerializableTransactionAsync<T>(
         AthlifyDbContext db,
         Func<Task<T>> work,
@@ -190,20 +177,14 @@ public static partial class UserAdminMutation
                 }
                 catch (Exception exception) when (attempt < MaxSerializationAttempts && IsSerializationFailure(exception))
                 {
-                    // Conflicting serializable transaction: try again.
                 }
             }
         });
 
-    /// <summary>Postgres aborts one of two conflicting serializable transactions with SQLSTATE 40001.</summary>
     private static bool IsSerializationFailure(Exception exception) =>
         (exception as PostgresException ?? exception.InnerException as PostgresException)?.SqlState
             == PostgresErrorCodes.SerializationFailure;
 
-    /// <summary>
-    /// Sets a new password for a user and signs them out everywhere. Administrators only; the administrator
-    /// knows the new password, so the user should change it in the settings afterwards.
-    /// </summary>
     public static async Task<User> ResetUserPassword(
         [ID<User>] int id,
         ResetUserPasswordInput input,
@@ -221,7 +202,6 @@ public static partial class UserAdminMutation
         var target = await FindAsync(db, id, cancellationToken);
         target.PasswordHash = hashService.HashPassword(input.NewPassword);
 
-        // Marked here, saved below: the new hash and the revocation commit together or not at all.
         await tokenService.RevokeAllForUserAsync(
             target.Id, cookieService.GetClientIp(httpContextAccessor), RefreshToken.RevokeReason.PasswordChanged,
             cancellationToken);
@@ -230,11 +210,6 @@ public static partial class UserAdminMutation
         return target;
     }
 
-    /// <summary>
-    /// Permanently deletes a user with all their data: activities, bicycles, gadgets, tags, events, body stats,
-    /// Strava connection and refresh tokens. Administrators only; nobody can delete their own account, and the
-    /// check runs serializable, so the last administrator stays even when two administrators delete each other.
-    /// </summary>
     [ID<User>]
     public static async Task<int> DeleteUser(
         [ID<User>] int id,
@@ -242,7 +217,6 @@ public static partial class UserAdminMutation
         AthlifyDbContext db,
         CancellationToken cancellationToken)
     {
-        // Serializable: two administrators deleting each other at the same moment must not both commit.
         return await InSerializableTransactionAsync(db, async () =>
         {
             var caller = await AdminUsers.RequireAdminAsync(currentUser, db, cancellationToken);

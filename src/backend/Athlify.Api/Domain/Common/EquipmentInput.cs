@@ -39,7 +39,6 @@ public static class EquipmentValidation
         errors.ThrowIfAny();
     }
 
-    /// <summary>Copies the shared fields; the links (tags and so on) are applied by the caller.</summary>
     public static void Apply(Equipment target, EquipmentInput input)
     {
         target.Brand = input.Brand.Trim();

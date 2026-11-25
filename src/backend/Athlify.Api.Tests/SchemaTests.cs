@@ -71,7 +71,6 @@ public class SchemaTests : WebApiTestBase
         await Assert.That(sdl).DoesNotContain("tokenHash");
     }
 
-    // Hot Chocolate writes the platform newline, so the SDL is normalised to "\n" once here.
     private async Task<string> FetchSdl() =>
         (await Factory.CreateClient().GetStringAsync("/graphql?sdl")).Replace("\r\n", "\n");
 

@@ -61,7 +61,6 @@ public class BodyStatsQueryTests : WebApiTestBase
     {
         var client = await CreateUserClientAsync();
         var sameDay = DateTime.UtcNow.Date;
-        // Equal dates: the id decides the order, so the cursor must not skip or repeat entries.
         foreach (var weight in new[] { 70.0, 71.0, 72.0 })
             await AddAsync(client, Input(date: sameDay, weight: weight));
 

@@ -39,7 +39,6 @@ public class PostgresWebApplicationFactory : MyWebApplicationFactory
             .ConnectionString;
         RemoveDbContextRegistrations(services);
         services.AddDbContext<AthlifyDbContext>(options => // Like the app: EnrichNpgsqlDbContext (Aspire) turns on the retrying execution strategy, which refuses
-        // a transaction that code starts itself unless it runs inside the strategy.
         options.UseNpgsql(connectionString, npgsql => npgsql.EnableRetryOnFailure()));
     }
 

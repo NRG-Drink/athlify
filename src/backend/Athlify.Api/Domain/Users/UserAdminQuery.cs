@@ -6,7 +6,6 @@ namespace Athlify.Api.Domain.Users;
 [QueryType]
 public static partial class UserAdminQuery
 {
-    /// <summary>Every user. Administrators only; shows accounts, never anyone's personal records.</summary>
     public static async Task<List<User>> GetUsers(
         ICurrentUser currentUser,
         AthlifyDbContext db,

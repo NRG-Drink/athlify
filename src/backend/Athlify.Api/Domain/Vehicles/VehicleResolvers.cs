@@ -10,7 +10,6 @@ namespace Athlify.Api.Domain.Vehicles;
 [QueryType]
 public static partial class VehicleQuery
 {
-    // Brand and model are never null, which keeps the keyset cursor simple; the id breaks ties.
     private static readonly Func<SortDefinition<Vehicle>, SortDefinition<Vehicle>> DefaultOrder =
         sort => sort.AddAscending(v => v.Brand).AddAscending(v => v.Model).AddAscending(v => v.Id);
 
@@ -65,10 +64,6 @@ public static partial class VehicleMutation
         return await VehicleNode.GetAsync(id, query, db, cancellationToken);
     }
 
-    /// <summary>
-    /// Deletes the bicycle with its maintenance cycles. Its activities remain without a bicycle, soft-deleted
-    /// ones included, because they still reference it; its links to gadgets and tags are removed.
-    /// </summary>
     [ID<Vehicle>]
     public static async Task<int?> DeleteVehicle(
         [ID<Vehicle>] int id,

@@ -38,10 +38,6 @@ public static class UpdateMeValidation
 [MutationType]
 public static partial class UserMutation
 {
-    /// <summary>
-    /// Changes the signed-in user's own name, language and password. A password change needs the current password
-    /// and revokes all refresh tokens, so every device has to sign in again.
-    /// </summary>
     public static async Task<User> UpdateMe(
         UpdateMeInput input,
         ICurrentUser currentUser,
@@ -55,7 +51,6 @@ public static partial class UserMutation
         var userId = currentUser.UserId ?? throw DomainErrors.NotAuthenticated();
         UpdateMeValidation.ThrowIfInvalid(input);
 
-        // The owner filter only finds the signed-in user.
         var user = await db.Users.SingleAsync(u => u.Id == userId, cancellationToken);
 
         var change = input.PasswordChange;
@@ -74,7 +69,6 @@ public static partial class UserMutation
         if (change is not null)
         {
             user.PasswordHash = hashService.HashPassword(change.NewPassword);
-            // Marked here, saved below: the new hash and the revocation commit together or not at all.
             await tokenService.RevokeAllForUserAsync(
                 userId, cookieService.GetClientIp(httpContextAccessor), RefreshToken.RevokeReason.PasswordChanged,
                 cancellationToken);

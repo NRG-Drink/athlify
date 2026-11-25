@@ -25,7 +25,6 @@ public class ArchitectureTests
             Collect(type, type.GetCustomAttributes(false), offenders);
             foreach (var member in type.GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
             {
-                // The one deliberate exception: [ID] on Entity.Id (see the comment there).
                 var attributes = type == typeof(Entity) && member.Name == nameof(Entity.Id)
                     ? member.GetCustomAttributes(false).Where(a => a is not IDAttribute)
                     : member.GetCustomAttributes(false);

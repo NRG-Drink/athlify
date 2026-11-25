@@ -51,7 +51,6 @@ public class UserAdminTests : WebApiTestBase
         password,
     };
 
-    // ---- list ----
 
     [Test]
     public async Task UsersReturnsAllUsersForAdmin()
@@ -62,7 +61,6 @@ public class UserAdminTests : WebApiTestBase
 
         var users = (await DataAsync(admin, UsersQuery)).GetProperty("users").EnumerateArray().ToList();
 
-        // The application also provisions its development administrator at startup.
         await Assert.That(users.Count).IsGreaterThanOrEqualTo(3);
         await Assert.That(users.Select(u => u.GetProperty("username").GetString()))
             .Contains(Luca).And.Contains("mia@example.com").And.Contains(Admin);
@@ -98,7 +96,6 @@ public class UserAdminTests : WebApiTestBase
         await Assert.That(activities.TryGetProperty("errors", out _)).IsTrue();
     }
 
-    // ---- create ----
 
     [Test]
     public async Task CreateUserStoresTheAccountAndTheUserCanBeFoundByPassword()
@@ -205,7 +202,6 @@ public class UserAdminTests : WebApiTestBase
         await Assert.That(extensions.GetProperty("rule").GetString()).IsEqualTo(rule);
     }
 
-    // ---- update ----
 
     [Test]
     public async Task UpdateUserChangesNameLanguageAndRole()
@@ -342,7 +338,6 @@ public class UserAdminTests : WebApiTestBase
         await Assert.That(ErrorCodes(root)).Contains(DomainErrors.ValidationCode);
     }
 
-    // ---- reset password ----
 
     [Test]
     public async Task ResetPasswordReplacesTheHashAndRevokesTokens()
@@ -386,7 +381,6 @@ public class UserAdminTests : WebApiTestBase
         await Assert.That(Hasher.VerifyPassword("old-secret", stored.PasswordHash)).IsTrue();
     }
 
-    // ---- delete ----
 
     private const string DeleteUser = "mutation($id: ID!) { deleteUser(id: $id) }";
 
@@ -409,7 +403,6 @@ public class UserAdminTests : WebApiTestBase
         await Assert.That(await CountUsersAsync(Luca)).IsEqualTo(0);
         await Assert.That(await CountOwnedRecordsAsync(lucaId)).IsEqualTo(0);
         await Assert.That(await GetRefreshTokensAsync(lucaId)).IsEmpty();
-        // Another user's data is untouched.
         await Assert.That(await CountUsersAsync("mia@example.com")).IsEqualTo(1);
         await Assert.That(await CountOwnedRecordsAsync(miaId)).IsGreaterThan(0);
     }
@@ -476,7 +469,6 @@ public class UserAdminTests : WebApiTestBase
         await Assert.That(root.TryGetProperty("errors", out _)).IsTrue();
     }
 
-    // ---- authorization ----
 
     [Test]
     public async Task RegularUserCannotCreateUpdateOrResetUsers()
@@ -528,7 +520,6 @@ public class UserAdminTests : WebApiTestBase
         await Assert.That(Nodes(data, "bodyStats").Count).IsEqualTo(0);
     }
 
-    // ---- rules ----
 
     [Test]
     public async Task RulesAllowUnchangedRoleAndOtherUsersDemotionWithSeveralAdmins()
@@ -556,7 +547,6 @@ public class UserAdminTests : WebApiTestBase
         await Assert.That(lastAdmin.Errors[0].Code).IsEqualTo(DomainErrors.LastAdminCode);
     }
 
-    // ---- helpers ----
 
     private async Task<int> CountUsersAsync(string username)
     {

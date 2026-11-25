@@ -17,14 +17,11 @@ public class DbSeeder : IDbSeeder
 
     public void Seed(AthlifyDbContext context, int ownerId)
     {
-        // Without a marker, days the user deleted would be refilled on every start.
         SeedOnce(context, ownerId, BodyStatsSeedKey, () => AddBodyStats(context, ownerId));
         SeedOnce(context, ownerId, ActivitySeedKey, () => AddActivities(context, ownerId));
-        // Extra rides so the list spans several pages; a separate marker tops up users seeded before.
         SeedOnce(context, ownerId, MoreActivitiesSeedKey, () => AddMoreActivities(context, ownerId));
     }
 
-    /// <summary>Runs <paramref name="addFixture"/> unless <paramref name="key"/> is marked, then saves fixture and marker together.</summary>
     private static void SeedOnce(AthlifyDbContext context, int ownerId, string key, Action addFixture)
     {
         var alreadySeeded = context.SeedMarkers
