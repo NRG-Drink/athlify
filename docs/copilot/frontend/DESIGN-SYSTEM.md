@@ -273,7 +273,7 @@ Before designing something new, check whether one of these already covers it
 | Chakra `Collapsible` | Folds rarely used form fields under "Weitere Details". |
 | `PrimaryNav`, `MobileNav`, `UserMenu`, `AppHeader` | Shell navigation with the indicator bar. |
 | `BrandMark` | The logo mark with the `volt` gradient. |
-| `AgGridTable` (`components/ag-grid/`) | The AG Grid wrapper used by the Events grid and the admin user list. Its theme follows the app color mode through `gridThemeFor` (`components/ag-grid/gridTheme.ts`). |
+| `AgGridTable` (`components/ag-grid/`) | The AG Grid wrapper used by the Activities, Events and Body-Stats grids and the admin user list. Its theme follows the app color mode through `gridThemeFor` (`components/ag-grid/gridTheme.ts`). |
 
 ## Grids
 

@@ -438,7 +438,14 @@
         "boneMass": "Geschätztes Gewicht deiner Knochen. Es ändert sich über Monate kaum."
       },
       "columns": {
-        "date": "Datum"
+        "actions": "Aktionen",
+        "date": "Datum",
+        "weight": "Gewicht",
+        "bodyFatPercentage": "Körperfett",
+        "musclePercentage": "Muskelanteil",
+        "waterPercentage": "Wasseranteil",
+        "boneMass": "Knochenmasse",
+        "comment": "Notiz"
       },
       "kpi": {
         "group": "Messwerte",
@@ -477,7 +484,6 @@
           "fromAfterTo": "Das Startdatum muss vor dem Enddatum liegen."
         }
       },
-      "history": "Verlauf",
       "add": {
         "open": "Messung erfassen",
         "title": "Neue Messung",
@@ -500,12 +506,8 @@
         "success": "Messung gelöscht.",
         "errors": {
           "failed": "Löschen fehlgeschlagen. Bitte versuche es nochmals."
-        }
-      },
-      "row": {
-        "actionsColumn": "Aktionen",
-        "edit": "Messung vom {{date}} bearbeiten",
-        "delete": "Messung vom {{date}} löschen"
+        },
+        "action": "Messung löschen"
       },
       "empty": {
         "title": "Noch keine Messungen",
@@ -515,36 +517,89 @@
       "loadFailed": "Body-Stats konnten nicht geladen werden.",
       "resultCount_one": "{{count}} Messung",
       "resultCount_other": "{{count}} Messungen",
-      "loadMore": "Weitere Messungen laden",
-      "loadMoreFailed": "Weitere Messungen konnten nicht geladen werden."
+      "controls": {
+        "title": "Messungen filtern",
+        "quickFilter": "Notizen durchsuchen",
+        "fromFilter": "Von",
+        "toFilter": "Bis",
+        "filterActions": "Filteraktionen",
+        "filterYtd": "Seit Jahresbeginn",
+        "resetFilters": "Filter zurücksetzen",
+        "resetTable": "Tabelle zurücksetzen",
+        "invalidDate": "Bitte ein gültiges Datum eingeben."
+      },
+      "views": {
+        "select": "Gespeicherte Ansicht auswählen",
+        "choose": "Ansicht auswählen",
+        "saveCurrent": "Aktuelle Ansicht speichern",
+        "name": "Name der Ansicht",
+        "duplicateName": "Eine Ansicht mit diesem Namen gibt es bereits.",
+        "save": "Ansicht speichern",
+        "delete": "Ansicht löschen",
+        "storageFailed": "Ansichten konnten nicht im Browser gespeichert werden."
+      },
+      "gridFilter": {
+        "none": "Kein Filter",
+        "options": {
+          "equals": "Ist gleich",
+          "notEqual": "Ist nicht gleich",
+          "contains": "Enthält",
+          "notContains": "Enthält nicht",
+          "startsWith": "Beginnt mit",
+          "endsWith": "Endet mit",
+          "blank": "Leer",
+          "notBlank": "Nicht leer",
+          "lessThan": "Kleiner als",
+          "greaterThan": "Grösser als",
+          "inRange": "Zwischen",
+          "before": "Vor",
+          "after": "Nach"
+        }
+      },
+      "columnPicker": {
+        "open": "Spalten",
+        "label": "Spalten auswählen"
+      },
+      "pin": {
+        "pinRow": "Messung anheften",
+        "unpinRow": "Anheftung lösen"
+      },
+      "table": {
+        "caption": "Messungen"
+      },
+      "emptyValue": "—"
     },
     "events": {
-      "controls": { "title": "Events filtern" },
-        "gridFilter": {
-          "none": "Kein Filter",
-          "options": {
-            "equals": "Ist gleich",
-            "notEqual": "Ist nicht gleich",
-            "contains": "Enthält",
-            "notContains": "Enthält nicht",
-            "startsWith": "Beginnt mit",
-            "endsWith": "Endet mit",
-            "blank": "Leer",
-            "notBlank": "Nicht leer",
-            "lessThan": "Kleiner als",
-            "greaterThan": "Grösser als",
-            "inRange": "Zwischen",
-            "before": "Vor",
-            "after": "Nach"
-          }
-        },
+      "controls": {
+        "title": "Events filtern"
+      },
+      "gridFilter": {
+        "none": "Kein Filter",
+        "options": {
+          "equals": "Ist gleich",
+          "notEqual": "Ist nicht gleich",
+          "contains": "Enthält",
+          "notContains": "Enthält nicht",
+          "startsWith": "Beginnt mit",
+          "endsWith": "Endet mit",
+          "blank": "Leer",
+          "notBlank": "Nicht leer",
+          "lessThan": "Kleiner als",
+          "greaterThan": "Grösser als",
+          "inRange": "Zwischen",
+          "before": "Vor",
+          "after": "Nach"
+        }
+      },
       "filterYtd": "Dieses Jahr",
       "filterActions": "Filteraktionen",
       "resetFilters": "Filter zurücksetzen",
       "quickFilter": "Events durchsuchen",
       "fromFilter": "Von",
       "toFilter": "Bis",
-      "filter": { "invalidDate": "Bitte ein gültiges Datum eingeben." },
+      "filter": {
+        "invalidDate": "Bitte ein gültiges Datum eingeben."
+      },
       "views": {
         "select": "Gespeicherte Ansichten",
         "choose": "Ansicht auswählen",
@@ -564,7 +619,10 @@
         "success": "Event hinzugefügt.",
         "failed": "Event konnte nicht hinzugefügt werden."
       },
-      "columnPicker": { "open": "Spalten", "label": "Spalten auswählen" },
+      "columnPicker": {
+        "open": "Spalten",
+        "label": "Spalten auswählen"
+      },
       "columns": {
         "actions": "Aktionen",
         "id": "ID",
@@ -584,7 +642,10 @@
         "GOAL": "Ziel",
         "OTHER": "Sonstiges"
       },
-      "typeFilter": { "ariaLabel": "Nach Eventtyp filtern", "selectAll": "Alle auswählen" },
+      "typeFilter": {
+        "ariaLabel": "Nach Eventtyp filtern",
+        "selectAll": "Alle auswählen"
+      },
       "pin": {
         "pinRow": "Event anheften",
         "unpinRow": "Anheftung lösen"
@@ -600,7 +661,9 @@
       },
       "emptyValue": "—",
       "loadFailed": "Events konnten nicht geladen werden.",
-      "table": { "caption": "Events" }
+      "table": {
+        "caption": "Events"
+      }
     },
     "checklist": {
       "search": "Suchen …",

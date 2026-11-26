@@ -20,6 +20,7 @@ considered before creating a frontend-specific ADR.
 | [ADR-005](ADR-005-theme-tokens.md) | "Night Ride" theme as Chakra semantic tokens | Proposed |
 | [ADR-007](ADR-007-domain-page-pattern.md) | Domain pages as feature folders with Relay fragments | Proposed |
 | [ADR-012](ADR-012-store-updates-for-server-sorted-lists.md) | Store updates for server-sorted, filtered lists (amends ADR-007 rule 4) | Proposed |
+| [ADR-013](ADR-013-grid-lists-fetch-outside-the-relay-store.md) | Grid lists fetch rows outside the Relay store (amends ADR-007 rule 4, ADR-012) | Proposed |
 
 The API style is a shared decision; see
 [shared ADR-001](../../adr/ADR-001-graphql-api-contract.md), and the

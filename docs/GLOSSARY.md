@@ -171,11 +171,11 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
     comparisons. Activities also use an inclusive date range in their URL-backed
     list filters.
 
-  **Saved view** — A named, browser-local Activities grid preset containing its
+  **Saved view** — A named, browser-local Activities, Events or Body-Stats grid preset containing its
     filters, sort order and column layout. It can be applied or deleted by the
     current browser user; it is not shared or synchronized to another device.
 
-  **Pinned Activity** — A temporary Activities-grid row shown above the
+  **Pinned Activity** — A temporary Activities-grid row (Events and Body-Stats grids pin their rows the same way) shown above the
     server-filtered results. Users can pin multiple activities at once and
     unpin them independently; creation pins the new activity until it is
     unpinned.

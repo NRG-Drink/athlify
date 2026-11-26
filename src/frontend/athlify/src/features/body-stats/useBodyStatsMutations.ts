@@ -3,7 +3,6 @@ import { ConnectionHandler, ROOT_ID } from 'relay-runtime'
 import { useTranslation } from 'react-i18next'
 import { toaster } from '../../components/ui/toaster'
 import { removeFromConnections } from '../../relay/removeFromConnections'
-import { useBodyStatsHistorySort } from './bodyStatsSort'
 import type { useBodyStatsMutationsAddMutation } from './__generated__/useBodyStatsMutationsAddMutation.graphql'
 import type { useBodyStatsMutationsDeleteMutation } from './__generated__/useBodyStatsMutationsDeleteMutation.graphql'
 import type { useBodyStatsMutationsUpdateMutation } from './__generated__/useBodyStatsMutationsUpdateMutation.graphql'
@@ -48,21 +47,18 @@ const deleteMutation = graphql`
 
 export type BodyStatsInput = useBodyStatsMutationsAddMutation['variables']['input']
 
-/** Keys of the analytics and history connections edited by Body-Stats mutations. */
+/** Key of the analytics connection edited by Body-Stats mutations. */
 const BODY_STATS_ANALYTICS_CONNECTION_KEY = 'BodyStatsPage_analytics__bodyStats'
-const BODY_STATS_HISTORY_CONNECTION_KEY = 'BodyStatsPage_history__bodyStats'
 
-/** The history connection is stored per `order`, so its id needs the order the table shows. */
-const connectionIds = (historyOrder: ReturnType<typeof useBodyStatsHistorySort>['order']) => [
+const connectionIds = () => [
   ConnectionHandler.getConnectionID(ROOT_ID, BODY_STATS_ANALYTICS_CONNECTION_KEY),
-  ConnectionHandler.getConnectionID(ROOT_ID, BODY_STATS_HISTORY_CONNECTION_KEY, {
-    order: historyOrder,
-  }),
 ]
 
 interface Callbacks {
   /** Called after the server confirmed the change, so the dialog can close. */
   onSuccess: () => void
+  /** Called when the server or the network rejected the change, so an edited cell can be restored. */
+  onFailure?: () => void
 }
 
 interface DeleteCallbacks {
@@ -76,7 +72,6 @@ interface DeleteCallbacks {
  * the user gets a toast for every outcome.
  */
 export function useBodyStatsMutations() {
-  const { order: historyOrder } = useBodyStatsHistorySort()
   const { t } = useTranslation()
   const environment = useRelayEnvironment()
   const [commitAdd, isAdding] = useMutation<useBodyStatsMutationsAddMutation>(addMutation)
@@ -90,11 +85,11 @@ export function useBodyStatsMutations() {
   }
 
   const removeLocally = (id: string) =>
-    removeFromConnections(environment, connectionIds(historyOrder), id)
+    removeFromConnections(environment, connectionIds(), id)
 
   const add = (input: BodyStatsInput, { onSuccess }: Callbacks) =>
     commitAdd({
-      variables: { input, connections: connectionIds(historyOrder) },
+      variables: { input, connections: connectionIds() },
       onCompleted: (response, errors) => {
         if (errors?.length || !response.addBodyStats) {
           fail('bodyStats.add.errors.saveFailed')
@@ -106,12 +101,13 @@ export function useBodyStatsMutations() {
       onError: () => fail('bodyStats.add.errors.saveFailed'),
     })
 
-  const update = (id: string, input: BodyStatsInput, { onSuccess }: Callbacks) =>
+  const update = (id: string, input: BodyStatsInput, { onSuccess, onFailure }: Callbacks) =>
     commitUpdate({
       variables: { id, input },
       onCompleted: (response, errors) => {
         if (errors?.length) {
           fail('bodyStats.add.errors.saveFailed')
+          onFailure?.()
           return
         }
         if (!response.updateBodyStats) {
@@ -124,7 +120,10 @@ export function useBodyStatsMutations() {
         toaster.create({ type: 'success', title: t('bodyStats.edit.success') })
         onSuccess()
       },
-      onError: () => fail('bodyStats.add.errors.saveFailed'),
+      onError: () => {
+        fail('bodyStats.add.errors.saveFailed')
+        onFailure?.()
+      },
     })
 
   const remove = (id: string, { onSettled }: DeleteCallbacks) =>
