@@ -38,7 +38,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
       - name: Run Pipeline 
-        run: dotnet run -c Release -- test-only
+        run: dotnet run -c Release -- --test-only
         working-directory: "src/backend/Athlify.Build"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
