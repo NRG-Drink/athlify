@@ -17,7 +17,7 @@ import {
 import type { DashboardTableRow } from './dashboardTableRows'
 
 export interface DashboardTableProps {
-  rows: readonly DashboardTableRow[]
+  rows: DashboardTableRow[]
   open: boolean
   onOpenChange: (open: boolean) => void
 }
@@ -44,6 +44,8 @@ const numericColumns: readonly NumericColumn[] = [
   { id: 'atl', decimals: 0, width: 100 },
   { id: 'tsb', decimals: 0, width: 100 },
 ]
+
+const defaultColDef: ColDef<DashboardTableRow> = { resizable: true, sortable: true }
 
 function readStoredColumnState() {
   try {
@@ -180,9 +182,9 @@ export function DashboardTable({ rows, open, onOpenChange }: DashboardTableProps
                 key={i18n.resolvedLanguage}
                 ariaLabel={t('dashboard.table.caption')}
                 height="clamp(20rem, 60dvh, 36rem)"
-                rowData={[...rows]}
+                rowData={rows}
                 columnDefs={columnDefs}
-                defaultColDef={{ resizable: true, sortable: true }}
+                defaultColDef={defaultColDef}
                 getRowId={({ data }) => data.key}
                 suppressColumnVirtualisation
                 tooltipShowDelay={500}

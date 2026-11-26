@@ -4,6 +4,7 @@ import type { Environment } from 'relay-runtime'
 import type { ActivityRow, BodyRow } from '../../lib/aggregate'
 import { CTL_DAYS } from '../../lib/fitness'
 import { localDateKey, type DateRange } from '../../lib/period'
+import { ALL_SINCE } from './useDashboardPageState'
 import { activityFiltersToWhere, type ActivityFilters } from '../activities/activityFilters'
 import { dayEndIso, dayStartIso } from '../body-stats/BodyStatsGridQuery'
 import type {
@@ -89,14 +90,14 @@ export interface DashboardEvent {
 }
 
 export interface DashboardData {
-  /** Includes the warm-up days before the range; the page cuts them off for display. */
+  /** Includes the warm-up days before the range; the view cuts them off for display. */
   activities: ActivityRow[]
   bodyStats: BodyRow[]
   events: DashboardEvent[]
 }
 
-export type DashboardDataState =
-  { status: 'loading' } | { status: 'failed' } | { status: 'ready'; data: DashboardData }
+export type LoadState<T> =
+  { status: 'loading' } | { status: 'failed' } | { status: 'ready'; data: T }
 
 interface Connection<T> {
   nodes: ReadonlyArray<T> | null | undefined
@@ -124,15 +125,30 @@ function shiftDays(dateKey: string, days: number): Date {
   return new Date(year, month - 1, day + days)
 }
 
-export function activitiesWhere(
-  range: DateRange,
-  filters: ActivityFilters,
-): useDashboardDataActivitiesQuery$variables['where'] {
-  const start = dayStartIso(localDateKey(shiftDays(range.from, -WARM_UP_DAYS)))
+type ActivitiesWhere = useDashboardDataActivitiesQuery$variables['where']
+
+/** The activities of the range that match the type and tag filters. */
+export function activitiesWhere(range: DateRange, filters: ActivityFilters): ActivitiesWhere {
+  const start = dayStartIso(range.from)
   const end = dayEndIso(range.to)
-  const conditions: NonNullable<useDashboardDataActivitiesQuery$variables['where']>[] = []
+  const conditions: NonNullable<ActivitiesWhere>[] = []
   if (start) conditions.push({ date: { gte: start } })
   if (end) conditions.push({ date: { lte: end } })
+  const filter = activityFiltersToWhere(filters)
+  if (filter) conditions.push(filter)
+  return { and: conditions }
+}
+
+/**
+ * The activities with a TSS in the warm-up days before the range. Activities without a TSS do
+ * not change the fitness, so they are not loaded; without any TSS this is one empty page.
+ */
+export function warmUpWhere(range: DateRange, filters: ActivityFilters): ActivitiesWhere {
+  const start = dayStartIso(localDateKey(shiftDays(range.from, -WARM_UP_DAYS)))
+  const end = dayStartIso(range.from)
+  const conditions: NonNullable<ActivitiesWhere>[] = [{ tss: { neq: null } }]
+  if (start) conditions.push({ date: { gte: start } })
+  if (end) conditions.push({ date: { lt: end } })
   const filter = activityFiltersToWhere(filters)
   if (filter) conditions.push(filter)
   return { and: conditions }
@@ -164,89 +180,105 @@ export function eventsWhere(range: DateRange): useDashboardDataEventsQuery$varia
   }
 }
 
-async function loadDashboard(
+const loadActivityRows = async (
   environment: Environment,
-  range: DateRange,
-  filters: ActivityFilters,
-): Promise<DashboardData> {
-  const activitiesFilter = activitiesWhere(range, filters)
-  const bodyStatsFilter = bodyStatsWhere(range)
-  const eventsFilter = eventsWhere(range)
+  where: ActivitiesWhere,
+): Promise<ActivityRow[]> => {
+  const rows = await loadAll(async (after) => {
+    const response = await fetchQuery<useDashboardDataActivitiesQuery>(
+      environment,
+      activitiesQuery,
+      { first: PAGE_SIZE, after, where },
+      network,
+    ).toPromise()
+    return response?.activities
+  })
+  return rows.map((row) => ({
+    date: new Date(row.date),
+    time: row.time,
+    distance: row.distance,
+    elevationGain: row.elevationGain ?? null,
+    tss: row.tss ?? null,
+  }))
+}
 
-  const [activities, bodyStats, events] = await Promise.all([
-    loadAll(async (after) => {
-      const response = await fetchQuery<useDashboardDataActivitiesQuery>(
-        environment,
-        activitiesQuery,
-        { first: PAGE_SIZE, after, where: activitiesFilter },
-        network,
-      ).toPromise()
-      return response?.activities
-    }),
-    loadAll(async (after) => {
-      const response = await fetchQuery<useDashboardDataBodyStatsQuery>(
-        environment,
-        bodyStatsQuery,
-        { first: PAGE_SIZE, after, where: bodyStatsFilter },
-        network,
-      ).toPromise()
-      return response?.bodyStats
-    }),
-    loadAll(async (after) => {
-      const response = await fetchQuery<useDashboardDataEventsQuery>(
-        environment,
-        eventsQuery,
-        { first: PAGE_SIZE, after, where: eventsFilter },
-        network,
-      ).toPromise()
-      return response?.events
-    }),
+interface ActivitiesRequest {
+  range: DateRange
+  filters: ActivityFilters
+}
+
+/** The range's activities and, in parallel, the warm-up activities that carry a TSS, oldest first. */
+async function loadActivities(
+  environment: Environment,
+  { range, filters }: ActivitiesRequest,
+): Promise<ActivityRow[]> {
+  const [warmUp, inRange] = await Promise.all([
+    range.from === ALL_SINCE
+      ? Promise.resolve([])
+      : loadActivityRows(environment, warmUpWhere(range, filters)),
+    loadActivityRows(environment, activitiesWhere(range, filters)),
   ])
+  return [...warmUp, ...inRange]
+}
 
-  return {
-    activities: activities.map((row) => ({
-      date: new Date(row.date),
-      time: row.time,
-      distance: row.distance,
-      elevationGain: row.elevationGain ?? null,
-      tss: row.tss ?? null,
-    })),
-    bodyStats: bodyStats.map((row) => ({
-      date: new Date(row.date),
-      weight: row.weight,
-      bodyFatPercentage: row.bodyFatPercentage,
-      musclePercentage: row.musclePercentage,
-      waterPercentage: row.waterPercentage,
-      boneMass: row.boneMass,
-    })),
-    events: events.map((row) => ({
-      id: row.id,
-      name: row.name,
-      type: row.type as EventType,
-      startDate: String(row.startDate),
-      endDate: row.endDate ? String(row.endDate) : null,
-    })),
-  }
+async function loadBodyStats(environment: Environment, range: DateRange): Promise<BodyRow[]> {
+  const where = bodyStatsWhere(range)
+  const rows = await loadAll(async (after) => {
+    const response = await fetchQuery<useDashboardDataBodyStatsQuery>(
+      environment,
+      bodyStatsQuery,
+      { first: PAGE_SIZE, after, where },
+      network,
+    ).toPromise()
+    return response?.bodyStats
+  })
+  return rows.map((row) => ({
+    date: new Date(row.date),
+    weight: row.weight,
+    bodyFatPercentage: row.bodyFatPercentage,
+    musclePercentage: row.musclePercentage,
+    waterPercentage: row.waterPercentage,
+    boneMass: row.boneMass,
+  }))
+}
+
+async function loadEvents(environment: Environment, range: DateRange): Promise<DashboardEvent[]> {
+  const where = eventsWhere(range)
+  const rows = await loadAll(async (after) => {
+    const response = await fetchQuery<useDashboardDataEventsQuery>(
+      environment,
+      eventsQuery,
+      { first: PAGE_SIZE, after, where },
+      network,
+    ).toPromise()
+    return response?.events
+  })
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    type: row.type as EventType,
+    startDate: String(row.startDate),
+    endDate: row.endDate ? String(row.endDate) : null,
+  }))
 }
 
 /**
- * Activities (with warm-up days), body stats and events of the range, loaded together. Loads
- * again when the range, the activity filters or `refreshKey` change.
+ * Loads one source of the dashboard. The request is compared by value, so the load only runs
+ * again when it changes or when `refreshKey` changes; the other sources are not affected.
  */
-export function useDashboardData(
-  range: DateRange,
-  filters: ActivityFilters,
+function useSource<R, T>(
+  request: R,
+  load: (environment: Environment, request: R) => Promise<T>,
   refreshKey: number,
-): DashboardDataState & { retry: () => void } {
+): LoadState<T> & { retry: () => void } {
   const environment = useRelayEnvironment()
   const [retryCount, setRetryCount] = useState(0)
-  const [result, setResult] = useState<DashboardDataState>({ status: 'loading' })
-  const requestKey = JSON.stringify([range, filters])
+  const [result, setResult] = useState<LoadState<T>>({ status: 'loading' })
+  const requestKey = JSON.stringify(request)
 
   useEffect(() => {
     let cancelled = false
-    const [requestRange, requestFilters] = JSON.parse(requestKey) as [DateRange, ActivityFilters]
-    loadDashboard(environment, requestRange, requestFilters).then(
+    load(environment, JSON.parse(requestKey) as R).then(
       (data) => {
         if (!cancelled) setResult({ status: 'ready', data })
       },
@@ -258,11 +290,30 @@ export function useDashboardData(
     return () => {
       cancelled = true
     }
-  }, [environment, requestKey, refreshKey, retryCount])
+  }, [environment, load, requestKey, refreshKey, retryCount])
 
   const retry = useCallback(() => {
     setResult({ status: 'loading' })
     setRetryCount((count) => count + 1)
   }, [])
   return { ...result, retry }
+}
+
+/** The range's activities (with warm-up), reloaded when the range or the type and tag filters change. */
+export function useDashboardActivities(
+  range: DateRange,
+  filters: ActivityFilters,
+  refreshKey: number,
+) {
+  return useSource<ActivitiesRequest, ActivityRow[]>({ range, filters }, loadActivities, refreshKey)
+}
+
+/** The range's measurements, reloaded only when the range changes. */
+export function useDashboardBodyStats(range: DateRange, refreshKey: number) {
+  return useSource<DateRange, BodyRow[]>(range, loadBodyStats, refreshKey)
+}
+
+/** The events overlapping the range, reloaded only when the range changes. */
+export function useDashboardEvents(range: DateRange, refreshKey: number) {
+  return useSource<DateRange, DashboardEvent[]>(range, loadEvents, refreshKey)
 }

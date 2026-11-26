@@ -30,9 +30,14 @@ const body = (date: string, weight: number) => ({
   boneMass: 3,
 })
 
+const isWarmUp = (variables: unknown) => JSON.stringify(variables).includes('"tss":{"neq":null}')
+
 const handler =
   (overrides: Record<string, unknown> = {}) =>
-  (operation: string) => {
+  (operation: string, variables: unknown = {}) => {
+    if (operation === ACTIVITIES && isWarmUp(variables) && !overrides[ACTIVITIES]) {
+      return { data: { activities: { nodes: [], pageInfo: noMore } } }
+    }
     const responses: Record<string, unknown> = {
       [ACTIVITIES]: {
         data: {
@@ -135,6 +140,20 @@ describe('DashboardPage', () => {
     expect(JSON.stringify(calls(EVENTS)[0])).toContain('"startDate":{"lte":"2026-11-30"}')
   })
 
+  it('reloads only the activities when the type filter changes', async () => {
+    const { calls, user } = renderWithRelay(<DashboardPage />, handler(), { path })
+    await screen.findByRole('grid')
+    expect(calls(BODY_STATS)).toHaveLength(1)
+    expect(calls(EVENTS)).toHaveLength(1)
+    expect(calls(ACTIVITIES).filter(isWarmUp)).toHaveLength(1)
+
+    await user.click(screen.getByRole('button', { name: 'Indoor' }))
+
+    await waitFor(() => expect(calls(ACTIVITIES)).toHaveLength(4))
+    expect(calls(BODY_STATS)).toHaveLength(1)
+    expect(calls(EVENTS)).toHaveLength(1)
+  })
+
   it('shows empty messages when nothing matches', async () => {
     renderWithRelay(
       <DashboardPage />,
@@ -161,9 +180,9 @@ describe('DashboardPage', () => {
     )
 
     expect((await screen.findAllByText('Das Dashboard konnte nicht geladen werden.')).length).toBe(
-      3,
+      2,
     )
-    expect(screen.getAllByRole('button', { name: 'Erneut versuchen' })).toHaveLength(3)
+    expect(screen.getAllByRole('button', { name: 'Erneut versuchen' })).toHaveLength(2)
     await user.click(screen.getAllByRole('button', { name: 'Erneut versuchen' })[0])
   })
 

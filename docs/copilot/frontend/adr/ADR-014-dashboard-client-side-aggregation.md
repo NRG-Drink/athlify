@@ -32,10 +32,11 @@ move to the server later.
 
 ## Decision
 
-**Chosen**: Option 2 for the first iteration. The Dashboard loads activities
-(with 126 warm-up days before the range for the fitness values), Body-Stats and
-the Events overlapping the range with `fetchQuery` (`network-only`) and
-aggregates them in `lib/aggregate.ts` and `lib/fitness.ts`:
+**Chosen**: Option 2 for the first iteration. The Dashboard loads activities,
+Body-Stats and the Events overlapping the range, each with its own `fetchQuery`
+loop (`network-only`), so that a changed type or tag filter reloads only the
+activities. For the fitness values the activities that carry a TSS in the 126 days
+before the range are loaded as well, in parallel. The rows are aggregated in `lib/aggregate.ts` and `lib/fitness.ts`:
 
 - Buckets are local calendar days, ISO weeks (Monday), months and years.
 - Activities are summed per bucket; speed is distance divided by time. Body-Stats

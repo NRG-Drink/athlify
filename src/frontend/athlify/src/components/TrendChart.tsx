@@ -1,5 +1,5 @@
 import { Box, Center, Stack, Text, useBreakpointValue } from '@chakra-ui/react'
-import { useMemo, type ReactNode } from 'react'
+import { memo, useMemo, type ReactNode } from 'react'
 import { LuChartLine } from 'react-icons/lu'
 import {
   Bar,
@@ -55,8 +55,11 @@ export interface TrendChartProps {
 
 type Row = { key: string; label: string } & Record<string, string | number | undefined>
 
-/** Several series over bucketed time, with the events of the period marked in the chart. */
-export function TrendChart({
+/**
+ * Several series over bucketed time, with the events of the period marked in the chart. Memoized:
+ * drawing is the expensive part, so it only happens when the series, buckets or markers change.
+ */
+export const TrendChart = memo(function TrendChart({
   buckets,
   series,
   markers,
@@ -173,7 +176,7 @@ export function TrendChart({
       </ResponsiveContainer>
     </Box>
   )
-}
+})
 
 interface TrendTooltipProps {
   // Injected by Recharts when it renders the tooltip element.

@@ -2,7 +2,7 @@ import { Stack } from '@chakra-ui/react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Page } from '../../components/Page'
-import { TrendChart, type TrendSeries } from '../../components/TrendChart'
+import { TrendChart, type TrendMarker, type TrendSeries } from '../../components/TrendChart'
 import { useFormat } from '../../i18n/useFormat'
 import { useFetchKey } from '../../relay/useFetchKey'
 import { bodyStatsMetrics, metricByKey, parseMetric } from '../body-stats/bodyStatsMetrics'
@@ -18,11 +18,19 @@ import {
   type DashboardCard,
 } from './dashboardPreferences'
 import { useBucketLabels } from './useBucketLabels'
-import { useDashboardData } from './useDashboardData'
+import {
+  useDashboardActivities,
+  useDashboardBodyStats,
+  useDashboardEvents,
+  type DashboardData,
+} from './useDashboardData'
 import { useDashboardPageState } from './useDashboardPageState'
 import { useDashboardTags } from './useDashboardTags'
 
-const NO_BUCKETS: never[] = []
+const NO_ACTIVITIES: DashboardData['activities'] = []
+const NO_BODY_STATS: DashboardData['bodyStats'] = []
+const NO_EVENTS: DashboardData['events'] = []
+const NO_MARKERS: TrendMarker[] = []
 
 const fitnessLines = [
   { key: 'ctl', color: 'var(--chakra-colors-chart-primary)' },
@@ -38,23 +46,32 @@ function DashboardContent({ refreshKey }: { refreshKey: number }) {
   const { preferences, updatePreferences } = useDashboardPreferences()
   const savedViews = useDashboardViews()
   const tags = useDashboardTags()
-  const result = useDashboardData(state.range, state.filters, refreshKey)
-  const status = result.status
-  const data = result.status === 'ready' ? result.data : undefined
+  const activities = useDashboardActivities(state.range, state.filters, refreshKey)
+  const bodyStats = useDashboardBodyStats(state.range, refreshKey)
+  const events = useDashboardEvents(state.range, refreshKey)
+  const allReady =
+    activities.status === 'ready' && bodyStats.status === 'ready' && events.status === 'ready'
 
-  const view = useMemo(
-    () => (data ? buildDashboardView(data, state.range, state.grouping) : undefined),
-    [data, state.range, state.grouping],
-  )
+  const activityRows = activities.status === 'ready' ? activities.data : NO_ACTIVITIES
+  const bodyRows = bodyStats.status === 'ready' ? bodyStats.data : NO_BODY_STATS
+  const eventRows = events.status === 'ready' ? events.data : NO_EVENTS
+  const view = useMemo(() => {
+    const data: DashboardData = {
+      activities: activityRows,
+      bodyStats: bodyRows,
+      events: eventRows,
+    }
+    return buildDashboardView(data, state.range, state.grouping)
+  }, [activityRows, bodyRows, eventRows, state.range, state.grouping])
 
   const tableRows = useMemo(
-    () => (view ? buildTableRows(view, state.grouping, labels) : undefined),
-    [view, state.grouping, labels],
+    () => (allReady ? buildTableRows(view, state.grouping, labels) : undefined),
+    [allReady, view, state.grouping, labels],
   )
 
   const buckets = useMemo(
     () =>
-      (view?.buckets ?? NO_BUCKETS).map(({ key, start }, _index, all) => ({
+      view.buckets.map(({ key, start }, _index, all) => ({
         key,
         label: labels.axis(
           start,
@@ -71,7 +88,7 @@ function DashboardContent({ refreshKey }: { refreshKey: number }) {
 
   const trackSeries = useMemo<TrendSeries[]>(() => {
     const values = new Map<string, number>()
-    for (const [key, bucket] of view?.activities ?? []) {
+    for (const [key, bucket] of view.activities) {
       const value = trackMetric.value(bucket)
       if (value !== undefined) values.set(key, value)
     }
@@ -97,14 +114,14 @@ function DashboardContent({ refreshKey }: { refreshKey: number }) {
         decimals: 0,
         color,
         kind: 'line',
-        values: new Map([...(view?.fitness ?? [])].map(([bucket, day]) => [bucket, day[key]])),
+        values: new Map([...view.fitness].map(([bucket, day]) => [bucket, day[key]])),
       })),
     [view, t],
   )
 
   const bodySeries = useMemo<TrendSeries[]>(() => {
     const values = new Map<string, number>()
-    for (const [key, bucket] of view?.bodyStats ?? []) values.set(key, bucket[bodyMetric.key])
+    for (const [key, bucket] of view.bodyStats) values.set(key, bucket[bodyMetric.key])
     return [
       {
         key: bodyMetric.key,
@@ -121,9 +138,10 @@ function DashboardContent({ refreshKey }: { refreshKey: number }) {
   const setCardOpen = (card: DashboardCard, open: boolean) =>
     updatePreferences({ cardsOpen: { ...preferences.cardsOpen, [card]: open } })
 
-  const first = view?.buckets[0]
-  const last = view?.buckets[view.buckets.length - 1]
-  const eventCount = view?.markers.length ?? 0
+  const first = view.buckets[0]
+  const last = view.buckets[view.buckets.length - 1]
+  const eventsReady = events.status === 'ready'
+  const eventCount = eventsReady ? view.markers.length : 0
   const summaryFor = (title: string, series: readonly TrendSeries[]) =>
     first && last && series.some((entry) => entry.values.size > 0)
       ? t('dashboard.chart.summary', {
@@ -136,7 +154,7 @@ function DashboardContent({ refreshKey }: { refreshKey: number }) {
       : t('dashboard.chart.emptySummary', { title })
   const eventNote =
     eventCount > 0 ? t('dashboard.chart.eventsNote', { count: eventCount }) : undefined
-  const markers = view?.markers ?? []
+  const markers = eventsReady ? view.markers : NO_MARKERS
 
   return (
     <Stack gap="6">
@@ -154,10 +172,10 @@ function DashboardContent({ refreshKey }: { refreshKey: number }) {
 
       <DashboardMetricCard
         title={t('dashboard.track.title')}
-        status={status}
+        status={activities.status}
         open={preferences.cardsOpen.track}
         onOpenChange={(open) => setCardOpen('track', open)}
-        onRetry={result.retry}
+        onRetry={activities.retry}
         metrics={trackMetrics.map(({ key, labelKey }) => ({ key, label: t(labelKey) }))}
         metric={trackMetric.key}
         onMetricChange={(key) => updatePreferences({ trackMetric: parseTrackMetric(key) })}
@@ -175,10 +193,10 @@ function DashboardContent({ refreshKey }: { refreshKey: number }) {
 
       <DashboardMetricCard
         title={t('dashboard.fitness.title')}
-        status={status}
+        status={activities.status}
         open={preferences.cardsOpen.fitness}
         onOpenChange={(open) => setCardOpen('fitness', open)}
-        onRetry={result.retry}
+        onRetry={activities.retry}
         note={t('dashboard.fitness.note')}
       >
         <TrendChart
@@ -193,10 +211,10 @@ function DashboardContent({ refreshKey }: { refreshKey: number }) {
 
       <DashboardMetricCard
         title={t('dashboard.body.title')}
-        status={status}
+        status={bodyStats.status}
         open={preferences.cardsOpen.body}
         onOpenChange={(open) => setCardOpen('body', open)}
-        onRetry={result.retry}
+        onRetry={bodyStats.retry}
         metrics={bodyStatsMetrics.map(({ key, labelKey }) => ({ key, label: t(labelKey) }))}
         metric={bodyMetric.key}
         onMetricChange={(key) => updatePreferences({ bodyMetric: parseMetric(key) })}
