@@ -5,6 +5,7 @@ import {
   EVENTS_COLUMN_STORAGE_KEY,
   EVENTS_VIEWS_STORAGE_KEY,
   parseEventsColumnState,
+  parseEventsFilterModel,
   parseEventsSavedViews,
 } from '../../../features/events/EventsGridState'
 import { mockGridViewport } from '../../utils/gridViewport'
@@ -350,8 +351,9 @@ it('pins a new event through active filters until the user unpins it', async () 
     const search = new URLSearchParams(router.state.location.search)
     expect(search.get('q')).toBe('unmatched')
     expect(search.get('from')).toBe('2026-01-01')
-    expect(search.get('filter.name.filter')).toBe('unmatched')
-    expect(search.get('filter.name.type')).toBe('contains')
+    expect(parseEventsFilterModel(search)).toMatchObject({
+      name: { filter: 'unmatched', type: 'contains' },
+    })
     expect(search.get('gridSort')).toBe(filters.get('gridSort'))
   })
   expect(calls('EventsGridCreateMutation')).toEqual([

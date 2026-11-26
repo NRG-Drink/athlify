@@ -217,6 +217,49 @@
         "active": "Active filters",
         "remove": "Remove {{filter}} filter"
       },
+      "controls": {
+        "title": "Filter activities",
+        "quickFilter": "Search description",
+        "fromFilter": "From",
+        "toFilter": "To",
+        "filterActions": "Filter actions",
+        "filterYtd": "Year to date",
+        "resetFilters": "Reset filters",
+        "resetTable": "Reset table",
+        "invalidDate": "Enter a valid date."
+      },
+      "views": {
+        "select": "Select saved view",
+        "choose": "Choose a view",
+        "saveCurrent": "Save current view",
+        "name": "View name",
+        "duplicateName": "A view with this name already exists.",
+        "save": "Save view",
+        "delete": "Delete view",
+        "storageFailed": "Views could not be saved in this browser."
+      },
+      "columnPicker": {
+        "open": "Columns",
+        "label": "Choose columns"
+      },
+      "gridFilter": {
+        "none": "No filter",
+        "options": {
+          "equals": "Equals",
+          "notEqual": "Does not equal",
+          "contains": "Contains",
+          "notContains": "Does not contain",
+          "startsWith": "Starts with",
+          "endsWith": "Ends with",
+          "blank": "Blank",
+          "notBlank": "Not blank",
+          "lessThan": "Less than",
+          "greaterThan": "Greater than",
+          "inRange": "In range",
+          "before": "Before",
+          "after": "After"
+        }
+      },
       "types": {
         "ROAD": "Road",
         "MOUNTAIN": "Mountain",
@@ -245,6 +288,8 @@
         "speed": "Avg. speed",
         "tss": "TSS",
         "heartRate": "Avg. heart rate",
+        "heartRateMin": "Min. heart rate",
+        "heartRateMax": "Max. heart rate",
         "effort": "Effort",
         "mood": "Mood",
         "wind": "Wind",
@@ -254,10 +299,17 @@
       "table": {
         "caption": "Activities"
       },
+      "sort": {
+        "ariaLabel": "{{column}}, {{direction}}",
+        "ascending": "sorted ascending",
+        "descending": "sorted descending",
+        "unsorted": "not sorted"
+      },
       "moreTags": "+{{count}}",
       "resultCount_one": "{{count}} activity",
       "resultCount_other": "{{count}} activities",
       "loadMore": "Load more activities",
+      "loadingMore": "Loading more activities …",
       "loadMoreFailed": "More activities could not be loaded.",
       "loadFailed": "Activities could not be loaded.",
       "empty": {
@@ -290,6 +342,7 @@
       "add": {
         "open": "Add activity",
         "title": "New activity",
+        "defaultDescription": "New Activity",
         "success": "Activity saved.",
         "hiddenByFilters": "Activity saved. The active filters hide it.",
         "errors": {
@@ -298,13 +351,16 @@
       },
       "duplicate": {
         "action": "Duplicate",
-        "title": "Duplicate activity"
+        "title": "Duplicate activity",
+        "copySuffix": "(copy)"
       },
       "edit": {
         "title": "Edit activity",
         "success": "Activity updated.",
         "errors": {
-          "notFound": "This activity no longer exists."
+          "notFound": "This activity no longer exists.",
+          "saveFailed": "Could not save this activity. Please try again.",
+          "validationFailed": "This value is not valid for the activity."
         }
       },
       "delete": {
@@ -322,6 +378,10 @@
         "actionsColumn": "Actions",
         "edit": "Edit activity from {{date}}",
         "more": "More actions for the activity from {{date}}"
+      },
+      "pin": {
+        "action": "Pin activity",
+        "unpin": "Unpin activity"
       },
       "form": {
         "date": "Date and start time",

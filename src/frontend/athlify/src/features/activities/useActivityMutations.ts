@@ -12,7 +12,40 @@ const createMutation = graphql`
   mutation useActivityMutationsCreateMutation($input: ActivityInput!) {
     createActivity(activity: $input) {
       id
-      ...ActivitiesTable_entries
+      date
+      type
+      description
+      time
+      distance
+      averageSpeed
+      elevationGain
+      tss
+      heartRateMin
+      heartRateMax
+      heartRateAverage
+      mood
+      effort
+      wind
+      source
+      merge {
+        id
+      }
+      vehicle {
+        id
+        brand
+        model
+        nickname
+      }
+      gadgets {
+        id
+        brand
+        model
+        nickname
+      }
+      tags {
+        id
+        name
+      }
     }
   }
 `
@@ -21,7 +54,40 @@ const updateMutation = graphql`
   mutation useActivityMutationsUpdateMutation($id: ID!, $input: ActivityInput!) {
     updateActivity(id: $id, activity: $input) {
       id
-      ...ActivitiesTable_entries
+      date
+      type
+      description
+      time
+      distance
+      averageSpeed
+      elevationGain
+      tss
+      heartRateMin
+      heartRateMax
+      heartRateAverage
+      mood
+      effort
+      wind
+      source
+      merge {
+        id
+      }
+      vehicle {
+        id
+        brand
+        model
+        nickname
+      }
+      gadgets {
+        id
+        brand
+        model
+        nickname
+      }
+      tags {
+        id
+        name
+      }
     }
   }
 `
@@ -33,14 +99,22 @@ const deleteMutation = graphql`
 `
 
 interface Callbacks {
-  /** Called after the server confirmed the change, so the dialog can close (and, after a create, the list refetch). */
-  onSuccess: () => void
+  /** Called with the confirmed row so callers can update temporary pinned-row state. */
+  onSuccess: (row: ActivityMutationRow) => void
+}
+
+interface UpdateCallbacks extends Callbacks {
+  onFailure?: () => void
 }
 
 interface DeleteCallbacks {
   /** Called when the request finished, so the confirm dialog can close; `removed` is false after an error. */
   onSettled: (removed: boolean) => void
 }
+
+type ActivityMutationRow = NonNullable<
+  useActivityMutationsCreateMutation['response']['createActivity']
+>
 
 /**
  * Create, update and delete for activities. The list is sorted and filtered by the server, so a new
@@ -69,27 +143,34 @@ export function useActivityMutations(connectionId: string) {
           fail('activities.add.errors.saveFailed')
           return
         }
-        onSuccess()
+        onSuccess(response.createActivity)
       },
       onError: () => fail('activities.add.errors.saveFailed'),
     })
 
-  const update = (id: string, input: ActivityFormInput, { onSuccess }: Callbacks) =>
+  const update = (id: string, input: ActivityFormInput, { onSuccess, onFailure }: UpdateCallbacks) =>
     commitUpdate({
       variables: { id, input },
       onCompleted: (response, errors) => {
         if (errors?.length) {
-          fail('activities.add.errors.saveFailed')
+          fail('activities.edit.errors.saveFailed')
+          onFailure?.()
           return
         }
         if (!response.updateActivity) {
           // The activity vanished on the server: drop it here as well.
           removeLocally(id)
           fail('activities.edit.errors.notFound')
-        } else toaster.create({ type: 'success', title: t('activities.edit.success') })
-        onSuccess()
+          onFailure?.()
+        } else {
+          toaster.create({ type: 'success', title: t('activities.edit.success') })
+          onSuccess(response.updateActivity)
+        }
       },
-      onError: () => fail('activities.add.errors.saveFailed'),
+      onError: () => {
+        fail('activities.edit.errors.saveFailed')
+        onFailure?.()
+      },
     })
 
   const remove = (id: string, { onSettled }: DeleteCallbacks) =>
@@ -110,5 +191,13 @@ export function useActivityMutations(connectionId: string) {
       },
     })
 
-  return { create, update, remove, isSaving: isCreating || isUpdating, isDeleting }
+  return {
+    create,
+    update,
+    remove,
+    isSaving: isCreating || isUpdating,
+    isCreating,
+    isUpdating,
+    isDeleting,
+  }
 }

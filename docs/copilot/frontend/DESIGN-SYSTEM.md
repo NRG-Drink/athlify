@@ -167,17 +167,12 @@ In short:
 
 ## Row actions and forms
 
-- **Row actions.** Editing is the row itself: a click, or Enter on the
-  focused row, opens the form, and `DataTable`'s `rowLabel` names the row
-  by that action ("Aktivität vom 16.10.2026 bearbeiten"). There is no
-  separate edit button. A focused row (also after a dialog returns focus
-  to it) gets `bg.muted` cells and the `brand.solid` indicator bar on its
-  first cell, never a focus ring, which breaks apart on table rows. The remaining actions are ghost `sm` icon buttons
-  in `fg.muted` with an `aria-label` that names the row: a single delete
-  button (Body-Stats), or a "⋯" `Menu` (`LuEllipsis`) when there are
-  several (Activities). A destructive item comes last in the menu, after a
-  separator, in `fg.error` with a `bg.error` highlight. Menu items act on
-  `onClick`, which Enter on a highlighted item triggers as well.
+- **Row actions.** Activities are edited directly in cells; clicking a row
+  does not open a form. Their actions live in the leftmost pinned column as
+  ghost icon buttons for duplicate, pin/unpin and delete, each with a
+  row-specific `aria-label`. Delete opens a confirmation dialog. Other
+  domain tables may use a separate edit action or a menu when their workflow
+  requires it.
 - **Forms.** `*` means "calculated or system value" (user story US-03), so a
   form that shows such values does not show Chakra's required indicator;
   required fields set `required` (so `aria-required` is set) and explain
@@ -185,41 +180,26 @@ In short:
   read-only block below the fields, headed by a `kicker` "Berechnet", marked
   with `*` and explained by the note "* Wird automatisch berechnet."; a
   missing value shows "—".
-- Fields that most records leave empty are folded under "Weitere Details"
-  (closed for new records, open when editing a record that has values there;
-  an error inside opens it). Pairs of short number fields stay side by side
-  on phones. Optional selects start at "—", never at a pre-chosen value.
-- Dates are entered with `DateField` (a Chakra `DatePicker`, typed as
+- Forms that remain (for example, Body-Stats) use `DateField` (a Chakra `DatePicker`, typed as
   `TT.MM.JJJJ`, `1.2.25` is read as 01.02.2025; text that is not a date
   stays as typed and the form's validation reports it) and times with
   `TimeField` (`HH:MM`, typed or picked from hours and five-minute steps);
-  `DateTimeField` puts both under one label. Never use native `date`,
-  `time` or `datetime-local` inputs: they follow the browser's locale
-  (`11/01/2026, 11:31 PM`).
+  `DateTimeField` puts both under one label. Activities use grid cell
+  editing instead. Never use native `date`, `time` or `datetime-local`
+  inputs: they follow the browser's locale (`11/01/2026, 11:31 PM`).
 - Every text field is normalised when it is left: numbers to their
   canonical form (`42,50` → `42.5`), durations to `h:mm` (`1.20` →
   `1:20`), times to `HH:MM`, dates to `DD.MM.YYYY`.
-- Durations are entered as `h:mm` (`.` works too), with `1:30` as the
-  placeholder; the format is named only in the error text, so no helper
-  line pushes the field out of its row. The form shows no seconds; when an
-  edited record's minutes stay the same, its stored seconds are kept.
+- Activity durations are edited in the grid and keep their stored seconds
+  when the edited minutes remain unchanged.
 - Number fields carry their unit as an addon beside the input. A group of
   fields with the same unit (heart rate min/Ø/max) names it once in the
   legend ("Herzfrequenz (bpm)") instead, so three fields fit side by side
   on phones.
-- While "Weitere Details" is folded, its trigger shows how many of the
-  fields inside hold a value ("· 3 Angaben").
-- A rating on a short numeric scale (effort 1–10) is a Chakra `Slider`
-  whose far left, 0, means "Keine Angabe". A few ordered values (mood,
-  wind) are a row of toggle buttons with an emoji above the label; the
-  chosen one is `brand` `subtle` with a `brand.solid` border, and pressing
-  it again clears the value. Gadgets and tags are chips switched on and
-  off (tags in their table colour, `tagColorPalette`; gadgets in `brand`).
-  Without options, a muted line says so ("Noch keine Gadgets erfasst.").
-  The last tag chip is a small dashed "+ Neuer Tag" button that opens a
-  popover with the name, "Abbrechen" and "Erstellen" (Enter creates); it
-  is not portalled, so it stays in the dialog's focus trap. An existing
-  name is ticked instead of created twice.
+- Activities choose mood, wind, gadgets and tags through their grid editors.
+  A small "+ Neuer Tag" button in the tags cell editor opens a popover with
+  the name, "Abbrechen" and "Erstellen" (Enter creates); an existing name is
+  ticked instead of created twice.
 - `FormDialog` scrolls its body inside the dialog; the footer with
   "Speichern" and "Abbrechen" always stays visible. It has no close (X)
   button: "Abbrechen", Escape or a click beside the dialog discard the

@@ -11,35 +11,43 @@ the merge UI and Strava synchronization are not implemented yet.
 
 ## Views and functions
 
-- List/table view with filtering and multi-activity selection. The list
-  shows the date (without time), type, description, duration, distance,
-  bicycle, elevation gain, average speed and TSS; on wide screens also
-  average heart rate, effort, mood, wind, gadgets and tags (shown as tag chips). The source is
-  not a column. Missing values are shown as "—", never as 0. The filters
-  (type, bicycle, wind, tag) sit in the headers of their columns next to
-  the sort button. Each filter is a checklist: several values can be ticked, and
-  a row matches when it has any of them (OR within a filter); the filters combine
-  (AND across filters). A filter shows its number of ticked values on its header
-  and is listed as a removable chip above the table. On small screens, where the
-  bicycle, wind and tag columns are hidden, their filters appear above the table
-  as buttons and open as a bottom sheet. A filter with no matches keeps the table
-  header and its filters and offers a reset. The list is sorted by the server
-  over all matching activities, not only the loaded page: newest first by
-  default, and the chosen order is kept in the URL (`?sort=distance`,
-  `?sort=-distance`). Type, description, bicycle, mood, wind, gadgets and tags
-  are not sortable, because their stored values would not sort in their
-  natural order. The number of matching activities is shown above the table.
-- Detail view as an edit form, opened from the list: a row click
-  edits, a "⋯" menu duplicates (a new activity with the same values and the
-  current date) or deletes (after a confirmation that warns when the activity
-  is part of a merge). "Add activity" starts from the type and bicycle of the
-  most recent activity. Rarely used fields (heart rate, effort, mood, wind,
-  gadgets, tags) are folded under "More details"; calculated and system values
-  (average speed, TSS, source) are shown read-only, marked with `*`. The
-  duration is entered in hours and minutes; the seconds of an imported ride
-  are kept while its minutes are unchanged. Effort is a slider (0 = not set),
-  mood and wind are picked from emoji buttons, and gadgets and tags are chips;
-  a new tag can be created in the form without leaving it.
+- List/table view. The list shows the date and start time, type, description,
+  duration, distance, bicycle, elevation gain, average speed and TSS; on wide
+  screens it also shows average heart rate, effort, mood, wind, gadgets and
+  tags (as chips). The source is not a column. Missing values are shown as
+  "—", never as 0. Users can search descriptions and filter by an inclusive
+  date range or year-to-date from the controls above the grid. Column filters
+  provide text, date and numeric operators, plus checklists for type, bicycle,
+  tags, wind, mood and gadgets. All filters are applied by the server and
+  combine with AND semantics; multiple selected values in a checklist match
+  any selected value. Filter and sort state is kept in the URL. Sorting is
+  server-side across all matching activities, not only the loaded page, and
+  supports multiple sort columns; newest first is the default. Type,
+  description, bicycle, mood, wind, gadgets and tags are not sortable because
+  their stored values would not sort in their natural order. The number of
+  matching activities is shown above the grid.
+- Saved views store the URL-backed filters and sort order together with column
+  order, visibility, width and pinning in browser-local storage. Reset Filters
+  clears filters while keeping the current sort and column layout. Reset Table
+  clears filters, restores the default sort and column layout, and leaves saved
+  views intact. The grid loads further cursor pages automatically when the user
+  scrolls to the end; a failed page load offers an explicit retry.
+- A user can temporarily pin multiple activities above the filtered results.
+  Newly created activities are pinned while the server refreshes the sorted and
+  filtered list; the user can also pin existing rows. Unpinning removes only
+  that activity from the pinned area without changing the server-owned list.
+- Table cells are directly editable for every functional input field,
+  including date and start time, tags, gadgets and minimum/average/maximum
+  heart rate. Calculated and system-managed values remain read-only. "Add
+  activity" immediately creates a row with the most recent activity type (or
+  ROAD), the current date and time, a one-minute duration, zero distance and a
+  localized "New Activity" description.
+  The row is pinned while the user completes it through inline cell editing.
+  Duplicate immediately creates a pinned copy with the source values and the
+  current date and time, appending a localized copy marker to the description
+  (or using the marker alone when the source has no description). Tags can be
+  created from a small popover in the tags cell editor. Delete requires
+  confirmation and warns when the activity belongs to a merge.
 - Calendar view with weekly summary inspired by TrainingPeaks.
 - Full CRUD for manual and synchronized activities.
 - Visible Strava sync button on the Activities page.
@@ -47,7 +55,7 @@ the merge UI and Strava synchronization are not implemented yet.
 
 ## Editability
 
-All functional input fields are editable unless they are calculated or system-managed. System and calculated fields are marked with `*` and displayed as read-only in the form.
+All functional input fields are editable unless they are calculated or system-managed. System and calculated fields are marked with `*` and remain read-only wherever they are displayed.
 
 Non-editable fields:
 

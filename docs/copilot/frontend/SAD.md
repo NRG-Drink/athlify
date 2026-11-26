@@ -28,7 +28,7 @@ TypeScript and Vite.
 | Routing                | `react-router-dom` v7 data mode (`createBrowserRouter`, nested app-layout route)                                                          | Proposed in [ADR-004](adr/ADR-004-react-router-data-mode.md)                                                                          |
 | Localization           | i18next with react-i18next (`de` default, `en` fallback)                                                                                  | Proposed in [ADR-003](adr/ADR-003-i18next-localization.md)                                                                            |
 | Icons                  | `react-icons` (Lucide set)                                                                                                                | Implemented                                                                                                                           |
-| Data grid              | AG Grid Community (`ag-grid-react`, `ag-grid-community`)                                                                                  | Implemented for Events and user management                                                                                                        |
+| Data grid              | AG Grid Community (`ag-grid-react`, `ag-grid-community`)                                                                                  | Implemented for Activities, Events and user management                                                                                 |
 | Testing                | Vitest + React Testing Library + user-event in jsdom (`npm test`)                                                                         | Implemented                                                                                                                           |
 | Tooling                | ESLint 10 + typescript-eslint, Prettier; no git hooks                                                                                     | Implemented                                                                                                                           |
 | Backend contract       | Hot Chocolate GraphQL                                                                                                                     | Proposed in [shared ADR-001](../adr/ADR-001-graphql-api-contract.md); IDs follow [shared ADR-006](../adr/ADR-006-relay-global-ids.md) |
@@ -55,11 +55,16 @@ npm package with its own `package.json` and `package-lock.json`. It is an app
 shell with three implemented domain slices: Body-Stats is the reference for
 domain pages (see [Domain page pattern](#domain-page-pattern)), and Activities
 and Events are list slices with editing. The Activities page lists activities
-from the backend connection, applies URL-backed filters, loads additional
-pages on demand and adds, edits, duplicates and deletes activities in a form
-dialog. The Settings page lets the signed-in user edit their own profile,
-language and password. Administrators manage users (list, create, edit, set
-a new password, delete with a confirmation) on `/admin/users`, reached from the User Menu; other users see a
+from the backend connection in AG Grid, applies URL-backed external and
+column filters and multi-column server sorting, automatically loads cursor
+pages while scrolling, edits supported values directly in cells, and adds,
+duplicates and deletes activities through their respective flows.
+Browser-local saved views include filters, sorting and column layout; newly
+created activities and any existing rows the user pins can remain temporarily
+above the current results at the same time. The Settings page lets the
+signed-in user edit their own profile, language and password. Administrators
+manage users (list, create, edit, set a new password, delete with a
+confirmation) on `/admin/users`, reached from the User Menu; other users see a
 "no access" page ([design system](DESIGN-SYSTEM.md)). The Events page lists,
 creates, edits and deletes personal events, with URL-backed filters, sorting and
 saved views. Dashboard and Garage remain placeholders.
@@ -93,7 +98,10 @@ switches the UI language at once, a password change signs the user out (the
 backend revokes all refresh tokens), and the account language is applied at the
 start of every session by `AuthAndRelayProvider`. The `/activities` view is a
 domain page backed by the GraphQL API; its type, bicycle, wind and tag
-filters are checklists of ticked values, kept in the URL as repeated parameters, operated from the column headers and its list uses Relay cursor pagination (50 per page, "load more"). The
+filters are checklists of ticked values, kept in the URL as repeated parameters and exposed through
+the AG Grid filter menus. The table uses Relay cursor pagination (50 per page, "load more") and
+direct cell editing for supported input fields; add and duplicate create pinned
+rows immediately for inline completion. The
 `/body-stats` view is a domain page backed by the GraphQL API. State management
 beyond the Relay store
 and the Tailwind/Chakra boundary are still open decisions. Record them as ADRs
@@ -113,7 +121,7 @@ The domain areas are implemented as independent views or clearly separated UI mo
 
 1. Login and user account
 2. Dashboard
-3. Activities with list, form and calendar
+3. Activities with an editable list, immediate add/duplicate and calendar
 4. Garage with bicycles and gadgets
 5. Body-Stats
 6. Events
@@ -135,7 +143,7 @@ view are shown inside the layout through the route `errorElement`
 | `/`           | redirects unauthenticated users to `/login`; authenticated users continue to `/dashboard` | –                  |
 | `/login`      | Login page; authenticated users are redirected to `/dashboard`                            | –                  |
 | `/dashboard`  | Dashboard (placeholder)                                                                   | Primary Navigation |
-| `/activities` | Activities (list with URL filters and pagination; add, edit, duplicate, delete)           | Primary Navigation |
+| `/activities` | Activities (filterable, server-sorted grid with saved views and cursor scrolling; add, edit, duplicate, delete) | Primary Navigation |
 | `/garage`     | Garage (placeholder)                                                                      | Primary Navigation |
 | `/body-stats` | Body-Stats (domain page; `?metric=`, `?from=` and `?to=` select the view)                 | Primary Navigation |
 | `/events`     | Events (personal event grid with filters, sorting and saved views)                         | Primary Navigation |
@@ -204,33 +212,22 @@ reference is `src/features/body-stats/`.
   records. A range
   without data keeps the chart's height and explains that no measurements
   exist in the selected dates.
-- **Table:** `DataTable` sorts with the keyboard through header buttons. It
-  never sorts on the client, because every list is paged: `sort` and
-  `onSortChange` are required, the rows are rendered in the order the server
-  sent them, and a header click reports the next order (descending first).
-  Activities and the Body-Stats history keep the order in the URL (`?sort=`,
-  `lib/sort.ts`) and change it through `useParamsRefresh`, which also dims the
-  old rows until the new ones arrive. A column with `sortable: false` has no
-  sort button and no `aria-sort`. Every
-  list table looks and behaves the same because `DataTable` owns the parts
-  around the rows too: `count` (the number of matching rows, muted, above the
-  table, announced politely) and `pagination` ("load more" plus the inline
-  error with retry). `DataTableSkeleton` is the loading placeholder of every
-  table. Every header cell, the row-actions column included, is sticky, so the
-  header spans the whole width. A column's `description` adds a tooltip
-  (hover and keyboard focus) to its header; a header that cannot sort becomes
-  focusable when it has one. The texts live under `columnHints` in the locale
-  files. Row
-  actions (edit, delete) are always visible; clicking a row also opens the
-  editor. Columns drop out below `sm`, `md` and `lg` so that a phone shows date,
-  weight and the actions. A column may declare a `filter`: `DataTable` then
-  renders a funnel button beside the sort button that opens a `FilterPopover`: a
-  popover (portal) from `sm`, a bottom sheet below it. The count of ticked values
-  sits on the button; the table stays domain-free. `emptyMessage` keeps
-  the header when no row matches, and `busy` dims the rows and sets `aria-busy`
-  while data refreshes. On Activities, the filters of columns hidden at the current
-  breakpoint are buttons above the table, and one chip per active filter lists
-  its values. The checklist applies each tick at once and stays open until "Fertig".
+- **Tables and grids:** Body-Stats history uses `DataTable`, which keeps its
+  server-sorted rows in server order and owns the count, cursor pagination and
+  loading skeleton. Activities and Events use the shared `AgGridTable` wrapper;
+  neither grid sorts or filters only the loaded page. Activities maps grid
+  filter and multi-sort changes to GraphQL variables, keeps query state in the
+  URL, and automatically loads the next Relay cursor page at the scroll end.
+  Its native text/date/number column filters and categorical checklist filters
+  are combined with description and date-range controls above the grid. Saved
+  views are browser-local presets of URL query state and column layout; column
+  visibility, order, width and pinning are also saved locally. Reset Filters
+  preserves sort and layout, while Reset Table restores defaults. A newly
+  created Activity is temporarily pinned above the server results until
+  unpinned. Users can also pin multiple existing rows and unpin them
+  independently. The shared `GridColumnPicker` provides visibility controls on both
+  grid pages. `AgGridTable` owns the accessible region, busy state and theme;
+  each domain grid retains its own columns, renderers, filters and row actions.
 - **Dialogs:** `FormDialog` (a bottom sheet on phones) and `ConfirmDialog`
   (`alertdialog`, Cancel focused). Neither can be dismissed while a request is
   in flight.
@@ -286,7 +283,8 @@ tuned.
 - Data-dependent pages show loading, empty, error and success states.
 - Filters are passed consistently to all affected Dashboard presentations.
 - Unsaved form changes are not shown as saved.
-- Non-editable Activity fields are visible but read-only.
+- Activity input fields are edited directly in their table cells; calculated
+  and system-managed fields are visible but read-only.
 - Sync, delete and merge operations need clear feedback; destructive actions are confirmed or made safely undoable.
 - Responsive behavior is provided for desktop, tablet and smartphone.
 

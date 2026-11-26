@@ -1,39 +1,34 @@
-import { Flex, IconButton, Menu, Portal, Tag, Text } from '@chakra-ui/react'
-import { memo, useMemo, type ReactNode, type Ref } from 'react'
+import { Box, Button, Flex, Text, useBreakpointValue } from '@chakra-ui/react'
+import type { CellValueChangedEvent, GridApi } from 'ag-grid-community'
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+  type Ref,
+} from 'react'
 import { graphql, useFragment } from 'react-relay'
-import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
-import { LuCopy, LuEllipsis, LuTrash2 } from 'react-icons/lu'
-import { DataTable, type DataTableColumn } from '../../components/DataTable'
+import { LuPlus } from 'react-icons/lu'
+import { AgGridTable } from '../../components/ag-grid/AgGridTable'
+import { clearNoOpGridFilters } from '../../components/ag-grid/GridFilterParams'
+import { GridColumnPicker } from '../../components/ag-grid/GridColumnPicker'
 import { useFormat } from '../../i18n/useFormat'
-import { ActivityFilterField } from './ActivityFilterField'
+import type { FilterOption } from './activityFilters'
+import { type ActivityGridFilterModel, type ActivitySort } from './activityQuery'
+import { useActivitiesGridColumns } from './ActivitiesGridColumns'
+import type { ActivityRow } from './ActivitiesGridTypes'
 import {
-  activeFilterSummary,
-  filterColumnBreakpoint,
-  filterValueCount,
-  type ActivityFilterKey,
-  type ActivityFilters,
-  type FilterOption,
-} from './activityFilters'
-import {
-  effortLevel,
-  enumLabel,
-  formatDuration,
-  formatHeartRate,
-  formatOptionalNumber,
-  moodEmojiOf,
-  moodRank,
-  tagColorPalette,
-  vehicleLabel,
-  windEmojiOf,
-  windRank,
-} from './activityFormatting'
-import { isSortColumn, type ListSort } from '../../lib/sort'
-import { activitySortColumns, type ActivitySort } from './activityQuery'
-import type {
-  ActivitiesTable_entries$data,
-  ActivitiesTable_entries$key,
-} from './__generated__/ActivitiesTable_entries.graphql'
+  ACTIVITIES_COLUMN_STORAGE_KEY,
+  activitiesColumnIds,
+  parseActivitiesColumnState,
+  serializeActivitiesColumnState,
+  type ActivitiesColumnState,
+} from './ActivitiesGridState'
+import type { ActivitiesTable_entries$key } from './__generated__/ActivitiesTable_entries.graphql'
 
 const tableFragment = graphql`
   fragment ActivitiesTable_entries on Activity @relay(plural: true) {
@@ -75,118 +70,17 @@ const tableFragment = graphql`
   }
 `
 
-export type ActivityRow = ActivitiesTable_entries$data[number]
-
-const gadgetNames = (row: ActivityRow) => row.gadgets.map(vehicleLabel).join(', ')
-const tagNames = (row: ActivityRow) => row.tags.map((tag) => tag.name).join(', ')
-
-const VISIBLE_TAGS = 2
-
-/** One line: the first tags as chips, the rest as a "+N" chip; the title lists all of them. */
-function TagChips({ row }: { row: ActivityRow }) {
-  const { t } = useTranslation()
-  if (row.tags.length === 0) return '—'
-  return (
-    <Flex gap="1" wrap="nowrap" overflow="hidden" title={tagNames(row)}>
-      {row.tags.slice(0, VISIBLE_TAGS).map((tag) => (
-        <Tag.Root
-          key={tag.id}
-          size="sm"
-          variant="subtle"
-          flexShrink={0}
-          colorPalette={tagColorPalette(tag.id)}
-        >
-          <Tag.Label>{tag.name}</Tag.Label>
-        </Tag.Root>
-      ))}
-      {row.tags.length > VISIBLE_TAGS && (
-        <Tag.Root size="sm" variant="outline" flexShrink={0}>
-          <Tag.Label>
-            {t('activities.moreTags', { count: row.tags.length - VISIBLE_TAGS })}
-          </Tag.Label>
-        </Tag.Root>
-      )}
-    </Flex>
-  )
+function getGridSortModel(api: GridApi<ActivityRow>): ActivitySort {
+  return api
+    .getColumnState()
+    .filter(({ sort }) => sort)
+    .sort((left, right) => (left.sortIndex ?? 0) - (right.sortIndex ?? 0))
+    .flatMap(({ colId, sort }) => (sort ? [{ colId, sort }] : []))
 }
 
-interface RowActionsProps {
-  row: ActivityRow
-  /** Accessible name of the menu button; it names the row. */
-  label: string
-  labels: { duplicate: string; delete: string }
-  onDuplicate: (row: ActivityRow) => void
-  onDelete: (row: ActivityRow) => void
+function ActivityEmptyOverlay({ emptyMessage }: { emptyMessage?: ReactNode }) {
+  return <Box p="4">{emptyMessage}</Box>
 }
-
-/**
- * Duplicate and the destructive delete (last) in a menu; a click on the row itself edits. It gets
- * its texts as props, so a row adds no hooks of its own.
- */
-function RowActions({ row, label, labels, onDuplicate, onDelete }: RowActionsProps) {
-  return (
-    <Menu.Root positioning={{ placement: 'bottom-end' }}>
-      <Menu.Trigger asChild>
-        <IconButton variant="ghost" size="sm" color="fg.muted" aria-label={label}>
-          <LuEllipsis />
-        </IconButton>
-      </Menu.Trigger>
-      <Portal>
-        <Menu.Positioner>
-          {/* Portals leave the app's brand palette, so the menu sets it again. */}
-          <Menu.Content colorPalette="brand">
-            {/* onClick, not onSelect: in the page tests onSelect never fired (see frontend
-                LEARNINGS); Enter on a highlighted item clicks it, so the keyboard works too. */}
-            <Menu.Item value="duplicate" onClick={() => onDuplicate(row)}>
-              <LuCopy aria-hidden />
-              {labels.duplicate}
-            </Menu.Item>
-            <Menu.Separator />
-            <Menu.Item
-              value="delete"
-              color="fg.error"
-              _highlighted={{ bg: 'bg.error' }}
-              onClick={() => onDelete(row)}
-            >
-              <LuTrash2 aria-hidden />
-              {labels.delete}
-            </Menu.Item>
-          </Menu.Content>
-        </Menu.Positioner>
-      </Portal>
-    </Menu.Root>
-  )
-}
-
-/**
- * A mood or wind as its emoji; the label is its accessible name and tooltip. A value without an emoji
- * (newer than this client) shows its label, and a missing one "—".
- */
-function EmojiValue({ emoji, label }: { emoji: string | undefined; label: string }) {
-  if (!emoji) return <>{label}</>
-  return (
-    <Text as="span" role="img" aria-label={label} title={label} fontSize="lg" lineHeight="1">
-      {emoji}
-    </Text>
-  )
-}
-
-/** The effort with the emoji of its group before the number; the group's name is the tooltip. */
-function effortCell(t: TFunction, effort: number | null | undefined) {
-  const level = effortLevel(t, effort)
-  if (!level) return '—'
-  return (
-    <Text as="span" title={level.label} whiteSpace="nowrap">
-      <span aria-hidden>{level.emoji}</span> {effort}
-    </Text>
-  )
-}
-
-/** Shows the full text as a tooltip, because truncated cells hide the end. */
-const titled = (text: string) => (text ? <span title={text}>{text}</span> : '—')
-
-/** Secondary data: hidden on narrow screens and shown in a muted colour. */
-const secondary = { hideBelow: '2xl', muted: true } as const
 
 interface ActivitiesTableProps {
   entries: ActivitiesTable_entries$key
@@ -194,22 +88,36 @@ interface ActivitiesTableProps {
   isLoadingNext: boolean
   loadMoreError: boolean
   onLoadMore: () => void
-  filters: ActivityFilters
+  filterModel: ActivityGridFilterModel
   vehicles: readonly FilterOption[]
+  vehicleRecords: readonly NonNullable<ActivityRow['vehicle']>[]
+  gadgets: readonly FilterOption[]
+  gadgetRecords: readonly ActivityRow['gadgets'][number][]
   tags: readonly FilterOption[]
+  tagRecords: readonly ActivityRow['tags'][number][]
+  onCreateTag: (name: string, onCreated: (id: string) => void) => void
+  isCreatingTag: boolean
   hasMoreVehicles: boolean
+  hasMoreGadgets: boolean
   hasMoreTags: boolean
-  onFiltersChange: (value: ActivityFilters) => void
-  /** Server-side order; the rows arrive sorted. */
+  /** Server-side state; rows arrive filtered and sorted. */
   sort: ActivitySort
-  onSortChange: (sort: ActivitySort) => void
+  onGridStateChange: (model: ActivityGridFilterModel, sort: ActivitySort) => void
+  columnState: ActivitiesColumnState[]
+  resetTableVersion: number
+  onColumnStateChange: (columns: ActivitiesColumnState[]) => void
+  pinnedActivities: ActivityRow[]
+  onTogglePin: (row: ActivityRow) => void
   /** Number of activities matching the filters, across all pages. */
   totalCount: number
   /** The data is being refreshed after a filter change. */
   busy: boolean
   /** Shown in the table body when nothing matches; the header and its filters stay. */
   emptyMessage?: ReactNode
-  onEdit: (row: ActivityRow) => void
+  onCreateActivity: () => void
+  isCreating: boolean
+  isUpdating: boolean
+  onCellValueChanged: (event: CellValueChangedEvent<ActivityRow>) => void
   onDuplicate: (row: ActivityRow) => void
   onDelete: (row: ActivityRow) => void
   /** The count line, which takes the focus after a delete. */
@@ -223,271 +131,322 @@ export const ActivitiesTable = memo(function ActivitiesTable({
   isLoadingNext,
   loadMoreError,
   onLoadMore,
-  filters,
+  filterModel,
   vehicles,
+  vehicleRecords,
+  gadgets,
+  gadgetRecords,
   tags,
+  tagRecords,
+  onCreateTag,
+  isCreatingTag,
   hasMoreVehicles,
+  hasMoreGadgets,
   hasMoreTags,
-  onFiltersChange,
   sort,
-  onSortChange,
+  onGridStateChange,
+  columnState,
+  resetTableVersion,
+  onColumnStateChange,
+  pinnedActivities,
+  onTogglePin,
   totalCount,
   busy,
   emptyMessage,
-  onEdit,
+  onCreateActivity,
+  isCreating,
+  isUpdating,
+  onCellValueChanged,
   onDuplicate,
   onDelete,
   countRef,
 }: ActivitiesTableProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const format = useFormat()
-  const actionLabels = useMemo(
-    () => ({ duplicate: t('activities.duplicate.action'), delete: t('activities.delete.action') }),
-    [t],
-  )
+  const showMd = useBreakpointValue({ base: false, md: true }) ?? true
+  const showLg = useBreakpointValue({ base: false, lg: true }) ?? true
+  const show2xl = useBreakpointValue({ base: false, '2xl': true }) ?? true
+  const [gridApi, setGridApi] = useState<GridApi<ActivityRow> | null>(null)
+  const [visibleColumns, setVisibleColumns] = useState<string[]>([...activitiesColumnIds])
+  const applyingUrlState = useRef(false)
   const rows = useFragment(tableFragment, entries)
+  const pinnedActivityIds = useMemo(
+    () => new Set(pinnedActivities.map((activity) => activity.id)),
+    [pinnedActivities],
+  )
+  const columnDefs = useActivitiesGridColumns({
+    t,
+    format,
+    showMd,
+    showLg,
+    show2xl,
+    isUpdating,
+    vehicles,
+    vehicleRecords,
+    gadgets,
+    gadgetRecords,
+    tags,
+    tagRecords,
+    onCreateTag,
+    isCreatingTag,
+    hasMoreVehicles,
+    hasMoreGadgets,
+    hasMoreTags,
+    pinnedActivityIds,
+    onTogglePin,
+    onDuplicate,
+    onDelete,
+  })
 
-  const columnFilters = useMemo(() => {
-    const filterFor = (key: ActivityFilterKey) => {
-      const column = t(`activities.filters.${key}`)
-      const count = filterValueCount(key, filters)
-      return {
-        title: column,
-        label: t('activities.filters.filterBy', { column }),
-        active: count > 0,
-        count,
-        activeLabel: t('activities.filters.filterByActive', {
-          column,
-          value: activeFilterSummary(key, filters, vehicles, tags, t),
-        }),
-        // The panel stays open while values are ticked; its "Fertig" button closes it.
-        content: () => (
-          <ActivityFilterField
-            field={key}
-            value={filters}
-            vehicles={vehicles}
-            tags={tags}
-            hasMoreVehicles={hasMoreVehicles}
-            hasMoreTags={hasMoreTags}
-            onChange={onFiltersChange}
-          />
-        ),
-      }
-    }
-    return {
-      type: filterFor('type'),
-      vehicle: filterFor('vehicle'),
-      tags: filterFor('tag'),
-      wind: filterFor('wind'),
-    }
-  }, [t, filters, vehicles, tags, hasMoreVehicles, hasMoreTags, onFiltersChange])
-
-  const columns = useMemo<DataTableColumn<ActivityRow>[]>(
-    () => [
-      {
-        id: 'date',
-        header: t('activities.columns.date'),
-        accessor: (row) => new Date(row.date).getTime(),
-        cell: (row) => <time dateTime={row.date}>{format.dateTime(row.date)}</time>,
-        width: '10rem',
-      },
-      {
-        id: 'type',
-        header: t('activities.columns.type'),
-        accessor: (row) => row.type,
-        cell: (row) => t(`activities.types.${row.type}`),
-        filter: columnFilters.type,
-        sortable: false,
-      },
-      {
-        id: 'description',
-        header: t('activities.columns.description'),
-        accessor: (row) => row.description ?? '',
-        cell: (row) => titled(row.description ?? ''),
-        sortable: false,
-        hideBelow: 'md',
-        truncate: true,
-        minWidth: '12rem',
-        maxWidth: '24rem',
-      },
-      {
-        id: 'time',
-        header: t('activities.columns.duration'),
-        accessor: (row) => row.time,
-        cell: (row) => formatDuration(row.time),
-        align: 'end',
-        unit: t('activities.units.duration'),
-        description: t('activities.columnHints.duration'),
-      },
-      {
-        id: 'distance',
-        header: t('activities.columns.distance'),
-        accessor: (row) => row.distance,
-        cell: (row) => formatOptionalNumber(format, row.distance, 1),
-        align: 'end',
-        unit: t('activities.units.distance'),
-      },
-      {
-        id: 'vehicle',
-        header: t('activities.columns.vehicle'),
-        accessor: (row) => (row.vehicle ? vehicleLabel(row.vehicle) : ''),
-        cell: (row) =>
-          row.vehicle ? (
-            <Text truncate maxW="12rem">
-              {vehicleLabel(row.vehicle)}
-            </Text>
-          ) : (
-            '—'
-          ),
-        hideBelow: filterColumnBreakpoint.vehicle,
-        sortable: false,
-        truncate: true,
-        filter: columnFilters.vehicle,
-      },
-      {
-        id: 'elevationGain',
-        header: t('activities.columns.elevationGain'),
-        accessor: (row) => row.elevationGain ?? -1,
-        cell: (row) => formatOptionalNumber(format, row.elevationGain, 0),
-        align: 'end',
-        unit: t('activities.units.elevation'),
-        description: t('activities.columnHints.elevationGain'),
-        hideBelow: 'lg',
-      },
-      {
-        id: 'averageSpeed',
-        header: t('activities.columns.speed'),
-        accessor: (row) => row.averageSpeed ?? -1,
-        cell: (row) => formatOptionalNumber(format, row.averageSpeed, 1),
-        align: 'end',
-        unit: t('activities.units.speed'),
-        description: t('activities.columnHints.speed'),
-        hideBelow: 'lg',
-      },
-      {
-        id: 'tss',
-        header: t('activities.columns.tss'),
-        description: t('activities.columnHints.tss'),
-        accessor: (row) => row.tss ?? -1,
-        cell: (row) => (row.tss == null ? '—' : format.number(row.tss, 0)),
-        align: 'end',
-        hideBelow: 'lg',
-      },
-      {
-        id: 'heartRate',
-        header: t('activities.columns.heartRate'),
-        accessor: (row) => row.heartRateAverage ?? -1,
-        cell: (row) => {
-          const { text, title } = formatHeartRate(
-            row.heartRateAverage,
-            row.heartRateMin,
-            row.heartRateMax,
-          )
-          return title ? <span title={title}>{text}</span> : text
-        },
-        align: 'end',
-        unit: t('activities.units.heartRate'),
-        description: t('activities.columnHints.heartRate'),
-        ...secondary,
-      },
-      {
-        id: 'effort',
-        header: t('activities.columns.effort'),
-        accessor: (row) => row.effort ?? -1,
-        cell: (row) => effortCell(t, row.effort),
-        align: 'end',
-        unit: t('activities.units.effort'),
-        description: t('activities.columnHints.effort'),
-        ...secondary,
-      },
-      {
-        id: 'mood',
-        header: t('activities.columns.mood'),
-        description: t('activities.columnHints.mood'),
-        accessor: (row) => moodRank(row.mood),
-        cell: (row) => (
-          <EmojiValue emoji={moodEmojiOf(row.mood)} label={enumLabel(t, 'moods', row.mood)} />
-        ),
-        ...secondary,
-        sortable: false,
-      },
-      {
-        id: 'wind',
-        header: t('activities.columns.wind'),
-        description: t('activities.columnHints.wind'),
-        accessor: (row) => windRank(row.wind),
-        cell: (row) => (
-          <EmojiValue emoji={windEmojiOf(row.wind)} label={enumLabel(t, 'winds', row.wind)} />
-        ),
-        ...secondary,
-        hideBelow: filterColumnBreakpoint.wind,
-        filter: columnFilters.wind,
-        sortable: false,
-      },
-      {
-        id: 'gadgets',
-        header: t('activities.columns.gadgets'),
-        description: t('activities.columnHints.gadgets'),
-        accessor: gadgetNames,
-        cell: (row) => titled(gadgetNames(row)),
-        ...secondary,
-        sortable: false,
-        truncate: true,
-        minWidth: '8rem',
-        maxWidth: '14rem',
-      },
-      {
-        id: 'tags',
-        header: t('activities.columns.tags'),
-        accessor: tagNames,
-        cell: (row) => <TagChips row={row} />,
-        ...secondary,
-        hideBelow: filterColumnBreakpoint.tag,
-        filter: columnFilters.tags,
-        sortable: false,
-        minWidth: '8rem',
-        maxWidth: '14rem',
-      },
-    ],
-    [t, format, columnFilters],
+  const updateColumnState = useCallback(
+    (api: GridApi<ActivityRow>) => {
+      const state = parseActivitiesColumnState(serializeActivitiesColumnState(api.getColumnState()))
+      onColumnStateChange(state)
+      setVisibleColumns(state.filter(({ hide }) => !hide).map(({ colId }) => colId))
+    },
+    [onColumnStateChange],
   )
 
-  const changeSort = ({ column, desc }: ListSort) => {
-    if (isSortColumn(activitySortColumns, column)) onSortChange({ column, desc })
-  }
+  const persistColumnState = useCallback(
+    (api: GridApi<ActivityRow>) => {
+      const state = serializeActivitiesColumnState(api.getColumnState())
+      updateColumnState(api)
+      try {
+        window.localStorage.setItem(ACTIVITIES_COLUMN_STORAGE_KEY, state)
+      } catch (error) {
+        console.error('Could not save Activities column preferences.', error)
+      }
+    },
+    [updateColumnState],
+  )
+
+  const restoreColumnState = useCallback(
+    (api: GridApi<ActivityRow>) => {
+      try {
+        const stored = parseActivitiesColumnState(
+          window.localStorage.getItem(ACTIVITIES_COLUMN_STORAGE_KEY),
+        )
+        if (stored.length > 0) api.applyColumnState({ state: stored, applyOrder: true })
+      } catch (error) {
+        console.error('Could not restore Activities column preferences.', error)
+      }
+      updateColumnState(api)
+    },
+    [updateColumnState],
+  )
+
+  useEffect(() => {
+    if (!gridApi || columnState.length === 0) return
+    const current = serializeActivitiesColumnState(gridApi.getColumnState())
+    const desired = serializeActivitiesColumnState(columnState)
+    if (current !== desired) gridApi.applyColumnState({ state: columnState, applyOrder: true })
+  }, [columnState, gridApi])
+
+  useEffect(() => {
+    if (!gridApi || resetTableVersion === 0) return
+    gridApi.resetColumnState()
+    applyingUrlState.current = true
+    gridApi.setFilterModel(null)
+    queueMicrotask(() => {
+      applyingUrlState.current = false
+    })
+  }, [gridApi, resetTableVersion])
+
+  useEffect(() => {
+    if (!gridApi) return
+    const current = getGridSortModel(gridApi)
+    if (JSON.stringify(current) === JSON.stringify(sort)) return
+    applyingUrlState.current = true
+    gridApi.applyColumnState({
+      state: sort.map(({ colId, sort: direction }, sortIndex) => ({
+        colId,
+        sort: direction,
+        sortIndex,
+      })),
+      defaultState: { sort: null },
+    })
+    queueMicrotask(() => {
+      applyingUrlState.current = false
+    })
+  }, [gridApi, sort])
+
+  useEffect(() => {
+    if (!gridApi) return
+    const current = JSON.stringify(gridApi.getFilterModel() ?? {})
+    const desired = JSON.stringify(filterModel)
+    if (current === desired) return
+    applyingUrlState.current = true
+    gridApi.setFilterModel(Object.keys(filterModel).length > 0 ? filterModel : null)
+    queueMicrotask(() => {
+      applyingUrlState.current = false
+    })
+  }, [filterModel, gridApi])
 
   return (
-    <DataTable
-      data={rows}
-      columns={columns}
-      getRowId={(row) => row.id}
-      sort={sort}
-      onSortChange={changeSort}
-      caption={t('activities.table.caption')}
-      busy={busy}
-      emptyMessage={emptyMessage}
-      count={t('activities.resultCount', { count: totalCount })}
-      countRef={countRef}
-      actionsLabel={t('activities.row.actionsColumn')}
-      onRowClick={onEdit}
-      rowLabel={(row) => t('activities.row.edit', { date: format.date(row.date) })}
-      rowActions={(row) => (
-        <RowActions
-          row={row}
-          label={t('activities.row.more', { date: format.date(row.date) })}
-          labels={actionLabels}
-          onDuplicate={onDuplicate}
-          onDelete={onDelete}
-        />
+    <Flex direction="column" gap="3">
+      <Box
+        display="grid"
+        gridTemplateColumns={{ base: '1fr', sm: '1fr auto' }}
+        alignItems="center"
+        gap="3"
+      >
+        <Text
+          ref={countRef}
+          tabIndex={countRef ? -1 : undefined}
+          fontSize="sm"
+          color="fg.muted"
+          aria-live="polite"
+          _focusVisible={{ outline: 'none' }}
+        >
+          {t('activities.resultCount', { count: totalCount })}
+        </Text>
+        <Box
+          display="grid"
+          gridTemplateColumns="max-content max-content"
+          justifyContent={{ base: 'start', sm: 'end' }}
+          gap="2"
+        >
+          <Button size="sm" onClick={onCreateActivity} loading={isCreating}>
+            <LuPlus aria-hidden />
+            {t('activities.add.open')}
+          </Button>
+          <GridColumnPicker
+            visibleColumns={visibleColumns}
+            columns={activitiesColumnIds
+              .filter((id) => id !== 'actions')
+              .map((id) => ({
+                id,
+                label: t(
+                  `activities.columns.${
+                    (
+                      {
+                        time: 'duration',
+                        averageSpeed: 'speed',
+                      } as Record<string, string>
+                    )[id] ?? id
+                  }`,
+                ),
+              }))}
+            openLabel={t('activities.columnPicker.open')}
+            dialogLabel={t('activities.columnPicker.label')}
+            onColumnVisibleChange={(column, visible) => {
+              gridApi?.applyColumnState({ state: [{ colId: column, hide: !visible }] })
+              if (gridApi) persistColumnState(gridApi)
+            }}
+          />
+        </Box>
+      </Box>
+      <AgGridTable<ActivityRow>
+        key={i18n.resolvedLanguage}
+        ariaLabel={t('activities.table.caption')}
+        height="clamp(24rem, calc(100dvh - 22rem), 48rem)"
+        busy={busy}
+        rowData={rows.filter((row) => !pinnedActivityIds.has(row.id)).map((row) => ({ ...row }))}
+        columnDefs={columnDefs}
+        headerHeight={48}
+        defaultColDef={{
+          resizable: true,
+          sortable: true,
+          filter: true,
+          suppressHeaderMenuButton: false,
+          minWidth: 100,
+        }}
+        getRowId={({ data }) => data?.id ?? ''}
+        pinnedTopRowData={
+          pinnedActivities.length > 0
+            ? pinnedActivities.map((activity) => ({ ...activity }))
+            : undefined
+        }
+        noRowsOverlayComponent={ActivityEmptyOverlay}
+        noRowsOverlayComponentParams={{ emptyMessage }}
+        localeText={{
+          noRowsToShow: t('activities.empty.filteredTitle'),
+          equals: t('activities.gridFilter.options.equals'),
+          notEqual: t('activities.gridFilter.options.notEqual'),
+          contains: t('activities.gridFilter.options.contains'),
+          notContains: t('activities.gridFilter.options.notContains'),
+          startsWith: t('activities.gridFilter.options.startsWith'),
+          endsWith: t('activities.gridFilter.options.endsWith'),
+          blank: t('activities.gridFilter.options.blank'),
+          notBlank: t('activities.gridFilter.options.notBlank'),
+          lessThan: t('activities.gridFilter.options.lessThan'),
+          greaterThan: t('activities.gridFilter.options.greaterThan'),
+          inRange: t('activities.gridFilter.options.inRange'),
+          before: t('activities.gridFilter.options.before'),
+          after: t('activities.gridFilter.options.after'),
+        }}
+        onGridReady={({ api }) => {
+          setGridApi(api)
+          restoreColumnState(api)
+          applyingUrlState.current = true
+          api.applyColumnState({
+            state: sort.map(({ colId, sort: direction }, sortIndex) => ({
+              colId,
+              sort: direction,
+              sortIndex,
+            })),
+            defaultState: { sort: null },
+          })
+          api.setFilterModel(Object.keys(filterModel).length > 0 ? filterModel : null)
+          queueMicrotask(() => {
+            applyingUrlState.current = false
+          })
+        }}
+        onFilterChanged={({ api }) => {
+          void clearNoOpGridFilters(
+            api.getFilterModel() ?? {},
+            (column) => api.setColumnFilterModel(column, null),
+            () => api.onFilterChanged(),
+          )
+            .then((cleared) => {
+              if (!cleared && !applyingUrlState.current) {
+                onGridStateChange(api.getFilterModel() ?? {}, getGridSortModel(api))
+              }
+            })
+            .catch((error: unknown) => {
+              console.error('Could not clear no-op activity filters.', error)
+            })
+        }}
+        onSortChanged={({ api }) => {
+          if (!applyingUrlState.current) {
+            onGridStateChange(
+              { ...filterModel, ...(api.getFilterModel() ?? {}) },
+              getGridSortModel(api),
+            )
+          }
+        }}
+        onCellValueChanged={onCellValueChanged}
+        onBodyScrollEnd={({ api }) => {
+          if (
+            hasNextPage &&
+            !isLoadingNext &&
+            api.getDisplayedRowCount() > 0 &&
+            api.getLastDisplayedRowIndex() >= api.getDisplayedRowCount() - 1
+          ) {
+            onLoadMore()
+          }
+        }}
+        onColumnMoved={({ api }) => persistColumnState(api)}
+        onColumnVisible={({ api }) => persistColumnState(api)}
+        onColumnResized={({ api, finished }) => {
+          if (finished) persistColumnState(api)
+        }}
+      />
+      {loadMoreError && (
+        <Flex align="center" justify="space-between" gap="3" wrap="wrap">
+          <Text role="alert" color="fg.error">
+            {t('activities.loadMoreFailed')}
+          </Text>
+          <Button size="sm" variant="outline" onClick={onLoadMore}>
+            {t('page.retry')}
+          </Button>
+        </Flex>
       )}
-      pagination={{
-        hasNextPage,
-        isLoadingNext,
-        error: loadMoreError,
-        onLoadMore,
-        loadMoreLabel: t('activities.loadMore'),
-        errorLabel: t('activities.loadMoreFailed'),
-      }}
-    />
+      {isLoadingNext && (
+        <Text aria-live="polite" color="fg.muted" textAlign="center">
+          {t('activities.loadingMore')}
+        </Text>
+      )}
+    </Flex>
   )
 })

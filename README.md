@@ -39,10 +39,10 @@ The product is not implemented yet. The repository currently contains:
   belongs to a user; until login exists, every request acts as a development
   user. Strava synchronization and Dashboard analyses are not implemented.
 - **Frontend**: a React app with light/dark color mode, a German/English
-  language setting and routing. The Activities page lists activities in a
-  paged table; type, bicycle, wind and tag filters sit in the column headers
-  and live in the URL. The Body-Stats page shows summary tiles, a chart, a
-  paged history table and add/edit/delete. Both use the backend API.
+  language switcher and routing. The Activities page uses a grid with
+  URL-backed filters and sorting, browser-local saved views, configurable
+  columns and cursor scrolling. The Body-Stats page shows summary tiles, a
+  chart, a paged history table and add/edit/delete. Both use the backend API.
 
 ## Tech Stack & Sources
 

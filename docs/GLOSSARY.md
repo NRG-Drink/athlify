@@ -162,14 +162,23 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
   description and actions, and exactly one UI state body (loading, empty,
   error or ready). See [`SAD.md`](copilot/frontend/SAD.md#page-frame).
 
-**Period** — A relative time span used by the Body-Stats chart and by the planned
+  **Period** — A relative time span used by the Body-Stats chart and by the planned
   Dashboard filters, for example the last 30 days or one year. Body-Stats keeps it in
-  the URL (`?period=`), so a view can be reloaded and shared. The Activities list has
-  no period filter; it shows the whole history.
+  the URL (`?period=`), so a view can be reloaded and shared.
 
 **Date range** — An inclusive pair of local calendar dates (`from` and `to`)
   that defines the exact interval shown by the Body-Stats chart and KPI
-  comparisons. It is part of the URL so the view can be reloaded and shared.
+    comparisons. Activities also use an inclusive date range in their URL-backed
+    list filters.
+
+  **Saved view** — A named, browser-local Activities grid preset containing its
+    filters, sort order and column layout. It can be applied or deleted by the
+    current browser user; it is not shared or synchronized to another device.
+
+  **Pinned Activity** — A temporary Activities-grid row shown above the
+    server-filtered results. Users can pin multiple activities at once and
+    unpin them independently; creation pins the new activity until it is
+    unpinned.
 
 **Chart aggregation** — The display resolution applied to the selected
   Body-Stats chart metric: no aggregation, or daily, weekly, monthly or yearly

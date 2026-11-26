@@ -11,13 +11,21 @@ ModuleRegistry.registerModules(gridModules)
 type AgGridTableProps<TData> = AgGridReactProps<TData> & {
   ariaLabel: string
   height: string
+  busy?: boolean
 }
 
-export function AgGridTable<TData>({ ariaLabel, height, ...props }: AgGridTableProps<TData>) {
+export function AgGridTable<TData>({ ariaLabel, height, busy, ...props }: AgGridTableProps<TData>) {
   const { colorMode } = useColorMode()
   return (
     <AgGridProvider modules={gridModules}>
-      <Box height={height} aria-label={ariaLabel}>
+      <Box
+        role="region"
+        height={height}
+        aria-label={ariaLabel}
+        aria-busy={busy || undefined}
+        opacity={busy ? 0.6 : undefined}
+        transition="opacity 0.15s"
+      >
         <AgGridReact<TData> {...props} theme={gridThemeFor(colorMode ?? 'light')} />
       </Box>
     </AgGridProvider>

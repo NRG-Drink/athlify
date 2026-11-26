@@ -13,7 +13,7 @@ import {
 import { formatDuration } from './activityFormatting'
 import type { useActivityMutationsCreateMutation } from './__generated__/useActivityMutationsCreateMutation.graphql'
 
-/** Text values of the activity form; empty strings stand for "not set". */
+/** Editable activity values; empty strings stand for "not set". */
 export interface ActivityFormValues {
   /** `DD.MM.YYYY, HH:MM`, local time. */
   date: string
@@ -78,6 +78,7 @@ export interface ActivityFormSource {
 }
 
 export const MAX_DESCRIPTION_LENGTH = 2000
+export const MAX_TAG_LENGTH = 50
 const MIN_HEART_RATE = 20
 const MAX_HEART_RATE = 250
 const MIN_EFFORT = 1
@@ -102,7 +103,7 @@ export function normalizeDuration(raw: string): string {
 
 const text = (value: number | null | undefined) => (value == null ? '' : String(value))
 
-/** An empty form; type and bicycle come from the latest activity when there is one. */
+/** Minimal values for a new activity; callers set its type and valid duration and distance. */
 export function newActivityValues(
   defaults: { type?: string | null; vehicleId?: string | null },
   now = new Date(),
