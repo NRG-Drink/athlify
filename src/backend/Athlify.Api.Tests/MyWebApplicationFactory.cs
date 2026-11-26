@@ -115,7 +115,6 @@ public class MyWebApplicationFactory : TestWebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
-            services.ReplaceService<IDbSeeder, SeedNothing>();
             ConfigureDatabase(services);
             services.RemoveAll<ICurrentUser>();
             services.AddScoped<ICurrentUser, TestCurrentUser>();
@@ -154,13 +153,6 @@ public class MyWebApplicationFactory : TestWebApplicationFactory<Program>
         {
             services.Remove(registration);
         }
-    }
-}
-
-public class SeedNothing : IDbSeeder
-{
-    public void Seed(AthlifyDbContext context, int ownerId)
-    {
     }
 }
 

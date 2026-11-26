@@ -11,16 +11,6 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Athlify.Api.Database.Configurations;
 
-public class SeedMarkerConfiguration : IEntityTypeConfiguration<SeedMarker>
-{
-    public void Configure(EntityTypeBuilder<SeedMarker> builder)
-    {
-        builder.HasOne<User>().WithMany().HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
-        builder.Property(s => s.Key).HasMaxLength(200);
-        builder.HasIndex(s => new { s.UserId, s.Key }).IsUnique();
-    }
-}
-
 public class TagConfiguration : IEntityTypeConfiguration<Tag>
 {
     public void Configure(EntityTypeBuilder<Tag> builder)

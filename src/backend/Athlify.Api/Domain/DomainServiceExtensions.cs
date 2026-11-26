@@ -16,7 +16,6 @@ public static class DomainServiceExtensions
         builder.Services
             .AddSingleton<ActivityValidation>()
             .AddSingleton<MergeMembership>()
-            .AddSingleton<DbSeeder>()
             .AddSingleton<BodyStatsValidation>()
             .AddSingleton<EventValidation>()
             .AddSingleton<EquipmentValidation>()

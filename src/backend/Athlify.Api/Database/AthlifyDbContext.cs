@@ -39,7 +39,6 @@ public class AthlifyDbContext(DbContextOptions<AthlifyDbContext> options, ICurre
     public DbSet<ActivityMerge> ActivityMerges => Set<ActivityMerge>();
     public DbSet<Event> Events => Set<Event>();
     public DbSet<StravaConnection> StravaConnections => Set<StravaConnection>();
-    public DbSet<SeedMarker> SeedMarkers => Set<SeedMarker>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     /// <summary>
@@ -75,7 +74,6 @@ public class AthlifyDbContext(DbContextOptions<AthlifyDbContext> options, ICurre
         modelBuilder.Entity<ActivityMerge>().HasQueryFilter(OwnerFilter, m => m.UserId == CurrentUserId);
         modelBuilder.Entity<Event>().HasQueryFilter(OwnerFilter, e => e.UserId == CurrentUserId);
         modelBuilder.Entity<StravaConnection>().HasQueryFilter(OwnerFilter, s => s.UserId == CurrentUserId);
-        modelBuilder.Entity<SeedMarker>().HasQueryFilter(OwnerFilter, s => s.UserId == CurrentUserId);
     }
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
