@@ -54,7 +54,7 @@ The backend is under `../../../src/backend/`. The solution
 `Athlify.slnx` contains `Athlify.Api` (ASP.NET Core, Hot Chocolate GraphQL,
 EF Core, PostgreSQL) and `Athlify.Api.Tests` (TUnit). It exposes the domain
 model (Activities with merges, Garage, tags, Body-Stats, Events) as an
-owner-scoped GraphQL API. Development startup provisions the development Administrator; sample
+owner-scoped GraphQL API. Development startup provisions the development Administrator and a regular user; sample
 Activities and Body-Stats are inserted only by the explicit seed tests. Authentication, Strava
 synchronization and the Dashboard analyses do not exist yet: every request
 acts as a provisioned development user. Copilot must not present these

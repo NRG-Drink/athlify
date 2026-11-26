@@ -128,8 +128,8 @@ src/backend/
   gives `NOT_AUTHENTICATED`. Every rule is checked in application code; the
   database constraints are a backstop that the InMemory tests do not cover.
 - At startup the API applies pending migrations and, only in the
-  `Development` environment, provisions the development Administrator on
-  every start. Sample data is never written at startup: the explicit
+  `Development` environment, provisions the development Administrator and a
+  regular development user (`user`/`user`) on every start. Sample data is never written at startup: the explicit
   `DatabaseSeed` tests in `Athlify.Api.Tests/DatabaseSeeds/` insert random
   Events, Activities (with tags and one merge) and Body-Stats for the user in
   `Database:OwnerUserId`.
