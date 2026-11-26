@@ -3,6 +3,7 @@ import type { GridApi } from 'ag-grid-community'
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { graphql, useMutation, useRelayEnvironment } from 'react-relay'
+import { GridToolbar } from '../../components/ag-grid/GridToolbar'
 import { InfiniteAgGridTable } from '../../components/ag-grid/InfiniteAgGridTable'
 import { handleGridFilterChanged } from '../../components/ag-grid/gridFilterChange'
 import { getGridSortModel } from '../../components/ag-grid/gridSortModel'
@@ -17,7 +18,6 @@ import type { EventsGridCreateMutation } from './__generated__/EventsGridCreateM
 import type { EventsGridUpdateMutation } from './__generated__/EventsGridUpdateMutation.graphql'
 import { EventsDataSource } from './EventsDataSource'
 import { createEventsColumnDefs } from './EventsGridColumns'
-import { EventsGridToolbar } from './EventsGridToolbar'
 import { defaultOrder, getGridQuery } from './EventsGridQuery'
 import { copyEventRow, type EventsRow } from './EventsGridTypes'
 import {
@@ -92,6 +92,8 @@ const createMutation = graphql`
     }
   }
 `
+
+const eventsToolbarColumnIds = eventsColumnIds.filter((column) => column !== 'delete')
 
 type UpdatedEvent = NonNullable<EventsGridUpdateMutation['response']['updateEvent']>
 
@@ -257,11 +259,13 @@ export function EventsGrid({
           {t('events.loadFailed')}
         </Text>
       )}
-      <EventsGridToolbar
+      <GridToolbar
+        namespace="events"
+        columnIds={eventsToolbarColumnIds}
         resultCount={resultCount}
         isCreating={isCreating}
         visibleColumns={visibleColumns}
-        onCreateEvent={createEvent}
+        onCreate={createEvent}
         onColumnVisibleChange={setColumnVisible}
       />
       <InfiniteAgGridTable<EventsRow>

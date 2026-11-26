@@ -81,3 +81,31 @@ export function createGridNumberFilterParams(t: TFunction, namespace: GridFilter
     maxNumConditions: 1,
   }
 }
+
+const requiredValueOptions = (options: ReadonlyArray<unknown>) =>
+  options.filter((option) => option !== 'blank' && option !== 'notBlank')
+
+const isEqualityOption = (option: unknown) =>
+  option === 'equals' ||
+  option === 'notEqual' ||
+  (typeof option === 'object' &&
+    option !== null &&
+    'displayKey' in option &&
+    option.displayKey === 'none')
+
+/** For a column that always holds a value, so "blank" and "not blank" make no sense. */
+export function createGridRequiredDateFilterParams(t: TFunction, namespace: GridFilterNamespace) {
+  const params = createGridDateFilterParams(t, namespace)
+  return { ...params, filterOptions: requiredValueOptions(params.filterOptions) }
+}
+
+export function createGridRequiredNumberFilterParams(t: TFunction, namespace: GridFilterNamespace) {
+  const params = createGridNumberFilterParams(t, namespace)
+  return { ...params, filterOptions: requiredValueOptions(params.filterOptions) }
+}
+
+/** For an identifier, which can only be matched exactly. */
+export function createGridIdFilterParams(t: TFunction, namespace: GridFilterNamespace) {
+  const params = createGridNumberFilterParams(t, namespace)
+  return { ...params, filterOptions: params.filterOptions.filter(isEqualityOption) }
+}

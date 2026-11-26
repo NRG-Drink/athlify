@@ -1,4 +1,5 @@
-import type { ColumnState } from 'ag-grid-community'
+import { createColumnStateCodec } from '../../components/ag-grid/gridStateCodec'
+import type { GridColumnState } from '../../components/ag-grid/useGridColumnPreferences'
 import { applyActivityQuery, parseActivityQuery, type ActivityQuery } from './activityQuery'
 
 export const ACTIVITIES_COLUMN_STORAGE_KEY = 'athlify.activities.columns.v1'
@@ -25,7 +26,7 @@ export const activitiesColumnIds = [
   'actions',
 ] as const
 
-export type ActivitiesColumnState = Pick<ColumnState, 'colId' | 'width' | 'hide' | 'pinned'>
+export type ActivitiesColumnState = GridColumnState
 
 export type ActivitiesSavedView = {
   id: string
@@ -38,49 +39,18 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
-export function parseActivitiesColumnState(raw: string | null): ActivitiesColumnState[] {
-  if (!raw) return []
-  try {
-    return parseActivitiesColumnStateValue(JSON.parse(raw) as unknown)
-  } catch {
-    return []
-  }
-}
+const columnStateCodec = createColumnStateCodec<ActivitiesColumnState>(
+  activitiesColumnIds,
+  (columns) => {
+    const actions = columns.find(({ colId }) => colId === 'actions')
+    if (!actions) return columns
+    return [{ ...actions, pinned: 'left' }, ...columns.filter(({ colId }) => colId !== 'actions')]
+  },
+)
 
-export function parseActivitiesColumnStateValue(parsed: unknown): ActivitiesColumnState[] {
-  if (!Array.isArray(parsed)) return []
-  const columns = parsed.flatMap((item): ActivitiesColumnState[] => {
-    if (
-      !isRecord(item) ||
-      typeof item.colId !== 'string' ||
-      !activitiesColumnIds.includes(item.colId as (typeof activitiesColumnIds)[number])
-    ) {
-      return []
-    }
-    const state: ActivitiesColumnState = { colId: item.colId, width: 100 }
-    if (typeof item.width === 'number' && Number.isFinite(item.width) && item.width > 0) {
-      state.width = item.width
-    }
-    if (typeof item.hide === 'boolean') state.hide = item.hide
-    if (item.pinned === 'left' || item.pinned === 'right' || item.pinned === null) {
-      state.pinned = item.pinned
-    }
-    return [state]
-  })
-  const actions = columns.find(({ colId }) => colId === 'actions')
-  if (!actions) return columns
-  return [{ ...actions, pinned: 'left' }, ...columns.filter(({ colId }) => colId !== 'actions')]
-}
-
-export function serializeActivitiesColumnState(columns: ActivitiesColumnState[]): string {
-  return JSON.stringify(
-    columns
-      .filter(({ colId }) =>
-        activitiesColumnIds.includes(colId as (typeof activitiesColumnIds)[number]),
-      )
-      .map(({ colId, width, hide, pinned }) => ({ colId, width, hide, pinned })),
-  )
-}
+export const parseActivitiesColumnState = columnStateCodec.parse
+export const parseActivitiesColumnStateValue = columnStateCodec.parseValue
+export const serializeActivitiesColumnState = columnStateCodec.serialize
 
 export function parseActivitiesSavedViews(raw: string | null): ActivitiesSavedView[] {
   if (!raw) return []

@@ -6,11 +6,11 @@ import type { Formatter } from '../../i18n/useFormat'
 import { parseDateTime } from '../../lib/dates'
 import { parseDecimal } from '../../lib/formValues'
 import {
-  createBodyStatsDateFilterParams,
-  createBodyStatsIdFilterParams,
-  createBodyStatsNumberFilterParams,
-  createBodyStatsTextFilterParams,
-} from './BodyStatsGridFilterParams'
+  createGridIdFilterParams,
+  createGridRequiredDateFilterParams,
+  createGridRequiredNumberFilterParams,
+  createGridTextFilterParams,
+} from '../../components/ag-grid/GridFilterParams'
 import type { BodyStatsRow } from './BodyStatsGridTypes'
 import { bodyStatsMetrics } from './bodyStatsMetrics'
 
@@ -53,10 +53,10 @@ export function createBodyStatsColumnDefs({
   onDelete,
   onTogglePin,
 }: BodyStatsColumnOptions): ColDef<BodyStatsRow>[] {
-  const textFilterParams = createBodyStatsTextFilterParams(t)
-  const dateFilterParams = createBodyStatsDateFilterParams(t)
-  const numberFilterParams = createBodyStatsNumberFilterParams(t)
-  const idFilterParams = createBodyStatsIdFilterParams(t)
+  const textFilterParams = createGridTextFilterParams(t, 'bodyStats')
+  const dateFilterParams = createGridRequiredDateFilterParams(t, 'bodyStats')
+  const numberFilterParams = createGridRequiredNumberFilterParams(t, 'bodyStats')
+  const idFilterParams = createGridIdFilterParams(t, 'bodyStats')
 
   const metricColumns = bodyStatsMetrics.map(
     ({ key, labelKey, unit, decimals }): ColDef<BodyStatsRow> => ({

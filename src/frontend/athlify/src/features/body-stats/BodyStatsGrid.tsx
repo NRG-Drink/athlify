@@ -3,6 +3,7 @@ import type { GridApi } from 'ag-grid-community'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { graphql, useRelayEnvironment } from 'react-relay'
+import { GridToolbar } from '../../components/ag-grid/GridToolbar'
 import { InfiniteAgGridTable } from '../../components/ag-grid/InfiniteAgGridTable'
 import { handleGridFilterChanged } from '../../components/ag-grid/gridFilterChange'
 import { getGridSortModel } from '../../components/ag-grid/gridSortModel'
@@ -24,7 +25,6 @@ import {
   type BodyStatsFilterModel,
   type BodyStatsSortModel,
 } from './BodyStatsGridState'
-import { BodyStatsGridToolbar } from './BodyStatsGridToolbar'
 import { copyBodyStatsRow, type BodyStatsRow } from './BodyStatsGridTypes'
 import { useBodyStatsCellEdit } from './useBodyStatsCellEdit'
 import { useBodyStatsMutations } from './useBodyStatsMutations'
@@ -44,6 +44,8 @@ type BodyStatsGridProps = {
   onColumnStateChange: (columns: BodyStatsColumnState[]) => void
   onGridStateChange: (filters: BodyStatsFilterModel, sort: BodyStatsSortModel) => void
 }
+
+const bodyStatsToolbarColumnIds = bodyStatsColumnIds.filter((column) => column !== 'actions')
 
 const pageQuery = graphql`
   query BodyStatsGridPageQuery(
@@ -221,7 +223,9 @@ export function BodyStatsGrid({
           {t('bodyStats.loadFailed')}
         </Text>
       )}
-      <BodyStatsGridToolbar
+      <GridToolbar
+        namespace="bodyStats"
+        columnIds={bodyStatsToolbarColumnIds}
         resultCount={resultCount}
         visibleColumns={visibleColumns}
         isCreating={isCreating}

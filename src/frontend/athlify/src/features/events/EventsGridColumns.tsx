@@ -4,9 +4,9 @@ import type { TFunction } from 'i18next'
 import { LuPin, LuPinOff, LuTrash2 } from 'react-icons/lu'
 import { parseDate } from '../../lib/dates'
 import {
-  createEventsDateFilterParams,
-  createEventsTextFilterParams,
-} from './EventsGridFilterParams'
+  createGridDateFilterParams,
+  createGridTextFilterParams,
+} from '../../components/ag-grid/GridFilterParams'
 import type { EventsRow } from './EventsGridTypes'
 import { EventsTypeFilter } from './EventsTypeFilter'
 import { eventTypes } from './EventTypes'
@@ -60,8 +60,8 @@ export function createEventsColumnDefs({
   onDelete,
   onTogglePin,
 }: EventsColumnOptions): ColDef<EventsRow>[] {
-  const textFilterParams = createEventsTextFilterParams(t)
-  const dateFilterParams = createEventsDateFilterParams(t)
+  const textFilterParams = createGridTextFilterParams(t, 'events')
+  const dateFilterParams = createGridDateFilterParams(t, 'events')
 
   return [
     {

@@ -275,6 +275,7 @@ Before designing something new, check whether one of these already covers it
 | `BrandMark` | The logo mark with the `volt` gradient. |
 | `AgGridTable` (`components/ag-grid/`) | The AG Grid wrapper used by the Activities, Events and Body-Stats grids and the admin user list. Its theme follows the app color mode through `gridThemeFor` (`components/ag-grid/gridTheme.ts`). |
 | `InfiniteAgGridTable` (`components/ag-grid/`) | `AgGridTable` with the server-paged row model, the shared paging settings and the translated filter labels (`localeNamespace`). Used by the Activities, Events and Body-Stats grids. Their shared behaviour lives in `useGridColumnPreferences`, `useGridUrlSync`, `usePinnedRows` and `handleGridFilterChanged`. |
+| `GridToolbar` (`components/ag-grid/`) | Result count, add button and column picker above the Events and Body-Stats grids. Labels come from `<namespace>.resultCount`, `.add.open`, `.columns.*` and `.columnPicker.*`. |
 
 ## Grids
 
