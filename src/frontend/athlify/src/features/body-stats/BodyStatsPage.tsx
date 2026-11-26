@@ -20,10 +20,10 @@ import type { BodyStatsPage_analytics$key } from './__generated__/BodyStatsPage_
 import type { BodyStatsPageMoreQuery } from './__generated__/BodyStatsPageMoreQuery.graphql'
 import type { BodyStatsPageQuery } from './__generated__/BodyStatsPageQuery.graphql'
 import { BodyStatsChart } from './BodyStatsChart'
-import { emptyValues } from './bodyStatsForm'
+import { newMeasurementInput } from './bodyStatsForm'
 import { BodyStatsGrid } from './BodyStatsGrid'
 import { BodyStatsPageControls } from './BodyStatsPageControls'
-import { BodyStatsFormDialog } from './BodyStatsFormDialog'
+import type { BodyStatsRow } from './BodyStatsGridTypes'
 import { BodyStatsKpis } from './BodyStatsKpis'
 import { bodyStatsMetrics, parseMetric, type BodyStatsMetricKey } from './bodyStatsMetrics'
 import { useBodyStatsSeries } from './bodyStatsSeries'
@@ -61,6 +61,7 @@ type AnalyticsStatus = 'pending' | 'ready' | 'empty'
 interface AnalyticsProps {
   fetchKey: number
   onCreate: () => void
+  isCreating: boolean
   onStatusChange: (status: Exclude<AnalyticsStatus, 'pending'>) => void
   onLatestChange: (values: Partial<Record<BodyStatsMetricKey, number>>) => void
 }
@@ -68,6 +69,7 @@ interface AnalyticsProps {
 function BodyStatsAnalytics({
   fetchKey,
   onCreate,
+  isCreating,
   onStatusChange,
   onLatestChange,
 }: AnalyticsProps) {
@@ -158,7 +160,7 @@ function BodyStatsAnalytics({
         title={t('bodyStats.empty.title')}
         message={t('bodyStats.empty.message')}
         action={
-          <Button onClick={onCreate}>
+          <Button onClick={onCreate} loading={isCreating}>
             <LuPlus aria-hidden />
             {t('bodyStats.empty.action')}
           </Button>
@@ -190,28 +192,25 @@ function BodyStatsAnalytics({
 interface ContentProps {
   analyticsFetchKey: number
   retryAnalytics: () => void
-  dialogOpen: boolean
-  onDialogOpenChange: (open: boolean) => void
 }
 
-function BodyStatsContent({
-  analyticsFetchKey,
-  retryAnalytics,
-  dialogOpen,
-  onDialogOpenChange,
-}: ContentProps) {
+function BodyStatsContent({ analyticsFetchKey, retryAnalytics }: ContentProps) {
   const { t } = useTranslation()
   const [analyticsStatus, setAnalyticsStatus] = useState<AnalyticsStatus>('pending')
   const [latestValues, setLatestValues] = useState<Partial<Record<BodyStatsMetricKey, number>>>({})
   const [gridRefreshVersion, setGridRefreshVersion] = useState(0)
+  const [createdRow, setCreatedRow] = useState<BodyStatsRow | null>(null)
   const mutations = useBodyStatsMutations()
   const state = useBodyStatsPageState()
 
-  // New entries start from the latest known value of each measurement, which may come from an older entry.
-  const prefill = useMemo(() => emptyValues(latestValues), [latestValues])
-
-  const openCreate = () => onDialogOpenChange(true)
-  const closeDialog = () => onDialogOpenChange(false)
+  // A new measurement starts from the latest known value of each measurement, which may come from an older entry.
+  const createMeasurement = () =>
+    mutations.add(newMeasurementInput(latestValues), {
+      onSuccess: (created) => {
+        setCreatedRow(created)
+        setGridRefreshVersion((version) => version + 1)
+      },
+    })
 
   return (
     <Stack gap="8">
@@ -222,7 +221,8 @@ function BodyStatsContent({
       >
         <BodyStatsAnalytics
           fetchKey={analyticsFetchKey}
-          onCreate={openCreate}
+          onCreate={createMeasurement}
+          isCreating={mutations.isSaving}
           onStatusChange={setAnalyticsStatus}
           onLatestChange={setLatestValues}
         />
@@ -238,45 +238,25 @@ function BodyStatsContent({
             columnState={state.columnState}
             resetTableVersion={state.resetTableVersion}
             refreshVersion={gridRefreshVersion}
-            onCreate={openCreate}
+            createdRow={createdRow}
+            isCreating={mutations.isSaving}
+            onCreate={createMeasurement}
             onColumnStateChange={state.onColumnStateChange}
             onGridStateChange={state.onGridStateChange}
           />
         </Stack>
       )}
-
-      <BodyStatsFormDialog
-        open={dialogOpen}
-        onOpenChange={onDialogOpenChange}
-        mode="create"
-        initialValues={prefill}
-        busy={mutations.isSaving}
-        onSave={(input) =>
-          mutations.add(input, {
-            onSuccess: () => {
-              closeDialog()
-              setGridRefreshVersion((version) => version + 1)
-            },
-          })
-        }
-      />
     </Stack>
   )
 }
 
 export function BodyStatsPage() {
   const { t } = useTranslation()
-  const [dialogOpen, setDialogOpen] = useState(false)
   const [analyticsFetchKey, retryAnalytics] = useFetchKey()
 
   return (
     <Page title={t('nav.bodyStats')}>
-      <BodyStatsContent
-        analyticsFetchKey={analyticsFetchKey}
-        retryAnalytics={retryAnalytics}
-        dialogOpen={dialogOpen}
-        onDialogOpenChange={setDialogOpen}
-      />
+      <BodyStatsContent analyticsFetchKey={analyticsFetchKey} retryAnalytics={retryAnalytics} />
     </Page>
   )
 }

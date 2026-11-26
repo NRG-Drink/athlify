@@ -257,7 +257,8 @@ can be saved in the browser and applied again. Columns can be shown, hidden,
 resized, moved and pinned, and rows can be pinned above the results. Values
 and the note are edited directly in their cells; deleting asks for
 confirmation. The button for a new measurement sits next to the grid's result
-count. Body-Stats are private data and are available only
+count; it saves a measurement at once, with the latest known values and no
+note, and pins it above the results so the user can fill in the cells. Body-Stats are private data and are available only
 within the owning user's personal context. The final list of supported
 measurements may be extended, but any additional values must remain consistent
 with the Dashboard's Body Metrics.

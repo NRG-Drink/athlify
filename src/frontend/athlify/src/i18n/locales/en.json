@@ -427,10 +427,6 @@
         "waterPercentage": "Water",
         "boneMass": "Bone mass"
       },
-      "fields": {
-        "date": "Date",
-        "note": "Note"
-      },
       "columnHints": {
         "bodyFatPercentage": "Share of body fat in your weight. Body composition scales estimate it; compare the trend rather than single values.",
         "musclePercentage": "Share of muscle mass in your weight, estimated by the body composition scale.",
@@ -486,14 +482,12 @@
       },
       "add": {
         "open": "Add measurement",
-        "title": "New measurement",
         "success": "Measurement saved.",
         "errors": {
           "saveFailed": "Saving failed. Please try again."
         }
       },
       "edit": {
-        "title": "Edit measurement",
         "success": "Measurement updated.",
         "errors": {
           "notFound": "This measurement no longer exists."

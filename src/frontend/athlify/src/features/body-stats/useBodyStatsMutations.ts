@@ -3,6 +3,7 @@ import { ConnectionHandler, ROOT_ID } from 'relay-runtime'
 import { useTranslation } from 'react-i18next'
 import { toaster } from '../../components/ui/toaster'
 import { removeFromConnections } from '../../relay/removeFromConnections'
+import type { BodyStatsRow } from './BodyStatsGridTypes'
 import type { useBodyStatsMutationsAddMutation } from './__generated__/useBodyStatsMutationsAddMutation.graphql'
 import type { useBodyStatsMutationsDeleteMutation } from './__generated__/useBodyStatsMutationsDeleteMutation.graphql'
 import type { useBodyStatsMutationsUpdateMutation } from './__generated__/useBodyStatsMutationsUpdateMutation.graphql'
@@ -27,6 +28,14 @@ const addMutation = graphql`
     addBodyStats(bodyStats: $input)
       @prependNode(connections: $connections, edgeTypeName: "BodyStatsEdge") {
       ...useBodyStatsMutations_entry
+      id
+      date
+      weight
+      bodyFatPercentage
+      musclePercentage
+      waterPercentage
+      boneMass
+      comment
     }
   }
 `
@@ -55,7 +64,7 @@ const connectionIds = () => [
 ]
 
 interface Callbacks {
-  /** Called after the server confirmed the change, so the dialog can close. */
+  /** Called after the server confirmed the change. */
   onSuccess: () => void
   /** Called when the server or the network rejected the change, so an edited cell can be restored. */
   onFailure?: () => void
@@ -87,7 +96,7 @@ export function useBodyStatsMutations() {
   const removeLocally = (id: string) =>
     removeFromConnections(environment, connectionIds(), id)
 
-  const add = (input: BodyStatsInput, { onSuccess }: Callbacks) =>
+  const add = (input: BodyStatsInput, { onSuccess }: { onSuccess: (created: BodyStatsRow) => void }) =>
     commitAdd({
       variables: { input, connections: connectionIds() },
       onCompleted: (response, errors) => {
@@ -96,7 +105,9 @@ export function useBodyStatsMutations() {
           return
         }
         toaster.create({ type: 'success', title: t('bodyStats.add.success') })
-        onSuccess()
+        const { id, date, weight, bodyFatPercentage, musclePercentage, waterPercentage, boneMass, comment } =
+          response.addBodyStats
+        onSuccess({ id, date, weight, bodyFatPercentage, musclePercentage, waterPercentage, boneMass, comment })
       },
       onError: () => fail('bodyStats.add.errors.saveFailed'),
     })

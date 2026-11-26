@@ -294,7 +294,7 @@ describe('BodyStatsPage', () => {
       )
     })
 
-    it('uses the same names in tiles and form', async () => {
+    it('uses the same names in tiles and column picker', async () => {
       const { user } = page(() => okQuery())
       await tiles().findByRole('button', { name: /Gewicht/ })
       const names = ['Gewicht', 'Körperfett', 'Muskelanteil', 'Wasseranteil', 'Knochenmasse']
@@ -302,11 +302,9 @@ describe('BodyStatsPage', () => {
         expect(tiles().getByRole('button', { name: new RegExp(name) })).toBeInTheDocument()
       }
 
-      await user.click(screen.getByRole('button', { name: 'Messung erfassen' }))
-      const dialog = await screen.findByRole('dialog')
-
+      await user.click(await screen.findByRole('button', { name: 'Spalten' }))
       for (const name of names) {
-        expect(within(dialog).getByLabelText(new RegExp(`^${name}`))).toBeInTheDocument()
+        expect(await screen.findByRole('checkbox', { name })).toBeInTheDocument()
       }
     })
 
@@ -333,13 +331,16 @@ describe('BodyStatsPage', () => {
     })
 
     it('shows an empty state with the add action instead of an empty grid', async () => {
-      const { user } = page(() => okQuery([]))
+      const { user, calls } = page((operation) =>
+        operation === ADD ? { data: { addBodyStats: entry('bs-new', '2026-10-03T10:00:00Z', 1) } } : okQuery([]),
+      )
 
       expect(await screen.findByText('Noch keine Messungen')).toBeInTheDocument()
       expect(screen.queryByRole('grid')).not.toBeInTheDocument()
 
       await user.click(screen.getByRole('button', { name: 'Erste Messung erfassen' }))
-      expect(await screen.findByRole('dialog')).toBeInTheDocument()
+      await waitFor(() => expect(calls(ADD)).toHaveLength(1))
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     })
 
     it('shows a load error inside the page and retries with a new request', async () => {
@@ -391,103 +392,67 @@ describe('BodyStatsPage', () => {
   })
 
   describe('adding', () => {
-    const added = entry('bs-new', '2026-10-03T10:00:00Z', 72.5, 'neu')
+    const added = entry('bs-new', '2026-10-03T10:00:00Z', 70.5)
 
-    it('prefills from the newest measurement, not from the first one delivered', async () => {
-      const { user } = page(() => okQuery())
-      await tiles().findByRole('button', { name: /Gewicht/ })
-
-      await user.click(screen.getByRole('button', { name: 'Messung erfassen' }))
-      const dialog = await screen.findByRole('dialog', { name: 'Neue Messung' })
-
-      expect(within(dialog).getByLabelText(/^Gewicht/)).toHaveValue('70.5')
-    })
-
-    it('validates the form and sends nothing while it is invalid', async () => {
-      const { user, calls } = page(() => okQuery([]))
-      await user.click(await screen.findByRole('button', { name: 'Erste Messung erfassen' }))
-      const dialog = await screen.findByRole('dialog')
-
-      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
-
-      expect(await within(dialog).findAllByText('Pflichtfeld.')).toHaveLength(5)
-      expect(calls(ADD)).toHaveLength(0)
-    })
-
-    it('rejects values outside the allowed range', async () => {
-      const { user, calls } = page(() => okQuery())
-      await user.click(await screen.findByRole('button', { name: 'Messung erfassen' }))
-      const dialog = await screen.findByRole('dialog')
-
-      const fat = within(dialog).getByLabelText(/^Körperfett/)
-      await user.clear(fat)
-      await user.type(fat, '120')
-      const weight = within(dialog).getByLabelText(/^Gewicht/)
-      await user.clear(weight)
-      await user.type(weight, '0')
-      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
-
-      expect(
-        await within(dialog).findByText('Bitte einen Wert zwischen 0 und 100 eingeben.'),
-      ).toBeInTheDocument()
-      expect(
-        within(dialog).getByText('Bitte einen Wert grösser als 0 eingeben.'),
-      ).toBeInTheDocument()
-      expect(calls(ADD)).toHaveLength(0)
-    })
-
-    it('sends a decimal comma as a number, trims the note, and reloads the grid rows', async () => {
+    it('creates a measurement at once from the latest values, without a form', async () => {
       const { user, calls } = page((operation) =>
         operation === ADD ? { data: { addBodyStats: added } } : okQuery(),
       )
       await screen.findByRole('grid')
-      const gridCallsBefore = calls(GRID).length
       await user.click(await screen.findByRole('button', { name: 'Messung erfassen' }))
-      const dialog = await screen.findByRole('dialog')
 
-      const weight = within(dialog).getByLabelText(/^Gewicht/)
-      await user.clear(weight)
-      await user.type(weight, '72,5')
-      await user.type(within(dialog).getByRole('textbox', { name: 'Notiz' }), '  neu  ')
-      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
-
-      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+      await waitFor(() => expect(calls(ADD)).toHaveLength(1))
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
       expect(calls(ADD)).toEqual([
         {
           input: {
             date: new Date(2026, 9, 3, 12, 0).toISOString(),
-            weight: 72.5,
+            weight: 70.5,
             bodyFatPercentage: 15.2,
             musclePercentage: 40.3,
             waterPercentage: 60.1,
             boneMass: 3.2,
-            comment: 'neu',
+            comment: null,
           },
           connections: [expect.stringContaining('BodyStatsPage_analytics__bodyStats')],
         },
       ])
-      await waitFor(() => expect(calls(GRID).length).toBeGreaterThan(gridCallsBefore))
       expect(await screen.findByText('Messung gespeichert.')).toBeInTheDocument()
       expect(calls(QUERY)).toHaveLength(1)
     })
 
-    it('keeps the dialog and its values when saving fails', async () => {
-      const { user } = page((operation) =>
+    it('creates a first measurement with valid placeholders from the empty state', async () => {
+      const { user, calls } = page((operation) =>
+        operation === ADD ? { data: { addBodyStats: added } } : okQuery([]),
+      )
+      await user.click(await screen.findByRole('button', { name: 'Erste Messung erfassen' }))
+
+      await waitFor(() => expect(calls(ADD)).toHaveLength(1))
+      expect(calls(ADD)[0]).toMatchObject({
+        input: {
+          weight: 1,
+          bodyFatPercentage: 0,
+          musclePercentage: 0,
+          waterPercentage: 0,
+          boneMass: 1,
+          comment: null,
+        },
+      })
+    })
+
+    it('tells the user when saving fails', async () => {
+      const { user, calls } = page((operation) =>
         operation === ADD ? { data: null, errors: [{ message: 'boom' }] } : okQuery(),
       )
       await user.click(await screen.findByRole('button', { name: 'Messung erfassen' }))
-      const dialog = await screen.findByRole('dialog')
-
-      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
 
       expect(
         await screen.findByText('Speichern fehlgeschlagen. Bitte versuche es nochmals.'),
       ).toBeInTheDocument()
-      expect(screen.getByRole('dialog')).toBeInTheDocument()
-      expect(within(screen.getByRole('dialog')).getByLabelText(/^Gewicht/)).toHaveValue('70.5')
+      expect(calls(ADD)).toHaveLength(1)
     })
 
-    it('sends one request when the save button is pressed twice', async () => {
+    it('sends one request when the button is pressed twice', async () => {
       let finish: (value: unknown) => void = () => {}
       const pending = new Promise((resolve) => {
         finish = resolve
@@ -495,17 +460,13 @@ describe('BodyStatsPage', () => {
       const { user, calls } = page((operation) =>
         operation === ADD ? (pending as never) : okQuery(),
       )
-      await user.click(await screen.findByRole('button', { name: 'Messung erfassen' }))
-      const dialog = await screen.findByRole('dialog')
-      const save = within(dialog).getByRole('button', { name: 'Speichern' })
+      const button = await screen.findByRole('button', { name: 'Messung erfassen' })
 
-      await user.click(save)
-      await user.click(save)
+      await user.click(button)
+      await user.click(button)
 
       expect(calls(ADD)).toHaveLength(1)
-      expect(save).toBeDisabled()
       await act(async () => finish({ data: { addBodyStats: added } }))
     })
   })
-
 })

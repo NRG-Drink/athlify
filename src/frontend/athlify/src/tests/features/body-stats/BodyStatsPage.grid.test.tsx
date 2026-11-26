@@ -287,6 +287,24 @@ describe('BodyStatsPage grid', () => {
     await waitFor(() => expect(calls(GRID).length).toBeGreaterThan(1))
   }, 20000)
 
+  it('pins a newly created measurement and reloads the rows', async () => {
+    const created = entry('bs-new', '2026-10-03T10:00:00Z', 70.5)
+    const { user, calls } = page((operation) =>
+      operation === 'useBodyStatsMutationsAddMutation'
+        ? { data: { addBodyStats: created } }
+        : undefined,
+    )
+    await waitForRows()
+    const loadsBefore = calls(GRID).length
+
+    await user.click(screen.getByRole('button', { name: 'Messung erfassen' }))
+
+    const unpin = await screen.findAllByRole('button', { name: 'Anheftung lösen' })
+    expect(unpin.length).toBeGreaterThan(0)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(calls(GRID).length).toBeGreaterThan(loadsBefore))
+  }, 20000)
+
   it('pins a row to the top and unpins it again', async () => {
     const { user } = page()
     await waitForRows()

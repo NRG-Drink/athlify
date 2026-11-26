@@ -220,7 +220,8 @@ reference is `src/features/body-stats/`.
   apart from the chart's `from`/`to`), column filters and sort go to the
   server, state lives in the URL, and saved views and column layout live in
   `localStorage` (`athlify.bodystats.*`). Body-Stats cells are edited inline;
-  the add dialog and the delete confirmation remain. Activities maps grid
+  Add creates a measurement at once from the latest known
+  values and pins it for completion; the delete confirmation remains. Activities maps grid
   filter and multi-sort changes to GraphQL variables, keeps query state in the
   URL, and automatically loads the next Relay cursor page at the scroll end.
   Its native text/date/number column filters and categorical checklist filters

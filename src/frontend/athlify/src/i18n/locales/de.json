@@ -427,10 +427,6 @@
         "waterPercentage": "Wasseranteil",
         "boneMass": "Knochenmasse"
       },
-      "fields": {
-        "date": "Datum",
-        "note": "Notiz"
-      },
       "columnHints": {
         "bodyFatPercentage": "Anteil des Körperfetts an deinem Gewicht. Körperanalysewaagen schätzen ihn; vergleiche den Verlauf statt einzelner Werte.",
         "musclePercentage": "Anteil der Muskelmasse an deinem Gewicht, geschätzt von der Körperanalysewaage.",
@@ -486,14 +482,12 @@
       },
       "add": {
         "open": "Messung erfassen",
-        "title": "Neue Messung",
         "success": "Messung gespeichert.",
         "errors": {
           "saveFailed": "Speichern fehlgeschlagen. Bitte versuche es nochmals."
         }
       },
       "edit": {
-        "title": "Messung bearbeiten",
         "success": "Messung aktualisiert.",
         "errors": {
           "notFound": "Diese Messung existiert nicht mehr."

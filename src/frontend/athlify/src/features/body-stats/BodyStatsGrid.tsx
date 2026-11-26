@@ -32,6 +32,8 @@ type BodyStatsGridProps = {
   columnState: BodyStatsColumnState[]
   resetTableVersion: number
   refreshVersion: number
+  createdRow: BodyStatsRow | null
+  isCreating: boolean
   onCreate: () => void
   onColumnStateChange: (columns: BodyStatsColumnState[]) => void
   onGridStateChange: (filters: BodyStatsFilterModel, sort: BodyStatsSortModel) => void
@@ -79,6 +81,8 @@ export function BodyStatsGrid({
   columnState,
   resetTableVersion,
   refreshVersion,
+  createdRow,
+  isCreating,
   onCreate,
   onColumnStateChange,
   onGridStateChange,
@@ -97,7 +101,17 @@ export function BodyStatsGrid({
   const applyingUrlState = useRef(false)
   const handledRefreshVersion = useRef(refreshVersion)
 
-  const togglePinnedBodyStats = useCallback((row: BodyStatsRow) => {
+  const [pinnedCreatedRow, setPinnedCreatedRow] = useState<BodyStatsRow | null>(null)
+  if (createdRow && createdRow !== pinnedCreatedRow) {
+    setPinnedCreatedRow(createdRow)
+    setPinnedBodyStats((current) =>
+      current.some((pinned) => pinned.id === createdRow.id)
+        ? current
+        : [...current, copyBodyStatsRow(createdRow)],
+    )
+  }
+
+  const togglePinnedBodyStats =useCallback((row: BodyStatsRow) => {
     setPinnedBodyStats((current) =>
       current.some((pinned) => pinned.id === row.id)
         ? current.filter((pinned) => pinned.id !== row.id)
@@ -325,6 +339,7 @@ export function BodyStatsGrid({
       <BodyStatsGridToolbar
         resultCount={resultCount}
         visibleColumns={visibleColumns}
+        isCreating={isCreating}
         onCreate={onCreate}
         onColumnVisibleChange={setColumnVisible}
       />

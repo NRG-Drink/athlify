@@ -5,6 +5,7 @@ import { BodyStatsColumnPicker } from './BodyStatsColumnPicker'
 
 type BodyStatsGridToolbarProps = {
   resultCount: number | null
+  isCreating: boolean
   visibleColumns: string[]
   onCreate: () => void
   onColumnVisibleChange: (column: string, visible: boolean) => void
@@ -12,6 +13,7 @@ type BodyStatsGridToolbarProps = {
 
 export function BodyStatsGridToolbar({
   resultCount,
+  isCreating,
   visibleColumns,
   onCreate,
   onColumnVisibleChange,
@@ -34,7 +36,7 @@ export function BodyStatsGridToolbar({
         justifyContent={{ base: 'start', sm: 'end' }}
         gap="2"
       >
-        <Button size="sm" onClick={onCreate}>
+        <Button size="sm" onClick={onCreate} loading={isCreating}>
           <LuPlus aria-hidden />
           {t('bodyStats.add.open')}
         </Button>

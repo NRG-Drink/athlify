@@ -70,7 +70,7 @@ edited directly in their grid cells, while add and duplicate create pinned
 rows for inline completion; delete uses a confirmation
 ([ADR-012](adr/ADR-012-store-updates-for-server-sorted-lists.md)). Dashboard, Garage and
 Settings remain placeholders. The Settings page lets the signed-in user edit their own
-profile, language and password. The Body-Stats history is an AG Grid with URL-backed filters, browser-local saved views, configurable columns, pinned rows and inline editing ([ADR-013](adr/ADR-013-grid-lists-fetch-outside-the-relay-store.md)). The Events page uses the backend API to list,
+profile, language and password. The Body-Stats history is an AG Grid with URL-backed filters, browser-local saved views, configurable columns, pinned rows, form-free creation of a pinned measurement and inline editing ([ADR-013](adr/ADR-013-grid-lists-fetch-outside-the-relay-store.md)). The Events page uses the backend API to list,
 create, edit and delete personal events, with URL-backed filters and saved
 views. The backend is under `../../../src/backend/`. See
 [`SAD.md`](SAD.md) for the folder layout and open decisions. Do not present
