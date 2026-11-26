@@ -58,8 +58,8 @@ i18next. It provides the App Layout (header with Primary Navigation, User
 Menu with sign-out and color mode, mobile drawer), the `Page` frame,
 the "Night Ride" theme in `src/theme/`
 ([ADR-005](adr/ADR-005-theme-tokens.md)), plus the Body-Stats domain page
-([ADR-007](adr/ADR-007-domain-page-pattern.md)): summary tiles, a chart of the
-selected measurement over a selectable date range, and a history table with add,
+([ADR-007](adr/ADR-007-domain-page-pattern.md)): a chart of the
+selected measurement for the measurements the history table lists, and a history table with add,
 edit and delete against the backend API. New entries are prefilled from the
 entry with the newest date. The Activities page is an AG Grid on the infinite row model backed by the
 `activities` connection, with URL-backed description/date/column filters and

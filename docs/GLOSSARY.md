@@ -36,6 +36,10 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 **Body-Stats** — Personal body measurements recorded at multiple points in time.
   See [`CONCEPT.md`](concept/CONCEPT.md).
 
+**Body-Stats chart** — The line chart on the Body-Stats page. It shows one
+  selected measurement over time for exactly the measurements the history grid
+  lists, so it follows the grid's filters. See [`CONCEPT.md`](concept/CONCEPT.md).
+
 **Calendar view** — An activity presentation organized by calendar week with a
   weekly summary.
 
@@ -124,8 +128,7 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 
 **KPI tile** — A large, self-explaining value on a page: label, latest value
   with unit, change within the selected Period and the comparison period. A
-  missing value is shown as a dash, never as zero. On Body-Stats a tile also
-  selects the measurement shown in the chart.
+  missing value is shown as a dash, never as zero.
 
 ## M — R
 
@@ -156,9 +159,8 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
   description and actions, and exactly one UI state body (loading, empty,
   error or ready). See [`SAD.md`](copilot/frontend/SAD.md#page-frame).
 
-  **Period** — A relative time span used by the Body-Stats chart and by the planned
-  Dashboard filters, for example the last 30 days or one year. Body-Stats keeps it in
-  the URL (`?period=`), so a view can be reloaded and shared.
+  **Period** — A relative time span used by the planned Dashboard filters, for
+  example the last 30 days or one year.
 
 **Date range** — An inclusive pair of local calendar dates (`from` and `to`)
   that defines the exact interval shown by the Body-Stats chart and KPI
@@ -173,12 +175,6 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
     server-filtered results. Users can pin multiple activities at once and
     unpin them independently; creation pins the new activity until it is
     unpinned.
-
-**Chart aggregation** — The display resolution applied to the selected
-  Body-Stats chart metric: no aggregation, or daily, weekly, monthly or yearly
-  local-calendar buckets. Each bucket shows the latest real measurement when
-  aggregation is enabled; disabled aggregation shows every real measurement.
-  It does not change raw records, KPI calculations or history-table data.
 
 **Primary Navigation** — The header navigation between the personal areas
   Dashboard, Activities, Garage, Body-Stats and Events. On small screens it

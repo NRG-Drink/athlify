@@ -22,6 +22,8 @@ import { LuChevronRight } from 'react-icons/lu'
 type BodyStatsPageControlsProps = {
   filters: BodyStatsPageFilterControls
   views: BodyStatsSavedViewControls
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
 
 type DateFilterDraft = {
@@ -48,7 +50,12 @@ function hasFourDigitYear(value: string): boolean {
   return /^\d{1,2}\.\d{1,2}\.\d{4}$/.test(value.trim())
 }
 
-export function BodyStatsPageControls({ filters, views }: BodyStatsPageControlsProps) {
+export function BodyStatsPageControls({
+  filters,
+  views,
+  open,
+  onOpenChange,
+}: BodyStatsPageControlsProps) {
   const { t } = useTranslation()
   const [saveViewOpen, setSaveViewOpen] = useState(false)
   const [newViewName, setNewViewName] = useState('')
@@ -91,7 +98,7 @@ export function BodyStatsPageControls({ filters, views }: BodyStatsPageControlsP
   }
 
   return (
-    <Collapsible.Root defaultOpen>
+    <Collapsible.Root open={open} onOpenChange={(details) => onOpenChange(details.open)}>
       <Box
         display="grid"
         bg="bg.panel"

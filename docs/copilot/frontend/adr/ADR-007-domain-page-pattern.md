@@ -70,7 +70,7 @@ Relay confirmed as the GraphQL client.
 ### Positive
 
 - A new area copies one folder and reuses `DataTable`, `MetricChart`,
-  `KpiTile`, `DateRangePicker`, `FormDialog`, `ConfirmDialog` and `QueryBoundary`.
+  `KpiTile`, `FormDialog`, `ConfirmDialog` and `QueryBoundary`.
 - Components own their data needs, so they can be moved and tested alone.
 - Large lists do not reload after a change.
 - The chart library is replaceable behind `MetricChart`.
@@ -82,7 +82,7 @@ Relay confirmed as the GraphQL client.
 - Tests build a real Relay environment with a fetch handler
   (`src/tests/utils/relay.tsx`); `relay-test-utils` is not used.
 - Lists are Relay connections with cursor paging from the first page on. A page
-  that needs the whole list (Body-Stats: chart and tiles) loads all pages in a
+  that needs the whole list (Body-Stats: chart) loads all pages in a
   loop; pages with long lists (Activities) show one page and use
   `usePaginationFragment` with `loadNext` on demand. The server caps a page at
   200 entries (`ModifyPagingOptions`) to stay inside the query cost limits.
@@ -91,7 +91,7 @@ Relay confirmed as the GraphQL client.
 
 - Reference implementation: `src/frontend/athlify/src/features/body-stats/`.
 - Shared building blocks: `src/components/` (`DataTable`, `MetricChart`,
-  `KpiTile`, `DateRangePicker`, `FormDialog`, `ConfirmDialog`, `QueryBoundary`,
+  `KpiTile`, `FormDialog`, `ConfirmDialog`, `QueryBoundary`,
   `Page`), `src/lib/` (`metrics`, `period`, `ticks`), `src/relay/`
   (`environment`), `src/i18n/useFormat.ts`.
 - The identifier convention is [ADR-006](../../adr/ADR-006-relay-global-ids.md).

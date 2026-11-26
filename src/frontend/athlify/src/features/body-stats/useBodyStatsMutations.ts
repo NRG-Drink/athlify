@@ -1,15 +1,11 @@
-import { graphql, useMutation, useRelayEnvironment } from 'react-relay'
-import { ConnectionHandler, ROOT_ID } from 'relay-runtime'
+import { graphql, useMutation } from 'react-relay'
 import { useTranslation } from 'react-i18next'
 import { toaster } from '../../components/ui/toaster'
-import { removeFromConnections } from '../../relay/removeFromConnections'
 import type { BodyStatsRow } from './BodyStatsGridTypes'
 import type { useBodyStatsMutationsAddMutation } from './__generated__/useBodyStatsMutationsAddMutation.graphql'
 import type { useBodyStatsMutationsDeleteMutation } from './__generated__/useBodyStatsMutationsDeleteMutation.graphql'
 import type { useBodyStatsMutationsUpdateMutation } from './__generated__/useBodyStatsMutationsUpdateMutation.graphql'
 
-// Every field that the list fragments read, so a saved entry is complete in the store
-// without refetching the list. Keep in sync with the fragments of the page's components.
 export const bodyStatsRecordFragment = graphql`
   fragment useBodyStatsMutations_entry on BodyStats {
     id
@@ -24,9 +20,8 @@ export const bodyStatsRecordFragment = graphql`
 `
 
 const addMutation = graphql`
-  mutation useBodyStatsMutationsAddMutation($input: BodyStatsInput!, $connections: [ID!]!) {
-    addBodyStats(bodyStats: $input)
-      @prependNode(connections: $connections, edgeTypeName: "BodyStatsEdge") {
+  mutation useBodyStatsMutationsAddMutation($input: BodyStatsInput!) {
+    addBodyStats(bodyStats: $input) {
       ...useBodyStatsMutations_entry
       id
       date
@@ -56,13 +51,6 @@ const deleteMutation = graphql`
 
 export type BodyStatsInput = useBodyStatsMutationsAddMutation['variables']['input']
 
-/** Key of the analytics connection edited by Body-Stats mutations. */
-const BODY_STATS_ANALYTICS_CONNECTION_KEY = 'BodyStatsPage_analytics__bodyStats'
-
-const connectionIds = () => [
-  ConnectionHandler.getConnectionID(ROOT_ID, BODY_STATS_ANALYTICS_CONNECTION_KEY),
-]
-
 interface Callbacks {
   /** Called after the server confirmed the change. */
   onSuccess: () => void
@@ -83,13 +71,11 @@ interface DeleteCallbacks {
 }
 
 /**
- * Add, update and delete for Body-Stats. The Relay connections are updated from the mutation result
- * (`@prependNode`, and a local removal after a confirmed delete), never by refetching the list, and
- * the user gets a toast for every outcome.
+ * Add, update and delete for Body-Stats. The user gets a toast for every outcome; the list and
+ * the chart load their own data again when the caller reports the change.
  */
 export function useBodyStatsMutations() {
   const { t } = useTranslation()
-  const environment = useRelayEnvironment()
   const [commitAdd, isAdding] = useMutation<useBodyStatsMutationsAddMutation>(addMutation)
   const [commitUpdate, isUpdating] =
     useMutation<useBodyStatsMutationsUpdateMutation>(updateMutation)
@@ -100,14 +86,12 @@ export function useBodyStatsMutations() {
     toaster.create({ type: 'error', title: t(key) })
   }
 
-  const removeLocally = (id: string) => removeFromConnections(environment, connectionIds(), id)
-
   const add = (
     input: BodyStatsInput,
     { onSuccess }: { onSuccess: (created: BodyStatsRow) => void },
   ) =>
     commitAdd({
-      variables: { input, connections: connectionIds() },
+      variables: { input },
       onCompleted: (response, errors) => {
         if (errors?.length || !response.addBodyStats) {
           fail('bodyStats.add.errors.saveFailed')
@@ -148,7 +132,6 @@ export function useBodyStatsMutations() {
           return
         }
         if (!response.updateBodyStats) {
-          removeLocally(id)
           fail('bodyStats.edit.errors.notFound')
           onNotFound?.()
           return
@@ -168,7 +151,6 @@ export function useBodyStatsMutations() {
       onCompleted: (_response, errors) => {
         if (errors?.length) fail('bodyStats.delete.errors.failed')
         else {
-          removeLocally(id)
           toaster.create({ type: 'success', title: t('bodyStats.delete.success') })
           onDeleted()
         }

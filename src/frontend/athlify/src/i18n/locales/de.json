@@ -405,42 +405,17 @@
         "boneMass": "Knochenmasse",
         "comment": "Notiz"
       },
-      "kpi": {
-        "group": "Messwerte",
-        "noData": "Keine Messung",
-        "noRangeData": "Keine Messung im Zeitraum",
-        "notEnoughData": "Zu wenig Daten im Zeitraum",
-        "lastMeasured": "Letzte Messung: {{date}}"
-      },
       "chart": {
-        "summary_one": "{{metric}}, {{fromDate}} bis {{toDate}}: {{from}}, 1 Messung",
+        "title": "Verlauf",
+        "metricGroup": "Messwert",
+        "latest": "Aktuell",
+        "change": "Veränderung",
+        "average": "Durchschnitt",
+        "range": "Min – Max",
+        "empty": "Keine Messungen für die aktuellen Filter.",
+        "summary_one": "{{metric}}, {{fromDate}}: {{from}}, 1 Messung",
         "summary_other": "{{metric}}, {{fromDate}} bis {{toDate}}: von {{from}} auf {{to}}, {{count}} Messungen",
-        "empty": {
-          "range": "Keine Messungen in diesem Zeitraum."
-        },
         "emptySummary": "{{metric}}: {{message}}"
-      },
-      "range": {
-        "label": "Zeitraum",
-        "summary": "Zeitraum: {{from}} – {{to}} · {{aggregation}}",
-        "changeLabel": "Zeitraum ändern: {{summary}}",
-        "from": "Von",
-        "to": "Bis",
-        "apply": "Anwenden",
-        "cancel": "Abbrechen",
-        "aggregation": "Auflösung",
-        "aggregations": {
-          "none": "Keine",
-          "day": "1 T",
-          "week": "1 W",
-          "month": "1 M",
-          "year": "1 J"
-        },
-        "errors": {
-          "missing": "Bitte gib beide Daten ein.",
-          "invalidDate": "Bitte gib die Daten im Format TT.MM.JJJJ ein.",
-          "fromAfterTo": "Das Startdatum muss vor dem Enddatum liegen."
-        }
       },
       "add": {
         "open": "Messung erfassen",

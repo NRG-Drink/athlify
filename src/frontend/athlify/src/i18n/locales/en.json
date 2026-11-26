@@ -405,42 +405,17 @@
         "boneMass": "Bone mass",
         "comment": "Note"
       },
-      "kpi": {
-        "group": "Measurements",
-        "noData": "No measurement",
-        "noRangeData": "No measurement in this date range",
-        "notEnoughData": "Not enough data in this period",
-        "lastMeasured": "Last measured: {{date}}"
-      },
       "chart": {
-        "summary_one": "{{metric}}, {{fromDate}} to {{toDate}}: {{from}}, 1 measurement",
+        "title": "Trend",
+        "metricGroup": "Measurement",
+        "latest": "Latest",
+        "change": "Change",
+        "average": "Average",
+        "range": "Min – max",
+        "empty": "No measurements match the current filters.",
+        "summary_one": "{{metric}}, {{fromDate}}: {{from}}, 1 measurement",
         "summary_other": "{{metric}}, {{fromDate}} to {{toDate}}: from {{from}} to {{to}}, {{count}} measurements",
-        "empty": {
-          "range": "No measurements in this date range."
-        },
         "emptySummary": "{{metric}}: {{message}}"
-      },
-      "range": {
-        "label": "Date range",
-        "summary": "Date range: {{from}} – {{to}} · {{aggregation}}",
-        "changeLabel": "Change date range: {{summary}}",
-        "from": "From",
-        "to": "To",
-        "apply": "Apply",
-        "cancel": "Cancel",
-        "aggregation": "Resolution",
-        "aggregations": {
-          "none": "None",
-          "day": "1d",
-          "week": "1w",
-          "month": "1m",
-          "year": "1y"
-        },
-        "errors": {
-          "missing": "Enter both dates.",
-          "invalidDate": "Enter the dates as DD.MM.YYYY.",
-          "fromAfterTo": "The start date must be before the end date."
-        }
       },
       "add": {
         "open": "Add measurement",
