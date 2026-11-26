@@ -22,7 +22,7 @@ permissions:
   packages: write
 
 jobs:
-  ci-cd.build-test-pack-publish-push:
+  build-test-pack-publish-push:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
