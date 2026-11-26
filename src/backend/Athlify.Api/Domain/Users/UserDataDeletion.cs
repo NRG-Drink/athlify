@@ -47,11 +47,6 @@ public sealed class UserDataDeletion
         await RemoveOwnedAsync<Gadget>(db, user.Id, cancellationToken);
         await RemoveOwnedAsync<MaintenanceCycle>(db, user.Id, cancellationToken);
 
-        db.SeedMarkers.RemoveRange(await db.SeedMarkers
-            .IgnoreQueryFilters()
-            .Where(m => m.UserId == user.Id)
-            .ToListAsync(cancellationToken));
-
         db.Users.Remove(user);
     }
 

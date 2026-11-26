@@ -59,7 +59,7 @@ public partial class Program
 
         if (app.Configuration.GetValue<bool>("Database:AutoMigrate", true))
         {
-            await SeedDatabaseAsync(app);
+            await MigrateAndProvisionDevelopmentUserAsync(app);
         }
 
         // Only the local Vite dev server needs cross-origin access; other environments are same-origin.
@@ -125,13 +125,8 @@ public partial class Program
         optionsBuilder.UseNpgsql(postgresConnectionString);
     }
 
-    private static async Task SeedDatabaseAsync(WebApplication app)
+    private static async Task MigrateAndProvisionDevelopmentUserAsync(WebApplication app)
     {
-        var seedOptions = app.Configuration.GetSection(SeedOptions.Section).Get<SeedOptions>() ?? new SeedOptions();
-        var developmentUserOptions = app.Configuration
-            .GetSection(DevelopmentUserOptions.Section)
-            .Get<DevelopmentUserOptions>()
-            ?? new DevelopmentUserOptions();
         await using var scope = app.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AthlifyDbContext>();
         if (db.Database.IsRelational())
@@ -143,10 +138,16 @@ public partial class Program
             await db.Database.EnsureCreatedAsync();
         }
 
-        var provisioner = scope.ServiceProvider.GetRequiredService<DevelopmentUserProvisioner>();
-        var developmentUserId = await provisioner.EnsureAsync(db, developmentUserOptions);
+        if (!app.Environment.IsDevelopment())
+        {
+            return;
+        }
 
-        var seeder = scope.ServiceProvider.GetRequiredService<DbSeeder>();
-        seeder.Seed(db, developmentUserId);
+        var developmentUserOptions = app.Configuration
+            .GetSection(DevelopmentUserOptions.Section)
+            .Get<DevelopmentUserOptions>()
+            ?? new DevelopmentUserOptions();
+        var provisioner = scope.ServiceProvider.GetRequiredService<DevelopmentUserProvisioner>();
+        await provisioner.EnsureAsync(db, developmentUserOptions);
     }
 }

@@ -142,7 +142,6 @@ public class UserAdminPostgresTests
             },
             new MaintenanceCycle { UserId = user.Id, Vehicle = vehicle },
             new BodyStats { UserId = user.Id, Date = DateTime.UtcNow, Weight = 70 },
-            new SeedMarker { UserId = user.Id, Key = "demo" },
             new RefreshToken
             {
                 UserId = user.Id, TokenHash = Guid.NewGuid().ToString("N"), FamilyId = Guid.NewGuid(),
@@ -165,7 +164,6 @@ public class UserAdminPostgresTests
             + await db.Tags.IgnoreQueryFilters().CountAsync(e => e.UserId == userId)
             + await db.Events.IgnoreQueryFilters().CountAsync(e => e.UserId == userId)
             + await db.BodyStats.IgnoreQueryFilters().CountAsync(e => e.UserId == userId)
-            + await db.SeedMarkers.IgnoreQueryFilters().CountAsync(e => e.UserId == userId)
             + await db.RefreshTokens.IgnoreQueryFilters().CountAsync(e => e.UserId == userId);
     }
 

@@ -575,7 +575,6 @@ public class UserAdminTests : WebApiTestBase
             Distance = 30,
             DeletedAt = softDeleted ? DateTime.UtcNow : null,
         });
-        db.SeedMarkers.Add(new SeedMarker { UserId = userId, Key = "demo" });
         await db.SaveChangesAsync();
     }
 
@@ -586,8 +585,7 @@ public class UserAdminTests : WebApiTestBase
         return await db.BodyStats.IgnoreQueryFilters().CountAsync(e => e.UserId == userId)
             + await db.Tags.IgnoreQueryFilters().CountAsync(e => e.UserId == userId)
             + await db.Vehicles.IgnoreQueryFilters().CountAsync(e => e.UserId == userId)
-            + await db.Activities.IgnoreQueryFilters().CountAsync(e => e.UserId == userId)
-            + await db.SeedMarkers.IgnoreQueryFilters().CountAsync(e => e.UserId == userId);
+            + await db.Activities.IgnoreQueryFilters().CountAsync(e => e.UserId == userId);
     }
 
     [Test]

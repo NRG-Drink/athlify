@@ -13,6 +13,9 @@ public sealed class DatabaseSeedsFixture : IAsyncInitializer, IAsyncDisposable
     public AthlifyDbContext Context =>
         context ?? throw new InvalidOperationException("The database fixture has not been initialized.");
 
+    /// <summary>The user the seeded rows belong to (<c>Database:OwnerUserId</c>).</summary>
+    public int OwnerUserId { get; private set; }
+
     public async Task InitializeAsync()
     {
         var settingsPath = Path.Combine(AppContext.BaseDirectory, "DatabaseSeeds", "appsettings.json");
@@ -50,6 +53,7 @@ public sealed class DatabaseSeedsFixture : IAsyncInitializer, IAsyncDisposable
                 throw new InvalidOperationException($"No database user exists with ID {ownerUserId.Value}.");
             }
 
+            OwnerUserId = ownerUserId.Value;
             context = database;
         }
         catch

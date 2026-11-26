@@ -9,7 +9,7 @@ namespace Athlify.Api.Tests.DatabaseSeeds;
 public class EventSeeds(DatabaseSeedsFixture database)
 {
     [Test, Explicit]
-    [Arguments(20261114, 200)]
+    [Arguments(20261114, 20)]
     public async Task InsertsRandomEvents(int seed, int numberOfEntries)
     {
         if (numberOfEntries < 1)
@@ -24,7 +24,7 @@ public class EventSeeds(DatabaseSeedsFixture database)
             .RuleFor(databaseEvent => databaseEvent.Description, faker => faker.Lorem.Sentence())
             .RuleFor(
                 databaseEvent => databaseEvent.StartDate,
-                faker => faker.Date.BetweenDateOnly(new DateOnly(2020, 1, 1), new DateOnly(2026, 12, 31)))
+                faker => faker.Date.BetweenDateOnly(new DateOnly(2020, 1, 1), DateOnly.FromDateTime(DateTime.UtcNow)))
             .RuleFor(
                 databaseEvent => databaseEvent.EndDate,
                 (faker, databaseEvent) => faker.Random.Bool()
