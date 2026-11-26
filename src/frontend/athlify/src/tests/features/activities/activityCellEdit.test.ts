@@ -1,11 +1,11 @@
 import i18next from 'i18next'
 import { describe, expect, it } from 'vitest'
 import { activityInputFromCellChange } from '../../../features/activities/activityCellEdit'
-import type { ActivityFormSource } from '../../../features/activities/activityForm'
+import type { ActivityInputSource } from '../../../features/activities/activityInput'
 
 const t = i18next.getFixedT('de')
 
-const row: ActivityFormSource = {
+const row: ActivityInputSource = {
   date: '2025-05-15T07:30:00.000Z',
   type: 'ROAD',
   time: 5400,

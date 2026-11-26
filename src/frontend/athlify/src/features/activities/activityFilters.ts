@@ -1,4 +1,3 @@
-import type { TFunction } from 'i18next'
 import type { ChecklistOption } from '../../components/Checklist'
 
 export const activityTypes = ['ROAD', 'MOUNTAIN', 'GRAVEL', 'INDOOR'] as const
@@ -82,16 +81,6 @@ export function applyActivityFilters(params: URLSearchParams, filters: ActivityF
   return next
 }
 
-/** The filter keys that have at least one ticked value, in column order. */
-export function activeActivityFilterKeys(filters: ActivityFilters): ActivityFilterKey[] {
-  return activityFilterKeys.filter((key) => filterValueCount(key, filters) > 0)
-}
-
-/** How many values a filter has ticked. */
-export function filterValueCount(key: ActivityFilterKey, filters: ActivityFilters): number {
-  return filters[activityFilterFields[key]]?.length ?? 0
-}
-
 /** Sets the ticked values of one filter; an empty list turns it off. Unknown enum values are ignored. */
 export function setActivityFilterValues(
   filters: ActivityFilters,
@@ -110,59 +99,4 @@ export function setActivityFilterValues(
   }
 }
 
-/** Breakpoints below which a column is hidden; the filter summary offers its filter there instead. */
-export const filterColumnBreakpoint = { vehicle: 'md', tag: '2xl', wind: '2xl' } as const
-
 export type FilterOption = ChecklistOption
-
-function labelsFor(ids: readonly string[] | undefined, options: readonly FilterOption[]) {
-  return (ids ?? []).flatMap((id) => {
-    const label = options.find((option) => option.id === id)?.label
-    return label ? [label] : []
-  })
-}
-
-/** The labels of the ticked values, in the order they were ticked. Unknown ids are left out. */
-export function activeFilterValueLabels(
-  key: ActivityFilterKey,
-  value: ActivityFilters,
-  vehicles: readonly FilterOption[],
-  tags: readonly FilterOption[],
-  t: TFunction,
-): string[] {
-  switch (key) {
-    case 'type':
-      return (value.types ?? []).map((type) => t(`activities.types.${type}`))
-    case 'vehicle':
-      return labelsFor(value.vehicleIds, vehicles)
-    case 'tag':
-      return labelsFor(value.tagIds, tags)
-    case 'wind':
-      return (value.winds ?? []).map((wind) => t(`activities.winds.${wind}`))
-  }
-}
-
-/**
- * "Road, Gravel" for up to two values, "Road, Gravel +1" for more. When the labels are not loaded
- * yet (or a value is no longer among the first options), the count stands in for them.
- */
-export function summarizeValues(labels: readonly string[], count: number, t: TFunction): string {
-  if (labels.length === 0) return t('checklist.selectedCount', { count })
-  if (labels.length <= 2) return labels.join(', ')
-  return `${labels.slice(0, 2).join(', ')} ${t('activities.filters.more', { count: labels.length - 2 })}`
-}
-
-/** The summary of a filter's ticked values, for the header label and the summary chip. */
-export function activeFilterSummary(
-  key: ActivityFilterKey,
-  filters: ActivityFilters,
-  vehicles: readonly FilterOption[],
-  tags: readonly FilterOption[],
-  t: TFunction,
-): string {
-  return summarizeValues(
-    activeFilterValueLabels(key, filters, vehicles, tags, t),
-    filterValueCount(key, filters),
-    t,
-  )
-}

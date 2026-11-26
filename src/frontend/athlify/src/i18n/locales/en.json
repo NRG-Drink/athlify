@@ -209,13 +209,8 @@
         "vehicle": "Bicycle",
         "tag": "Tag",
         "wind": "Wind",
-        "more": "+{{count}}",
         "done": "Done",
-        "reset": "Reset filters",
-        "filterBy": "Filter by {{column}}",
-        "filterByActive": "Filter by {{column}}, active: {{value}}",
-        "active": "Active filters",
-        "remove": "Remove {{filter}} filter"
+        "reset": "Reset filters"
       },
       "controls": {
         "title": "Filter activities",
@@ -299,12 +294,6 @@
       "table": {
         "caption": "Activities"
       },
-      "sort": {
-        "ariaLabel": "{{column}}, {{direction}}",
-        "ascending": "sorted ascending",
-        "descending": "sorted descending",
-        "unsorted": "not sorted"
-      },
       "moreTags": "+{{count}}",
       "resultCount_one": "{{count}} activity",
       "resultCount_other": "{{count}} activities",
@@ -313,8 +302,7 @@
         "title": "No activities yet",
         "message": "Activities you enter or import will appear here.",
         "filteredTitle": "No matching activities",
-        "filteredMessage": "Adjust or reset the filters.",
-        "action": "Add your first activity"
+        "filteredMessage": "Adjust or reset the filters."
       },
       "moods": {
         "VERY_BAD": "Very bad",
@@ -338,7 +326,6 @@
       },
       "add": {
         "open": "Add activity",
-        "title": "New activity",
         "defaultDescription": "New Activity",
         "success": "Activity saved.",
         "hiddenByFilters": "Activity saved. The active filters hide it.",
@@ -347,7 +334,6 @@
         }
       },
       "edit": {
-        "title": "Edit activity",
         "success": "Activity updated.",
         "errors": {
           "notFound": "This activity no longer exists.",
@@ -367,9 +353,7 @@
         }
       },
       "row": {
-        "actionsColumn": "Actions",
-        "edit": "Edit activity from {{date}}",
-        "more": "More actions for the activity from {{date}}"
+        "actionsColumn": "Actions"
       },
       "pin": {
         "action": "Pin activity",
@@ -377,23 +361,8 @@
       },
       "form": {
         "date": "Date and start time",
-        "durationPlaceholder": "1:30",
-        "moreDetails": "More details",
-        "detailsCount_one": "{{count}} value",
-        "detailsCount_other": "{{count}} values",
-        "heartRate": "Heart rate ({{unit}})",
-        "heartRateMin": "Min",
-        "heartRateAverage": "Avg",
-        "heartRateMax": "Max",
-        "noVehicle": "No bicycle",
-        "calculated": "Calculated",
-        "calculatedHint": "* Calculated automatically.",
-        "source": "Source",
-        "effortNone": "Not set",
-        "effortHigh": "maximal",
         "newTag": "New tag",
         "tagName": "Tag name",
-        "noGadgets": "No gadgets yet.",
         "createTag": "Create",
         "tagCreated": "Tag “{{name}}” created.",
         "tagCreateFailed": "The tag could not be created. Does it already exist?",

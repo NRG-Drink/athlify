@@ -209,13 +209,8 @@
         "vehicle": "Velo",
         "tag": "Tag",
         "wind": "Wind",
-        "more": "+{{count}}",
         "done": "Fertig",
-        "reset": "Filter zurücksetzen",
-        "filterBy": "Nach {{column}} filtern",
-        "filterByActive": "Nach {{column}} filtern, aktiv: {{value}}",
-        "active": "Aktive Filter",
-        "remove": "Filter {{filter}} entfernen"
+        "reset": "Filter zurücksetzen"
       },
       "controls": {
         "title": "Aktivitäten filtern",
@@ -299,12 +294,6 @@
       "table": {
         "caption": "Aktivitäten"
       },
-      "sort": {
-        "ariaLabel": "{{column}}, {{direction}}",
-        "ascending": "aufsteigend sortiert",
-        "descending": "absteigend sortiert",
-        "unsorted": "nicht sortiert"
-      },
       "moreTags": "+{{count}}",
       "resultCount_one": "{{count}} Aktivität",
       "resultCount_other": "{{count}} Aktivitäten",
@@ -313,8 +302,7 @@
         "title": "Noch keine Aktivitäten",
         "message": "Sobald du eine Aktivität erfasst oder importierst, erscheint sie hier.",
         "filteredTitle": "Keine passenden Aktivitäten",
-        "filteredMessage": "Passe die Filter an oder setze sie zurück.",
-        "action": "Erste Aktivität erfassen"
+        "filteredMessage": "Passe die Filter an oder setze sie zurück."
       },
       "moods": {
         "VERY_BAD": "Sehr schlecht",
@@ -338,7 +326,6 @@
       },
       "add": {
         "open": "Aktivität erfassen",
-        "title": "Neue Aktivität",
         "defaultDescription": "Neue Aktivität",
         "success": "Aktivität gespeichert.",
         "hiddenByFilters": "Aktivität gespeichert. Die aktiven Filter blenden sie aus.",
@@ -347,7 +334,6 @@
         }
       },
       "edit": {
-        "title": "Aktivität bearbeiten",
         "success": "Aktivität aktualisiert.",
         "errors": {
           "notFound": "Diese Aktivität existiert nicht mehr.",
@@ -367,9 +353,7 @@
         }
       },
       "row": {
-        "actionsColumn": "Aktionen",
-        "edit": "Aktivität vom {{date}} bearbeiten",
-        "more": "Weitere Aktionen für die Aktivität vom {{date}}"
+        "actionsColumn": "Aktionen"
       },
       "pin": {
         "action": "Aktivität anheften",
@@ -377,23 +361,8 @@
       },
       "form": {
         "date": "Datum und Startzeit",
-        "durationPlaceholder": "1:30",
-        "moreDetails": "Weitere Details",
-        "detailsCount_one": "{{count}} Angabe",
-        "detailsCount_other": "{{count}} Angaben",
-        "heartRate": "Herzfrequenz ({{unit}})",
-        "heartRateMin": "Min",
-        "heartRateAverage": "Ø",
-        "heartRateMax": "Max",
-        "noVehicle": "Kein Velo",
-        "calculated": "Berechnet",
-        "calculatedHint": "* Wird automatisch berechnet.",
-        "source": "Quelle",
-        "effortNone": "Keine Angabe",
-        "effortHigh": "maximal",
         "newTag": "Neuer Tag",
         "tagName": "Name des Tags",
-        "noGadgets": "Noch keine Gadgets erfasst.",
         "createTag": "Erstellen",
         "tagCreated": "Tag «{{name}}» erstellt.",
         "tagCreateFailed": "Der Tag konnte nicht erstellt werden. Gibt es ihn schon?",

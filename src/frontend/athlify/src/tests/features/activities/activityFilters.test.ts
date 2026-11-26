@@ -1,13 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
-  activeFilterValueLabels,
   activityFiltersToWhere,
   applyActivityFilters,
   parseActivityFilters,
-  summarizeValues,
   setActivityFilterValues,
 } from '../../../features/activities/activityFilters'
-import i18next from 'i18next'
 
 describe('activity filters', () => {
   it('parses every repeated value and ignores invalid enum values', () => {
@@ -68,21 +65,5 @@ describe('activity filters', () => {
       types: undefined,
       winds: ['CALM'],
     })
-  })
-
-  it('labels the ticked values and summarizes more than two', async () => {
-    const t = i18next.getFixedT('de')
-    const labels = activeFilterValueLabels(
-      'type',
-      { types: ['ROAD', 'GRAVEL', 'INDOOR'] },
-      [],
-      [],
-      t,
-    )
-    expect(labels).toEqual(['Strasse', 'Gravel', 'Indoor'])
-    expect(summarizeValues(labels, 3, t)).toBe('Strasse, Gravel +1')
-    expect(summarizeValues(labels.slice(0, 2), 2, t)).toBe('Strasse, Gravel')
-    // Labels not loaded yet: the count stands in.
-    expect(summarizeValues([], 2, t)).toBe('2 ausgewählt')
   })
 })

@@ -1,7 +1,7 @@
 import { graphql, useMutation } from 'react-relay'
 import { useTranslation } from 'react-i18next'
 import { toaster } from '../../components/ui/toaster'
-import type { ActivityFormInput } from './activityForm'
+import type { ActivityMutationInput } from './activityInput'
 import type { useActivityMutationsCreateMutation } from './__generated__/useActivityMutationsCreateMutation.graphql'
 import type { useActivityMutationsDeleteMutation } from './__generated__/useActivityMutationsDeleteMutation.graphql'
 import type { useActivityMutationsUpdateMutation } from './__generated__/useActivityMutationsUpdateMutation.graphql'
@@ -131,7 +131,7 @@ export function useActivityMutations() {
     toaster.create({ type: 'error', title: t(key) })
   }
 
-  const create = (input: ActivityFormInput, { onSuccess }: Callbacks) =>
+  const create = (input: ActivityMutationInput, { onSuccess }: Callbacks) =>
     commitCreate({
       variables: { input },
       onCompleted: (response, errors) => {
@@ -146,7 +146,7 @@ export function useActivityMutations() {
 
   const update = (
     id: string,
-    input: ActivityFormInput,
+    input: ActivityMutationInput,
     { onSuccess, onFailure, onGone }: UpdateCallbacks,
   ) =>
     commitUpdate({

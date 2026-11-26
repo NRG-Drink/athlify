@@ -25,7 +25,7 @@ import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { toaster } from '../../components/ui/toaster'
 import { useFormat } from '../../i18n/useFormat'
 import type { FilterOption } from './activityFilters'
-import { newActivityValues, toInput, validate, type ActivityFormValues } from './activityForm'
+import { newActivityValues, toInput, validate, type ActivityInputValues } from './activityInput'
 import { activityInputFromCellChange } from './activityCellEdit'
 import { enumLabel } from './activityFormatting'
 import {
@@ -269,7 +269,7 @@ export const ActivitiesTable = memo(function ActivitiesTable({
   })
 
   const createActivity = () => {
-    const values: ActivityFormValues = {
+    const values: ActivityInputValues = {
       ...newActivityValues({ type: latestType }),
       duration: '0:01',
       distance: '0',
