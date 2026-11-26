@@ -1,1 +1,1 @@
-export const authEvents = new EventTarget();
+export const authEvents = new EventTarget()

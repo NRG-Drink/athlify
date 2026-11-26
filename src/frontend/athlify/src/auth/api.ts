@@ -1,34 +1,32 @@
-const configuredApiUrl = import.meta.env.VITE_API_URL ?? "";
-const apiUrl = configuredApiUrl.replace(/\/$/, "");
-const configuredGraphqlUrl = import.meta.env.VITE_GRAPHQL_ENDPOINT;
+const configuredApiUrl = import.meta.env.VITE_API_URL ?? ''
+const apiUrl = configuredApiUrl.replace(/\/$/, '')
+const configuredGraphqlUrl = import.meta.env.VITE_GRAPHQL_ENDPOINT
 
-export function authUrl(path: "login" | "logout" | "refresh"): string {
-  return `${apiUrl}/auth/${path}`;
+export function authUrl(path: 'login' | 'logout' | 'refresh'): string {
+  return `${apiUrl}/auth/${path}`
 }
 
 export function graphqlUrl(): string {
-  return configuredGraphqlUrl ?? `${apiUrl}/graphql`;
+  return configuredGraphqlUrl ?? `${apiUrl}/graphql`
 }
 
 export interface AccessTokenResponse {
-  token: string;
-  expiresAt: string;
+  token: string
+  expiresAt: string
 }
 
-export async function readAccessTokenResponse(
-  response: Response,
-): Promise<AccessTokenResponse> {
-  const result: unknown = await response.json();
+export async function readAccessTokenResponse(response: Response): Promise<AccessTokenResponse> {
+  const result: unknown = await response.json()
   if (
-    typeof result !== "object" ||
+    typeof result !== 'object' ||
     result === null ||
-    !("token" in result) ||
-    typeof result.token !== "string" ||
-    !("expiresAt" in result) ||
-    typeof result.expiresAt !== "string"
+    !('token' in result) ||
+    typeof result.token !== 'string' ||
+    !('expiresAt' in result) ||
+    typeof result.expiresAt !== 'string'
   ) {
-    throw new Error("The authentication server returned an invalid token response.");
+    throw new Error('The authentication server returned an invalid token response.')
   }
 
-  return { token: result.token, expiresAt: result.expiresAt };
+  return { token: result.token, expiresAt: result.expiresAt }
 }

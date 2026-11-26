@@ -14,8 +14,8 @@ public class ActivitySeeds(DatabaseSeedsFixture database)
     private static readonly string[] TagNames = ["endurance", "intervals", "commute", "hills"];
 
     [Test, Explicit]
-    [Arguments(20261126, 120)]
-    public async Task InsertsRandomActivities(int seed, int numberOfEntries)
+    [Arguments(20261126, 720, 6)]
+    public async Task InsertsRandomActivities(int seed, int numberOfEntries, int years)
     {
         if (numberOfEntries < 2)
         {
@@ -24,10 +24,12 @@ public class ActivitySeeds(DatabaseSeedsFixture database)
 
         var tags = await GetOrCreateTagsAsync();
         var now = DateTime.UtcNow;
+        var to = now.AddDays(-1);
+        var from = now.AddDays(-365 * years);
         var activityFaker = new Faker<Activity>()
             .UseSeed(seed)
             .RuleFor(activity => activity.UserId, _ => database.OwnerUserId)
-            .RuleFor(activity => activity.Date, faker => DateTime.SpecifyKind(faker.Date.Between(now.AddDays(-730), now.AddDays(-1)), DateTimeKind.Utc))
+            .RuleFor(activity => activity.Date, faker => DateTime.SpecifyKind(faker.Date.Between(from, to), DateTimeKind.Utc))
             .RuleFor(activity => activity.Type, faker => faker.PickRandom(Enum.GetValues<ActivityType>()))
             .RuleFor(activity => activity.Time, faker => faker.Random.Int(1800, 14400))
             .RuleFor(activity => activity.Distance, faker => Math.Round(faker.Random.Double(10, 120), 1))

@@ -1,4 +1,10 @@
-import type { ColumnState, SortModelItem } from 'ag-grid-community'
+import {
+  createGridStateCodec,
+  type GridFilterModel,
+  type GridSavedView,
+  type GridSortModel,
+} from '../../components/ag-grid/gridStateCodec'
+import type { GridColumnState } from '../../components/ag-grid/useGridColumnPreferences'
 
 export const EVENTS_COLUMN_STORAGE_KEY = 'athlify.events.columns.v1'
 export const EVENTS_VIEWS_STORAGE_KEY = 'athlify.events.views.v1'
@@ -17,243 +23,28 @@ export const eventsColumnIds = [
   'description',
 ] as const
 
-const eventsFilterColumnIds = [
-  'name',
-  'startDate',
-  'endDate',
-  'type',
-  'tags',
-  'description',
-] as const
+export type EventsFilterModel = GridFilterModel
+export type EventsSortModel = GridSortModel
+export type EventsColumnState = GridColumnState
+export type EventsSavedView = GridSavedView<EventsColumnState>
 
-const eventsSortableColumnIds = [
-  'id',
-  'name',
-  'startDate',
-  'endDate',
-  'type',
-  'description',
-] as const
+export const eventsGridStateCodec = createGridStateCodec<EventsColumnState>({
+  columnIds: eventsColumnIds,
+  filterColumnIds: ['name', 'startDate', 'endDate', 'type', 'tags', 'description'],
+  sortableColumnIds: ['id', 'name', 'startDate', 'endDate', 'type', 'description'],
+  filterPrefix: EVENTS_FILTER_PREFIX,
+  filtersParam: EVENTS_FILTERS_PARAM,
+  sortParam: EVENTS_SORT_PARAM,
+  listLeaves: ['values'],
+})
 
-export type EventsFilterModel = Record<string, unknown>
-export type EventsSortModel = SortModelItem[]
-export type EventsColumnState = Pick<ColumnState, 'colId' | 'width' | 'hide' | 'pinned'>
-export type EventsSavedView = {
-  id: string
-  name: string
-  filters: {
-    quick: string
-    from: string
-    to: string
-    grid: EventsFilterModel
-  }
-  sort: EventsSortModel
-  columns: EventsColumnState[]
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === 'object' && !Array.isArray(value)
-}
-
-function parseJson(params: URLSearchParams, key: string): unknown {
-  const raw = params.get(key)
-  if (!raw) return null
-
-  try {
-    return JSON.parse(raw) as unknown
-  } catch {
-    return null
-  }
-}
-
-export function parseEventsFilterModel(params: URLSearchParams): EventsFilterModel {
-  const flattened = [...params.entries()].filter(([key]) => key.startsWith(EVENTS_FILTER_PREFIX))
-  if (flattened.length === 0) {
-    return parseEventsFilterModelValue(parseJson(params, EVENTS_FILTERS_PARAM))
-  }
-
-  const result: Record<string, unknown> = {}
-  for (const [key, value] of flattened) {
-    const path = key.slice(EVENTS_FILTER_PREFIX.length).split('.')
-    if (!path.length || !eventsFilterColumnIds.includes(path[0] as (typeof eventsFilterColumnIds)[number])) {
-      continue
-    }
-
-    let current: Record<string, unknown> = result
-    for (const segment of path.slice(0, -1)) {
-      const nested = current[segment]
-      if (!isRecord(nested)) current[segment] = {}
-      current = current[segment] as Record<string, unknown>
-    }
-    const leaf = path[path.length - 1]
-    if (leaf !== undefined) {
-      const previous = current[leaf]
-      if (leaf === 'values') {
-        current[leaf] = [...(Array.isArray(previous) ? previous : []), value]
-      } else {
-        current[leaf] = previous === undefined ? value : Array.isArray(previous) ? [...previous, value] : [previous, value]
-      }
-    }
-  }
-  return parseEventsFilterModelValue(result)
-}
-
-export function parseEventsFilterModelValue(parsed: unknown): EventsFilterModel {
-  if (!isRecord(parsed)) return {}
-
-  return Object.fromEntries(
-    Object.entries(parsed).filter(
-      ([column, model]) =>
-        eventsFilterColumnIds.includes(column as (typeof eventsFilterColumnIds)[number]) &&
-        isRecord(model),
-    ),
-  )
-}
-
-export function parseEventsSortModel(params: URLSearchParams): EventsSortModel {
-  return parseEventsSortModelValue(parseJson(params, EVENTS_SORT_PARAM))
-}
-
-export function parseEventsSortModelValue(parsed: unknown): EventsSortModel {
-  if (!Array.isArray(parsed)) return []
-
-  return parsed.flatMap((item): SortModelItem[] => {
-    if (!isRecord(item) || typeof item.colId !== 'string') return []
-    if (
-      !eventsSortableColumnIds.includes(item.colId as (typeof eventsSortableColumnIds)[number])
-    ) {
-      return []
-    }
-    if (item.sort !== 'asc' && item.sort !== 'desc') return []
-    return [{ colId: item.colId, sort: item.sort }]
-  })
-}
-
-export function applyEventsGridState(
-  params: URLSearchParams,
-  filterModel: EventsFilterModel,
-  sortModel: EventsSortModel,
-): URLSearchParams {
-  const next = new URLSearchParams(params)
-  for (const key of [...next.keys()]) {
-    if (key.startsWith(EVENTS_FILTER_PREFIX) || key === EVENTS_FILTERS_PARAM) next.delete(key)
-  }
-  if (Object.keys(filterModel).length > 0) {
-    const flatten = (value: unknown, path: string[]) => {
-      if (isRecord(value)) {
-        for (const [key, nested] of Object.entries(value)) flatten(nested, [...path, key])
-      } else if (Array.isArray(value)) {
-        for (const item of value) flatten(item, path)
-      } else if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-        next.append(`${EVENTS_FILTER_PREFIX}${path.join('.')}`, String(value))
-      }
-    }
-    for (const [column, model] of Object.entries(filterModel)) flatten(model, [column])
-  }
-  if (sortModel.length > 0) {
-    next.set(EVENTS_SORT_PARAM, JSON.stringify(sortModel))
-  } else {
-    next.delete(EVENTS_SORT_PARAM)
-  }
-  return next
-}
-
-export function parseEventsColumnState(raw: string | null): EventsColumnState[] {
-  if (!raw) return []
-
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(raw) as unknown
-  } catch {
-    return []
-  }
-  return parseEventsColumnStateValue(parsed)
-}
-
-export function parseEventsColumnStateValue(parsed: unknown): EventsColumnState[] {
-  if (!Array.isArray(parsed)) return []
-  return parsed.flatMap((item): EventsColumnState[] => {
-    if (
-      !isRecord(item) ||
-      typeof item.colId !== 'string' ||
-      !eventsColumnIds.includes(item.colId as (typeof eventsColumnIds)[number])
-    ) {
-      return []
-    }
-
-    const state: EventsColumnState = { colId: item.colId, width: 100 }
-    if (typeof item.width === 'number' && Number.isFinite(item.width) && item.width > 0) {
-      state.width = item.width
-    }
-    if (typeof item.hide === 'boolean') state.hide = item.hide
-    if (item.pinned === 'left' || item.pinned === 'right' || item.pinned === null) {
-      state.pinned = item.pinned
-    }
-    return [state]
-  })
-}
-
-export function parseEventsSavedViews(raw: string | null): EventsSavedView[] {
-  if (!raw) return []
-
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(raw) as unknown
-  } catch {
-    return []
-  }
-  if (!Array.isArray(parsed)) return []
-
-  const views: EventsSavedView[] = []
-  const seenIds = new Set<string>()
-  const seenNames = new Set<string>()
-  for (const item of parsed) {
-    if (
-      !isRecord(item) ||
-      typeof item.id !== 'string' ||
-      !item.id ||
-      typeof item.name !== 'string' ||
-      !item.name.trim() ||
-      item.name.length > 80 ||
-      !isRecord(item.filters) ||
-      typeof item.filters.quick !== 'string' ||
-      typeof item.filters.from !== 'string' ||
-      typeof item.filters.to !== 'string'
-    ) {
-      continue
-    }
-
-    const name = item.name.trim()
-    const nameKey = name.toLocaleLowerCase()
-    if (seenIds.has(item.id) || seenNames.has(nameKey)) continue
-    seenIds.add(item.id)
-    seenNames.add(nameKey)
-    views.push({
-      id: item.id,
-      name,
-      filters: {
-        quick: item.filters.quick,
-        from: item.filters.from,
-        to: item.filters.to,
-        grid: parseEventsFilterModelValue(item.filters.grid),
-      },
-      sort: parseEventsSortModelValue(item.sort),
-      columns: parseEventsColumnStateValue(item.columns),
-    })
-  }
-  return views
-}
-
-export function serializeEventsSavedViews(views: EventsSavedView[]): string {
-  return JSON.stringify(views)
-}
-
-export function serializeEventsColumnState(columnState: EventsColumnState[]): string {
-  return JSON.stringify(
-    columnState
-      .filter(({ colId }) =>
-        eventsColumnIds.includes(colId as (typeof eventsColumnIds)[number]),
-      )
-      .map(({ colId, width, hide, pinned }) => ({ colId, width, hide, pinned })),
-  )
-}
+export const parseEventsFilterModel = eventsGridStateCodec.parseFilterModel
+export const parseEventsFilterModelValue = eventsGridStateCodec.parseFilterModelValue
+export const parseEventsSortModel = eventsGridStateCodec.parseSortModel
+export const parseEventsSortModelValue = eventsGridStateCodec.parseSortModelValue
+export const applyEventsGridState = eventsGridStateCodec.applyGridState
+export const parseEventsColumnState = eventsGridStateCodec.columns.parse
+export const parseEventsColumnStateValue = eventsGridStateCodec.columns.parseValue
+export const serializeEventsColumnState = eventsGridStateCodec.columns.serialize
+export const parseEventsSavedViews = eventsGridStateCodec.parseSavedViews
+export const serializeEventsSavedViews = eventsGridStateCodec.serializeSavedViews

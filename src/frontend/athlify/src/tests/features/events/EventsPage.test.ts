@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import i18next from 'i18next'
 import { createEventsColumnDefs, formatEventTags } from '../../../features/events/EventsGridColumns'
-import { clearNoOpGridFilters } from '../../../features/events/EventsGridFilterParams'
+import { clearNoOpGridFilters } from '../../../components/ag-grid/GridFilterParams'
 import { getGridQuery } from '../../../features/events/EventsGridQuery'
 import {
   applyEventsGridState,

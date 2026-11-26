@@ -43,6 +43,9 @@ export const localDateKey = (date: Date): string =>
     .toString()
     .padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
 
+/** `2026-01-01`, the first day of the year of `date`. */
+export const yearStartKey = (date: Date): string => `${date.getFullYear()}-01-01`
+
 export function dateFromKey(value: string): Date {
   const [year, month, day] = value.split('-').map(Number)
   return new Date(year, month - 1, day)

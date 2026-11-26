@@ -1,19 +1,24 @@
 import { Box, Text } from '@chakra-ui/react'
-import type { ColDef, GridApi } from 'ag-grid-community'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { GridApi } from 'ag-grid-community'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { graphql, useMutation, useRelayEnvironment } from 'react-relay'
-import { AgGridTable } from '../../components/ag-grid/AgGridTable'
+import { GridToolbar } from '../../components/ag-grid/GridToolbar'
+import { InfiniteAgGridTable } from '../../components/ag-grid/InfiniteAgGridTable'
+import { handleGridFilterChanged } from '../../components/ag-grid/gridFilterChange'
+import { getGridSortModel } from '../../components/ag-grid/gridSortModel'
+import { useGridColumnPreferences } from '../../components/ag-grid/useGridColumnPreferences'
+import { useGridUrlSync } from '../../components/ag-grid/useGridUrlSync'
+import { usePinnedRows } from '../../components/ag-grid/usePinnedRows'
 import { toaster } from '../../components/ui/toaster'
 import { useFormat } from '../../i18n/useFormat'
+import { localDateKey } from '../../lib/period'
 import type { EventFilterInput } from './__generated__/EventsManagementPageQuery.graphql'
 import type { EventsGridDeleteMutation } from './__generated__/EventsGridDeleteMutation.graphql'
 import type { EventsGridCreateMutation } from './__generated__/EventsGridCreateMutation.graphql'
 import type { EventsGridUpdateMutation } from './__generated__/EventsGridUpdateMutation.graphql'
 import { EventsDataSource } from './EventsDataSource'
 import { createEventsColumnDefs } from './EventsGridColumns'
-import { clearNoOpGridFilters } from './EventsGridFilterParams'
-import { EventsGridToolbar } from './EventsGridToolbar'
 import { defaultOrder, getGridQuery } from './EventsGridQuery'
 import { copyEventRow, type EventsRow } from './EventsGridTypes'
 import {
@@ -89,23 +94,9 @@ const createMutation = graphql`
   }
 `
 
+const eventsToolbarColumnIds = eventsColumnIds.filter((column) => column !== 'delete')
+
 type UpdatedEvent = NonNullable<EventsGridUpdateMutation['response']['updateEvent']>
-
-function getTodayLocalDate(): string {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0')
-  const day = String(today.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-function getGridSortModel(api: GridApi<EventsRow>): EventsSortModel {
-  return api
-    .getColumnState()
-    .filter(({ sort }) => sort)
-    .sort((left, right) => (left.sortIndex ?? 0) - (right.sortIndex ?? 0))
-    .flatMap(({ colId, sort }) => (sort ? [{ colId, sort }] : []))
-}
 
 export function EventsGrid({
   where,
@@ -116,7 +107,7 @@ export function EventsGrid({
   onColumnStateChange,
   onGridStateChange,
 }: EventsGridProps) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const format = useFormat()
   const environment = useRelayEnvironment()
   const [commitDelete, isDeleting] = useMutation<EventsGridDeleteMutation>(deleteMutation)
@@ -124,18 +115,15 @@ export function EventsGrid({
   const [loadFailed, setLoadFailed] = useState(false)
   const [loading, setLoading] = useState(true)
   const [resultCount, setResultCount] = useState<number | null>(null)
-  const [visibleColumns, setVisibleColumns] = useState<string[]>([...eventsColumnIds])
-  const [pinnedEvents, setPinnedEvents] = useState<EventsRow[]>([])
   const [gridApi, setGridApi] = useState<GridApi<EventsRow> | null>(null)
-  const applyingUrlState = useRef(false)
-
-  const togglePinnedEvent = useCallback((row: EventsRow) => {
-    setPinnedEvents((current) =>
-      current.some((event) => event.id === row.id)
-        ? current.filter((event) => event.id !== row.id)
-        : [...current, copyEventRow(row)],
-    )
-  }, [])
+  const {
+    rows: pinnedRows,
+    ids: pinnedIds,
+    toggle: togglePinned,
+    add: addPinned,
+    update: updatePinned,
+    remove: removePinned,
+  } = usePinnedRows<EventsRow>(copyEventRow)
 
   const datasource = useMemo(
     () =>
@@ -152,131 +140,39 @@ export function EventsGrid({
     [environment, where],
   )
 
+  const reloadRows = useCallback(() => {
+    datasource.reset()
+    gridApi?.refreshInfiniteCache()
+  }, [datasource, gridApi])
+
   const onEventUpdated = useCallback(
     (event: UpdatedEvent) => {
-      setPinnedEvents((current) =>
-        current.map((pinnedEvent) =>
-          pinnedEvent.id === event.id
-            ? { ...pinnedEvent, ...event, tags: pinnedEvent.tags }
-            : pinnedEvent,
-        ),
-      )
-      datasource.reset()
-      gridApi?.refreshInfiniteCache()
+      updatePinned(event.id, (row) => ({ ...row, ...event, tags: row.tags }))
+      reloadRows()
     },
-    [datasource, gridApi],
+    [updatePinned, reloadRows],
   )
   const { isUpdating, onCellValueChanged } = useEventsCellEdit(onEventUpdated)
 
-  const applyUrlGridState = useCallback(
-    (api: GridApi<EventsRow>) => {
-      const currentSort = getGridSortModel(api)
-      const sortChanged = JSON.stringify(currentSort) !== JSON.stringify(sortModel)
-      const filtersChanged =
-        JSON.stringify(api.getFilterModel() ?? {}) !== JSON.stringify(filterModel)
-      if (!sortChanged && !filtersChanged) return
+  const { visibleColumns, persistColumnState, restoreColumnState, setColumnVisible } =
+    useGridColumnPreferences<EventsRow, EventsColumnState>({
+      gridApi,
+      columnIds: eventsColumnIds,
+      storageKey: EVENTS_COLUMN_STORAGE_KEY,
+      storageLabel: 'My Events',
+      columnState,
+      parse: parseEventsColumnState,
+      serialize: serializeEventsColumnState,
+      onColumnStateChange,
+    })
 
-      applyingUrlState.current = true
-      try {
-        if (sortChanged) {
-          api.applyColumnState({
-            state: sortModel.map(({ colId, sort }, sortIndex) => ({ colId, sort, sortIndex })),
-            defaultState: { sort: null },
-          })
-        }
-        if (filtersChanged) api.setFilterModel(filterModel)
-      } finally {
-        queueMicrotask(() => {
-          applyingUrlState.current = false
-        })
-      }
-    },
-    [filterModel, sortModel],
-  )
-
-  const updateColumnState = useCallback(
-    (api: GridApi<EventsRow>) => {
-      const state = parseEventsColumnState(serializeEventsColumnState(api.getColumnState()))
-      onColumnStateChange(state)
-      setVisibleColumns(state.filter(({ hide }) => !hide).map(({ colId }) => colId))
-    },
-    [onColumnStateChange],
-  )
-
-  const persistColumnState = useCallback(
-    (api: GridApi<EventsRow>) => {
-      const state = serializeEventsColumnState(api.getColumnState())
-      updateColumnState(api)
-      try {
-        window.localStorage.setItem(EVENTS_COLUMN_STORAGE_KEY, state)
-      } catch (error) {
-        console.error('Could not save My Events column preferences.', error)
-      }
-    },
-    [updateColumnState],
-  )
-
-  const restoreColumnState = useCallback(
-    (api: GridApi<EventsRow>) => {
-      try {
-        const storedState = parseEventsColumnState(
-          window.localStorage.getItem(EVENTS_COLUMN_STORAGE_KEY),
-        )
-        if (storedState.length > 0) {
-          api.applyColumnState({ state: storedState, applyOrder: true })
-        }
-      } catch (error) {
-        console.error('Could not restore My Events column preferences.', error)
-      }
-      updateColumnState(api)
-    },
-    [updateColumnState],
-  )
-
-  const applyColumnPreset = useCallback(() => {
-    const api = gridApi
-    if (!api || columnState.length === 0) return
-
-    if (
-      serializeEventsColumnState(api.getColumnState()) !== serializeEventsColumnState(columnState)
-    ) {
-      api.applyColumnState({ state: columnState, applyOrder: true })
-    }
-  }, [columnState, gridApi])
-
-  useEffect(() => {
-    applyColumnPreset()
-  }, [applyColumnPreset])
-
-  useEffect(() => {
-    if (resetTableVersion === 0) return
-    const api = gridApi
-    if (!api) return
-
-    applyingUrlState.current = true
-    try {
-      api.resetColumnState()
-      api.setFilterModel(null)
-      persistColumnState(api)
-    } finally {
-      queueMicrotask(() => {
-        applyingUrlState.current = false
-      })
-    }
-  }, [gridApi, persistColumnState, resetTableVersion])
-
-  useEffect(() => {
-    if (gridApi) applyUrlGridState(gridApi)
-  }, [applyUrlGridState, gridApi])
-
-  const defaultColDef = useMemo<ColDef<EventsRow>>(
-    () => ({
-      resizable: true,
-      sortable: true,
-      filter: true,
-    }),
-    [],
-  )
+  const { applyUrlState, isApplyingUrlState } = useGridUrlSync<EventsRow>({
+    gridApi,
+    filterModel,
+    sortModel,
+    resetTableVersion,
+    onReset: persistColumnState,
+  })
 
   const deleteEvent = useCallback(
     (id: string) => {
@@ -287,9 +183,8 @@ export function EventsGrid({
             toaster.create({ type: 'error', title: t('events.delete.failed') })
             return
           }
-          setPinnedEvents((current) => current.filter((event) => event.id !== id))
-          datasource.reset()
-          gridApi?.refreshInfiniteCache()
+          removePinned(id)
+          reloadRows()
           toaster.create({ type: 'success', title: t('events.delete.success') })
         },
         onError: () => {
@@ -297,7 +192,7 @@ export function EventsGrid({
         },
       })
     },
-    [commitDelete, datasource, gridApi, t],
+    [commitDelete, removePinned, reloadRows, t],
   )
 
   const createEvent = useCallback(() => {
@@ -305,7 +200,7 @@ export function EventsGrid({
       variables: {
         event: {
           name: t('events.add.defaultName'),
-          startDate: getTodayLocalDate(),
+          startDate: localDateKey(new Date()),
           type: 'OTHER',
           description: null,
           endDate: null,
@@ -317,16 +212,15 @@ export function EventsGrid({
           toaster.create({ type: 'error', title: t('events.add.failed') })
           return
         }
-        setPinnedEvents((current) => [...current, copyEventRow(response.createEvent)])
-        datasource.reset()
-        gridApi?.refreshInfiniteCache()
+        addPinned(response.createEvent)
+        reloadRows()
         toaster.create({ type: 'success', title: t('events.add.success') })
       },
       onError: () => {
         toaster.create({ type: 'error', title: t('events.add.failed') })
       },
     })
-  }, [commitCreate, datasource, gridApi, t])
+  }, [commitCreate, addPinned, reloadRows, t])
 
   const columnDefs = useMemo(
     () =>
@@ -336,46 +230,19 @@ export function EventsGrid({
         emptyValue: t('events.emptyValue'),
         isDeleting,
         isUpdating,
-        pinnedEventIds: new Set(pinnedEvents.map(({ id }) => id)),
+        pinnedEventIds: pinnedIds,
         onDelete: deleteEvent,
-        onTogglePin: togglePinnedEvent,
+        onTogglePin: togglePinned,
       }),
-    [deleteEvent, format.date, isDeleting, isUpdating, pinnedEvents, t, togglePinnedEvent],
+    [deleteEvent, format.date, isDeleting, isUpdating, pinnedIds, t, togglePinned],
   )
 
   const saveGridState = useCallback(
     (api: GridApi<EventsRow>) => {
-      if (applyingUrlState.current) return
+      if (isApplyingUrlState()) return
       onGridStateChange(api.getFilterModel() ?? {}, getGridSortModel(api))
     },
-    [onGridStateChange],
-  )
-
-  const handleFilterChanged = useCallback(
-    (api: GridApi<EventsRow>) => {
-      void clearNoOpGridFilters(
-        api.getFilterModel() ?? {},
-        (column) => api.setColumnFilterModel(column, null),
-        () => api.onFilterChanged(),
-      )
-        .then((cleared) => {
-          if (!cleared) saveGridState(api)
-        })
-          .catch((error: unknown) => {
-            console.error('Could not clear no-op event filters.', error)
-          })
-    },
-    [saveGridState],
-  )
-
-  const setColumnVisible = useCallback(
-    (column: string, visible: boolean) => {
-      const api = gridApi
-      if (!api) return
-      api.applyColumnState({ state: [{ colId: column, hide: !visible }] })
-      persistColumnState(api)
-    },
-    [gridApi, persistColumnState],
+    [isApplyingUrlState, onGridStateChange],
   )
 
   return (
@@ -385,49 +252,35 @@ export function EventsGrid({
           {t('events.loadFailed')}
         </Text>
       )}
-      <EventsGridToolbar
+      <GridToolbar
+        namespace="events"
+        columnIds={eventsToolbarColumnIds}
         resultCount={resultCount}
         isCreating={isCreating}
         visibleColumns={visibleColumns}
-        onCreateEvent={createEvent}
+        onCreate={createEvent}
         onColumnVisibleChange={setColumnVisible}
       />
-      <AgGridTable<EventsRow>
-        key={i18n.resolvedLanguage}
+      <InfiniteAgGridTable<EventsRow>
         ariaLabel={t('events.table.caption')}
-        height="clamp(24rem, calc(100dvh - 22rem), 48rem)"
-        localeText={{
-          equals: t('events.gridFilter.options.equals'),
-          notEqual: t('events.gridFilter.options.notEqual'),
-          contains: t('events.gridFilter.options.contains'),
-          notContains: t('events.gridFilter.options.notContains'),
-          startsWith: t('events.gridFilter.options.startsWith'),
-          endsWith: t('events.gridFilter.options.endsWith'),
-          blank: t('events.gridFilter.options.blank'),
-          notBlank: t('events.gridFilter.options.notBlank'),
-          lessThan: t('events.gridFilter.options.lessThan'),
-          greaterThan: t('events.gridFilter.options.greaterThan'),
-          inRange: t('events.gridFilter.options.inRange'),
-          before: t('events.gridFilter.options.before'),
-          after: t('events.gridFilter.options.after'),
-        }}
-        rowModelType="infinite"
+        localeNamespace="events"
         datasource={datasource}
         getRowId={({ data }) => data?.id}
-        cacheBlockSize={20}
-        maxBlocksInCache={5}
-        rowBuffer={10}
-        suppressRowVirtualisation={false}
         columnDefs={columnDefs}
-        defaultColDef={defaultColDef}
         loading={loading}
-        pinnedTopRowData={pinnedEvents.length > 0 ? pinnedEvents : undefined}
+        pinnedTopRowData={pinnedRows.length > 0 ? pinnedRows : undefined}
         onGridReady={({ api }) => {
           setGridApi(api)
           restoreColumnState(api)
-          applyUrlGridState(api)
+          applyUrlState(api)
         }}
-        onFilterChanged={({ api }) => handleFilterChanged(api)}
+        onFilterChanged={({ api }) =>
+          handleGridFilterChanged(
+            api,
+            () => saveGridState(api),
+            'Could not clear no-op event filters.',
+          )
+        }
         onSortChanged={({ api }) => saveGridState(api)}
         onCellValueChanged={onCellValueChanged}
         onColumnMoved={({ api }) => persistColumnState(api)}
