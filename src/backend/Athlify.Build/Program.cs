@@ -99,7 +99,7 @@ internal class Program
                 .AddModule<NodeTestReportOpen>()
                 .AddModule<NodeTestReportCopyToArtifactsUpload>();
 
-        if (!args.Contains("test-only"))
+        if (!args.Any(e => e.TrimStart('-').Equals("test-only", StringComparison.OrdinalIgnoreCase)))
         {
             // General
             builder

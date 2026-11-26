@@ -8,6 +8,7 @@ using ModularPipelines.Modules;
 namespace Athlify.Build.Modules.Node;
 
 [ModuleCategory(ModuleCategoryKey.Node)]
+[RunOnLocalMachineOnly]
 [RunOnWindows]
 [DependsOn<FindRepoPaths>()]
 [DependsOn<NodeTestWithCoverage>()]
