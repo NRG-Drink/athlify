@@ -12,7 +12,8 @@ export function isoWeek(date: Date): { week: number; year: number } {
   thursday.setDate(thursday.getDate() + 3 - ((thursday.getDay() + 6) % 7))
   const firstThursday = new Date(thursday.getFullYear(), 0, 4)
   const offset = (firstThursday.getDay() + 6) % 7
-  const week = 1 + Math.round(((thursday.getTime() - firstThursday.getTime()) / DAY - 3 + offset) / 7)
+  const week =
+    1 + Math.round(((thursday.getTime() - firstThursday.getTime()) / DAY - 3 + offset) / 7)
   return { week, year: thursday.getFullYear() }
 }
 

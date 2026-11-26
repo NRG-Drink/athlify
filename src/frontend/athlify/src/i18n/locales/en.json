@@ -89,8 +89,19 @@
         "speed": "Avg [km/h]",
         "weight": "Weight [kg]",
         "muscle": "Muscle [%]",
-        "fitness": "Fitness (CTL)",
-        "events": "Events"
+        "events": "Events",
+        "noValue": "—",
+        "bodyFat": "Body fat [%]",
+        "water": "Water [%]",
+        "bone": "Bone [kg]",
+        "ctl": "Fitness (CTL)",
+        "atl": "Fatigue (ATL)",
+        "tsb": "Form (TSB)",
+        "columnPicker": {
+          "open": "Columns",
+          "label": "Overview columns",
+          "reset": "Reset columns"
+        }
       }
     },
     "layout": {

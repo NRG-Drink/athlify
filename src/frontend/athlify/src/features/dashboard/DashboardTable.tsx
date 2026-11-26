@@ -1,103 +1,176 @@
-import { Heading, Stack, Table, Text } from '@chakra-ui/react'
+import { Button, Flex, Heading, Stack } from '@chakra-ui/react'
+import type { ColDef, GridApi, GridReadyEvent } from 'ag-grid-community'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { AgGridTable } from '../../components/ag-grid/AgGridTable'
+import { GridColumnPicker } from '../../components/ag-grid/GridColumnPicker'
 import { useFormat } from '../../i18n/useFormat'
-import type { ActivityBucket, BodyBucket, Grouping } from '../../lib/aggregate'
-import type { FitnessDay } from '../../lib/fitness'
-import type { TrendMarker } from '../../components/TrendChart'
-import type { BucketLabels } from './useBucketLabels'
+import {
+  DASHBOARD_COLUMN_STORAGE_KEY,
+  dashboardColumnIds,
+  optionalColumnIds,
+  parseDashboardColumnState,
+  serializeDashboardColumnState,
+  type DashboardColumnId,
+} from './dashboardTableColumns'
+import type { DashboardTableRow } from './dashboardTableRows'
 
 export interface DashboardTableProps {
-  /** First day of every bucket to list, newest first. */
-  starts: readonly { key: string; start: Date }[]
-  grouping: Grouping
-  labels: BucketLabels
-  activities: ReadonlyMap<string, ActivityBucket>
-  bodyStats: ReadonlyMap<string, BodyBucket>
-  fitness: ReadonlyMap<string, FitnessDay>
-  markers: readonly TrendMarker[]
+  rows: readonly DashboardTableRow[]
 }
 
-/** One row per bucket with the aggregated activities, body stats, fitness and the events of the period. */
-export function DashboardTable({
-  starts,
-  grouping,
-  labels,
-  activities,
-  bodyStats,
-  fitness,
-  markers,
-}: DashboardTableProps) {
-  const { t } = useTranslation()
-  const format = useFormat()
-  const measure = (value: number | undefined, decimals: number) =>
-    value === undefined ? '—' : format.number(value, decimals)
+type NumericColumn = {
+  id: Exclude<DashboardColumnId, 'period' | 'events'>
+  decimals: number
+  width: number
+}
 
-  const columns: { key: string; label: string; numeric: boolean }[] = [
-    { key: 'period', label: t('dashboard.table.period'), numeric: false },
-    { key: 'count', label: t('dashboard.table.count'), numeric: true },
-    { key: 'hours', label: t('dashboard.table.hours'), numeric: true },
-    { key: 'distance', label: t('dashboard.table.distance'), numeric: true },
-    { key: 'elevationGain', label: t('dashboard.table.elevationGain'), numeric: true },
-    { key: 'tss', label: t('dashboard.table.tss'), numeric: true },
-    { key: 'speed', label: t('dashboard.table.speed'), numeric: true },
-    { key: 'weight', label: t('dashboard.table.weight'), numeric: true },
-    { key: 'muscle', label: t('dashboard.table.muscle'), numeric: true },
-    { key: 'fitness', label: t('dashboard.table.fitness'), numeric: true },
-    { key: 'events', label: t('dashboard.table.events'), numeric: false },
-  ]
+const numericColumns: readonly NumericColumn[] = [
+  { id: 'count', decimals: 0, width: 110 },
+  { id: 'hours', decimals: 1, width: 100 },
+  { id: 'distance', decimals: 1, width: 120 },
+  { id: 'elevationGain', decimals: 0, width: 120 },
+  { id: 'tss', decimals: 0, width: 90 },
+  { id: 'speed', decimals: 1, width: 110 },
+  { id: 'weight', decimals: 1, width: 120 },
+  { id: 'bodyFat', decimals: 1, width: 120 },
+  { id: 'muscle', decimals: 1, width: 120 },
+  { id: 'water', decimals: 1, width: 120 },
+  { id: 'bone', decimals: 1, width: 120 },
+  { id: 'ctl', decimals: 0, width: 120 },
+  { id: 'atl', decimals: 0, width: 100 },
+  { id: 'tsb', decimals: 0, width: 100 },
+]
+
+function readStoredColumnState() {
+  try {
+    return parseDashboardColumnState(window.localStorage.getItem(DASHBOARD_COLUMN_STORAGE_KEY))
+  } catch (error) {
+    console.error('Could not restore the dashboard column preferences.', error)
+    return []
+  }
+}
+
+/** One row per bucket with activities, body values, fitness and events; columns can be hidden and resized. */
+export function DashboardTable({ rows }: DashboardTableProps) {
+  const { t, i18n } = useTranslation()
+  const format = useFormat()
+  const [gridApi, setGridApi] = useState<GridApi<DashboardTableRow> | null>(null)
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(
+    dashboardColumnIds.filter((id) => !optionalColumnIds.includes(id)),
+  )
+  const label = useCallback((id: DashboardColumnId) => t(`dashboard.table.${id}`), [t])
+
+  const columnDefs = useMemo<ColDef<DashboardTableRow>[]>(
+    () => [
+      {
+        colId: 'period',
+        field: 'key',
+        headerName: label('period'),
+        valueFormatter: ({ data }) => data?.period ?? '',
+        width: 150,
+        pinned: 'left',
+        sort: 'desc',
+        lockVisible: true,
+      },
+      ...numericColumns.map(({ id, decimals, width }): ColDef<DashboardTableRow> => ({
+        colId: id,
+        field: id,
+        headerName: label(id),
+        type: 'rightAligned',
+        width,
+        hide: optionalColumnIds.includes(id),
+        valueFormatter: ({ value }) =>
+          typeof value === 'number' ? format.number(value, decimals) : t('dashboard.table.noValue'),
+      })),
+      {
+        colId: 'events',
+        field: 'events',
+        headerName: label('events'),
+        width: 240,
+        tooltipField: 'events',
+      },
+    ],
+    [format, label, t],
+  )
+
+  const readColumnState = useCallback((api: GridApi<DashboardTableRow>) => {
+    const state = api.getColumnState()
+    setVisibleColumns(state.filter(({ hide }) => !hide).map(({ colId }) => colId))
+    return state
+  }, [])
+
+  const persistColumnState = useCallback(
+    (api: GridApi<DashboardTableRow>) => {
+      const state = readColumnState(api)
+      try {
+        window.localStorage.setItem(
+          DASHBOARD_COLUMN_STORAGE_KEY,
+          serializeDashboardColumnState(state),
+        )
+      } catch (error) {
+        console.error('Could not save the dashboard column preferences.', error)
+      }
+    },
+    [readColumnState],
+  )
+
+  const onGridReady = useCallback(
+    ({ api }: GridReadyEvent<DashboardTableRow>) => {
+      const stored = readStoredColumnState()
+      if (stored.length > 0) api.applyColumnState({ state: stored, applyOrder: true })
+      readColumnState(api)
+      setGridApi(api)
+    },
+    [readColumnState],
+  )
+
+  const resetColumns = () => {
+    if (!gridApi) return
+    gridApi.resetColumnState()
+    persistColumnState(gridApi)
+  }
 
   return (
     <Stack gap="3" bg="bg.panel" borderWidth="1px" borderRadius="l3" p={{ base: '4', md: '6' }}>
-      <Heading as="h2" size="lg">
-        {t('dashboard.table.title')}
-      </Heading>
-      {starts.length === 0 ? (
-        <Text color="fg.muted">{t('dashboard.table.empty')}</Text>
-      ) : (
-        <Table.ScrollArea maxH="32rem" borderWidth="1px" borderRadius="l2">
-          <Table.Root size="sm" stickyHeader css={{ tableLayout: 'auto' }}>
-            <Table.Caption srOnly>{t('dashboard.table.caption')}</Table.Caption>
-            <Table.Header>
-              <Table.Row>
-                {columns.map(({ key, label, numeric }) => (
-                  <Table.ColumnHeader key={key} textAlign={numeric ? 'end' : 'start'}>
-                    {label}
-                  </Table.ColumnHeader>
-                ))}
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {starts.map(({ key, start }) => {
-                const activity = activities.get(key)
-                const body = bodyStats.get(key)
-                const form = fitness.get(key)
-                const events = markers.filter(
-                  (marker) => marker.startKey <= key && key <= marker.endKey,
-                )
-                return (
-                  <Table.Row key={key}>
-                    <Table.Cell whiteSpace="nowrap">{labels.full(start, grouping)}</Table.Cell>
-                    <Table.Cell textAlign="end">{activity?.count ?? '—'}</Table.Cell>
-                    <Table.Cell textAlign="end">{measure(activity?.hours, 1)}</Table.Cell>
-                    <Table.Cell textAlign="end">{measure(activity?.distance, 1)}</Table.Cell>
-                    <Table.Cell textAlign="end">
-                      {measure(activity?.elevationGain, 0)}
-                    </Table.Cell>
-                    <Table.Cell textAlign="end">{measure(activity?.tss, 0)}</Table.Cell>
-                    <Table.Cell textAlign="end">{measure(activity?.speed, 1)}</Table.Cell>
-                    <Table.Cell textAlign="end">{measure(body?.weight, 1)}</Table.Cell>
-                    <Table.Cell textAlign="end">
-                      {measure(body?.musclePercentage, 1)}
-                    </Table.Cell>
-                    <Table.Cell textAlign="end">{measure(form?.ctl, 0)}</Table.Cell>
-                    <Table.Cell>{events.map((event) => event.name).join(', ')}</Table.Cell>
-                  </Table.Row>
-                )
-              })}
-            </Table.Body>
-          </Table.Root>
-        </Table.ScrollArea>
-      )}
+      <Flex justify="space-between" align="center" wrap="wrap" gap="2">
+        <Heading as="h2" size="lg">
+          {t('dashboard.table.title')}
+        </Heading>
+        <Flex gap="2">
+          <GridColumnPicker
+            visibleColumns={visibleColumns}
+            columns={dashboardColumnIds
+              .filter((id) => id !== 'period')
+              .map((id) => ({ id, label: label(id) }))}
+            openLabel={t('dashboard.table.columnPicker.open')}
+            dialogLabel={t('dashboard.table.columnPicker.label')}
+            onColumnVisibleChange={(column, visible) => {
+              if (!gridApi) return
+              gridApi.setColumnsVisible([column], visible)
+              persistColumnState(gridApi)
+            }}
+          />
+          <Button size="sm" variant="outline" onClick={resetColumns}>
+            {t('dashboard.table.columnPicker.reset')}
+          </Button>
+        </Flex>
+      </Flex>
+      <AgGridTable<DashboardTableRow>
+        key={i18n.resolvedLanguage}
+        ariaLabel={t('dashboard.table.caption')}
+        height="clamp(20rem, 60dvh, 36rem)"
+        rowData={[...rows]}
+        columnDefs={columnDefs}
+        defaultColDef={{ resizable: true, sortable: true }}
+        getRowId={({ data }) => data.key}
+        suppressColumnVirtualisation
+        tooltipShowDelay={500}
+        overlayNoRowsTemplate={t('dashboard.table.empty')}
+        onGridReady={onGridReady}
+        onColumnResized={({ finished, api }) => finished && persistColumnState(api)}
+        onColumnMoved={({ finished, api }) => finished && persistColumnState(api)}
+      />
     </Stack>
   )
 }

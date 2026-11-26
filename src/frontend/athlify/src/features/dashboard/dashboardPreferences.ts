@@ -1,20 +1,31 @@
 import { useCallback, useState } from 'react'
-import { bodyStatsMetrics, parseMetric, type BodyStatsMetricKey } from '../body-stats/bodyStatsMetrics'
+import {
+  bodyStatsMetrics,
+  parseMetric,
+  type BodyStatsMetricKey,
+} from '../body-stats/bodyStatsMetrics'
 import { parseTrackMetric, type TrackMetricKey } from './dashboardMetrics'
 
 export const DASHBOARD_PREFERENCES_STORAGE_KEY = 'athlify.dashboard.preferences.v1'
 export const DASHBOARD_VIEWS_STORAGE_KEY = 'athlify.dashboard.views.v1'
 
 /** Page choices that the browser remembers; filters stay in the URL so a link reproduces a view. */
+export const dashboardCards = ['track', 'fitness', 'body'] as const
+
+export type DashboardCard = (typeof dashboardCards)[number]
+
 export interface DashboardPreferences {
   /** Whether the filter panel above the charts is expanded. */
   controlsOpen: boolean
+  /** Which chart panels are expanded. */
+  cardsOpen: Record<DashboardCard, boolean>
   trackMetric: TrackMetricKey
   bodyMetric: BodyStatsMetricKey
 }
 
 export const defaultDashboardPreferences: DashboardPreferences = {
   controlsOpen: true,
+  cardsOpen: { track: true, fitness: true, body: true },
   trackMetric: parseTrackMetric(null),
   bodyMetric: parseMetric(null),
 }
@@ -24,12 +35,18 @@ export function parseDashboardPreferences(raw: string | null): DashboardPreferen
   try {
     const value: unknown = JSON.parse(raw)
     if (typeof value !== 'object' || value === null) return defaultDashboardPreferences
-    const { controlsOpen, trackMetric, bodyMetric } = value as Record<string, unknown>
+    const { controlsOpen, cardsOpen, trackMetric, bodyMetric } = value as Record<string, unknown>
+    const storedCards = (
+      typeof cardsOpen === 'object' && cardsOpen !== null ? cardsOpen : {}
+    ) as Record<string, unknown>
     return {
       controlsOpen:
-        typeof controlsOpen === 'boolean'
-          ? controlsOpen
-          : defaultDashboardPreferences.controlsOpen,
+        typeof controlsOpen === 'boolean' ? controlsOpen : defaultDashboardPreferences.controlsOpen,
+      cardsOpen: {
+        track: typeof storedCards.track === 'boolean' ? storedCards.track : true,
+        fitness: typeof storedCards.fitness === 'boolean' ? storedCards.fitness : true,
+        body: typeof storedCards.body === 'boolean' ? storedCards.body : true,
+      },
       trackMetric: parseTrackMetric(trackMetric),
       bodyMetric: bodyStatsMetrics.some(({ key }) => key === bodyMetric)
         ? (bodyMetric as BodyStatsMetricKey)
@@ -121,7 +138,9 @@ export function useDashboardViews() {
   const save = useCallback(
     (rawName: string, search: string) => {
       const name = rawName.trim()
-      const duplicate = views.some((view) => view.name.toLocaleLowerCase() === name.toLocaleLowerCase())
+      const duplicate = views.some(
+        (view) => view.name.toLocaleLowerCase() === name.toLocaleLowerCase(),
+      )
       if (!name || duplicate) return
       store([...views, { id: crypto.randomUUID(), name, search }])
     },

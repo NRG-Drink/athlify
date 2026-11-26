@@ -10,7 +10,11 @@ import {
   type Period,
 } from '../../lib/period'
 import { parsePeriod } from '../../lib/period'
-import { parseActivityFilters, type ActivityFilters, type ActivityType } from '../activities/activityFilters'
+import {
+  parseActivityFilters,
+  type ActivityFilters,
+  type ActivityType,
+} from '../activities/activityFilters'
 
 export const DASHBOARD_FROM_PARAM = 'from'
 export const DASHBOARD_TO_PARAM = 'to'

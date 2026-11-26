@@ -9,9 +9,14 @@ import { bodyStatsMetrics, metricByKey, parseMetric } from '../body-stats/bodySt
 import { DashboardFilters } from './DashboardFilters'
 import { DASHBOARD_CHART_HEIGHT, DashboardMetricCard } from './DashboardMetricCard'
 import { DashboardTable } from './DashboardTable'
+import { buildTableRows } from './dashboardTableRows'
 import { buildDashboardView } from './dashboardView'
 import { parseTrackMetric, trackMetricByKey, trackMetrics } from './dashboardMetrics'
-import { useDashboardPreferences, useDashboardViews } from './dashboardPreferences'
+import {
+  useDashboardPreferences,
+  useDashboardViews,
+  type DashboardCard,
+} from './dashboardPreferences'
 import { useBucketLabels } from './useBucketLabels'
 import { useDashboardData } from './useDashboardData'
 import { useDashboardPageState } from './useDashboardPageState'
@@ -40,6 +45,11 @@ function DashboardContent({ refreshKey }: { refreshKey: number }) {
   const view = useMemo(
     () => (data ? buildDashboardView(data, state.range, state.grouping) : undefined),
     [data, state.range, state.grouping],
+  )
+
+  const tableRows = useMemo(
+    () => (view ? buildTableRows(view, state.grouping, labels) : undefined),
+    [view, state.grouping, labels],
   )
 
   const buckets = useMemo(
@@ -103,6 +113,9 @@ function DashboardContent({ refreshKey }: { refreshKey: number }) {
     ]
   }, [view, bodyMetric, t])
 
+  const setCardOpen = (card: DashboardCard, open: boolean) =>
+    updatePreferences({ cardsOpen: { ...preferences.cardsOpen, [card]: open } })
+
   const first = view?.buckets[0]
   const last = view?.buckets[view.buckets.length - 1]
   const eventCount = view?.markers.length ?? 0
@@ -116,7 +129,8 @@ function DashboardContent({ refreshKey }: { refreshKey: number }) {
           events: eventCount,
         })
       : t('dashboard.chart.emptySummary', { title })
-  const eventNote = eventCount > 0 ? t('dashboard.chart.eventsNote', { count: eventCount }) : undefined
+  const eventNote =
+    eventCount > 0 ? t('dashboard.chart.eventsNote', { count: eventCount }) : undefined
   const markers = view?.markers ?? []
 
   return (
@@ -136,6 +150,8 @@ function DashboardContent({ refreshKey }: { refreshKey: number }) {
       <DashboardMetricCard
         title={t('dashboard.track.title')}
         status={status}
+        open={preferences.cardsOpen.track}
+        onOpenChange={(open) => setCardOpen('track', open)}
         onRetry={result.retry}
         metrics={trackMetrics.map(({ key, labelKey }) => ({ key, label: t(labelKey) }))}
         metric={trackMetric.key}
@@ -155,6 +171,8 @@ function DashboardContent({ refreshKey }: { refreshKey: number }) {
       <DashboardMetricCard
         title={t('dashboard.fitness.title')}
         status={status}
+        open={preferences.cardsOpen.fitness}
+        onOpenChange={(open) => setCardOpen('fitness', open)}
         onRetry={result.retry}
         note={t('dashboard.fitness.note')}
       >
@@ -171,6 +189,8 @@ function DashboardContent({ refreshKey }: { refreshKey: number }) {
       <DashboardMetricCard
         title={t('dashboard.body.title')}
         status={status}
+        open={preferences.cardsOpen.body}
+        onOpenChange={(open) => setCardOpen('body', open)}
         onRetry={result.retry}
         metrics={bodyStatsMetrics.map(({ key, labelKey }) => ({ key, label: t(labelKey) }))}
         metric={bodyMetric.key}
@@ -187,17 +207,7 @@ function DashboardContent({ refreshKey }: { refreshKey: number }) {
         />
       </DashboardMetricCard>
 
-      {view && (
-        <DashboardTable
-          starts={[...view.buckets].reverse()}
-          grouping={state.grouping}
-          labels={labels}
-          activities={view.activities}
-          bodyStats={view.bodyStats}
-          fitness={view.fitness}
-          markers={view.markers}
-        />
-      )}
+      {tableRows && <DashboardTable rows={tableRows} />}
     </Stack>
   )
 }

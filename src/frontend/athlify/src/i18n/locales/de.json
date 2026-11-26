@@ -89,8 +89,19 @@
         "speed": "Ø [km/h]",
         "weight": "Gewicht [kg]",
         "muscle": "Muskeln [%]",
-        "fitness": "Fitness (CTL)",
-        "events": "Events"
+        "events": "Events",
+        "noValue": "—",
+        "bodyFat": "Körperfett [%]",
+        "water": "Wasser [%]",
+        "bone": "Knochen [kg]",
+        "ctl": "Fitness (CTL)",
+        "atl": "Ermüdung (ATL)",
+        "tsb": "Form (TSB)",
+        "columnPicker": {
+          "open": "Spalten",
+          "label": "Spalten der Übersicht",
+          "reset": "Spalten zurücksetzen"
+        }
       }
     },
     "layout": {

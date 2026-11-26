@@ -26,11 +26,7 @@ const PAGE_SIZE = 200
 const WARM_UP_DAYS = CTL_DAYS * 3
 
 const activitiesQuery = graphql`
-  query useDashboardDataActivitiesQuery(
-    $first: Int!
-    $after: String
-    $where: ActivityFilterInput
-  ) {
+  query useDashboardDataActivitiesQuery($first: Int!, $after: String, $where: ActivityFilterInput) {
     activities(first: $first, after: $after, where: $where, order: [{ date: ASC }, { id: ASC }]) {
       nodes {
         date
@@ -100,9 +96,7 @@ export interface DashboardData {
 }
 
 export type DashboardDataState =
-  | { status: 'loading' }
-  | { status: 'failed' }
-  | { status: 'ready'; data: DashboardData }
+  { status: 'loading' } | { status: 'failed' } | { status: 'ready'; data: DashboardData }
 
 interface Connection<T> {
   nodes: ReadonlyArray<T> | null | undefined
@@ -144,7 +138,9 @@ export function activitiesWhere(
   return { and: conditions }
 }
 
-export function bodyStatsWhere(range: DateRange): useDashboardDataBodyStatsQuery$variables['where'] {
+export function bodyStatsWhere(
+  range: DateRange,
+): useDashboardDataBodyStatsQuery$variables['where'] {
   const start = dayStartIso(range.from)
   const end = dayEndIso(range.to)
   const conditions: NonNullable<useDashboardDataBodyStatsQuery$variables['where']>[] = []
