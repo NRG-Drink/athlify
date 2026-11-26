@@ -45,7 +45,8 @@
         "month": "Month",
         "year": "Year",
         "weekShort": "CW {{week}}",
-        "weekLong": "CW {{week}} · {{year}}"
+        "weekLong": "CW {{week}} · {{year}}",
+        "weekShortYear": "CW {{week}} · {{year}}"
       },
       "metrics": {
         "distance": "Distance",
@@ -77,7 +78,7 @@
         "eventsNote": "{{count}} events in the period are marked in the chart."
       },
       "table": {
-        "title": "Overview",
+        "title": "Aggregated data",
         "caption": "Activities, body values, fitness and events per period",
         "empty": "No periods in the selected range.",
         "period": "Period",

@@ -6,6 +6,8 @@ import { formatDate, formatDayMonth } from '../../lib/dates'
 
 const DAY = 24 * 60 * 60 * 1000
 
+const shortYear = (date: Date) => String(date.getFullYear() % 100).padStart(2, '0')
+
 /** ISO 8601 week number and week-year of a date. */
 export function isoWeek(date: Date): { week: number; year: number } {
   const thursday = new Date(date.getFullYear(), date.getMonth(), date.getDate())
@@ -18,8 +20,8 @@ export function isoWeek(date: Date): { week: number; year: number } {
 }
 
 export interface BucketLabels {
-  /** Short label for the chart axis. */
-  axis: (start: Date, grouping: Grouping) => string
+  /** Short label for the chart axis; `withYear` adds the year when the range spans several. */
+  axis: (start: Date, grouping: Grouping, withYear: boolean) => string
   /** Full label for the table and tooltips. */
   full: (start: Date, grouping: Grouping) => string
 }
@@ -29,17 +31,25 @@ export function useBucketLabels(): BucketLabels {
   const { t, i18n } = useTranslation()
   return useMemo(() => {
     const locale = localeFor(i18n.language)
-    const month = new Intl.DateTimeFormat(locale, { month: 'short', year: '2-digit' })
+    const month = new Intl.DateTimeFormat(locale, { month: 'short' })
+    const monthYear = new Intl.DateTimeFormat(locale, { month: 'short', year: '2-digit' })
     const longMonth = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' })
     return {
-      axis: (start, grouping) => {
+      axis: (start, grouping, withYear) => {
         switch (grouping) {
           case 'day':
-            return formatDayMonth(start)
-          case 'week':
-            return t('dashboard.grouping.weekShort', { week: isoWeek(start).week })
+            return withYear ? `${formatDayMonth(start)}${shortYear(start)}` : formatDayMonth(start)
+          case 'week': {
+            const { week, year } = isoWeek(start)
+            return withYear
+              ? t('dashboard.grouping.weekShortYear', {
+                  week,
+                  year: String(year % 100).padStart(2, '0'),
+                })
+              : t('dashboard.grouping.weekShort', { week })
+          }
           case 'month':
-            return month.format(start)
+            return (withYear ? monthYear : month).format(start)
           case 'year':
             return String(start.getFullYear())
         }

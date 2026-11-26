@@ -45,7 +45,8 @@
         "month": "Monat",
         "year": "Jahr",
         "weekShort": "KW {{week}}",
-        "weekLong": "KW {{week}} · {{year}}"
+        "weekLong": "KW {{week}} · {{year}}",
+        "weekShortYear": "KW {{week}} · {{year}}"
       },
       "metrics": {
         "distance": "Distanz",
@@ -77,7 +78,7 @@
         "eventsNote": "{{count}} Events im Zeitraum sind im Diagramm markiert."
       },
       "table": {
-        "title": "Übersicht",
+        "title": "Aggregierte Daten",
         "caption": "Aktivitäten, Körperwerte, Fitness und Events pro Zeitraum",
         "empty": "Keine Zeiträume im gewählten Bereich.",
         "period": "Zeitraum",

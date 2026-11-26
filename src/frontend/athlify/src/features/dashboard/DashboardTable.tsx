@@ -1,7 +1,8 @@
-import { Button, Flex, Heading, Stack } from '@chakra-ui/react'
+import { Box, Button, Collapsible, Flex, Heading } from '@chakra-ui/react'
 import type { ColDef, GridApi, GridReadyEvent } from 'ag-grid-community'
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { LuChevronRight } from 'react-icons/lu'
 import { AgGridTable } from '../../components/ag-grid/AgGridTable'
 import { GridColumnPicker } from '../../components/ag-grid/GridColumnPicker'
 import { useFormat } from '../../i18n/useFormat'
@@ -17,6 +18,8 @@ import type { DashboardTableRow } from './dashboardTableRows'
 
 export interface DashboardTableProps {
   rows: readonly DashboardTableRow[]
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
 
 type NumericColumn = {
@@ -52,7 +55,7 @@ function readStoredColumnState() {
 }
 
 /** One row per bucket with activities, body values, fitness and events; columns can be hidden and resized. */
-export function DashboardTable({ rows }: DashboardTableProps) {
+export function DashboardTable({ rows, open, onOpenChange }: DashboardTableProps) {
   const { t, i18n } = useTranslation()
   const format = useFormat()
   const [gridApi, setGridApi] = useState<GridApi<DashboardTableRow> | null>(null)
@@ -132,45 +135,66 @@ export function DashboardTable({ rows }: DashboardTableProps) {
   }
 
   return (
-    <Stack gap="3" bg="bg.panel" borderWidth="1px" borderRadius="l3" p={{ base: '4', md: '6' }}>
-      <Flex justify="space-between" align="center" wrap="wrap" gap="2">
+    <Collapsible.Root open={open} onOpenChange={(details) => onOpenChange(details.open)}>
+      <Box
+        bg="bg.panel"
+        borderWidth="1px"
+        borderRadius="l3"
+        p={{ base: '4', md: '6' }}
+        display="grid"
+        gap="3"
+      >
         <Heading as="h2" size="lg">
-          {t('dashboard.table.title')}
+          <Collapsible.Trigger display="flex" gap="2" alignItems="center" textAlign="start">
+            <Collapsible.Indicator
+              transition="transform 0.2s"
+              _open={{ transform: 'rotate(90deg)' }}
+            >
+              <LuChevronRight aria-hidden />
+            </Collapsible.Indicator>
+            {t('dashboard.table.title')}
+          </Collapsible.Trigger>
         </Heading>
-        <Flex gap="2">
-          <GridColumnPicker
-            visibleColumns={visibleColumns}
-            columns={dashboardColumnIds
-              .filter((id) => id !== 'period')
-              .map((id) => ({ id, label: label(id) }))}
-            openLabel={t('dashboard.table.columnPicker.open')}
-            dialogLabel={t('dashboard.table.columnPicker.label')}
-            onColumnVisibleChange={(column, visible) => {
-              if (!gridApi) return
-              gridApi.setColumnsVisible([column], visible)
-              persistColumnState(gridApi)
-            }}
-          />
-          <Button size="sm" variant="outline" onClick={resetColumns}>
-            {t('dashboard.table.columnPicker.reset')}
-          </Button>
-        </Flex>
-      </Flex>
-      <AgGridTable<DashboardTableRow>
-        key={i18n.resolvedLanguage}
-        ariaLabel={t('dashboard.table.caption')}
-        height="clamp(20rem, 60dvh, 36rem)"
-        rowData={[...rows]}
-        columnDefs={columnDefs}
-        defaultColDef={{ resizable: true, sortable: true }}
-        getRowId={({ data }) => data.key}
-        suppressColumnVirtualisation
-        tooltipShowDelay={500}
-        overlayNoRowsTemplate={t('dashboard.table.empty')}
-        onGridReady={onGridReady}
-        onColumnResized={({ finished, api }) => finished && persistColumnState(api)}
-        onColumnMoved={({ finished, api }) => finished && persistColumnState(api)}
-      />
-    </Stack>
+        <Collapsible.Content _open={{ animation: 'none' }} _closed={{ animation: 'none' }}>
+          {open && (
+            <Box display="grid" gap="3">
+              <Flex gap="2" justify="flex-end">
+                <GridColumnPicker
+                  visibleColumns={visibleColumns}
+                  columns={dashboardColumnIds
+                    .filter((id) => id !== 'period')
+                    .map((id) => ({ id, label: label(id) }))}
+                  openLabel={t('dashboard.table.columnPicker.open')}
+                  dialogLabel={t('dashboard.table.columnPicker.label')}
+                  onColumnVisibleChange={(column, visible) => {
+                    if (!gridApi) return
+                    gridApi.setColumnsVisible([column], visible)
+                    persistColumnState(gridApi)
+                  }}
+                />
+                <Button size="sm" variant="outline" onClick={resetColumns}>
+                  {t('dashboard.table.columnPicker.reset')}
+                </Button>
+              </Flex>
+              <AgGridTable<DashboardTableRow>
+                key={i18n.resolvedLanguage}
+                ariaLabel={t('dashboard.table.caption')}
+                height="clamp(20rem, 60dvh, 36rem)"
+                rowData={[...rows]}
+                columnDefs={columnDefs}
+                defaultColDef={{ resizable: true, sortable: true }}
+                getRowId={({ data }) => data.key}
+                suppressColumnVirtualisation
+                tooltipShowDelay={500}
+                overlayNoRowsTemplate={t('dashboard.table.empty')}
+                onGridReady={onGridReady}
+                onColumnResized={({ finished, api }) => finished && persistColumnState(api)}
+                onColumnMoved={({ finished, api }) => finished && persistColumnState(api)}
+              />
+            </Box>
+          )}
+        </Collapsible.Content>
+      </Box>
+    </Collapsible.Root>
   )
 }

@@ -184,6 +184,18 @@ describe('DashboardPage', () => {
     ).toMatchObject({ cardsOpen: { track: true, fitness: true, body: false } })
   })
 
+  it('hides the data table and remembers it in the browser', async () => {
+    const { user } = renderWithRelay(<DashboardPage />, handler(), { path })
+    await screen.findByRole('grid')
+
+    await user.click(screen.getByRole('button', { name: 'Aggregierte Daten' }))
+
+    await waitFor(() => expect(screen.queryByRole('grid')).not.toBeInTheDocument())
+    expect(
+      JSON.parse(window.localStorage.getItem(DASHBOARD_PREFERENCES_STORAGE_KEY) ?? '{}'),
+    ).toMatchObject({ cardsOpen: { table: false } })
+  })
+
   it('remembers the selected metric in the browser', async () => {
     const { user } = renderWithRelay(<DashboardPage />, handler(), { path })
     await screen.findByRole('grid')

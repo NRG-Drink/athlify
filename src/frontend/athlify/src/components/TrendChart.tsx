@@ -107,7 +107,8 @@ export function TrendChart({
         <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
           <CartesianGrid stroke="var(--chakra-colors-border)" vertical={false} />
           <XAxis
-            dataKey="label"
+            dataKey="key"
+            tickFormatter={(key: string) => labelByKey.get(key) ?? key}
             interval={interval}
             axisLine={false}
             tickLine={false}
@@ -126,13 +127,11 @@ export function TrendChart({
             content={<TrendTooltip series={series} markers={markers} />}
           />
           {markers.map((marker) => {
-            const start = labelByKey.get(marker.startKey)
-            const end = labelByKey.get(marker.endKey)
-            if (start === undefined || end === undefined) return null
+            if (!labelByKey.has(marker.startKey) || !labelByKey.has(marker.endKey)) return null
             return marker.startKey === marker.endKey ? (
               <ReferenceLine
                 key={marker.id}
-                x={start}
+                x={marker.startKey}
                 stroke={marker.color}
                 strokeWidth={2}
                 strokeDasharray="4 3"
@@ -141,8 +140,8 @@ export function TrendChart({
             ) : (
               <ReferenceArea
                 key={marker.id}
-                x1={start}
-                x2={end}
+                x1={marker.startKey}
+                x2={marker.endKey}
                 fill={marker.color}
                 fillOpacity={0.15}
                 ifOverflow="visible"

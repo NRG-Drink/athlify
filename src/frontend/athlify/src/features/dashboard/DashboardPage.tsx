@@ -54,9 +54,14 @@ function DashboardContent({ refreshKey }: { refreshKey: number }) {
 
   const buckets = useMemo(
     () =>
-      (view?.buckets ?? NO_BUCKETS).map(({ key, start }) => ({
+      (view?.buckets ?? NO_BUCKETS).map(({ key, start }, _index, all) => ({
         key,
-        label: labels.axis(start, state.grouping),
+        label: labels.axis(
+          start,
+          state.grouping,
+          start.getFullYear() !== all[0].start.getFullYear() ||
+            start.getFullYear() !== all[all.length - 1].start.getFullYear(),
+        ),
       })),
     [view, labels, state.grouping],
   )
@@ -207,7 +212,13 @@ function DashboardContent({ refreshKey }: { refreshKey: number }) {
         />
       </DashboardMetricCard>
 
-      {tableRows && <DashboardTable rows={tableRows} />}
+      {tableRows && (
+        <DashboardTable
+          rows={tableRows}
+          open={preferences.cardsOpen.table}
+          onOpenChange={(open) => setCardOpen('table', open)}
+        />
+      )}
     </Stack>
   )
 }

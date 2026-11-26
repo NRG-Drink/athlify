@@ -10,7 +10,7 @@ export const DASHBOARD_PREFERENCES_STORAGE_KEY = 'athlify.dashboard.preferences.
 export const DASHBOARD_VIEWS_STORAGE_KEY = 'athlify.dashboard.views.v1'
 
 /** Page choices that the browser remembers; filters stay in the URL so a link reproduces a view. */
-export const dashboardCards = ['track', 'fitness', 'body'] as const
+export const dashboardCards = ['track', 'fitness', 'body', 'table'] as const
 
 export type DashboardCard = (typeof dashboardCards)[number]
 
@@ -25,7 +25,7 @@ export interface DashboardPreferences {
 
 export const defaultDashboardPreferences: DashboardPreferences = {
   controlsOpen: true,
-  cardsOpen: { track: true, fitness: true, body: true },
+  cardsOpen: { track: true, fitness: true, body: true, table: true },
   trackMetric: parseTrackMetric(null),
   bodyMetric: parseMetric(null),
 }
@@ -46,6 +46,7 @@ export function parseDashboardPreferences(raw: string | null): DashboardPreferen
         track: typeof storedCards.track === 'boolean' ? storedCards.track : true,
         fitness: typeof storedCards.fitness === 'boolean' ? storedCards.fitness : true,
         body: typeof storedCards.body === 'boolean' ? storedCards.body : true,
+        table: typeof storedCards.table === 'boolean' ? storedCards.table : true,
       },
       trackMetric: parseTrackMetric(trackMetric),
       bodyMetric: bodyStatsMetrics.some(({ key }) => key === bodyMetric)
