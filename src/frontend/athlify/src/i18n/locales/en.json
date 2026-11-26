@@ -491,7 +491,8 @@
       "edit": {
         "success": "Measurement updated.",
         "errors": {
-          "notFound": "This measurement no longer exists."
+          "notFound": "This measurement no longer exists.",
+          "saveFailed": "Saving failed. Please try again."
         }
       },
       "delete": {

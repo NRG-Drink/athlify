@@ -111,7 +111,7 @@ export function BodyStatsGrid({
     )
   }
 
-  const togglePinnedBodyStats =useCallback((row: BodyStatsRow) => {
+  const togglePinnedBodyStats = useCallback((row: BodyStatsRow) => {
     setPinnedBodyStats((current) =>
       current.some((pinned) => pinned.id === row.id)
         ? current.filter((pinned) => pinned.id !== row.id)
@@ -148,7 +148,17 @@ export function BodyStatsGrid({
     },
     [reloadRows],
   )
-  const { isUpdating, onCellValueChanged } = useBodyStatsCellEdit(onBodyStatsUpdated)
+  const onBodyStatsGone = useCallback(
+    (row: BodyStatsRow) => {
+      setPinnedBodyStats((current) => current.filter((pinned) => pinned.id !== row.id))
+      reloadRows()
+    },
+    [reloadRows],
+  )
+  const { isUpdating, onCellValueChanged } = useBodyStatsCellEdit(
+    onBodyStatsUpdated,
+    onBodyStatsGone,
+  )
 
   useEffect(() => {
     if (handledRefreshVersion.current === refreshVersion) return
@@ -271,11 +281,11 @@ export function BodyStatsGrid({
     if (!deleting) return
     const { id } = deleting
     mutations.remove(id, {
-      onSettled: () => {
-        setDeleting(null)
+      onDeleted: () => {
         setPinnedBodyStats((current) => current.filter((pinned) => pinned.id !== id))
         reloadRows()
       },
+      onSettled: () => setDeleting(null),
     })
   }, [deleting, mutations, reloadRows])
 

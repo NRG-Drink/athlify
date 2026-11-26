@@ -491,7 +491,8 @@
       "edit": {
         "success": "Messung aktualisiert.",
         "errors": {
-          "notFound": "Diese Messung existiert nicht mehr."
+          "notFound": "Diese Messung existiert nicht mehr.",
+          "saveFailed": "Speichern fehlgeschlagen. Bitte versuche es nochmals."
         }
       },
       "delete": {

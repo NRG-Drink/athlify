@@ -70,7 +70,14 @@ interface Callbacks {
   onFailure?: () => void
 }
 
+interface UpdateCallbacks extends Callbacks {
+  /** Called when the entry no longer exists on the server, instead of `onSuccess`. */
+  onNotFound?: () => void
+}
+
 interface DeleteCallbacks {
+  /** Called once the entry is gone, also when the server no longer knew it. */
+  onDeleted: () => void
   /** Called when the request finished, successful or not, so the confirm dialog can close. */
   onSettled: () => void
 }
@@ -93,10 +100,12 @@ export function useBodyStatsMutations() {
     toaster.create({ type: 'error', title: t(key) })
   }
 
-  const removeLocally = (id: string) =>
-    removeFromConnections(environment, connectionIds(), id)
+  const removeLocally = (id: string) => removeFromConnections(environment, connectionIds(), id)
 
-  const add = (input: BodyStatsInput, { onSuccess }: { onSuccess: (created: BodyStatsRow) => void }) =>
+  const add = (
+    input: BodyStatsInput,
+    { onSuccess }: { onSuccess: (created: BodyStatsRow) => void },
+  ) =>
     commitAdd({
       variables: { input, connections: connectionIds() },
       onCompleted: (response, errors) => {
@@ -105,47 +114,63 @@ export function useBodyStatsMutations() {
           return
         }
         toaster.create({ type: 'success', title: t('bodyStats.add.success') })
-        const { id, date, weight, bodyFatPercentage, musclePercentage, waterPercentage, boneMass, comment } =
-          response.addBodyStats
-        onSuccess({ id, date, weight, bodyFatPercentage, musclePercentage, waterPercentage, boneMass, comment })
+        const {
+          id,
+          date,
+          weight,
+          bodyFatPercentage,
+          musclePercentage,
+          waterPercentage,
+          boneMass,
+          comment,
+        } = response.addBodyStats
+        onSuccess({
+          id,
+          date,
+          weight,
+          bodyFatPercentage,
+          musclePercentage,
+          waterPercentage,
+          boneMass,
+          comment,
+        })
       },
       onError: () => fail('bodyStats.add.errors.saveFailed'),
     })
 
-  const update = (id: string, input: BodyStatsInput, { onSuccess, onFailure }: Callbacks) =>
+  const update = (id: string, input: BodyStatsInput, { onSuccess, onFailure, onNotFound }: UpdateCallbacks) =>
     commitUpdate({
       variables: { id, input },
       onCompleted: (response, errors) => {
         if (errors?.length) {
-          fail('bodyStats.add.errors.saveFailed')
+          fail('bodyStats.edit.errors.saveFailed')
           onFailure?.()
           return
         }
         if (!response.updateBodyStats) {
-          // The entry vanished on the server: drop it here as well.
           removeLocally(id)
           fail('bodyStats.edit.errors.notFound')
-          onSuccess()
+          onNotFound?.()
           return
         }
         toaster.create({ type: 'success', title: t('bodyStats.edit.success') })
         onSuccess()
       },
       onError: () => {
-        fail('bodyStats.add.errors.saveFailed')
+        fail('bodyStats.edit.errors.saveFailed')
         onFailure?.()
       },
     })
 
-  const remove = (id: string, { onSettled }: DeleteCallbacks) =>
+  const remove = (id: string, { onSettled, onDeleted }: DeleteCallbacks) =>
     commitDelete({
       variables: { id },
       onCompleted: (_response, errors) => {
         if (errors?.length) fail('bodyStats.delete.errors.failed')
         else {
-          // Also when the server no longer knows it (`null`): either way it is gone.
           removeLocally(id)
           toaster.create({ type: 'success', title: t('bodyStats.delete.success') })
+          onDeleted()
         }
         onSettled()
       },

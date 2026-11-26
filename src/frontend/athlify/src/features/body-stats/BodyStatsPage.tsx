@@ -109,7 +109,6 @@ function BodyStatsAnalytics({
   }, [hasNext, isLoadingNext, loadNext, pagingFailed, startChartTransition, t])
 
   const series = useBodyStatsSeries(bodyStats)
-  // The series is rebuilt on every render, so the memo is keyed on the entries it derives from.
   const latestValues = useMemo(() => {
     const values: Partial<Record<BodyStatsMetricKey, number>> = {}
     for (const { key } of bodyStatsMetrics) values[key] = latest(series[key])?.value
@@ -203,7 +202,6 @@ function BodyStatsContent({ analyticsFetchKey, retryAnalytics }: ContentProps) {
   const mutations = useBodyStatsMutations()
   const state = useBodyStatsPageState()
 
-  // A new measurement starts from the latest known value of each measurement, which may come from an older entry.
   const createMeasurement = () =>
     mutations.add(newMeasurementInput(latestValues), {
       onSuccess: (created) => {

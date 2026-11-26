@@ -21,7 +21,23 @@ export function bodyStatsRowToValues(row: BodyStatsRow): BodyStatsFormValues {
   }
 }
 
-export function useBodyStatsCellEdit(onBodyStatsUpdated?: (row: BodyStatsRow) => void) {
+function isSameCellValue(colId: string, oldValue: unknown, newValue: unknown): boolean {
+  if (colId === 'comment') return (oldValue ?? '') === (newValue ?? '')
+  if (colId === 'date' && typeof oldValue === 'string' && typeof newValue === 'string') {
+    const [oldDate, newDate] = [new Date(oldValue), new Date(newValue)]
+    return (
+      !Number.isNaN(oldDate.getTime()) &&
+      !Number.isNaN(newDate.getTime()) &&
+      formatDateTime(oldDate) === formatDateTime(newDate)
+    )
+  }
+  return Object.is(oldValue, newValue)
+}
+
+export function useBodyStatsCellEdit(
+  onBodyStatsUpdated?: (row: BodyStatsRow) => void,
+  onBodyStatsGone?: (row: BodyStatsRow) => void,
+) {
   const { t } = useTranslation()
   const mutations = useBodyStatsMutations()
   const pendingRevert = useRef<{ colId: string; value: unknown } | null>(null)
@@ -39,7 +55,7 @@ export function useBodyStatsCellEdit(onBodyStatsUpdated?: (row: BodyStatsRow) =>
       pendingRevert.current = null
       return
     }
-    if (!data || Object.is(oldValue, newValue)) return
+    if (!data || isSameCellValue(colId, oldValue, newValue)) return
 
     const restoreCell = () => {
       pendingRevert.current = { colId, value: oldValue }
@@ -58,6 +74,7 @@ export function useBodyStatsCellEdit(onBodyStatsUpdated?: (row: BodyStatsRow) =>
     mutations.update(data.id, toInput(values), {
       onSuccess: () => onBodyStatsUpdated?.(data),
       onFailure: restoreCell,
+      onNotFound: () => onBodyStatsGone?.(data),
     })
   }
 
