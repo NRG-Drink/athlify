@@ -133,7 +133,7 @@ export function getGridQuery(
       : [],
   ) as BodyStatsSortInput[]
   if (order.length === 0) order.push(...defaultOrder)
-  else order.push({ id: 'DESC' })
+  else if (!order.some((item) => 'id' in item)) order.push({ id: 'DESC' })
 
   const clauses: BodyStatsFilterInput[] = baseWhere ? [baseWhere] : []
   for (const [field, raw] of Object.entries(filterModel)) {

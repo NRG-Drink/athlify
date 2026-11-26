@@ -48,10 +48,7 @@ describe('getGridQuery', () => {
     })
     expect(getGridQuery([], { id: { filter: 42, type: 'greaterThan' } }, null).where).toBeNull()
     expect(getGridQuery([], { id: { filter: 1.5, type: 'equals' } }, null).where).toBeNull()
-    expect(getGridQuery([{ colId: 'id', sort: 'asc' }], {}, null).order).toEqual([
-      { id: 'ASC' },
-      { id: 'DESC' },
-    ])
+    expect(getGridQuery([{ colId: 'id', sort: 'asc' }], {}, null).order).toEqual([{ id: 'ASC' }])
   })
 
   it('maps text filters of the note, including blank', () => {
