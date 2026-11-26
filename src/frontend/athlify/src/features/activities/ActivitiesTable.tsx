@@ -1,26 +1,23 @@
 import { Box, Button, Flex, Text, useBreakpointValue } from '@chakra-ui/react'
 import type {
   CellValueChangedEvent,
+  ColDef,
   FilterModel,
   GridApi,
   GridState,
   IOverlayParams,
 } from 'ag-grid-community'
-import {
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { graphql, useRelayEnvironment } from 'react-relay'
 import { useTranslation } from 'react-i18next'
 import { LuPlus } from 'react-icons/lu'
-import { AgGridTable } from '../../components/ag-grid/AgGridTable'
-import { clearNoOpGridFilters } from '../../components/ag-grid/GridFilterParams'
 import { GridColumnPicker } from '../../components/ag-grid/GridColumnPicker'
+import { InfiniteAgGridTable } from '../../components/ag-grid/InfiniteAgGridTable'
+import { handleGridFilterChanged } from '../../components/ag-grid/gridFilterChange'
+import { getGridSortModel } from '../../components/ag-grid/gridSortModel'
+import { useGridColumnPreferences } from '../../components/ag-grid/useGridColumnPreferences'
+import { useGridUrlSync } from '../../components/ag-grid/useGridUrlSync'
+import { usePinnedRows } from '../../components/ag-grid/usePinnedRows'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { toaster } from '../../components/ui/toaster'
 import { useFormat } from '../../i18n/useFormat'
@@ -103,14 +100,6 @@ const pageQuery = graphql`
   }
 `
 
-function getGridSortModel(api: GridApi<ActivityRow>): ActivitySort {
-  return api
-    .getColumnState()
-    .filter(({ sort }) => sort)
-    .sort((left, right) => (left.sortIndex ?? 0) - (right.sortIndex ?? 0))
-    .flatMap(({ colId, sort }) => (sort ? [{ colId, sort }] : []))
-}
-
 function ActivityEmptyOverlay({ emptyMessage }: { emptyMessage?: ReactNode }) {
   return <Box p="4">{emptyMessage}</Box>
 }
@@ -162,7 +151,7 @@ export const ActivitiesTable = memo(function ActivitiesTable({
   latestType,
   emptyMessage,
 }: ActivitiesTableProps) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const format = useFormat()
   const environment = useRelayEnvironment()
   const mutations = useActivityMutations()
@@ -170,22 +159,23 @@ export const ActivitiesTable = memo(function ActivitiesTable({
   const showLg = useBreakpointValue({ base: false, lg: true }) ?? true
   const show2xl = useBreakpointValue({ base: false, '2xl': true }) ?? true
   const [gridApi, setGridApi] = useState<GridApi<ActivityRow> | null>(null)
-  const [visibleColumns, setVisibleColumns] = useState<string[]>([...activitiesColumnIds])
   const [loadFailed, setLoadFailed] = useState(false)
   const [loading, setLoading] = useState(true)
   const [result, setResult] = useState<{ count: number } | null>(null)
-  const [pinnedActivities, setPinnedActivities] = useState<ActivityRow[]>([])
   const [deleting, setDeleting] = useState<ActivityRow | null>(null)
-  const applyingUrlState = useRef(false)
   const countRef = useRef<HTMLParagraphElement>(null)
   const deleted = useRef(false)
   const countBeforeCreate = useRef<number | null>(null)
   const { quickFilter, fromFilter, toFilter, sort } = query
 
-  const pinnedActivityIds = useMemo(
-    () => new Set(pinnedActivities.map((activity) => activity.id)),
-    [pinnedActivities],
-  )
+  const {
+    rows: pinnedActivities,
+    ids: pinnedActivityIds,
+    toggle: togglePinnedActivity,
+    add: addPinnedActivity,
+    update: updatePinnedActivity,
+    remove: removePinnedActivity,
+  } = usePinnedRows<ActivityRow>()
 
   const getQuery = useCallback(
     (gridSort: ActivitySort, gridFilters: ActivityGridFilterModel): GridQuery => {
@@ -231,14 +221,6 @@ export const ActivitiesTable = memo(function ActivitiesTable({
     datasource.reset()
     gridApi?.refreshInfiniteCache()
   }, [datasource, gridApi])
-
-  const togglePinnedActivity = useCallback((row: ActivityRow) => {
-    setPinnedActivities((current) =>
-      current.some((activity) => activity.id === row.id)
-        ? current.filter((activity) => activity.id !== row.id)
-        : [...current, { ...row }],
-    )
-  }, [])
 
   const confirmDelete = useCallback((row: ActivityRow) => {
     deleted.current = false
@@ -287,10 +269,7 @@ export const ActivitiesTable = memo(function ActivitiesTable({
 
     mutations.create(toInput(values), {
       onSuccess: (row) => {
-        setPinnedActivities((current) => [
-          ...current.filter((activity) => activity.id !== row.id),
-          row,
-        ])
+        addPinnedActivity(row)
         countBeforeCreate.current = result?.count ?? 0
         reloadRows()
       },
@@ -321,104 +300,37 @@ export const ActivitiesTable = memo(function ActivitiesTable({
 
       mutations.update(row.id, result.input, {
         onSuccess: (updated) => {
-          setPinnedActivities((current) =>
-            current.map((activity) => (activity.id === updated.id ? updated : activity)),
-          )
+          updatePinnedActivity(updated.id, () => updated)
           reloadRows()
         },
         onGone: () => {
-          setPinnedActivities((current) => current.filter((activity) => activity.id !== row.id))
+          removePinnedActivity(row.id)
           reloadRows()
         },
         onFailure: restoreCell,
       })
     },
-    [mutations, reloadRows, t],
+    [mutations, reloadRows, removePinnedActivity, t, updatePinnedActivity],
   )
 
-  const updateColumnState = useCallback(
-    (api: GridApi<ActivityRow>) => {
-      const state = parseActivitiesColumnState(serializeActivitiesColumnState(api.getColumnState()))
-      onColumnStateChange(state)
-      setVisibleColumns(state.filter(({ hide }) => !hide).map(({ colId }) => colId))
-    },
-    [onColumnStateChange],
-  )
-
-  const persistColumnState = useCallback(
-    (api: GridApi<ActivityRow>) => {
-      const state = serializeActivitiesColumnState(api.getColumnState())
-      updateColumnState(api)
-      try {
-        window.localStorage.setItem(ACTIVITIES_COLUMN_STORAGE_KEY, state)
-      } catch (error) {
-        console.error('Could not save Activities column preferences.', error)
-      }
-    },
-    [updateColumnState],
-  )
-
-  const restoreColumnState = useCallback(
-    (api: GridApi<ActivityRow>) => {
-      try {
-        const stored = parseActivitiesColumnState(
-          window.localStorage.getItem(ACTIVITIES_COLUMN_STORAGE_KEY),
-        )
-        if (stored.length > 0) api.applyColumnState({ state: stored, applyOrder: true })
-      } catch (error) {
-        console.error('Could not restore Activities column preferences.', error)
-      }
-      updateColumnState(api)
-    },
-    [updateColumnState],
-  )
-
-  useEffect(() => {
-    if (!gridApi || columnState.length === 0) return
-    const current = serializeActivitiesColumnState(gridApi.getColumnState())
-    const desired = serializeActivitiesColumnState(columnState)
-    if (current !== desired) gridApi.applyColumnState({ state: columnState, applyOrder: true })
-  }, [columnState, gridApi])
-
-  useEffect(() => {
-    if (!gridApi || resetTableVersion === 0) return
-    gridApi.resetColumnState()
-    applyingUrlState.current = true
-    gridApi.setFilterModel(null)
-    queueMicrotask(() => {
-      applyingUrlState.current = false
+  const { visibleColumns, persistColumnState, restoreColumnState, setColumnVisible } =
+    useGridColumnPreferences<ActivityRow, ActivitiesColumnState>({
+      gridApi,
+      columnIds: activitiesColumnIds,
+      storageKey: ACTIVITIES_COLUMN_STORAGE_KEY,
+      storageLabel: 'Activities',
+      columnState,
+      parse: parseActivitiesColumnState,
+      serialize: serializeActivitiesColumnState,
+      onColumnStateChange,
     })
-  }, [gridApi, resetTableVersion])
 
-  useEffect(() => {
-    if (!gridApi) return
-    const current = getGridSortModel(gridApi)
-    if (JSON.stringify(current) === JSON.stringify(sort)) return
-    applyingUrlState.current = true
-    gridApi.applyColumnState({
-      state: sort.map(({ colId, sort: direction }, sortIndex) => ({
-        colId,
-        sort: direction,
-        sortIndex,
-      })),
-      defaultState: { sort: null },
-    })
-    queueMicrotask(() => {
-      applyingUrlState.current = false
-    })
-  }, [gridApi, sort])
-
-  useEffect(() => {
-    if (!gridApi) return
-    const current = JSON.stringify(gridApi.getFilterModel() ?? {})
-    const desired = JSON.stringify(filterModel)
-    if (current === desired) return
-    applyingUrlState.current = true
-    gridApi.setFilterModel(Object.keys(filterModel).length > 0 ? filterModel : null)
-    queueMicrotask(() => {
-      applyingUrlState.current = false
-    })
-  }, [filterModel, gridApi])
+  const { isApplyingUrlState } = useGridUrlSync<ActivityRow>({
+    gridApi,
+    filterModel,
+    sortModel: sort,
+    resetTableVersion,
+  })
 
   const [initialState] = useState<GridState>(() => ({
     sort: { sortModel: sort.map(({ colId, sort: direction }) => ({ colId, sort: direction })) },
@@ -433,7 +345,7 @@ export const ActivitiesTable = memo(function ActivitiesTable({
     [emptyMessage],
   )
 
-  const defaultColDef = useMemo(
+  const defaultColDef = useMemo<ColDef<ActivityRow>>(
     () => ({
       resizable: true,
       sortable: true,
@@ -508,68 +420,40 @@ export const ActivitiesTable = memo(function ActivitiesTable({
               }))}
             openLabel={t('activities.columnPicker.open')}
             dialogLabel={t('activities.columnPicker.label')}
-            onColumnVisibleChange={(column, visible) => {
-              gridApi?.applyColumnState({ state: [{ colId: column, hide: !visible }] })
-              if (gridApi) persistColumnState(gridApi)
-            }}
+            onColumnVisibleChange={setColumnVisible}
           />
         </Box>
       </Box>
-      <AgGridTable<ActivityRow>
-        key={i18n.resolvedLanguage}
+      <InfiniteAgGridTable<ActivityRow>
         ariaLabel={t('activities.table.caption')}
-        height="clamp(24rem, calc(100dvh - 22rem), 48rem)"
-        rowModelType="infinite"
+        localeNamespace="activities"
         datasource={datasource}
         getRowId={({ data }) => data?.id}
-        cacheBlockSize={20}
-        maxBlocksInCache={5}
-        rowBuffer={10}
-        suppressRowVirtualisation={false}
         columnDefs={columnDefs}
         headerHeight={48}
         defaultColDef={defaultColDef}
         loading={loading}
         pinnedTopRowData={pinnedActivities.length > 0 ? pinnedActivities : undefined}
         overlayComponentSelector={overlayComponentSelector}
-        localeText={{
-          noRowsToShow: t('activities.empty.filteredTitle'),
-          equals: t('activities.gridFilter.options.equals'),
-          notEqual: t('activities.gridFilter.options.notEqual'),
-          contains: t('activities.gridFilter.options.contains'),
-          notContains: t('activities.gridFilter.options.notContains'),
-          startsWith: t('activities.gridFilter.options.startsWith'),
-          endsWith: t('activities.gridFilter.options.endsWith'),
-          blank: t('activities.gridFilter.options.blank'),
-          notBlank: t('activities.gridFilter.options.notBlank'),
-          lessThan: t('activities.gridFilter.options.lessThan'),
-          greaterThan: t('activities.gridFilter.options.greaterThan'),
-          inRange: t('activities.gridFilter.options.inRange'),
-          before: t('activities.gridFilter.options.before'),
-          after: t('activities.gridFilter.options.after'),
-        }}
+        localeText={{ noRowsToShow: t('activities.empty.filteredTitle') }}
         initialState={initialState}
         onGridReady={({ api }) => {
           setGridApi(api)
           restoreColumnState(api)
         }}
-        onFilterChanged={({ api }) => {
-          void clearNoOpGridFilters(
-            api.getFilterModel() ?? {},
-            (column) => api.setColumnFilterModel(column, null),
-            () => api.onFilterChanged(),
-          )
-            .then((cleared) => {
-              if (!cleared && !applyingUrlState.current) {
+        onFilterChanged={({ api }) =>
+          handleGridFilterChanged(
+            api,
+            () => {
+              if (!isApplyingUrlState()) {
                 onGridStateChange(api.getFilterModel() ?? {}, getGridSortModel(api))
               }
-            })
-            .catch((error: unknown) => {
-              console.error('Could not clear no-op activity filters.', error)
-            })
-        }}
+            },
+            'Could not clear no-op activity filters.',
+          )
+        }
         onSortChanged={({ api }) => {
-          if (!applyingUrlState.current) {
+          if (!isApplyingUrlState()) {
             onGridStateChange(
               { ...filterModel, ...(api.getFilterModel() ?? {}) },
               getGridSortModel(api),
@@ -596,9 +480,7 @@ export const ActivitiesTable = memo(function ActivitiesTable({
             onSettled: (removed) => {
               deleted.current = removed
               if (removed) {
-                setPinnedActivities((current) =>
-                  current.filter((activity) => activity.id !== deleting.id),
-                )
+                removePinnedActivity(deleting.id)
                 reloadRows()
               }
               setDeleting(null)
