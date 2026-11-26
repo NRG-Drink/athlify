@@ -63,6 +63,14 @@ export function dayEndIso(dateKey: string): string | null {
   ).toISOString()
 }
 
+function getIdFilter({ type = 'equals', filter }: GridFilter): BodyStatsFilterInput | null {
+  if (typeof filter !== 'number' || !Number.isSafeInteger(filter)) return null
+  const globalId = btoa(`BodyStats:${filter}`)
+  if (type === 'equals') return { id: { eq: globalId } }
+  if (type === 'notEqual') return { id: { neq: globalId } }
+  return null
+}
+
 function getTextFilter(type: string, value?: number | string): BodyStatsFilterInput | null {
   const operator = textFilterOperators[type]
   if (operator && typeof value === 'string' && value) {
@@ -134,6 +142,7 @@ export function getGridQuery(
 
     let clause: BodyStatsFilterInput | null = null
     if (field === 'comment') clause = getTextFilter(filter.type ?? 'contains', filter.filter)
+    else if (field === 'id') clause = getIdFilter(filter)
     else if (field === 'date') clause = getDateFilter(filter)
     else if ((numberFields as readonly string[]).includes(field)) {
       clause = getNumberFilter(field as NumberField, filter)

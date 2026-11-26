@@ -39,6 +39,21 @@ describe('getGridQuery', () => {
     })
   })
 
+  it('maps the ID filter to a global id and offers no range', () => {
+    expect(getGridQuery([], { id: { filter: 42, type: 'equals' } }, null).where).toEqual({
+      id: { eq: btoa('BodyStats:42') },
+    })
+    expect(getGridQuery([], { id: { filter: 42, type: 'notEqual' } }, null).where).toEqual({
+      id: { neq: btoa('BodyStats:42') },
+    })
+    expect(getGridQuery([], { id: { filter: 42, type: 'greaterThan' } }, null).where).toBeNull()
+    expect(getGridQuery([], { id: { filter: 1.5, type: 'equals' } }, null).where).toBeNull()
+    expect(getGridQuery([{ colId: 'id', sort: 'asc' }], {}, null).order).toEqual([
+      { id: 'ASC' },
+      { id: 'DESC' },
+    ])
+  })
+
   it('maps text filters of the note, including blank', () => {
     expect(getGridQuery([], { comment: { filter: 'easy', type: 'contains' } }, null).where).toEqual(
       { comment: { contains: 'easy' } },

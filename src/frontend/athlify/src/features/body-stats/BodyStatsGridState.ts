@@ -22,6 +22,7 @@ export const bodyStatsColumnIds = [
 ] as const
 
 const bodyStatsFilterColumnIds = [
+  'id',
   'date',
   'weight',
   'bodyFatPercentage',
@@ -31,7 +32,7 @@ const bodyStatsFilterColumnIds = [
   'comment',
 ] as const
 
-export const bodyStatsSortableColumnIds = [...bodyStatsFilterColumnIds, 'id'] as const
+export const bodyStatsSortableColumnIds = bodyStatsFilterColumnIds
 
 export type BodyStatsFilterModel = Record<string, unknown>
 export type BodyStatsSortModel = SortModelItem[]

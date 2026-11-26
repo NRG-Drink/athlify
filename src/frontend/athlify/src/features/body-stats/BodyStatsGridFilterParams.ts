@@ -19,6 +19,16 @@ export const createBodyStatsDateFilterParams = (t: TFunction) => {
   return { ...params, filterOptions: requiredValueOptions(params.filterOptions) }
 }
 
+const isEqualityOption = (option: unknown) =>
+  option === 'equals' ||
+  option === 'notEqual' ||
+  (typeof option === 'object' && option !== null && 'displayKey' in option && option.displayKey === 'none')
+
+export const createBodyStatsIdFilterParams = (t: TFunction) => {
+  const params = createGridNumberFilterParams(t, 'bodyStats')
+  return { ...params, filterOptions: params.filterOptions.filter(isEqualityOption) }
+}
+
 export const createBodyStatsNumberFilterParams = (t: TFunction) => {
   const params = createGridNumberFilterParams(t, 'bodyStats')
   return { ...params, filterOptions: requiredValueOptions(params.filterOptions) }

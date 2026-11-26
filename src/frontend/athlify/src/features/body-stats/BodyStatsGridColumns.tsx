@@ -7,6 +7,7 @@ import { parseDateTime } from '../../lib/dates'
 import { parseDecimal } from '../../lib/formValues'
 import {
   createBodyStatsDateFilterParams,
+  createBodyStatsIdFilterParams,
   createBodyStatsNumberFilterParams,
   createBodyStatsTextFilterParams,
 } from './BodyStatsGridFilterParams'
@@ -55,6 +56,7 @@ export function createBodyStatsColumnDefs({
   const textFilterParams = createBodyStatsTextFilterParams(t)
   const dateFilterParams = createBodyStatsDateFilterParams(t)
   const numberFilterParams = createBodyStatsNumberFilterParams(t)
+  const idFilterParams = createBodyStatsIdFilterParams(t)
 
   const metricColumns = bodyStatsMetrics.map(
     ({ key, labelKey, unit, decimals }): ColDef<BodyStatsRow> => ({
@@ -125,7 +127,8 @@ export function createBodyStatsColumnDefs({
       headerName: t('bodyStats.columns.id'),
       width: 100,
       hide: true,
-      filter: true,
+      filter: 'agNumberColumnFilter',
+      filterParams: idFilterParams,
       pinned: 'left',
       valueGetter: ({ data }) => getBodyStatsRowNumber(data?.id),
     },
