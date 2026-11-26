@@ -8,6 +8,7 @@ import {
   parseEventsFilterModel,
   parseEventsSavedViews,
 } from '../../../features/events/EventsGridState'
+import { EVENTS_PREFERENCES_STORAGE_KEY } from '../../../features/events/eventsPreferences'
 import { mockGridViewport } from '../../utils/gridViewport'
 import { renderWithRelay } from '../../utils/relay'
 
@@ -15,6 +16,47 @@ afterEach(() => {
   vi.unstubAllGlobals()
   localStorage.removeItem(EVENTS_COLUMN_STORAGE_KEY)
   localStorage.removeItem(EVENTS_VIEWS_STORAGE_KEY)
+  localStorage.removeItem(EVENTS_PREFERENCES_STORAGE_KEY)
+})
+
+const emptyEvents = () => ({
+  data: {
+    events: { totalCount: 0, nodes: [], pageInfo: { endCursor: null, hasNextPage: false } },
+  },
+})
+
+it('shows the filter panel open by default', async () => {
+  mockGridViewport()
+  renderWithRelay(<EventsPage />, emptyEvents)
+
+  await screen.findByRole('grid')
+  expect(screen.getByLabelText('Events durchsuchen')).toBeVisible()
+})
+
+it('remembers a collapsed filter panel after leaving the page', async () => {
+  mockGridViewport()
+  const first = renderWithRelay(<EventsPage />, emptyEvents)
+  await first.user.click(await screen.findByText('Events filtern'))
+  await waitFor(() =>
+    expect(
+      JSON.parse(localStorage.getItem(EVENTS_PREFERENCES_STORAGE_KEY) ?? '{}'),
+    ).toMatchObject({ controlsOpen: false }),
+  )
+  first.unmount()
+
+  renderWithRelay(<EventsPage />, emptyEvents)
+
+  await screen.findByRole('grid')
+  expect(screen.getByLabelText('Events durchsuchen')).not.toBeVisible()
+})
+
+it('ignores damaged remembered panel values', async () => {
+  mockGridViewport()
+  localStorage.setItem(EVENTS_PREFERENCES_STORAGE_KEY, '{"controlsOpen":3}')
+  renderWithRelay(<EventsPage />, emptyEvents)
+
+  await screen.findByRole('grid')
+  expect(screen.getByLabelText('Events durchsuchen')).toBeVisible()
 })
 
 it('restores URL filters and sorting plus locally saved column visibility', async () => {
@@ -89,9 +131,11 @@ it('restores URL filters and sorting plus locally saved column visibility', asyn
       )?.hide,
     ).toBe(false)
   })
-  expect(router.state.location.search).toContain('filter.name.filter=trail')
-  expect(router.state.location.search).toContain('filter.type.values=REPAIR')
-  expect(router.state.location.search).toContain('gridSort=')
+  await waitFor(() => {
+    expect(router.state.location.search).toContain('filter.name.filter=trail')
+    expect(router.state.location.search).toContain('filter.type.values=REPAIR')
+    expect(router.state.location.search).toContain('gridSort=')
+  })
 
   await user.click(screen.getByRole('button', { name: 'Ansicht speichern' }))
   await user.type(await screen.findByRole('textbox', { name: 'Name der Ansicht' }), 'Reiseansicht')
