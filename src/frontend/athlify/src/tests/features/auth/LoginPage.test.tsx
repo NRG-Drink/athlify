@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState, type ReactNode } from 'react'
+import { RelayEnvironmentProvider } from 'react-relay'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { describe, expect, test, vi } from 'vitest'
 import { AuthContext, type AuthContextValue } from '../../../auth/context'
@@ -8,6 +9,7 @@ import { ChakraProviderAthlify } from '../../../components/ui/ChakraProviderAthl
 import { paths } from '../../../navigation/paths'
 import { routes } from '../../../routes'
 import { renderRoute } from '../../utils/renderRoute'
+import { createTestEnvironment } from '../../utils/relay'
 
 function renderWithStatefulAuth(login: AuthContextValue['login']) {
   const router = createMemoryRouter(routes, { initialEntries: [paths.login] })
@@ -31,12 +33,15 @@ function renderWithStatefulAuth(login: AuthContextValue['login']) {
   }
 
   const user = userEvent.setup()
+  const { environment } = createTestEnvironment(() => ({ data: {} }))
   const result = render(
-    <ChakraProviderAthlify>
-      <StatefulAuthProvider>
-        <RouterProvider router={router} />
-      </StatefulAuthProvider>
-    </ChakraProviderAthlify>,
+    <RelayEnvironmentProvider environment={environment}>
+      <ChakraProviderAthlify>
+        <StatefulAuthProvider>
+          <RouterProvider router={router} />
+        </StatefulAuthProvider>
+      </ChakraProviderAthlify>
+    </RelayEnvironmentProvider>,
   )
 
   return { ...result, router, user }

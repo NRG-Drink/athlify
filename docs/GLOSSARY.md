@@ -53,7 +53,20 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
 ## D — F
 
 **Dashboard** — The central analysis view containing metrics, charts, filters and
-  timeline information. See [`CONCEPT.md`](concept/CONCEPT.md).
+  timeline information. It shows Track, Fitness and Body Metrics as charts and an
+  overview table, grouped by a Grouping, with Events marked in the charts. See
+  [`CONCEPT.md`](concept/CONCEPT.md) and
+  [ADR-014](copilot/frontend/adr/ADR-014-dashboard-client-side-aggregation.md).
+
+**Grouping** — The bucket size of the Dashboard: day, week (ISO, Monday), month or
+  year. Activities are summed and Body-Stats averaged per bucket.
+
+**Event marker** — A line (single-day Event) or band (Event with an end date) drawn in
+  the Dashboard charts at the bucket of the Event, so that changes such as an accident
+  can be related to the data.
+
+**Preset** — A named, browser-local set of Dashboard filters (period or date range,
+  Indoor/Outdoor, tags and Grouping), saved like a Saved view.
 
 **Connection** — The paged form of a list in the API (`edges`, `pageInfo`, cursors),
   following the Relay convention. Lists such as `bodyStats(first, after)` are
@@ -159,8 +172,8 @@ Strava. See [`activity-management.md`](concept/activity-management.md).
   description and actions, and exactly one UI state body (loading, empty,
   error or ready). See [`SAD.md`](copilot/frontend/SAD.md#page-frame).
 
-  **Period** — A relative time span used by the planned Dashboard filters, for
-  example the last 30 days or one year.
+  **Period** — A relative time span used by the Dashboard filters (30 days, 90 days,
+  1 year or all), resolved against today.
 
 **Date range** — An inclusive pair of local calendar dates (`from` and `to`)
   that defines the exact interval shown by the Body-Stats chart and KPI

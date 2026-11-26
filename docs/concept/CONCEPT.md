@@ -122,6 +122,8 @@ The three metric groups are displayed as visually distinct Dashboard areas. Char
 
 The filters apply to the displayed metrics, charts, activity trends and Events. The Dashboard should remain useful even when there is little or no data and should show a clear empty state.
 
+The Dashboard groups its data by day, week, month or year and lists the grouped values in an overview table that matches the charts. Events are marked in every chart at their point in time so that users can relate changes in the data to them. The first iteration filters by period, Indoor/Outdoor and tags (the Body Metrics ignore the activity filters), saves filter sets as browser-local Presets and calculates Fitness from the TSS of the activities; filtering by bicycle, the distribution charts and the calendar overview follow later.
+
 ### 3.3 Activity management
 
 The Activities page provides complete management of cycling activities. It offers a table with direct cell editing and a calendar view with a weekly summary similar to TrainingPeaks. Activities can be imported from Strava, created manually, viewed, filtered by description, date range and activity attributes, sorted, edited, deleted and merged. The list supports saved views and temporarily pinning activities above the current results.

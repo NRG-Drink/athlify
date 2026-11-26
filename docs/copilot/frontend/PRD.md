@@ -100,8 +100,9 @@ mood, effort, wind and Event type are decided; see
   Body-Stats, the Activities list (with add, edit and delete), the
   Settings page (profile, language, password), Events (listing, creation,
   editing and deletion) and the Administrator-only user management use the
-  backend; Dashboard and Garage have no completed pages yet.
-  pages yet.
+  backend; the Dashboard aggregates activities, Body-Stats and Events in the
+  browser (first iteration: period, Indoor/Outdoor, tags, Grouping, three
+  metric charts, overview table, Event markers); Garage has no completed page yet.
 - The project remains limited to a realistic scope for a two-person student
   project.
 - Personal data must remain isolated to the logged-in user.

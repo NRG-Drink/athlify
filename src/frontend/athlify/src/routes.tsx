@@ -7,6 +7,7 @@ import { AuthenticatedAppLayout, LoginRoute } from './features/auth/AuthRoutes'
 import { ActivitiesPage } from './features/activities/ActivitiesPage'
 import { AdminRoute } from './features/admin-users/AdminRoute'
 import { AdminUsersPage } from './features/admin-users/AdminUsersPage'
+import { DashboardPage } from './features/dashboard/DashboardPage'
 import { BodyStatsPage } from './features/body-stats/BodyStatsPage'
 import { EventsPage } from './features/events/EventsPage'
 import { SettingsPage } from './features/settings/SettingsPage'
@@ -33,7 +34,7 @@ export const routes: RouteObject[] = [
     errorElement: <RouteErrorPage />,
     children: [
       { index: true, element: <Navigate to={paths.dashboard} replace /> },
-      { path: paths.dashboard, element: areaPlaceholder('dashboard') },
+      { path: paths.dashboard, element: <DashboardPage /> },
       { path: paths.activities, element: <ActivitiesPage /> },
       { path: paths.garage, element: areaPlaceholder('garage') },
       { path: paths.bodyStats, element: <BodyStatsPage /> },
