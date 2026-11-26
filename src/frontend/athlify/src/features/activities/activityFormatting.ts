@@ -33,13 +33,6 @@ export function formatHeartRate(
   return min != null && max != null ? { text, title: `${min}–${max}` } : { text }
 }
 
-/** Rank in the natural order so that sorting by mood or wind is not alphabetical; -1 for null or unknown. */
-const rankIn = (order: readonly string[]) => (value: string | null | undefined) =>
-  order.indexOf(value ?? '')
-
-export const moodRank = rankIn(moods)
-export const windRank = rankIn(winds)
-
 type EnumGroup = 'types' | 'moods' | 'winds' | 'sources'
 
 /** Translated label of an enum value; an unknown (newer) value is shown as it is. */
@@ -101,16 +94,6 @@ export const moodEmojiOf = (value: string | null | undefined) => {
 export const windEmojiOf = (value: string | null | undefined) => {
   const wind = asEnum(winds, value)
   return wind && windEmoji[wind]
-}
-
-/** `enumOptions` with the emoji of each value, for the form's emoji choices. */
-export function emojiOptions<T extends string>(
-  t: TFunction,
-  group: EnumGroup,
-  values: readonly T[],
-  emoji: Record<T, string>,
-) {
-  return enumOptions(t, group, values).map((option) => ({ ...option, emoji: emoji[option.id] }))
 }
 
 const TAG_PALETTES = ['blue', 'green', 'orange', 'purple', 'pink', 'teal', 'cyan', 'red', 'yellow']

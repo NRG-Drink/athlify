@@ -4,9 +4,7 @@ import {
   effortLevel,
   enumLabel,
   formatHeartRate,
-  moodRank,
   vehicleLabel,
-  windRank,
 } from '../../../features/activities/activityFormatting'
 
 const t = ((_key: string, options?: { defaultValue?: string }) =>
@@ -31,13 +29,6 @@ describe('formatting helpers', () => {
   it('prefers the nickname', () => {
     expect(vehicleLabel({ brand: 'Canyon', model: 'Grail', nickname: 'Gravi' })).toBe('Gravi')
     expect(vehicleLabel({ brand: 'Canyon', model: 'Grail', nickname: null })).toBe('Canyon Grail')
-  })
-
-  it('ranks moods and winds naturally, unknown and missing values last', () => {
-    expect(moodRank('VERY_BAD')).toBeLessThan(moodRank('VERY_GOOD'))
-    expect(windRank('CALM')).toBeLessThan(windRank('STORMY'))
-    expect(moodRank(null)).toBe(-1)
-    expect(windRank('HURRICANE')).toBe(-1)
   })
 
   it('falls back to the raw enum value and a dash', () => {

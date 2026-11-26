@@ -3,7 +3,7 @@ import type { CustomCellEditorProps } from 'ag-grid-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LuPlus } from 'react-icons/lu'
-import { MAX_TAG_LENGTH } from './activityForm'
+import { MAX_TAG_LENGTH } from './activityInput'
 import type { FilterOption } from './activityFilters'
 import type { ActivityRow } from './ActivitiesGridTypes'
 

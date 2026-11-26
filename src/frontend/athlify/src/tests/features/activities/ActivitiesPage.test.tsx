@@ -52,7 +52,7 @@ const response = (nodes = [activity]) => ({
   data: {
     activities: {
       totalCount: nodes.length,
-      edges: nodes.map((node) => ({ cursor: node.id, node })),
+      nodes,
       pageInfo: {
         hasNextPage: false,
         endCursor: nodes.at(-1)?.id ?? null,
@@ -115,21 +115,21 @@ describe('ActivitiesPage', () => {
 
     const grid = await findActivitiesGrid()
     await within(grid).findByText('Strasse')
-    await waitFor(() => expect(calls('ActivitiesPageQuery')).toHaveLength(1))
-    expect(calls('ActivitiesPageQuery')[0]).toMatchObject({
-      first: 50,
+    await waitFor(() => expect(calls('ActivitiesTablePageQuery')).toHaveLength(1))
+    expect(calls('ActivitiesTablePageQuery')[0]).toMatchObject({
+      first: 20,
       where: null,
       order: [{ date: 'DESC' }, { id: 'DESC' }],
     })
   })
 
-  it('keeps cached rows visible while refreshing after returning to the page', async () => {
-    let holdResponse = false
-    let releaseResponse: (() => void) | undefined
-    const relay = createTestEnvironment(async () => {
-      if (holdResponse) {
+  it('keeps the page visible while the lookups refresh after returning to it', async () => {
+    let holdLookups = false
+    let releaseLookups: (() => void) | undefined
+    const relay = createTestEnvironment(async (operation) => {
+      if (holdLookups && operation === 'ActivitiesPageQuery') {
         await new Promise<void>((resolve) => {
-          releaseResponse = resolve
+          releaseLookups = resolve
         })
       }
       return response()
@@ -144,13 +144,14 @@ describe('ActivitiesPage', () => {
       ...options,
       otherRoutes: [{ path: '/other', element: <div /> }],
     })
-    holdResponse = true
+    await screen.findByText('Strasse')
+    holdLookups = true
     await act(async () => router.navigate('/other'))
     await act(async () => router.navigate('/activities'))
 
     await waitFor(() => expect(relay.calls('ActivitiesPageQuery')).toHaveLength(2))
     expect(await screen.findByText('Strasse')).toBeInTheDocument()
-    await act(async () => releaseResponse?.())
+    await act(async () => releaseLookups?.())
   })
 
   it('shows the add action for an empty first-use grid', async () => {
@@ -171,7 +172,7 @@ describe('ActivitiesPage', () => {
 
     await screen.findByText('Keine passenden Aktivitäten')
     await waitFor(() =>
-      expect(calls('ActivitiesPageQuery')[0]).toMatchObject({
+      expect(calls('ActivitiesTablePageQuery')[0]).toMatchObject({
         where: { type: { in: ['INDOOR'] } },
       }),
     )
@@ -292,7 +293,7 @@ describe('ActivitiesPage', () => {
 
     const grid = await findActivitiesGrid()
     await waitFor(() => expect(grid.querySelectorAll('time')).toHaveLength(2))
-    expect(calls('ActivitiesPageQuery')[0]).toMatchObject({
+    expect(calls('ActivitiesTablePageQuery')[0]).toMatchObject({
       order: [{ heartRateAverage: 'DESC' }, { id: 'DESC' }],
     })
     const dates = [...grid.querySelectorAll('time')].map((time) => time.getAttribute('datetime'))
@@ -337,7 +338,7 @@ describe('ActivitiesPage', () => {
     await user.type(screen.getByRole('textbox', { name: 'Beschreibung durchsuchen' }), 'See')
     await waitFor(() => expect(router.state.location.search).toBe('?q=See'))
     await waitFor(() =>
-      expect(calls('ActivitiesPageQuery').at(-1)).toMatchObject({
+      expect(calls('ActivitiesTablePageQuery').at(-1)).toMatchObject({
         where: { description: { contains: 'See' } },
       }),
     )

@@ -99,9 +99,9 @@ backend revokes all refresh tokens), and the account language is applied at the
 start of every session by `AuthAndRelayProvider`. The `/activities` view is a
 domain page backed by the GraphQL API; its type, bicycle, wind and tag
 filters are checklists of ticked values, kept in the URL as repeated parameters and exposed through
-the AG Grid filter menus. The table uses Relay cursor pagination (50 per page, "load more") and
-direct cell editing for supported input fields; add and duplicate create pinned
-rows immediately for inline completion. The
+the AG Grid filter menus. The table uses the AG Grid infinite row model with cursor pages of 20 rows
+(`ActivitiesDataSource`) and direct cell editing for supported input fields;
+add creates a pinned row immediately for inline completion. The
 `/body-stats` view is a domain page backed by the GraphQL API. State management
 beyond the Relay store
 and the Tailwind/Chakra boundary are still open decisions. Record them as ADRs
@@ -121,7 +121,7 @@ The domain areas are implemented as independent views or clearly separated UI mo
 
 1. Login and user account
 2. Dashboard
-3. Activities with an editable list, immediate add/duplicate and calendar
+3. Activities with an editable list, immediate add and calendar
 4. Garage with bicycles and gadgets
 5. Body-Stats
 6. Events
@@ -143,7 +143,7 @@ view are shown inside the layout through the route `errorElement`
 | `/`           | redirects unauthenticated users to `/login`; authenticated users continue to `/dashboard` | –                  |
 | `/login`      | Login page; authenticated users are redirected to `/dashboard`                            | –                  |
 | `/dashboard`  | Dashboard (placeholder)                                                                   | Primary Navigation |
-| `/activities` | Activities (filterable, server-sorted grid with saved views and cursor scrolling; add, edit, duplicate, delete) | Primary Navigation |
+| `/activities` | Activities (filterable, server-sorted grid with saved views and cursor scrolling; add, edit, delete) | Primary Navigation |
 | `/garage`     | Garage (placeholder)                                                                      | Primary Navigation |
 | `/body-stats` | Body-Stats (domain page; `?metric=`, `?from=` and `?to=` select the view)                 | Primary Navigation |
 | `/events`     | Events (personal event grid with filters, sorting and saved views)                         | Primary Navigation |

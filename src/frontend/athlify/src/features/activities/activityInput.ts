@@ -14,7 +14,7 @@ import { formatDuration } from './activityFormatting'
 import type { useActivityMutationsCreateMutation } from './__generated__/useActivityMutationsCreateMutation.graphql'
 
 /** Editable activity values; empty strings stand for "not set". */
-export interface ActivityFormValues {
+export interface ActivityInputValues {
   /** `DD.MM.YYYY, HH:MM`, local time. */
   date: string
   type: ActivityType
@@ -41,25 +41,15 @@ export interface ActivityFormValues {
   tagIds: string[]
 }
 
-export type ActivityFormErrors = Partial<Record<keyof ActivityFormValues, string>>
+export type ActivityInputErrors = Partial<Record<keyof ActivityInputValues, string>>
 
-export const heartRateFields = ['heartRateMin', 'heartRateAverage', 'heartRateMax'] as const
-
-/** The fields folded under "More details". */
-export const detailFields = [
-  ...heartRateFields,
-  'effort',
-  'mood',
-  'wind',
-  'gadgetIds',
-  'tagIds',
-] as const satisfies readonly (keyof ActivityFormValues)[]
+const heartRateFields = ['heartRateMin', 'heartRateAverage', 'heartRateMax'] as const
 
 /** Mutation input for creating or updating an activity, as the schema defines it. */
-export type ActivityFormInput = useActivityMutationsCreateMutation['variables']['input']
+export type ActivityMutationInput = useActivityMutationsCreateMutation['variables']['input']
 
 /** What the form reads from an existing activity. */
-export interface ActivityFormSource {
+export interface ActivityInputSource {
   date: string
   type: string
   time: number
@@ -77,12 +67,12 @@ export interface ActivityFormSource {
   tags: readonly { id: string }[]
 }
 
-export const MAX_DESCRIPTION_LENGTH = 2000
+const MAX_DESCRIPTION_LENGTH = 2000
 export const MAX_TAG_LENGTH = 50
 const MIN_HEART_RATE = 20
 const MAX_HEART_RATE = 250
 const MIN_EFFORT = 1
-export const MAX_EFFORT = 10
+const MAX_EFFORT = 10
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
@@ -95,19 +85,13 @@ export function parseDuration(raw: string): number | null {
   return hours * 3600 + minutes * 60
 }
 
-/** The canonical duration text, used when the field is left: `1.20` becomes `1:20`. */
-export function normalizeDuration(raw: string): string {
-  const seconds = parseDuration(raw)
-  return seconds === null ? raw : formatDuration(seconds)
-}
-
 const text = (value: number | null | undefined) => (value == null ? '' : String(value))
 
 /** Minimal values for a new activity; callers set its type and valid duration and distance. */
 export function newActivityValues(
   defaults: { type?: string | null; vehicleId?: string | null },
   now = new Date(),
-): ActivityFormValues {
+): ActivityInputValues {
   return {
     date: formatDateTime(now),
     type: asEnum(activityTypes, defaults.type) ?? 'ROAD',
@@ -128,13 +112,10 @@ export function newActivityValues(
   }
 }
 
-/** The values of an existing activity; as a copy (duplicate) it gets the current date and time. */
-export function activityToValues(
-  activity: ActivityFormSource,
-  { asCopy = false, now = new Date() }: { asCopy?: boolean; now?: Date } = {},
-): ActivityFormValues {
+/** The values of an existing activity. */
+export function activityToValues(activity: ActivityInputSource): ActivityInputValues {
   return {
-    date: formatDateTime(asCopy ? now : new Date(activity.date)),
+    date: formatDateTime(new Date(activity.date)),
     type: asEnum(activityTypes, activity.type) ?? 'ROAD',
     duration: formatDuration(activity.time),
     time: activity.time,
@@ -153,11 +134,6 @@ export function activityToValues(
   }
 }
 
-/** How many of the folded detail fields hold a value. */
-export function countDetails(values: ActivityFormValues): number {
-  return detailFields.filter((field) => values[field].length > 0).length
-}
-
 /** Whole number, `undefined` when empty, `NaN` when the text is not a whole number. */
 function parseInteger(raw: string): number | undefined {
   if (raw.trim() === '') return undefined
@@ -167,11 +143,11 @@ function parseInteger(raw: string): number | undefined {
 
 /** Mirrors the backend's `ActivityValidation`; the server stays authoritative. */
 export function validate(
-  values: ActivityFormValues,
+  values: ActivityInputValues,
   t: TFunction,
   now = new Date(),
-): ActivityFormErrors {
-  const errors: ActivityFormErrors = {}
+): ActivityInputErrors {
+  const errors: ActivityInputErrors = {}
 
   const date = parseDateTime(values.date)
   if (values.date.trim() === '') errors.date = t('form.errors.required')
@@ -236,7 +212,7 @@ export function validate(
 }
 
 /** The entered duration; the stored seconds when the minutes still match them. */
-function seconds(values: ActivityFormValues): number {
+function seconds(values: ActivityInputValues): number {
   const entered = parseDuration(values.duration) ?? 0
   const { time } = values
   return time !== null && entered === time - (time % 60) ? time : entered
@@ -245,7 +221,7 @@ function seconds(values: ActivityFormValues): number {
 const optionalNumber = (raw: string) => (raw.trim() === '' ? null : parseDecimal(raw))
 
 /** Mutation input; empty optional fields become null. Call only with values that passed `validate`. */
-export function toInput(values: ActivityFormValues): ActivityFormInput {
+export function toInput(values: ActivityInputValues): ActivityMutationInput {
   return {
     date: (parseDateTime(values.date) ?? new Date(NaN)).toISOString(),
     type: values.type,

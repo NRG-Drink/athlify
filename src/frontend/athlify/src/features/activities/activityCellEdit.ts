@@ -1,16 +1,16 @@
 import type { TFunction } from 'i18next'
 import { asEnum, activityTypes, moods, winds } from './activityFilters'
-import { activityToValues, toInput, validate, type ActivityFormInput } from './activityForm'
-import type { ActivityFormSource } from './activityForm'
+import { activityToValues, toInput, validate, type ActivityMutationInput } from './activityInput'
+import type { ActivityInputSource } from './activityInput'
 
 export type ActivityCellEditResult =
-  | { input: ActivityFormInput }
+  | { input: ActivityMutationInput }
   | { error: string }
 
 const text = (value: unknown) => (value == null ? '' : String(value))
 
 export function activityInputFromCellChange(
-  row: ActivityFormSource,
+  row: ActivityInputSource,
   column: string,
   value: unknown,
   t: TFunction,

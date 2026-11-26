@@ -2,19 +2,18 @@ import i18next from 'i18next'
 import { describe, expect, it } from 'vitest'
 import {
   activityToValues,
-  countDetails,
   newActivityValues,
   parseDuration,
   toInput,
   validate,
-  type ActivityFormValues,
-} from '../../../features/activities/activityForm'
+  type ActivityInputValues,
+} from '../../../features/activities/activityInput'
 import { formatDateTime } from '../../../lib/dates'
 
 const t = i18next.getFixedT('de')
 const now = new Date(2026, 9, 12, 7, 30)
 
-const valid = (overrides: Partial<ActivityFormValues> = {}): ActivityFormValues => ({
+const valid = (overrides: Partial<ActivityInputValues> = {}): ActivityInputValues => ({
   ...newActivityValues({}, now),
   duration: '1:30',
   distance: '42,5',
@@ -193,7 +192,7 @@ describe('toInput', () => {
   })
 })
 
-describe('form values', () => {
+describe('input values', () => {
   const activity = {
     date: new Date(2026, 9, 1, 18, 15).toISOString(),
     type: 'GRAVEL',
@@ -224,7 +223,7 @@ describe('form values', () => {
     })
   })
 
-  it('reads an activity, and as a copy with the current date', () => {
+  it('reads an activity', () => {
     const values = activityToValues(activity)
     expect(values).toMatchObject({
       date: '01.10.2026, 18:15',
@@ -239,16 +238,5 @@ describe('form values', () => {
       mood: '',
       gadgetIds: ['gadget-1'],
     })
-    expect(activityToValues(activity, { asCopy: true, now })).toEqual({
-      ...values,
-      date: '12.10.2026, 07:30',
-    })
-  })
-
-  it('knows whether a detail field holds a value', () => {
-    expect(countDetails(newActivityValues({}, now))).toBe(0)
-    expect(countDetails(valid({ tagIds: ['tag-1'] }))).toBe(1)
-    // heartRateAverage, wind and a gadget
-    expect(countDetails(activityToValues(activity))).toBe(3)
   })
 })

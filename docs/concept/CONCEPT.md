@@ -476,10 +476,8 @@ The wireframes show the domain views of the application. They do not prescribe a
 
 Users edit supported values directly in their cells. Add immediately creates a
 row with valid minimum values, a localized default description and pins it for
-inline completion. Duplicate immediately creates a pinned copy with the source
-values and the current date and time, appending a localized copy marker to its
-description (including when the source description is empty). Calculated and
-system-managed fields are not editable.
+inline completion. Calculated and system-managed fields are not editable. The
+list loads further rows while the user scrolls.
 
 ### 8.5 Activity calendar
 

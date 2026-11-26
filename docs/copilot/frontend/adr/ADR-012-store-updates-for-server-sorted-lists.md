@@ -74,4 +74,6 @@ filters (Body-Stats).
 
 - Reference implementation: `src/frontend/athlify/src/features/activities/`
   (`ActivitiesPage.tsx`, `useActivityMutations.ts`).
+- Since 2026-11-26 the Activities rows no longer use a Relay connection; see
+  [ADR-013](ADR-013-grid-lists-fetch-outside-the-relay-store.md).
 - Planning record: `.agents/planning/feat-activity-add-edit-delete/02-eng-review.md`.

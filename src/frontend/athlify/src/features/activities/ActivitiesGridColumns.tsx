@@ -2,7 +2,7 @@ import { Box, Button, Text } from '@chakra-ui/react'
 import type { ColDef, ICellRendererParams, ValueGetterParams } from 'ag-grid-community'
 import type { TFunction } from 'i18next'
 import { useMemo } from 'react'
-import { LuCopy, LuPin, LuPinOff, LuTrash2 } from 'react-icons/lu'
+import { LuPin, LuPinOff, LuTrash2 } from 'react-icons/lu'
 import {
   createGridDateFilterParams,
   createGridNumberFilterParams,
@@ -55,7 +55,6 @@ type ActivitiesGridColumnOptions = {
   hasMoreTags: boolean
   pinnedActivityIds: ReadonlySet<string>
   onTogglePin: (row: ActivityRow) => void
-  onDuplicate: (row: ActivityRow) => void
   onDelete: (row: ActivityRow) => void
 }
 
@@ -105,7 +104,6 @@ export function useActivitiesGridColumns({
   hasMoreTags,
   pinnedActivityIds,
   onTogglePin,
-  onDuplicate,
   onDelete,
 }: ActivitiesGridColumnOptions): ColDef<ActivityRow>[] {
   const filterOptions = useMemo(
@@ -162,9 +160,9 @@ export function useActivitiesGridColumns({
       {
         colId: 'actions',
         headerName: t('activities.row.actionsColumn'),
-        width: 120,
-        minWidth: 120,
-        maxWidth: 120,
+        width: 100,
+        minWidth: 100,
+        maxWidth: 100,
         pinned: 'left',
         sortable: false,
         filter: false,
@@ -176,19 +174,11 @@ export function useActivitiesGridColumns({
           return (
             <Box
               display="grid"
-              gridTemplateColumns="max-content max-content max-content"
+              gridTemplateColumns="max-content max-content"
               alignItems="center"
               justifyContent="center"
               gap="1"
             >
-              <Button
-                size="xs"
-                variant="ghost"
-                aria-label={t('activities.duplicate.action')}
-                onClick={() => onDuplicate(data)}
-              >
-                <LuCopy aria-hidden />
-              </Button>
               <Button
                 size="xs"
                 variant="ghost"
@@ -595,8 +585,7 @@ export function useActivitiesGridColumns({
     isUpdating,
     numberFilterParams,
     onDelete,
-    onDuplicate,
-    onTogglePin,
+      onTogglePin,
     pinnedActivityIds,
     show2xl,
     showLg,
