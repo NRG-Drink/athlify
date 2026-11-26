@@ -2,6 +2,7 @@ import { act, screen, waitFor, within } from '@testing-library/react'
 import i18n from 'i18next'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BodyStatsPage } from '../../../features/body-stats/BodyStatsPage'
+import { BODY_STATS_PREFERENCES_STORAGE_KEY } from '../../../features/body-stats/bodyStatsPreferences'
 import { dayStartIso } from '../../../features/body-stats/BodyStatsGridQuery'
 import { mockGridViewport } from '../../utils/gridViewport'
 import { renderWithRelay } from '../../utils/relay'
@@ -104,6 +105,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  localStorage.removeItem(BODY_STATS_PREFERENCES_STORAGE_KEY)
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
   vi.useRealTimers()
@@ -140,26 +142,31 @@ describe('BodyStatsPage', () => {
     })
 
     it('keeps loading pages until the whole history is in the chart', async () => {
-      const { calls } = page(() => okQuery(), '/body-stats', seed, (_operation, variables) => {
-        const { after } = variables as { after: string | null }
-        return after
-          ? {
-              data: {
-                bodyStats: {
-                  nodes: [newest, middle],
-                  pageInfo: { endCursor: null, hasNextPage: false },
+      const { calls } = page(
+        () => okQuery(),
+        '/body-stats',
+        seed,
+        (_operation, variables) => {
+          const { after } = variables as { after: string | null }
+          return after
+            ? {
+                data: {
+                  bodyStats: {
+                    nodes: [newest, middle],
+                    pageInfo: { endCursor: null, hasNextPage: false },
+                  },
                 },
-              },
-            }
-          : {
-              data: {
-                bodyStats: {
-                  nodes: [longAgo, oldest],
-                  pageInfo: { endCursor: 'bs-c', hasNextPage: true },
+              }
+            : {
+                data: {
+                  bodyStats: {
+                    nodes: [longAgo, oldest],
+                    pageInfo: { endCursor: 'bs-c', hasNextPage: true },
+                  },
                 },
-              },
-            }
-      })
+              }
+        },
+      )
 
       expect(await screen.findByRole('img', { name: /4 Messungen/ })).toBeInTheDocument()
       expect(calls(CHART).map(({ after }) => after)).toEqual([null, 'bs-c'])
@@ -168,10 +175,15 @@ describe('BodyStatsPage', () => {
     it('tells the user when the chart fails and loads it again on retry', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {})
       let attempt = 0
-      const { user, calls } = page(() => okQuery(), '/body-stats', seed, () => {
-        attempt += 1
-        return attempt === 1 ? Promise.reject(new Error('offline')) : chartPage(seed)
-      })
+      const { user, calls } = page(
+        () => okQuery(),
+        '/body-stats',
+        seed,
+        () => {
+          attempt += 1
+          return attempt === 1 ? Promise.reject(new Error('offline')) : chartPage(seed)
+        },
+      )
 
       const alert = await screen.findByRole('alert')
       expect(alert).toHaveTextContent('Body-Stats konnten nicht geladen werden.')
@@ -197,6 +209,54 @@ describe('BodyStatsPage', () => {
     it('restores the measurement from the URL and falls back for unknown values', async () => {
       page(() => okQuery(), '/body-stats?metric=boneMass')
       expect(await screen.findByRole('img', { name: /^Knochenmasse, / })).toBeInTheDocument()
+    })
+
+    it('remembers the selected measurement and uses it when the URL names none', async () => {
+      const first = page(() => okQuery())
+      await first.user.click(await metricButton('Körperfett'))
+      await screen.findByRole('img', { name: /^Körperfett, / })
+      first.unmount()
+
+      page(() => okQuery())
+
+      expect(await screen.findByRole('img', { name: /^Körperfett, / })).toBeInTheDocument()
+    })
+
+    it('prefers the measurement in the URL over the remembered one', async () => {
+      localStorage.setItem(
+        BODY_STATS_PREFERENCES_STORAGE_KEY,
+        JSON.stringify({ controlsOpen: true, metric: 'bodyFatPercentage' }),
+      )
+      page(() => okQuery(), '/body-stats?metric=boneMass')
+
+      expect(await screen.findByRole('img', { name: /^Knochenmasse, / })).toBeInTheDocument()
+    })
+
+    it('remembers whether the filter panel is open', async () => {
+      const first = page(() => okQuery())
+      await first.user.click(await screen.findByText('Messungen filtern'))
+      await waitFor(() =>
+        expect(
+          JSON.parse(localStorage.getItem(BODY_STATS_PREFERENCES_STORAGE_KEY) ?? '{}'),
+        ).toMatchObject({ controlsOpen: false }),
+      )
+      first.unmount()
+
+      page(() => okQuery())
+
+      await screen.findByRole('img', { name: /^Gewicht, / })
+      expect(screen.queryByLabelText('Notizen durchsuchen')).not.toBeVisible()
+    })
+
+    it('ignores damaged remembered values', async () => {
+      localStorage.setItem(
+        BODY_STATS_PREFERENCES_STORAGE_KEY,
+        '{"metric":"nonsense","controlsOpen":3}',
+      )
+      page(() => okQuery())
+
+      expect(await screen.findByRole('img', { name: /^Gewicht, / })).toBeInTheDocument()
+      expect(screen.getByLabelText('Notizen durchsuchen')).toBeVisible()
     })
 
     it('falls back to weight for an invalid measurement in the URL', async () => {
@@ -243,7 +303,9 @@ describe('BodyStatsPage', () => {
 
       await act(() => i18n.changeLanguage('en'))
 
-      expect(await screen.findByRole('img', { name: /^Weight, .* 4 measurements/ })).toBeInTheDocument()
+      expect(
+        await screen.findByRole('img', { name: /^Weight, .* 4 measurements/ }),
+      ).toBeInTheDocument()
       expect(screen.getByText('Latest')).toBeInTheDocument()
     })
   })
@@ -259,7 +321,9 @@ describe('BodyStatsPage', () => {
 
     it('shows an empty state with the add action instead of an empty grid', async () => {
       const { user, calls } = page((operation) =>
-        operation === ADD ? { data: { addBodyStats: entry('bs-new', '2026-10-03T10:00:00Z', 1) } } : okQuery([]),
+        operation === ADD
+          ? { data: { addBodyStats: entry('bs-new', '2026-10-03T10:00:00Z', 1) } }
+          : okQuery([]),
       )
 
       expect(await screen.findByText('Noch keine Messungen')).toBeInTheDocument()

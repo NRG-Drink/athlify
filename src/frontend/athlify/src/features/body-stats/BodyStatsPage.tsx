@@ -13,6 +13,7 @@ import { newMeasurementInput } from './bodyStatsForm'
 import { BodyStatsGrid } from './BodyStatsGrid'
 import { getGridQuery } from './BodyStatsGridQuery'
 import { BodyStatsPageControls } from './BodyStatsPageControls'
+import { useBodyStatsPreferences } from './bodyStatsPreferences'
 import type { BodyStatsRow } from './BodyStatsGridTypes'
 import { bodyStatsMetrics, parseMetric, type BodyStatsMetricKey } from './bodyStatsMetrics'
 import { BodyStatsSkeleton } from './BodyStatsSkeleton'
@@ -96,7 +97,9 @@ function BodyStatsContent({ overviewFetchKey, refreshOverview }: ContentProps) {
   const [createdRow, setCreatedRow] = useState<BodyStatsRow | null>(null)
   const mutations = useBodyStatsMutations()
   const state = useBodyStatsPageState()
-  const metric = parseMetric(searchParams.get('metric'))
+  const { preferences, updatePreferences } = useBodyStatsPreferences()
+  const metricParam = searchParams.get('metric')
+  const metric = metricParam ? parseMetric(metricParam) : preferences.metric
   const chartWhere = useMemo(
     () => getGridQuery([], state.filterModel, state.where).where,
     [state.filterModel, state.where],
@@ -111,7 +114,8 @@ function BodyStatsContent({ overviewFetchKey, refreshOverview }: ContentProps) {
       },
     })
 
-  const selectMetric = (next: BodyStatsMetricKey) =>
+  const selectMetric = (next: BodyStatsMetricKey) => {
+    updatePreferences({ metric: next })
     setSearchParams(
       (current) => {
         const params = new URLSearchParams(current)
@@ -120,6 +124,7 @@ function BodyStatsContent({ overviewFetchKey, refreshOverview }: ContentProps) {
       },
       { replace: true },
     )
+  }
 
   return (
     <Stack gap="8">
@@ -138,7 +143,12 @@ function BodyStatsContent({ overviewFetchKey, refreshOverview }: ContentProps) {
 
       {overview && !overview.isEmpty && (
         <Stack gap="6">
-          <BodyStatsPageControls filters={state.filters} views={state.views} />
+          <BodyStatsPageControls
+            filters={state.filters}
+            views={state.views}
+            open={preferences.controlsOpen}
+            onOpenChange={(controlsOpen) => updatePreferences({ controlsOpen })}
+          />
           <BodyStatsChart
             where={chartWhere}
             refreshKey={overviewFetchKey}

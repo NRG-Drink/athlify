@@ -194,7 +194,10 @@ reference is `src/features/body-stats/`.
   fragment on the page) with cursor paging from the API. A page that only needs
   the newest entries stops after the first page. Body-Stats reads its history
   chart and its grid rows outside the Relay store (see below).
-- **View state:** the selected chart measurement (`metric`) lives in the URL.
+- **View state:** the selected chart measurement (`metric`) lives in the URL; filters
+  too. The browser also remembers the chart measurement and whether the filter
+  panel is open (`athlify.bodystats.preferences.v1`); the URL wins when it names
+  a measurement.
 - **Formatting:** numbers, units and dates come from `useFormat()` in the active
   language; missing values show "—".
 - **Chart:** `BodyStatsChart` shows one measurement at a time, selected by a
