@@ -7,7 +7,7 @@ import { dayStartIso } from '../../../features/body-stats/BodyStatsGridQuery'
 import { mockGridViewport } from '../../utils/gridViewport'
 import { renderWithRelay } from '../../utils/relay'
 
-const QUERY = 'BodyStatsPageQuery'
+const QUERY = 'useBodyStatsOverviewQuery'
 const CHART = 'BodyStatsChartPageQuery'
 const ADD = 'useBodyStatsMutationsAddMutation'
 const GRID = 'BodyStatsGridPageQuery'
@@ -311,12 +311,13 @@ describe('BodyStatsPage', () => {
   })
 
   describe('states', () => {
-    it('shows a skeleton of the page while loading', async () => {
-      page(() => new Promise(() => {}))
+    it('shows filters, chart and table without waiting for the overview', async () => {
+      page((operation) => (operation === QUERY ? new Promise(() => {}) : undefined))
 
-      const [skeleton] = await screen.findAllByRole('status')
-      expect(skeleton).toHaveAttribute('aria-busy', 'true')
-      expect(screen.getByRole('heading', { level: 1, name: 'Body-Stats' })).toBeInTheDocument()
+      expect(await screen.findByRole('img', { name: /^Gewicht, / })).toBeInTheDocument()
+      expect(screen.getByLabelText('Notizen durchsuchen')).toBeVisible()
+      expect(await screen.findByRole('grid')).toBeInTheDocument()
+      expect(screen.queryByText('Noch keine Messungen')).not.toBeInTheDocument()
     })
 
     it('shows an empty state with the add action instead of an empty grid', async () => {
@@ -334,52 +335,14 @@ describe('BodyStatsPage', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     })
 
-    it('shows a load error inside the page and retries with a new request', async () => {
+    it('tells the user when the overview fails and keeps the page', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {})
-      let attempt = 0
-      const { user, calls } = page(() => {
-        attempt += 1
-        return attempt === 1 ? Promise.reject(new Error('offline')) : Promise.resolve(okQuery())
-      })
+      page((operation) => (operation === QUERY ? Promise.reject(new Error('offline')) : undefined))
 
-      const alert = await screen.findByRole('alert')
-      expect(alert).toHaveTextContent('Body-Stats konnten nicht geladen werden.')
-      expect(screen.getByRole('heading', { level: 1, name: 'Body-Stats' })).toBeInTheDocument()
-
-      await user.click(within(alert).getByRole('button', { name: 'Erneut versuchen' }))
-
+      expect(
+        await screen.findByText('Body-Stats konnten nicht geladen werden.'),
+      ).toBeInTheDocument()
       expect(await screen.findByRole('img', { name: /^Gewicht, / })).toBeInTheDocument()
-      expect(calls(QUERY)).toHaveLength(2)
-    })
-  })
-
-  describe('returning to the page', () => {
-    it('loads again instead of showing the old load error', async () => {
-      vi.spyOn(console, 'error').mockImplementation(() => {})
-      let attempt = 0
-      const { router, calls } = renderWithRelay(
-        <BodyStatsPage />,
-        (operation) => {
-          if (operation === GRID) return gridPage(seed)
-          if (operation === CHART) return chartPage(seed)
-          attempt += 1
-          return attempt === 1 ? Promise.reject(new Error('offline')) : Promise.resolve(okQuery())
-        },
-        {
-          path: '/body-stats',
-          routePath: '/body-stats',
-          otherRoutes: [{ path: '/other', element: <p>Andere Seite</p> }],
-        },
-      )
-      await screen.findByRole('alert')
-
-      await act(() => router.navigate('/other'))
-      await screen.findByText('Andere Seite')
-      await act(() => router.navigate('/body-stats'))
-
-      expect(await screen.findByRole('img', { name: /^Gewicht, / })).toBeInTheDocument()
-      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
-      expect(calls(QUERY)).toHaveLength(2)
     })
   })
 

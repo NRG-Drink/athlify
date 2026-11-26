@@ -1,4 +1,4 @@
-import { Button, Flex, Heading, SimpleGrid, Stack, Text } from '@chakra-ui/react'
+import { Button, Center, Flex, Heading, SimpleGrid, Skeleton, Stack, Text } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { MetricChart } from '../../components/MetricChart'
 import { useFormat } from '../../i18n/useFormat'
@@ -18,6 +18,10 @@ export interface BodyStatsChartProps {
 }
 
 const DAY = 24 * 60 * 60 * 1000
+
+/** The chart area is this tall while loading, on error and when drawn, so the page does not jump. */
+const CHART_HEIGHT = 240
+const EMPTY_VALUE = '—'
 
 function domainOf(points: readonly MetricPoint[]): [Date, Date] {
   const first = dateFromKey(localDateKey(points[0].date))
@@ -88,56 +92,71 @@ export function BodyStatsChart({ where, refreshKey, metric, onMetricChange }: Bo
         ))}
       </Flex>
 
+      <SimpleGrid columns={{ base: 2, md: 4 }} gap="4">
+        <Stat
+          label={t('bodyStats.chart.latest')}
+          value={first ? measure(last.value) : EMPTY_VALUE}
+        />
+        <Stat
+          label={t('bodyStats.chart.change')}
+          value={
+            points.length < 2
+              ? EMPTY_VALUE
+              : format.signed(last.value - first.value, definition.unit, definition.decimals)
+          }
+        />
+        <Stat
+          label={t('bodyStats.chart.average')}
+          value={
+            first
+              ? measure(values.reduce((sum, value) => sum + value, 0) / values.length)
+              : EMPTY_VALUE
+          }
+        />
+        <Stat
+          label={t('bodyStats.chart.range')}
+          value={
+            first
+              ? `${format.number(
+                  values.reduce((low, value) => Math.min(low, value)),
+                  definition.decimals,
+                )} – ${measure(values.reduce((high, value) => Math.max(high, value)))}`
+              : EMPTY_VALUE
+          }
+        />
+      </SimpleGrid>
+
       {data.status === 'failed' && (
-        <Stack align="center" gap="3" py="8" role="alert">
-          <Text color="fg.error">{t('bodyStats.loadFailed')}</Text>
-          <Button size="sm" variant="outline" onClick={data.retry}>
-            {t('page.retry')}
-          </Button>
-        </Stack>
+        <Center h={`${CHART_HEIGHT}px`} role="alert">
+          <Stack align="center" gap="3">
+            <Text color="fg.error">{t('bodyStats.loadFailed')}</Text>
+            <Button size="sm" variant="outline" onClick={data.retry}>
+              {t('page.retry')}
+            </Button>
+          </Stack>
+        </Center>
       )}
 
       {data.status === 'loading' && (
-        <Text color="fg.muted" role="status" py="8" textAlign="center">
-          {t('page.loading')}
-        </Text>
+        <Skeleton
+          h={`${CHART_HEIGHT}px`}
+          borderRadius="l2"
+          role="status"
+          aria-busy="true"
+          aria-label={t('page.loading')}
+        />
       )}
 
       {data.status === 'ready' && (
-        <>
-          {first && (
-            <SimpleGrid columns={{ base: 2, md: 4 }} gap="4">
-              <Stat label={t('bodyStats.chart.latest')} value={measure(last.value)} />
-              <Stat
-                label={t('bodyStats.chart.change')}
-                value={
-                  points.length < 2
-                    ? '—'
-                    : format.signed(last.value - first.value, definition.unit, definition.decimals)
-                }
-              />
-              <Stat
-                label={t('bodyStats.chart.average')}
-                value={measure(values.reduce((sum, value) => sum + value, 0) / values.length)}
-              />
-              <Stat
-                label={t('bodyStats.chart.range')}
-                value={`${format.number(
-                  values.reduce((low, value) => Math.min(low, value)),
-                  definition.decimals,
-                )} – ${measure(values.reduce((high, value) => Math.max(high, value)))}`}
-              />
-            </SimpleGrid>
-          )}
-          <MetricChart
-            points={points}
-            unit={definition.unit}
-            decimals={definition.decimals}
-            summary={summary}
-            domain={first ? domainOf(points) : [new Date(), new Date()]}
-            emptyMessage={t('bodyStats.chart.empty')}
-          />
-        </>
+        <MetricChart
+          points={points}
+          unit={definition.unit}
+          decimals={definition.decimals}
+          summary={summary}
+          domain={first ? domainOf(points) : [new Date(), new Date()]}
+          emptyMessage={t('bodyStats.chart.empty')}
+          height={CHART_HEIGHT}
+        />
       )}
     </Stack>
   )

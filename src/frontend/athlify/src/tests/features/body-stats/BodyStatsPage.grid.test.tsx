@@ -47,7 +47,7 @@ const page = (handler: Handler = () => undefined, path = '/body-stats', rows = [
     <BodyStatsPage />,
     (operation, variables) => {
       if (operation === GRID) return gridPage(rows)
-      if (operation === 'BodyStatsPageQuery') {
+      if (operation === 'useBodyStatsOverviewQuery') {
         return { data: { bodyStats: { totalCount: rows.length, nodes: rows.slice(0, 1) } } }
       }
       if (operation === 'BodyStatsChartPageQuery') return gridPage(rows)

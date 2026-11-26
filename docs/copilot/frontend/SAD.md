@@ -206,8 +206,11 @@ reference is `src/features/body-stats/`.
   The chart has no date range of its own: it loads every measurement that
   matches the grid's filters (page filters and column filters, no sort) through
   `useBodyStatsChartPoints`, pages of 200 with `fetchQuery` and `network-only`, oldest
-  first. A small page query (`BodyStatsPageQuery`) supplies the empty state and
-  the latest values for a new measurement. After an add, edit or delete the
+  first. The page renders filters, chart and grid at once, without a page
+  skeleton: each part loads its own data. A small query
+  (`useBodyStatsOverview`) runs next to them and supplies the empty state
+  (shown instead of the page when no measurement exists) and the latest values
+  for a new measurement. After an add, edit or delete the
   page loads both again.
 - **Tables and grids:** Activities, Events and the Body-Stats history use the
   shared `AgGridTable` wrapper; no grid sorts or filters only the loaded page.
