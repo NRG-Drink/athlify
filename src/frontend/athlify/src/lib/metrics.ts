@@ -11,7 +11,7 @@ export interface MetricDefinition<K extends string = string> {
   max?: number
 }
 
-export type MetricUnit = 'kg' | '%'
+export type MetricUnit = 'kg' | '%' | 'km' | 'h' | 'm' | 'km/h' | 'TSS'
 
 export interface MetricPoint {
   date: Date

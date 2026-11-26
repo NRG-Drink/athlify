@@ -67,7 +67,7 @@ manage users (list, create, edit, set a new password, delete with a
 confirmation) on `/admin/users`, reached from the User Menu; other users see a
 "no access" page ([design system](DESIGN-SYSTEM.md)). The Events page lists,
 creates, edits and deletes personal events, with URL-backed filters, sorting and
-saved views. Dashboard and Garage remain placeholders.
+saved views. The Dashboard is a first iteration (see below); Garage remains a placeholder.
 
 ```text
 src/frontend/athlify/src/
@@ -90,8 +90,12 @@ src/frontend/athlify/src/
 └── index.css         # Tailwind import only
 ```
 
-The App Layout and routing are implemented. Dashboard and Garage render
-placeholder pages. The `/events` view is a backend-backed domain page for
+The App Layout and routing are implemented. Garage renders a placeholder page.
+The `/dashboard` view loads activities, Body-Stats and Events with `fetchQuery` and
+aggregates them by day, week, month or year in the browser
+([ADR-014](adr/ADR-014-dashboard-client-side-aggregation.md)): filters (period, Indoor/Outdoor,
+tags, Grouping, browser-local Presets) in the URL, three chart panels (Track, Fitness,
+Body) with Event markers and an overview table. The `/events` view is a backend-backed domain page for
 managing events. The `/settings` view is a form page (two panels, Profile and
 Password) backed by `me` and the self-service `updateMe` mutation: a profile save
 switches the UI language at once, a password change signs the user out (the
@@ -142,7 +146,7 @@ view are shown inside the layout through the route `errorElement`
 | ------------- | ----------------------------------------------------------------------------------------- | ------------------ |
 | `/`           | redirects unauthenticated users to `/login`; authenticated users continue to `/dashboard` | –                  |
 | `/login`      | Login page; authenticated users are redirected to `/dashboard`                            | –                  |
-| `/dashboard`  | Dashboard (placeholder)                                                                   | Primary Navigation |
+| `/dashboard`  | Dashboard                                                                                 | Primary Navigation |
 | `/activities` | Activities (filterable, server-sorted grid with saved views and cursor scrolling; add, edit, delete) | Primary Navigation |
 | `/garage`     | Garage (placeholder)                                                                      | Primary Navigation |
 | `/body-stats` | Body-Stats (domain page; `?metric=`, `?from=` and `?to=` select the view)                 | Primary Navigation |

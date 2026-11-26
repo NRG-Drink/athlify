@@ -8,8 +8,9 @@ the earlier REST plan). Queries and mutations are organized around the domain
 modules. The Strava OAuth callback may still need a plain HTTP endpoint.
 
 The backend implements the domain areas marked as implemented below.
-Authentication, Strava synchronization and the Dashboard analyses are still
-planned. The backend must remain authoritative for validation, calculated
+Authentication and Strava synchronization are still planned. The Dashboard
+analyses are calculated in the frontend from the existing list queries
+([ADR-014](../copilot/frontend/adr/ADR-014-dashboard-client-side-aggregation.md)). The backend must remain authoritative for validation, calculated
 values, synchronization and ownership; the frontend must not infer or replace
 those rules.
 
@@ -24,7 +25,7 @@ those rules.
 | Tags | List, create, rename and delete | Implemented |
 | Body-Stats | List, create, edit and delete | Implemented |
 | Events | List, create, edit and delete | Implemented |
-| Dashboard | Metrics, charts and analyses | Planned |
+| Dashboard | Metrics, charts and analyses | Aggregated in the frontend; no dedicated endpoint (planned) |
 
 All personal endpoints verify authentication and ownership of the requested
 data server-side. Errors are returned explicitly in the GraphQL `errors` array so

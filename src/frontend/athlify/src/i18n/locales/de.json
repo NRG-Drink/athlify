@@ -10,6 +10,89 @@
       "settings": "Einstellungen",
       "adminUsers": "Benutzerverwaltung"
     },
+    "dashboard": {
+      "loadFailed": "Das Dashboard konnte nicht geladen werden.",
+      "metricGroup": "Messwert für {{title}}",
+      "filters": {
+        "title": "Filter",
+        "preset": "Preset",
+        "presetChoose": "Preset wählen",
+        "presetName": "Name des Presets",
+        "presetSave": "Preset speichern",
+        "presetDelete": "Preset löschen",
+        "presetDuplicate": "Ein Preset mit diesem Namen existiert bereits.",
+        "presetStorageFailed": "Die Presets konnten nicht im Browser gespeichert werden.",
+        "reset": "Filter zurücksetzen",
+        "period": "Zeitraum",
+        "periods": {
+          "30d": "30 Tage",
+          "90d": "90 Tage",
+          "1y": "1 Jahr",
+          "all": "Alles"
+        },
+        "from": "Von",
+        "to": "Bis",
+        "invalidDate": "Bitte ein gültiges Datum eingeben.",
+        "type": "Typ",
+        "indoor": "Indoor",
+        "outdoor": "Outdoor",
+        "tags": "Tags",
+        "grouping": "Gruppierung"
+      },
+      "grouping": {
+        "day": "Tag",
+        "week": "Woche",
+        "month": "Monat",
+        "year": "Jahr",
+        "weekShort": "KW {{week}}",
+        "weekLong": "KW {{week}} · {{year}}"
+      },
+      "metrics": {
+        "distance": "Distanz",
+        "hours": "Zeit",
+        "elevationGain": "Höhenmeter",
+        "tss": "TSS",
+        "speed": "Geschwindigkeit"
+      },
+      "track": {
+        "title": "Track-Metriken",
+        "empty": "Keine Aktivitäten für die aktuellen Filter."
+      },
+      "fitness": {
+        "title": "Fitness-Metriken",
+        "note": "Aus dem TSS der Aktivitäten berechnet: CTL (Chronic Training Load, 42 Tage), ATL (Acute Training Load, 7 Tage) und TSB (Form = CTL − ATL).",
+        "empty": "Keine TSS-Werte vorhanden. Die Fitness wird aus dem TSS der Aktivitäten berechnet.",
+        "ctl": "CTL",
+        "atl": "ATL",
+        "tsb": "TSB"
+      },
+      "body": {
+        "title": "Körper-Metriken",
+        "note": "Mittelwert pro Zeitraum. Die Filter Typ und Tags gelten nicht für Körperwerte.",
+        "empty": "Keine Messungen im gewählten Zeitraum."
+      },
+      "chart": {
+        "summary": "{{title}}: {{count}} Zeiträume von {{fromDate}} bis {{toDate}}, {{events}} Events markiert",
+        "emptySummary": "{{title}}: keine Daten",
+        "eventsNote": "{{count}} Events im Zeitraum sind im Diagramm markiert."
+      },
+      "table": {
+        "title": "Übersicht",
+        "caption": "Aktivitäten, Körperwerte, Fitness und Events pro Zeitraum",
+        "empty": "Keine Zeiträume im gewählten Bereich.",
+        "period": "Zeitraum",
+        "count": "Trainings",
+        "hours": "Zeit [h]",
+        "distance": "Distanz [km]",
+        "elevationGain": "Höhenm. [m]",
+        "tss": "TSS",
+        "speed": "Ø [km/h]",
+        "weight": "Gewicht [kg]",
+        "muscle": "Muskeln [%]",
+        "fitness": "Fitness (CTL)",
+        "events": "Events"
+      }
+    },
     "layout": {
       "skipToContent": "Zum Inhalt springen",
       "openMenu": "Menü öffnen",
@@ -163,7 +246,6 @@
       "message": "Diese Seite konnte nicht angezeigt werden. Bitte versuche es erneut."
     },
     "placeholder": {
-      "dashboard": "Hier siehst du bald Distanz, Zeit, Höhenmeter und Trainingsbelastung auf einen Blick.",
       "activities": "Hier verwaltest du bald alle Aktivitäten, aus Strava importiert oder manuell erfasst.",
       "garage": "Hier erfasst du bald deine Velos und Gadgets.",
       "events": "Hier dokumentierst du bald Stürze, Reparaturen, Pausen und andere Ereignisse."

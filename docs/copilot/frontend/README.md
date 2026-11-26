@@ -68,8 +68,9 @@ separate filter/table resets and cursor pages that load while scrolling.
 New activities are temporarily pinned above current results; input values are
 edited directly in their grid cells, while add creates a pinned row for inline
 completion; delete uses a confirmation
-([ADR-013](adr/ADR-013-grid-lists-fetch-outside-the-relay-store.md)). Dashboard, Garage and
-Settings remain placeholders. The Settings page lets the signed-in user edit their own
+([ADR-013](adr/ADR-013-grid-lists-fetch-outside-the-relay-store.md)). The Dashboard aggregates activities, Body-Stats and Events in the browser
+([ADR-014](adr/ADR-014-dashboard-client-side-aggregation.md)); Garage remains a placeholder. The
+Settings page lets the signed-in user edit their own
 profile, language and password. The Body-Stats history is an AG Grid with URL-backed filters, browser-local saved views, configurable columns, pinned rows, form-free creation of a pinned measurement and inline editing ([ADR-013](adr/ADR-013-grid-lists-fetch-outside-the-relay-store.md)). The Events page uses the backend API to list,
 create, edit and delete personal events, with URL-backed filters and saved
 views. The backend is under `../../../src/backend/`. See

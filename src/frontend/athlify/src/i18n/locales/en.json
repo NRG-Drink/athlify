@@ -10,6 +10,89 @@
       "settings": "Settings",
       "adminUsers": "User management"
     },
+    "dashboard": {
+      "loadFailed": "The dashboard could not be loaded.",
+      "metricGroup": "Metric for {{title}}",
+      "filters": {
+        "title": "Filters",
+        "preset": "Preset",
+        "presetChoose": "Choose preset",
+        "presetName": "Preset name",
+        "presetSave": "Save preset",
+        "presetDelete": "Delete preset",
+        "presetDuplicate": "A preset with this name already exists.",
+        "presetStorageFailed": "The presets could not be saved in the browser.",
+        "reset": "Reset filters",
+        "period": "Period",
+        "periods": {
+          "30d": "30 days",
+          "90d": "90 days",
+          "1y": "1 year",
+          "all": "All"
+        },
+        "from": "From",
+        "to": "To",
+        "invalidDate": "Please enter a valid date.",
+        "type": "Type",
+        "indoor": "Indoor",
+        "outdoor": "Outdoor",
+        "tags": "Tags",
+        "grouping": "Grouping"
+      },
+      "grouping": {
+        "day": "Day",
+        "week": "Week",
+        "month": "Month",
+        "year": "Year",
+        "weekShort": "CW {{week}}",
+        "weekLong": "CW {{week}} · {{year}}"
+      },
+      "metrics": {
+        "distance": "Distance",
+        "hours": "Time",
+        "elevationGain": "Elevation gain",
+        "tss": "TSS",
+        "speed": "Speed"
+      },
+      "track": {
+        "title": "Track metrics",
+        "empty": "No activities for the current filters."
+      },
+      "fitness": {
+        "title": "Fitness metrics",
+        "note": "Calculated from the TSS of the activities: CTL (Chronic Training Load, 42 days), ATL (Acute Training Load, 7 days) and TSB (form = CTL − ATL).",
+        "empty": "No TSS values available. Fitness is calculated from the TSS of the activities.",
+        "ctl": "CTL",
+        "atl": "ATL",
+        "tsb": "TSB"
+      },
+      "body": {
+        "title": "Body metrics",
+        "note": "Mean per period. The type and tag filters do not apply to body values.",
+        "empty": "No measurements in the selected period."
+      },
+      "chart": {
+        "summary": "{{title}}: {{count}} periods from {{fromDate}} to {{toDate}}, {{events}} events marked",
+        "emptySummary": "{{title}}: no data",
+        "eventsNote": "{{count}} events in the period are marked in the chart."
+      },
+      "table": {
+        "title": "Overview",
+        "caption": "Activities, body values, fitness and events per period",
+        "empty": "No periods in the selected range.",
+        "period": "Period",
+        "count": "Trainings",
+        "hours": "Time [h]",
+        "distance": "Distance [km]",
+        "elevationGain": "Elev. gain [m]",
+        "tss": "TSS",
+        "speed": "Avg [km/h]",
+        "weight": "Weight [kg]",
+        "muscle": "Muscle [%]",
+        "fitness": "Fitness (CTL)",
+        "events": "Events"
+      }
+    },
     "layout": {
       "skipToContent": "Skip to content",
       "openMenu": "Open menu",
@@ -163,7 +246,6 @@
       "message": "This page could not be displayed. Please try again."
     },
     "placeholder": {
-      "dashboard": "Soon you will see distance, time, elevation and training load at a glance.",
       "activities": "Soon you will manage all activities here, imported from Strava or entered manually.",
       "garage": "Soon you will record your bicycles and gadgets here.",
       "events": "Soon you will document crashes, repairs, breaks and other events here."

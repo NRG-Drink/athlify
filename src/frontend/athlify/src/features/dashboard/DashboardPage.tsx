@@ -1,0 +1,214 @@
+import { Stack } from '@chakra-ui/react'
+import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Page } from '../../components/Page'
+import { TrendChart, type TrendSeries } from '../../components/TrendChart'
+import { useFormat } from '../../i18n/useFormat'
+import { useFetchKey } from '../../relay/useFetchKey'
+import { bodyStatsMetrics, metricByKey, parseMetric } from '../body-stats/bodyStatsMetrics'
+import { DashboardFilters } from './DashboardFilters'
+import { DASHBOARD_CHART_HEIGHT, DashboardMetricCard } from './DashboardMetricCard'
+import { DashboardTable } from './DashboardTable'
+import { buildDashboardView } from './dashboardView'
+import { parseTrackMetric, trackMetricByKey, trackMetrics } from './dashboardMetrics'
+import { useDashboardPreferences, useDashboardViews } from './dashboardPreferences'
+import { useBucketLabels } from './useBucketLabels'
+import { useDashboardData } from './useDashboardData'
+import { useDashboardPageState } from './useDashboardPageState'
+import { useDashboardTags } from './useDashboardTags'
+
+const NO_BUCKETS: never[] = []
+
+const fitnessLines = [
+  { key: 'ctl', color: 'var(--chakra-colors-chart-primary)' },
+  { key: 'atl', color: 'var(--chakra-colors-chart-effort)' },
+  { key: 'tsb', color: 'var(--chakra-colors-chart-form)' },
+] as const
+
+function DashboardContent({ refreshKey }: { refreshKey: number }) {
+  const { t } = useTranslation()
+  const format = useFormat()
+  const labels = useBucketLabels()
+  const state = useDashboardPageState()
+  const { preferences, updatePreferences } = useDashboardPreferences()
+  const savedViews = useDashboardViews()
+  const tags = useDashboardTags()
+  const result = useDashboardData(state.range, state.filters, refreshKey)
+  const status = result.status
+  const data = result.status === 'ready' ? result.data : undefined
+
+  const view = useMemo(
+    () => (data ? buildDashboardView(data, state.range, state.grouping) : undefined),
+    [data, state.range, state.grouping],
+  )
+
+  const buckets = useMemo(
+    () =>
+      (view?.buckets ?? NO_BUCKETS).map(({ key, start }) => ({
+        key,
+        label: labels.axis(start, state.grouping),
+      })),
+    [view, labels, state.grouping],
+  )
+
+  const trackMetric = trackMetricByKey(preferences.trackMetric)
+  const bodyMetric = metricByKey(preferences.bodyMetric)
+
+  const trackSeries = useMemo<TrendSeries[]>(() => {
+    const values = new Map<string, number>()
+    for (const [key, bucket] of view?.activities ?? []) {
+      const value = trackMetric.value(bucket)
+      if (value !== undefined) values.set(key, value)
+    }
+    return [
+      {
+        key: trackMetric.key,
+        label: t(trackMetric.labelKey),
+        unit: trackMetric.unit,
+        decimals: trackMetric.decimals,
+        color: 'var(--chakra-colors-chart-primary)',
+        kind: 'bar',
+        values,
+      },
+    ]
+  }, [view, trackMetric, t])
+
+  const fitnessSeries = useMemo<TrendSeries[]>(
+    () =>
+      fitnessLines.map(({ key, color }) => ({
+        key,
+        label: t(`dashboard.fitness.${key}`),
+        unit: 'TSS',
+        decimals: 0,
+        color,
+        kind: 'line',
+        values: new Map([...(view?.fitness ?? [])].map(([bucket, day]) => [bucket, day[key]])),
+      })),
+    [view, t],
+  )
+
+  const bodySeries = useMemo<TrendSeries[]>(() => {
+    const values = new Map<string, number>()
+    for (const [key, bucket] of view?.bodyStats ?? []) values.set(key, bucket[bodyMetric.key])
+    return [
+      {
+        key: bodyMetric.key,
+        label: t(bodyMetric.labelKey),
+        unit: bodyMetric.unit,
+        decimals: bodyMetric.decimals,
+        color: 'var(--chakra-colors-chart-secondary)',
+        kind: 'line',
+        values,
+      },
+    ]
+  }, [view, bodyMetric, t])
+
+  const first = view?.buckets[0]
+  const last = view?.buckets[view.buckets.length - 1]
+  const eventCount = view?.markers.length ?? 0
+  const summaryFor = (title: string, series: readonly TrendSeries[]) =>
+    first && last && series.some((entry) => entry.values.size > 0)
+      ? t('dashboard.chart.summary', {
+          title,
+          fromDate: format.date(first.start),
+          toDate: format.date(last.start),
+          count: series[0].values.size,
+          events: eventCount,
+        })
+      : t('dashboard.chart.emptySummary', { title })
+  const eventNote = eventCount > 0 ? t('dashboard.chart.eventsNote', { count: eventCount }) : undefined
+  const markers = view?.markers ?? []
+
+  return (
+    <Stack gap="6">
+      <DashboardFilters
+        state={state}
+        tags={tags.options}
+        hasMoreTags={tags.hasMore}
+        views={savedViews.views}
+        viewsStorageFailed={savedViews.storageFailed}
+        onSaveView={savedViews.save}
+        onDeleteView={savedViews.remove}
+        open={preferences.controlsOpen}
+        onOpenChange={(controlsOpen) => updatePreferences({ controlsOpen })}
+      />
+
+      <DashboardMetricCard
+        title={t('dashboard.track.title')}
+        status={status}
+        onRetry={result.retry}
+        metrics={trackMetrics.map(({ key, labelKey }) => ({ key, label: t(labelKey) }))}
+        metric={trackMetric.key}
+        onMetricChange={(key) => updatePreferences({ trackMetric: parseTrackMetric(key) })}
+        note={eventNote}
+      >
+        <TrendChart
+          buckets={buckets}
+          series={trackSeries}
+          markers={markers}
+          summary={summaryFor(t('dashboard.track.title'), trackSeries)}
+          emptyMessage={t('dashboard.track.empty')}
+          height={DASHBOARD_CHART_HEIGHT}
+        />
+      </DashboardMetricCard>
+
+      <DashboardMetricCard
+        title={t('dashboard.fitness.title')}
+        status={status}
+        onRetry={result.retry}
+        note={t('dashboard.fitness.note')}
+      >
+        <TrendChart
+          buckets={buckets}
+          series={fitnessSeries}
+          markers={markers}
+          summary={summaryFor(t('dashboard.fitness.title'), fitnessSeries)}
+          emptyMessage={t('dashboard.fitness.empty')}
+          height={DASHBOARD_CHART_HEIGHT}
+        />
+      </DashboardMetricCard>
+
+      <DashboardMetricCard
+        title={t('dashboard.body.title')}
+        status={status}
+        onRetry={result.retry}
+        metrics={bodyStatsMetrics.map(({ key, labelKey }) => ({ key, label: t(labelKey) }))}
+        metric={bodyMetric.key}
+        onMetricChange={(key) => updatePreferences({ bodyMetric: parseMetric(key) })}
+        note={t('dashboard.body.note')}
+      >
+        <TrendChart
+          buckets={buckets}
+          series={bodySeries}
+          markers={markers}
+          summary={summaryFor(t('dashboard.body.title'), bodySeries)}
+          emptyMessage={t('dashboard.body.empty')}
+          height={DASHBOARD_CHART_HEIGHT}
+        />
+      </DashboardMetricCard>
+
+      {view && (
+        <DashboardTable
+          starts={[...view.buckets].reverse()}
+          grouping={state.grouping}
+          labels={labels}
+          activities={view.activities}
+          bodyStats={view.bodyStats}
+          fitness={view.fitness}
+          markers={view.markers}
+        />
+      )}
+    </Stack>
+  )
+}
+
+export function DashboardPage() {
+  const { t } = useTranslation()
+  const [refreshKey] = useFetchKey()
+
+  return (
+    <Page title={t('nav.dashboard')}>
+      <DashboardContent refreshKey={refreshKey} />
+    </Page>
+  )
+}

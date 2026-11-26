@@ -17,12 +17,17 @@ describe('routes', () => {
   })
 
   test.each([
-    [paths.dashboard, 'Dashboard', /Distanz, Zeit, Höhenmeter/],
     [paths.garage, 'Garage', /deine Velos und Gadgets/],
   ])('%s renders a coming-soon placeholder titled %s', async (path, title, areaMessage) => {
     renderRoute(path)
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument()
     expect(screen.getByText(/Demnächst verfügbar/)).toHaveTextContent(areaMessage)
+  })
+
+  test('renders the Dashboard at /dashboard', async () => {
+    renderRoute(paths.dashboard)
+    expect(await screen.findByRole('heading', { level: 1, name: 'Dashboard' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 2, name: 'Track-Metriken' })).toBeInTheDocument()
   })
 
   test('renders the Events page at /events', async () => {
