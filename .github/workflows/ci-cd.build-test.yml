@@ -17,7 +17,7 @@ on:
       - '!.devcontainer/**'
 
 jobs:
-  build-test:
+  ci-cd.build-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -37,7 +37,7 @@ jobs:
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
-      - name: Run Pipeline 
+      - name: Run Pipeline
         run: dotnet run -c Release -- --test-only
         working-directory: "src/backend/Athlify.Build"
         env:

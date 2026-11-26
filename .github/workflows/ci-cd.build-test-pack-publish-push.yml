@@ -22,7 +22,7 @@ permissions:
   packages: write
 
 jobs:
-  build-test-pack-publish-push:
+  ci-cd.build-test-pack-publish-push:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -42,7 +42,7 @@ jobs:
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
-      - name: Run Pipeline 
+      - name: Run Pipeline
         run: dotnet run -c Release -- all
         working-directory: "src/backend/Athlify.Build"
         env:
