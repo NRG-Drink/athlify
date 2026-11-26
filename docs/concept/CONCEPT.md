@@ -248,12 +248,17 @@ of periods. The selected chart metric can be displayed at daily, weekly,
 monthly or yearly local-calendar resolution, or with aggregation disabled to
 show every measurement; each bucket uses the latest real measurement and does
 not alter the raw values used by tiles or the history table. Below the chart,
-the history table lists all measurements, shows how many there are, sorts
-them on the server across all pages (newest first by default, the chosen
-order kept in the URL as `?sort=`) and
-offers edit and delete for each one; the note is shown only in the edit form,
-not in the table. The button for a new
-measurement sits next to the table heading. Body-Stats are private data and are available only
+the history grid lists all measurements, shows how many match, and sorts and
+filters on the server across all pages (newest first by default). Filters are
+a note search, a date range of its own (separate from the chart's date range),
+and column filters for date, each measurement and the note; the chosen filters
+and order are kept in the URL, and a view (filters, order and column layout)
+can be saved in the browser and applied again. Columns can be shown, hidden,
+resized, moved and pinned, and rows can be pinned above the results. Values
+and the note are edited directly in their cells; deleting asks for
+confirmation. The button for a new measurement sits next to the grid's result
+count; it saves a measurement at once, with the latest known values and no
+note, and pins it above the results so the user can fill in the cells. Body-Stats are private data and are available only
 within the owning user's personal context. The final list of supported
 measurements may be extended, but any additional values must remain consistent
 with the Dashboard's Body Metrics.

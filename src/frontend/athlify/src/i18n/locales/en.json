@@ -427,10 +427,6 @@
         "waterPercentage": "Water",
         "boneMass": "Bone mass"
       },
-      "fields": {
-        "date": "Date",
-        "note": "Note"
-      },
       "columnHints": {
         "bodyFatPercentage": "Share of body fat in your weight. Body composition scales estimate it; compare the trend rather than single values.",
         "musclePercentage": "Share of muscle mass in your weight, estimated by the body composition scale.",
@@ -438,7 +434,15 @@
         "boneMass": "Estimated weight of your bones. It barely changes over months."
       },
       "columns": {
-        "date": "Date"
+        "actions": "Actions",
+        "id": "ID",
+        "date": "Date",
+        "weight": "Weight",
+        "bodyFatPercentage": "Body fat",
+        "musclePercentage": "Muscle",
+        "waterPercentage": "Water",
+        "boneMass": "Bone mass",
+        "comment": "Note"
       },
       "kpi": {
         "group": "Measurements",
@@ -477,20 +481,18 @@
           "fromAfterTo": "The start date must be before the end date."
         }
       },
-      "history": "History",
       "add": {
         "open": "Add measurement",
-        "title": "New measurement",
         "success": "Measurement saved.",
         "errors": {
           "saveFailed": "Saving failed. Please try again."
         }
       },
       "edit": {
-        "title": "Edit measurement",
         "success": "Measurement updated.",
         "errors": {
-          "notFound": "This measurement no longer exists."
+          "notFound": "This measurement no longer exists.",
+          "saveFailed": "Saving failed. Please try again."
         }
       },
       "delete": {
@@ -500,12 +502,8 @@
         "success": "Measurement deleted.",
         "errors": {
           "failed": "Deleting failed. Please try again."
-        }
-      },
-      "row": {
-        "actionsColumn": "Actions",
-        "edit": "Edit measurement from {{date}}",
-        "delete": "Delete measurement from {{date}}"
+        },
+        "action": "Delete measurement"
       },
       "empty": {
         "title": "No measurements yet",
@@ -515,36 +513,89 @@
       "loadFailed": "Body stats could not be loaded.",
       "resultCount_one": "{{count}} measurement",
       "resultCount_other": "{{count}} measurements",
-      "loadMore": "Load more measurements",
-      "loadMoreFailed": "More measurements could not be loaded."
+      "controls": {
+        "title": "Filter measurements",
+        "quickFilter": "Search notes",
+        "fromFilter": "From",
+        "toFilter": "To",
+        "filterActions": "Filter actions",
+        "filterYtd": "Year to date",
+        "resetFilters": "Reset filters",
+        "resetTable": "Reset table",
+        "invalidDate": "Enter a valid date."
+      },
+      "views": {
+        "select": "Select saved view",
+        "choose": "Choose a view",
+        "saveCurrent": "Save current view",
+        "name": "View name",
+        "duplicateName": "A view with this name already exists.",
+        "save": "Save view",
+        "delete": "Delete view",
+        "storageFailed": "Views could not be saved in this browser."
+      },
+      "gridFilter": {
+        "none": "No filter",
+        "options": {
+          "equals": "Equals",
+          "notEqual": "Does not equal",
+          "contains": "Contains",
+          "notContains": "Does not contain",
+          "startsWith": "Starts with",
+          "endsWith": "Ends with",
+          "blank": "Blank",
+          "notBlank": "Not blank",
+          "lessThan": "Less than",
+          "greaterThan": "Greater than",
+          "inRange": "In range",
+          "before": "Before",
+          "after": "After"
+        }
+      },
+      "columnPicker": {
+        "open": "Columns",
+        "label": "Choose columns"
+      },
+      "pin": {
+        "pinRow": "Pin measurement",
+        "unpinRow": "Unpin measurement"
+      },
+      "table": {
+        "caption": "Measurements"
+      },
+      "emptyValue": "—"
     },
     "events": {
-      "controls": { "title": "Filter events" },
-        "gridFilter": {
-          "none": "No filter",
-          "options": {
-            "equals": "Equals",
-            "notEqual": "Does not equal",
-            "contains": "Contains",
-            "notContains": "Does not contain",
-            "startsWith": "Begins with",
-            "endsWith": "Ends with",
-            "blank": "Blank",
-            "notBlank": "Not blank",
-            "lessThan": "Less than",
-            "greaterThan": "Greater than",
-            "inRange": "Between",
-            "before": "Before",
-            "after": "After"
-          }
-        },
+      "controls": {
+        "title": "Filter events"
+      },
+      "gridFilter": {
+        "none": "No filter",
+        "options": {
+          "equals": "Equals",
+          "notEqual": "Does not equal",
+          "contains": "Contains",
+          "notContains": "Does not contain",
+          "startsWith": "Begins with",
+          "endsWith": "Ends with",
+          "blank": "Blank",
+          "notBlank": "Not blank",
+          "lessThan": "Less than",
+          "greaterThan": "Greater than",
+          "inRange": "Between",
+          "before": "Before",
+          "after": "After"
+        }
+      },
       "filterYtd": "This year",
       "filterActions": "Filter actions",
       "resetFilters": "Reset filters",
       "quickFilter": "Search events",
       "fromFilter": "From",
       "toFilter": "To",
-      "filter": { "invalidDate": "Enter a valid date." },
+      "filter": {
+        "invalidDate": "Enter a valid date."
+      },
       "views": {
         "select": "Saved views",
         "choose": "Choose a view",
@@ -564,7 +615,10 @@
         "success": "Event added.",
         "failed": "Could not add event."
       },
-      "columnPicker": { "open": "Columns", "label": "Choose columns" },
+      "columnPicker": {
+        "open": "Columns",
+        "label": "Choose columns"
+      },
       "columns": {
         "actions": "Actions",
         "id": "ID",
@@ -584,7 +638,10 @@
         "GOAL": "Goal",
         "OTHER": "Other"
       },
-      "typeFilter": { "ariaLabel": "Filter by event type", "selectAll": "Select all" },
+      "typeFilter": {
+        "ariaLabel": "Filter by event type",
+        "selectAll": "Select all"
+      },
       "pin": {
         "pinRow": "Pin event",
         "unpinRow": "Unpin event"
@@ -600,7 +657,9 @@
       },
       "emptyValue": "—",
       "loadFailed": "Events could not be loaded.",
-      "table": { "caption": "Events" }
+      "table": {
+        "caption": "Events"
+      }
     },
     "checklist": {
       "search": "Search …",

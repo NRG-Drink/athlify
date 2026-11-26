@@ -182,7 +182,7 @@ A domain page follows [ADR-007](adr/ADR-007-domain-page-pattern.md); the
 reference is `src/features/body-stats/`.
 
 - **Data:** the page runs one query. Each component that shows data declares a
-  plural Relay fragment (`bodyStatsSeries_entries`, `BodyStatsTable_entries`).
+  plural Relay fragment (`bodyStatsSeries_entries`).
   A mutation selects every field those fragments read through one shared
   fragment (`useBodyStatsMutations_entry`) so that a saved record is complete
   in the store.
@@ -212,10 +212,16 @@ reference is `src/features/body-stats/`.
   records. A range
   without data keeps the chart's height and explains that no measurements
   exist in the selected dates.
-- **Tables and grids:** Body-Stats history uses `DataTable`, which keeps its
-  server-sorted rows in server order and owns the count, cursor pagination and
-  loading skeleton. Activities and Events use the shared `AgGridTable` wrapper;
-  neither grid sorts or filters only the loaded page. Activities maps grid
+- **Tables and grids:** Activities, Events and the Body-Stats history use the
+  shared `AgGridTable` wrapper; no grid sorts or filters only the loaded page.
+  Events and Body-Stats read rows through the infinite row model and
+  `CursorInfiniteDatasource` ([ADR-013](adr/ADR-013-grid-lists-fetch-outside-the-relay-store.md)):
+  the quick (note) filter, the table's own date range (`tableFrom`, `tableTo`,
+  apart from the chart's `from`/`to`), column filters and sort go to the
+  server, state lives in the URL, and saved views and column layout live in
+  `localStorage` (`athlify.bodystats.*`). Body-Stats cells are edited inline;
+  Add creates a measurement at once from the latest known
+  values and pins it for completion; the delete confirmation remains. Activities maps grid
   filter and multi-sort changes to GraphQL variables, keeps query state in the
   URL, and automatically loads the next Relay cursor page at the scroll end.
   Its native text/date/number column filters and categorical checklist filters

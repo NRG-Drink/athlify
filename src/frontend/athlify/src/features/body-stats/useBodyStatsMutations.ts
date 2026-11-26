@@ -3,7 +3,7 @@ import { ConnectionHandler, ROOT_ID } from 'relay-runtime'
 import { useTranslation } from 'react-i18next'
 import { toaster } from '../../components/ui/toaster'
 import { removeFromConnections } from '../../relay/removeFromConnections'
-import { useBodyStatsHistorySort } from './bodyStatsSort'
+import type { BodyStatsRow } from './BodyStatsGridTypes'
 import type { useBodyStatsMutationsAddMutation } from './__generated__/useBodyStatsMutationsAddMutation.graphql'
 import type { useBodyStatsMutationsDeleteMutation } from './__generated__/useBodyStatsMutationsDeleteMutation.graphql'
 import type { useBodyStatsMutationsUpdateMutation } from './__generated__/useBodyStatsMutationsUpdateMutation.graphql'
@@ -28,6 +28,14 @@ const addMutation = graphql`
     addBodyStats(bodyStats: $input)
       @prependNode(connections: $connections, edgeTypeName: "BodyStatsEdge") {
       ...useBodyStatsMutations_entry
+      id
+      date
+      weight
+      bodyFatPercentage
+      musclePercentage
+      waterPercentage
+      boneMass
+      comment
     }
   }
 `
@@ -48,24 +56,28 @@ const deleteMutation = graphql`
 
 export type BodyStatsInput = useBodyStatsMutationsAddMutation['variables']['input']
 
-/** Keys of the analytics and history connections edited by Body-Stats mutations. */
+/** Key of the analytics connection edited by Body-Stats mutations. */
 const BODY_STATS_ANALYTICS_CONNECTION_KEY = 'BodyStatsPage_analytics__bodyStats'
-const BODY_STATS_HISTORY_CONNECTION_KEY = 'BodyStatsPage_history__bodyStats'
 
-/** The history connection is stored per `order`, so its id needs the order the table shows. */
-const connectionIds = (historyOrder: ReturnType<typeof useBodyStatsHistorySort>['order']) => [
+const connectionIds = () => [
   ConnectionHandler.getConnectionID(ROOT_ID, BODY_STATS_ANALYTICS_CONNECTION_KEY),
-  ConnectionHandler.getConnectionID(ROOT_ID, BODY_STATS_HISTORY_CONNECTION_KEY, {
-    order: historyOrder,
-  }),
 ]
 
 interface Callbacks {
-  /** Called after the server confirmed the change, so the dialog can close. */
+  /** Called after the server confirmed the change. */
   onSuccess: () => void
+  /** Called when the server or the network rejected the change, so an edited cell can be restored. */
+  onFailure?: () => void
+}
+
+interface UpdateCallbacks extends Callbacks {
+  /** Called when the entry no longer exists on the server, instead of `onSuccess`. */
+  onNotFound?: () => void
 }
 
 interface DeleteCallbacks {
+  /** Called once the entry is gone, also when the server no longer knew it. */
+  onDeleted: () => void
   /** Called when the request finished, successful or not, so the confirm dialog can close. */
   onSettled: () => void
 }
@@ -76,7 +88,6 @@ interface DeleteCallbacks {
  * the user gets a toast for every outcome.
  */
 export function useBodyStatsMutations() {
-  const { order: historyOrder } = useBodyStatsHistorySort()
   const { t } = useTranslation()
   const environment = useRelayEnvironment()
   const [commitAdd, isAdding] = useMutation<useBodyStatsMutationsAddMutation>(addMutation)
@@ -89,53 +100,77 @@ export function useBodyStatsMutations() {
     toaster.create({ type: 'error', title: t(key) })
   }
 
-  const removeLocally = (id: string) =>
-    removeFromConnections(environment, connectionIds(historyOrder), id)
+  const removeLocally = (id: string) => removeFromConnections(environment, connectionIds(), id)
 
-  const add = (input: BodyStatsInput, { onSuccess }: Callbacks) =>
+  const add = (
+    input: BodyStatsInput,
+    { onSuccess }: { onSuccess: (created: BodyStatsRow) => void },
+  ) =>
     commitAdd({
-      variables: { input, connections: connectionIds(historyOrder) },
+      variables: { input, connections: connectionIds() },
       onCompleted: (response, errors) => {
         if (errors?.length || !response.addBodyStats) {
           fail('bodyStats.add.errors.saveFailed')
           return
         }
         toaster.create({ type: 'success', title: t('bodyStats.add.success') })
-        onSuccess()
+        const {
+          id,
+          date,
+          weight,
+          bodyFatPercentage,
+          musclePercentage,
+          waterPercentage,
+          boneMass,
+          comment,
+        } = response.addBodyStats
+        onSuccess({
+          id,
+          date,
+          weight,
+          bodyFatPercentage,
+          musclePercentage,
+          waterPercentage,
+          boneMass,
+          comment,
+        })
       },
       onError: () => fail('bodyStats.add.errors.saveFailed'),
     })
 
-  const update = (id: string, input: BodyStatsInput, { onSuccess }: Callbacks) =>
+  const update = (id: string, input: BodyStatsInput, { onSuccess, onFailure, onNotFound }: UpdateCallbacks) =>
     commitUpdate({
       variables: { id, input },
       onCompleted: (response, errors) => {
         if (errors?.length) {
-          fail('bodyStats.add.errors.saveFailed')
+          fail('bodyStats.edit.errors.saveFailed')
+          onFailure?.()
           return
         }
         if (!response.updateBodyStats) {
-          // The entry vanished on the server: drop it here as well.
           removeLocally(id)
           fail('bodyStats.edit.errors.notFound')
-          onSuccess()
+          onNotFound?.()
           return
         }
         toaster.create({ type: 'success', title: t('bodyStats.edit.success') })
         onSuccess()
       },
-      onError: () => fail('bodyStats.add.errors.saveFailed'),
+      onError: () => {
+        fail('bodyStats.edit.errors.saveFailed')
+        onFailure?.()
+      },
     })
 
-  const remove = (id: string, { onSettled }: DeleteCallbacks) =>
+  const remove = (id: string, { onSettled, onDeleted }: DeleteCallbacks) =>
     commitDelete({
       variables: { id },
       onCompleted: (_response, errors) => {
         if (errors?.length) fail('bodyStats.delete.errors.failed')
         else {
-          // Also when the server no longer knows it (`null`): either way it is gone.
           removeLocally(id)
           toaster.create({ type: 'success', title: t('bodyStats.delete.success') })
+          onDeleted()
         }
         onSettled()
       },

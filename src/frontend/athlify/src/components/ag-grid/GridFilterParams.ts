@@ -20,7 +20,7 @@ export async function clearNoOpGridFilters(
   return true
 }
 
-type GridFilterNamespace = 'activities' | 'events'
+type GridFilterNamespace = 'activities' | 'events' | 'bodyStats'
 
 const noFilterOption = (displayName: string) => ({
   displayKey: 'none',

@@ -2,14 +2,13 @@ import { act, screen, waitFor, within } from '@testing-library/react'
 import i18n from 'i18next'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BodyStatsPage } from '../../../features/body-stats/BodyStatsPage'
+import { mockGridViewport } from '../../utils/gridViewport'
 import { renderWithRelay } from '../../utils/relay'
-import { expectNoTooltip } from '../../utils/tooltip'
 
 const QUERY = 'BodyStatsPageQuery'
 const MORE = 'BodyStatsPageMoreQuery'
 const ADD = 'useBodyStatsMutationsAddMutation'
-const UPDATE = 'useBodyStatsMutationsUpdateMutation'
-const DELETE = 'useBodyStatsMutationsDeleteMutation'
+const GRID = 'BodyStatsGridPageQuery'
 
 interface Entry {
   id: string
@@ -48,30 +47,25 @@ const seed = [oldest, newest, longAgo, middle]
 
 type Handler = Parameters<typeof renderWithRelay>[1]
 
-/** `order` of the history query by default; the id keeps equal dates in a stable order. */
-const NEWEST_FIRST = [{ date: 'DESC' }, { id: 'DESC' }]
+const newestFirstRows = (entries: Entry[]) =>
+  [...entries].sort((left, right) => right.date.localeCompare(left.date))
 
-const isHistory = (operation: string) => operation.startsWith('BodyStatsPageHistory')
+const gridPage = (entries: Entry[]) => ({
+  data: {
+    bodyStats: {
+      totalCount: entries.length,
+      nodes: newestFirstRows(entries),
+      pageInfo: { endCursor: null, hasNextPage: false },
+    },
+  },
+})
 
-/**
- * The history table shows the rows in the order the server sends them, so the mocked server sorts
- * the history newest first, as the API does by default. The analytics query keeps the shuffled order.
- */
-const newestFirst = (result: unknown) => {
-  const data = (result as { data?: { bodyStats?: { edges: { node: Entry }[] } } } | undefined)?.data
-  const edges = data?.bodyStats?.edges
-  if (!edges) return result
-  const sorted = [...edges].sort((left, right) => right.node.date.localeCompare(left.node.date))
-  return { ...result!, data: { ...data, bodyStats: { ...data.bodyStats, edges: sorted } } }
-}
-
-const page = (handler: Handler, path = '/body-stats') =>
+/** The grid asks for its rows in its own query; by default the mocked server answers with the seed. */
+const page = (handler: Handler, path = '/body-stats', gridRows: Entry[] = seed) =>
   renderWithRelay(
     <BodyStatsPage />,
-    (operation, variables) => {
-      const result = handler(operation, variables)
-      return isHistory(operation) && !(result instanceof Promise) ? newestFirst(result) : result
-    },
+    (operation, variables) =>
+      operation === GRID ? gridPage(gridRows) : handler(operation, variables),
     { path, routePath: '/body-stats' },
   )
 
@@ -90,17 +84,17 @@ const okQuery = (entries: Entry[] = seed) => ({ data: { bodyStats: connection(en
 // Looked up by structure, not by name: the names change with the language, and a modal dialog hides
 // the page behind it from the accessibility tree, so these are called while no dialog is open.
 const tiles = () => within(document.querySelector('ul[aria-label]') as HTMLElement)
-const table = () => screen.getByRole('table')
-const bodyRows = () => within(table()).getAllByRole('row').slice(1)
-const rowCount = () => document.querySelectorAll('tbody tr').length
 
 beforeEach(() => {
+  mockGridViewport()
   // Only Date is faked, so periods are deterministic while timers keep working.
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date(2026, 9, 3, 12, 0))
 })
 
 afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.restoreAllMocks()
   vi.useRealTimers()
 })
 
@@ -129,7 +123,7 @@ describe('BodyStatsPage', () => {
       expect(calls(QUERY)).toHaveLength(1)
     })
 
-    it('keeps loading pages of the analytics history while the table shows its first page', async () => {
+    it('keeps loading pages of the analytics history', async () => {
       const { calls } = page((operation) =>
         operation === MORE
           ? { data: { bodyStats: connection([oldest, longAgo]) } }
@@ -140,8 +134,6 @@ describe('BodyStatsPage', () => {
 
       expect(calls(MORE)).toEqual([{ first: 200, after: 'bs-b' }])
       expect(calls(QUERY)).toHaveLength(1)
-      expect(rowCount()).toBe(2)
-      expect(screen.getByRole('button', { name: 'Weitere Messungen laden' })).toBeInTheDocument()
     })
 
     it('keeps the content on screen while further pages load', async () => {
@@ -174,7 +166,6 @@ describe('BodyStatsPage', () => {
         await screen.findByText('Body-Stats konnten nicht geladen werden.'),
       ).toBeInTheDocument()
 
-      expect(rowCount()).toBe(2)
       expect(calls(MORE)).toHaveLength(1)
     })
 
@@ -229,13 +220,14 @@ describe('BodyStatsPage', () => {
       await screen.findByRole('img', { name: /3 Messungen/ })
 
       await user.click(screen.getByRole('button', { name: /Zeitraum ändern: Zeitraum:/ }))
-      const from = screen.getByRole('textbox', { name: 'Von' })
-      const to = screen.getByRole('textbox', { name: 'Bis' })
+      const picker = await screen.findByRole('dialog')
+      const from = within(picker).getByRole('textbox', { name: 'Von' })
+      const to = within(picker).getByRole('textbox', { name: 'Bis' })
       await user.clear(from)
       await user.type(from, '01.01.2026')
       await user.clear(to)
       await user.type(to, '03.10.2026')
-      await user.click(screen.getByRole('button', { name: 'Anwenden' }))
+      await user.click(within(picker).getByRole('button', { name: 'Anwenden' }))
 
       expect(
         await screen.findByRole('img', {
@@ -302,22 +294,17 @@ describe('BodyStatsPage', () => {
       )
     })
 
-    it('uses the same names in tiles, table and form', async () => {
+    it('uses the same names in tiles and column picker', async () => {
       const { user } = page(() => okQuery())
       await tiles().findByRole('button', { name: /Gewicht/ })
       const names = ['Gewicht', 'Körperfett', 'Muskelanteil', 'Wasseranteil', 'Knochenmasse']
       for (const name of names) {
         expect(tiles().getByRole('button', { name: new RegExp(name) })).toBeInTheDocument()
-        expect(
-          within(table()).getByRole('button', { name: new RegExp(name), hidden: true }),
-        ).toBeInTheDocument()
       }
 
-      await user.click(screen.getByRole('button', { name: 'Messung erfassen' }))
-      const dialog = await screen.findByRole('dialog')
-
+      await user.click(await screen.findByRole('button', { name: 'Spalten' }))
       for (const name of names) {
-        expect(within(dialog).getByLabelText(new RegExp(`^${name}`))).toBeInTheDocument()
+        expect(await screen.findByRole('checkbox', { name })).toBeInTheDocument()
       }
     })
 
@@ -331,9 +318,6 @@ describe('BodyStatsPage', () => {
       expect(
         screen.getByRole('button', { name: /Change date range: Date range:/ }),
       ).toHaveTextContent('Date range: 05.07.2026 – 03.10.2026')
-      expect(within(table()).getByRole('button', { name: /Weight/ })).toBeInTheDocument()
-      // Dates keep DD.MM.YYYY in every language.
-      expect(within(bodyRows()[0]).getByText(/^02\.10\.2026, \d{2}:\d{2}$/)).toBeInTheDocument()
     })
   })
 
@@ -346,14 +330,17 @@ describe('BodyStatsPage', () => {
       expect(screen.getByRole('heading', { level: 1, name: 'Body-Stats' })).toBeInTheDocument()
     })
 
-    it('shows an empty state with the add action instead of an empty table', async () => {
-      const { user } = page(() => okQuery([]))
+    it('shows an empty state with the add action instead of an empty grid', async () => {
+      const { user, calls } = page((operation) =>
+        operation === ADD ? { data: { addBodyStats: entry('bs-new', '2026-10-03T10:00:00Z', 1) } } : okQuery([]),
+      )
 
       expect(await screen.findByText('Noch keine Messungen')).toBeInTheDocument()
-      expect(screen.queryByRole('table')).not.toBeInTheDocument()
+      expect(screen.queryByRole('grid')).not.toBeInTheDocument()
 
       await user.click(screen.getByRole('button', { name: 'Erste Messung erfassen' }))
-      expect(await screen.findByRole('dialog')).toBeInTheDocument()
+      await waitFor(() => expect(calls(ADD)).toHaveLength(1))
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     })
 
     it('shows a load error inside the page and retries with a new request', async () => {
@@ -404,264 +391,68 @@ describe('BodyStatsPage', () => {
     })
   })
 
-  describe('history paging', () => {
-    const HISTORY = 'BodyStatsPageHistoryQuery'
-    const HISTORY_MORE = 'BodyStatsPageHistoryMoreQuery'
-    const LOAD_MORE = { name: 'Weitere Messungen laden' }
-
-    it('loads the next history page on request and appends it', async () => {
-      const { calls, user } = page((operation) => {
-        if (operation === HISTORY_MORE) return { data: { bodyStats: connection([longAgo]) } }
-        if (operation === HISTORY)
-          return { data: { bodyStats: connection([newest, middle], true) } }
-        return okQuery()
-      })
-
-      await user.click(await screen.findByRole('button', LOAD_MORE))
-
-      await waitFor(() => expect(rowCount()).toBe(3))
-      expect(calls(HISTORY_MORE)).toEqual([{ first: 50, after: 'bs-b', order: NEWEST_FIRST }])
-      expect(screen.queryByRole('button', LOAD_MORE)).not.toBeInTheDocument()
-    })
-
-    it('keeps the rows, shows an alert and retries the same cursor', async () => {
-      vi.spyOn(console, 'error').mockImplementation(() => {})
-      let attempt = 0
-      const { calls, user } = page((operation) => {
-        if (operation === HISTORY_MORE) {
-          attempt += 1
-          return attempt === 1
-            ? { data: null, errors: [{ message: 'boom' }] }
-            : { data: { bodyStats: connection([longAgo]) } }
-        }
-        if (operation === HISTORY)
-          return { data: { bodyStats: connection([newest, middle], true) } }
-        return okQuery()
-      })
-
-      await user.click(await screen.findByRole('button', LOAD_MORE))
-      const alert = await screen.findByRole('alert')
-
-      expect(alert).toHaveTextContent('Weitere Messungen konnten nicht geladen werden.')
-      expect(rowCount()).toBe(2)
-      await user.click(screen.getByRole('button', { name: 'Erneut versuchen' }))
-
-      await waitFor(() => expect(rowCount()).toBe(3))
-      expect(calls(HISTORY_MORE)).toEqual([
-        { first: 50, after: 'bs-b', order: NEWEST_FIRST },
-        { first: 50, after: 'bs-b', order: NEWEST_FIRST },
-      ])
-    })
-
-    it('offers no load-more action when the history is complete', async () => {
-      page(() => okQuery())
-
-      await tiles().findByRole('button', { name: /Gewicht/ })
-
-      expect(screen.queryByRole('button', LOAD_MORE)).not.toBeInTheDocument()
-    })
-
-    it('retries a failed history load with a new request', async () => {
-      vi.spyOn(console, 'error').mockImplementation(() => {})
-      let attempt = 0
-      const { calls, user } = page((operation) => {
-        if (operation === HISTORY) {
-          attempt += 1
-          return attempt === 1
-            ? Promise.reject(new Error('offline'))
-            : Promise.resolve({ data: { bodyStats: connection([newest, middle]) } })
-        }
-        return okQuery()
-      })
-
-      const alert = await screen.findByRole('alert')
-      await user.click(within(alert).getByRole('button', { name: 'Erneut versuchen' }))
-
-      await waitFor(() => expect(rowCount()).toBe(2))
-      expect(calls(HISTORY)).toHaveLength(2)
-    })
-  })
-
-  describe('history sorting and count', () => {
-    it('shows how many measurements exist across all pages', async () => {
-      page((operation) =>
-        isHistory(operation)
-          ? { data: { bodyStats: { ...connection(seed), totalCount: 120 } } }
-          : okQuery(),
-      )
-
-      expect(await screen.findByText('120 Messungen')).toBeInTheDocument()
-    })
-
-    it('sorts on the server: a header click sends the order and writes it to the URL', async () => {
-      const { user, router, calls } = page(() => okQuery())
-      await screen.findByRole('table')
-      const header = within(table()).getByRole('columnheader', { name: /Gewicht/ })
-
-      await user.click(within(header).getByRole('button'))
-
-      expect(router.state.location.search).toBe('?sort=-weight')
-      await waitFor(() =>
-        expect(calls('BodyStatsPageHistoryQuery').at(-1)).toEqual({
-          order: [{ weight: 'DESC' }, { id: 'DESC' }],
-        }),
-      )
-      await waitFor(() => expect(header).toHaveAttribute('aria-sort', 'descending'))
-      // The chart is not reloaded by a sort of the table.
-      expect(calls(QUERY)).toHaveLength(1)
-    })
-
-    it('reads the order from the URL', async () => {
-      const { calls } = page(() => okQuery(), '/body-stats?sort=boneMass')
-      await screen.findByRole('table')
-
-      expect(calls('BodyStatsPageHistoryQuery')[0]).toEqual({
-        order: [{ boneMass: 'ASC' }, { id: 'DESC' }],
-      })
-    })
-  })
-
-  describe('header explanations', () => {
-    // The body composition columns are hidden below sm, which jsdom applies; find them by their text.
-    const headerButton = (label: string) =>
-      within(within(table()).getByText(label).closest('th') as HTMLElement).getByRole('button', {
-        hidden: true,
-      })
-
-    it('explains the estimated body composition values', async () => {
-      const { user } = page(() => okQuery())
-      await screen.findByRole('table')
-
-      await user.hover(headerButton('Körperfett'))
-      expect(
-        await screen.findByText(/Anteil des Körperfetts an deinem Gewicht\./),
-      ).toBeInTheDocument()
-    })
-
-    it('does not explain the weight', async () => {
-      const { user } = page(() => okQuery())
-      await screen.findByRole('table')
-
-      await user.hover(headerButton('Gewicht'))
-      await expectNoTooltip()
-    })
-  })
-
   describe('adding', () => {
-    const added = entry('bs-new', '2026-10-03T10:00:00Z', 72.5, 'neu')
+    const added = entry('bs-new', '2026-10-03T10:00:00Z', 70.5)
 
-    it('prefills from the newest measurement, not from the first one delivered', async () => {
-      const { user } = page(() => okQuery())
-      await tiles().findByRole('button', { name: /Gewicht/ })
-
-      await user.click(screen.getByRole('button', { name: 'Messung erfassen' }))
-      const dialog = await screen.findByRole('dialog', { name: 'Neue Messung' })
-
-      expect(within(dialog).getByLabelText(/^Gewicht/)).toHaveValue('70.5')
-    })
-
-    it('validates the form and sends nothing while it is invalid', async () => {
-      const { user, calls } = page(() => okQuery([]))
-      await user.click(await screen.findByRole('button', { name: 'Erste Messung erfassen' }))
-      const dialog = await screen.findByRole('dialog')
-
-      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
-
-      expect(await within(dialog).findAllByText('Pflichtfeld.')).toHaveLength(5)
-      expect(calls(ADD)).toHaveLength(0)
-    })
-
-    it('rejects values outside the allowed range', async () => {
-      const { user, calls } = page(() => okQuery())
-      await user.click(await screen.findByRole('button', { name: 'Messung erfassen' }))
-      const dialog = await screen.findByRole('dialog')
-
-      const fat = within(dialog).getByLabelText(/^Körperfett/)
-      await user.clear(fat)
-      await user.type(fat, '120')
-      const weight = within(dialog).getByLabelText(/^Gewicht/)
-      await user.clear(weight)
-      await user.type(weight, '0')
-      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
-
-      expect(
-        await within(dialog).findByText('Bitte einen Wert zwischen 0 und 100 eingeben.'),
-      ).toBeInTheDocument()
-      expect(
-        within(dialog).getByText('Bitte einen Wert grösser als 0 eingeben.'),
-      ).toBeInTheDocument()
-      expect(calls(ADD)).toHaveLength(0)
-    })
-
-    it('sends a decimal comma as a number, trims the note, and shows the new row without refetching', async () => {
+    it('creates a measurement at once from the latest values, without a form', async () => {
       const { user, calls } = page((operation) =>
         operation === ADD ? { data: { addBodyStats: added } } : okQuery(),
       )
-      await screen.findByRole('table')
-      expect(rowCount()).toBe(4)
-      await user.click(screen.getByRole('button', { name: 'Messung erfassen' }))
-      const dialog = await screen.findByRole('dialog')
+      await screen.findByRole('grid')
+      await user.click(await screen.findByRole('button', { name: 'Messung erfassen' }))
 
-      const weight = within(dialog).getByLabelText(/^Gewicht/)
-      await user.clear(weight)
-      await user.type(weight, '72,5')
-      await user.type(within(dialog).getByRole('textbox', { name: 'Notiz' }), '  neu  ')
-      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
-
-      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+      await waitFor(() => expect(calls(ADD)).toHaveLength(1))
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
       expect(calls(ADD)).toEqual([
         {
           input: {
             date: new Date(2026, 9, 3, 12, 0).toISOString(),
-            weight: 72.5,
+            weight: 70.5,
             bodyFatPercentage: 15.2,
             musclePercentage: 40.3,
             waterPercentage: 60.1,
             boneMass: 3.2,
-            comment: 'neu',
+            comment: null,
           },
-          connections: [
-            expect.stringContaining('BodyStatsPage_analytics__bodyStats'),
-            expect.stringContaining('BodyStatsPage_history__bodyStats'),
-          ],
+          connections: [expect.stringContaining('BodyStatsPage_analytics__bodyStats')],
         },
       ])
-      expect(rowCount()).toBe(5)
-      expect(within(table()).getByText('72.5')).toBeInTheDocument()
       expect(await screen.findByText('Messung gespeichert.')).toBeInTheDocument()
       expect(calls(QUERY)).toHaveLength(1)
     })
 
-    it('shows a new measurement while the history is sorted by weight', async () => {
-      const { user } = page(
-        (operation) => (operation === ADD ? { data: { addBodyStats: added } } : okQuery()),
-        '/body-stats?sort=weight',
+    it('creates a first measurement with valid placeholders from the empty state', async () => {
+      const { user, calls } = page((operation) =>
+        operation === ADD ? { data: { addBodyStats: added } } : okQuery([]),
       )
-      await screen.findByRole('table')
-      await user.click(screen.getByRole('button', { name: 'Messung erfassen' }))
-      const dialog = await screen.findByRole('dialog')
-      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
+      await user.click(await screen.findByRole('button', { name: 'Erste Messung erfassen' }))
 
-      await waitFor(() => expect(rowCount()).toBe(5))
+      await waitFor(() => expect(calls(ADD)).toHaveLength(1))
+      expect(calls(ADD)[0]).toMatchObject({
+        input: {
+          weight: 1,
+          bodyFatPercentage: 0,
+          musclePercentage: 0,
+          waterPercentage: 0,
+          boneMass: 1,
+          comment: null,
+        },
+      })
     })
 
-    it('keeps the dialog and its values when saving fails', async () => {
-      const { user } = page((operation) =>
+    it('tells the user when saving fails', async () => {
+      const { user, calls } = page((operation) =>
         operation === ADD ? { data: null, errors: [{ message: 'boom' }] } : okQuery(),
       )
       await user.click(await screen.findByRole('button', { name: 'Messung erfassen' }))
-      const dialog = await screen.findByRole('dialog')
-
-      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
 
       expect(
         await screen.findByText('Speichern fehlgeschlagen. Bitte versuche es nochmals.'),
       ).toBeInTheDocument()
-      expect(screen.getByRole('dialog')).toBeInTheDocument()
-      expect(within(screen.getByRole('dialog')).getByLabelText(/^Gewicht/)).toHaveValue('70.5')
+      expect(calls(ADD)).toHaveLength(1)
     })
 
-    it('sends one request when the save button is pressed twice', async () => {
+    it('sends one request when the button is pressed twice', async () => {
       let finish: (value: unknown) => void = () => {}
       const pending = new Promise((resolve) => {
         finish = resolve
@@ -669,220 +460,13 @@ describe('BodyStatsPage', () => {
       const { user, calls } = page((operation) =>
         operation === ADD ? (pending as never) : okQuery(),
       )
-      await user.click(await screen.findByRole('button', { name: 'Messung erfassen' }))
-      const dialog = await screen.findByRole('dialog')
-      const save = within(dialog).getByRole('button', { name: 'Speichern' })
+      const button = await screen.findByRole('button', { name: 'Messung erfassen' })
 
-      await user.click(save)
-      await user.click(save)
+      await user.click(button)
+      await user.click(button)
 
       expect(calls(ADD)).toHaveLength(1)
-      expect(save).toBeDisabled()
       await act(async () => finish({ data: { addBodyStats: added } }))
-    })
-  })
-
-  describe('editing', () => {
-    const openEditor = async (user: ReturnType<typeof page>['user']) => {
-      await user.click(
-        await screen.findByRole('row', { name: 'Messung vom 02.10.2026 bearbeiten' }),
-      )
-      return screen.findByRole('dialog', { name: 'Messung bearbeiten' })
-    }
-
-    it('edits through the row action with the note prefilled, and updates the row in place', async () => {
-      const { user, calls } = page((operation) =>
-        operation === UPDATE
-          ? {
-              data: {
-                updateBodyStats: {
-                  ...newest,
-                  weight: 69,
-                  comment: 'Locker',
-                },
-              },
-            }
-          : okQuery(),
-      )
-      const dialog = await openEditor(user)
-      expect(within(dialog).getByLabelText(/^Gewicht/)).toHaveValue('70.5')
-      expect(within(dialog).getByRole('textbox', { name: 'Notiz' })).toHaveValue('Locker')
-
-      const weight = within(dialog).getByLabelText(/^Gewicht/)
-      await user.clear(weight)
-      await user.type(weight, '69')
-      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
-
-      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
-      expect(calls(UPDATE)).toHaveLength(1)
-      expect(calls(UPDATE)[0]).toMatchObject({
-        id: 'bs-a',
-        input: { weight: 69, comment: 'Locker' },
-      })
-      expect(await within(table()).findByText('69.0')).toBeInTheDocument()
-      expect(calls(QUERY)).toHaveLength(1)
-    })
-
-    it('opens the editor by clicking a row', async () => {
-      const { user } = page(() => okQuery())
-      await screen.findByRole('table')
-      const dateTime = within(bodyRows()[0]).getByText(/02\.10\.2026/)
-
-      expect(dateTime).toHaveTextContent(/\d{2}:\d{2}/)
-      await user.click(dateTime)
-
-      expect(await screen.findByRole('dialog', { name: 'Messung bearbeiten' })).toBeInTheDocument()
-    })
-
-    it('removes an entry that no longer exists on the server and tells the user', async () => {
-      const { user } = page((operation) =>
-        operation === UPDATE ? { data: { updateBodyStats: null } } : okQuery(),
-      )
-      const dialog = await openEditor(user)
-
-      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
-
-      expect(await screen.findByText('Diese Messung existiert nicht mehr.')).toBeInTheDocument()
-      await waitFor(() => expect(rowCount()).toBe(3))
-    })
-
-    it('keeps the entry when the server rejects the change', async () => {
-      const { user } = page((operation) =>
-        operation === UPDATE
-          ? { data: { updateBodyStats: null }, errors: [{ message: 'Invalid' }] }
-          : okQuery(),
-      )
-      const dialog = await openEditor(user)
-
-      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
-
-      expect(
-        await screen.findByText('Speichern fehlgeschlagen. Bitte versuche es nochmals.'),
-      ).toBeInTheDocument()
-      expect(screen.getByRole('dialog')).toBeInTheDocument()
-      expect(rowCount()).toBe(4)
-    })
-
-    it('sends the edited note, and a cleared note as no note', async () => {
-      const { user, calls } = page((operation) =>
-        operation === UPDATE ? { data: { updateBodyStats: newest } } : okQuery(),
-      )
-      let dialog = await openEditor(user)
-
-      const note = within(dialog).getByRole('textbox', { name: 'Notiz' })
-      await user.clear(note)
-      await user.type(note, 'Müde')
-      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
-      await waitFor(() => expect(calls(UPDATE)).toHaveLength(1))
-      expect(calls(UPDATE)[0]).toMatchObject({
-        input: { comment: 'Müde' },
-      })
-
-      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
-      dialog = await openEditor(user)
-      await user.clear(within(dialog).getByRole('textbox', { name: 'Notiz' }))
-      await user.click(within(dialog).getByRole('button', { name: 'Speichern' }))
-      await waitFor(() => expect(calls(UPDATE)).toHaveLength(2))
-      expect(calls(UPDATE)[1]).toMatchObject({ input: { comment: null } })
-    })
-
-    it('has no notes column and shows the add button beside the table heading', async () => {
-      page(() => okQuery())
-      await screen.findByRole('table')
-
-      expect(within(table()).queryByRole('button', { name: /Notiz/ })).not.toBeInTheDocument()
-      expect(screen.queryByText('Locker')).not.toBeInTheDocument()
-      const heading = screen.getByRole('heading', { level: 2, name: 'Verlauf' })
-      expect(
-        within(heading.parentElement as HTMLElement).getByRole('button', {
-          name: 'Messung erfassen',
-        }),
-      ).toBeInTheDocument()
-    })
-  })
-
-  describe('deleting', () => {
-    const openConfirm = async (user: ReturnType<typeof page>['user']) => {
-      await user.click(
-        await screen.findByRole('button', { name: 'Messung vom 02.10.2026 löschen' }),
-      )
-      return screen.findByRole('alertdialog', { name: 'Messung löschen?' })
-    }
-
-    it('asks for confirmation and keeps the entry when cancelled', async () => {
-      const { user, calls } = page(() => okQuery())
-
-      const confirm = await openConfirm(user)
-      expect(confirm).toHaveTextContent('Die Messung vom 02.10.2026 (70.5 kg)')
-      await user.click(within(confirm).getByRole('button', { name: 'Abbrechen' }))
-
-      await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
-      expect(calls(DELETE)).toHaveLength(0)
-      expect(rowCount()).toBe(4)
-    })
-
-    it('keeps the entry when the server refuses the delete', async () => {
-      const { user } = page((operation) =>
-        operation === DELETE
-          ? { data: { deleteBodyStats: null }, errors: [{ message: 'Failed' }] }
-          : okQuery(),
-      )
-
-      const confirm = await openConfirm(user)
-      await user.click(within(confirm).getByRole('button', { name: 'Löschen' }))
-
-      expect(
-        await screen.findByText('Löschen fehlgeschlagen. Bitte versuche es nochmals.'),
-      ).toBeInTheDocument()
-      await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
-      expect(rowCount()).toBe(4)
-      expect(
-        screen.getByRole('button', { name: 'Messung vom 02.10.2026 löschen' }),
-      ).toBeInTheDocument()
-    })
-
-    it('deletes after confirmation without refetching the list', async () => {
-      const { user, calls } = page((operation) =>
-        operation === DELETE
-          ? { data: { deleteBodyStats: 'bs-a' } }
-          : { data: { bodyStats: { ...connection(seed), totalCount: 4 } } },
-      )
-      expect(await screen.findByText('4 Messungen')).toBeInTheDocument()
-
-      const confirm = await openConfirm(user)
-      await user.click(within(confirm).getByRole('button', { name: 'Löschen' }))
-
-      await waitFor(() => expect(rowCount()).toBe(3))
-      // The count above the table drops with the row.
-      expect(screen.getByText('3 Messungen')).toBeInTheDocument()
-      expect(calls(DELETE)).toEqual([{ id: 'bs-a' }])
-      expect(await screen.findByText('Messung gelöscht.')).toBeInTheDocument()
-      expect(calls(QUERY)).toHaveLength(1)
-    })
-
-    it('treats an entry that is already gone as deleted', async () => {
-      const { user } = page((operation) =>
-        operation === DELETE ? { data: { deleteBodyStats: null } } : okQuery(),
-      )
-
-      const confirm = await openConfirm(user)
-      await user.click(within(confirm).getByRole('button', { name: 'Löschen' }))
-
-      await waitFor(() => expect(rowCount()).toBe(3))
-    })
-
-    it('keeps the row and shows an error when deleting fails', async () => {
-      const { user } = page((operation) =>
-        operation === DELETE ? { data: null, errors: [{ message: 'boom' }] } : okQuery(),
-      )
-
-      const confirm = await openConfirm(user)
-      await user.click(within(confirm).getByRole('button', { name: 'Löschen' }))
-
-      expect(
-        await screen.findByText('Löschen fehlgeschlagen. Bitte versuche es nochmals.'),
-      ).toBeInTheDocument()
-      expect(rowCount()).toBe(4)
     })
   })
 })
