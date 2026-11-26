@@ -31,6 +31,17 @@ const columnHintKeys: Record<string, string> = {
   boneMass: 'bodyStats.columnHints.boneMass',
 }
 
+function getBodyStatsRowNumber(id: string | undefined): number | null {
+  if (!id) return null
+
+  try {
+    const match = atob(id).match(/^BodyStats:(\d+)$/)
+    return match ? Number(match[1]) : null
+  } catch {
+    return null
+  }
+}
+
 export function createBodyStatsColumnDefs({
   t,
   format,
@@ -53,7 +64,8 @@ export function createBodyStatsColumnDefs({
       filter: 'agNumberColumnFilter',
       filterParams: numberFilterParams,
       type: 'rightAligned',
-      minWidth: 120,
+      minWidth: 100,
+      width: 120,
       valueFormatter: ({ value }) =>
         typeof value === 'number' ? format.number(value, decimals) : emptyValue,
       valueParser: ({ newValue }) => parseDecimal(String(newValue)),
@@ -68,6 +80,7 @@ export function createBodyStatsColumnDefs({
       colId: 'actions',
       headerName: t('bodyStats.columns.actions'),
       minWidth: 100,
+      width: 100,
       pinned: 'left',
       filter: false,
       sortable: false,
@@ -108,11 +121,21 @@ export function createBodyStatsColumnDefs({
       },
     },
     {
+      field: 'id',
+      headerName: t('bodyStats.columns.id'),
+      width: 100,
+      hide: true,
+      filter: true,
+      pinned: 'left',
+      valueGetter: ({ data }) => getBodyStatsRowNumber(data?.id),
+    },
+    {
       field: 'date',
       headerName: t('bodyStats.columns.date'),
       filter: 'agDateColumnFilter',
       filterParams: dateFilterParams,
-      minWidth: 160,
+      minWidth: 120,
+      width: 150,
       pinned: 'left',
       valueFormatter: ({ value }) => (value ? format.dateTime(value) : emptyValue),
       valueParser: ({ newValue }) => parseDateTime(String(newValue))?.toISOString() ?? newValue,

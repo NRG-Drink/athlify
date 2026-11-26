@@ -11,6 +11,7 @@ export const BODY_STATS_TO_PARAM = 'tableTo'
 
 export const bodyStatsColumnIds = [
   'actions',
+  'id',
   'date',
   'weight',
   'bodyFatPercentage',
@@ -30,7 +31,7 @@ const bodyStatsFilterColumnIds = [
   'comment',
 ] as const
 
-export const bodyStatsSortableColumnIds = bodyStatsFilterColumnIds
+export const bodyStatsSortableColumnIds = [...bodyStatsFilterColumnIds, 'id'] as const
 
 export type BodyStatsFilterModel = Record<string, unknown>
 export type BodyStatsSortModel = SortModelItem[]

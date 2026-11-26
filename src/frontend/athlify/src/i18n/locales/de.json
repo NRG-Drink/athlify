@@ -435,6 +435,7 @@
       },
       "columns": {
         "actions": "Aktionen",
+        "id": "ID",
         "date": "Datum",
         "weight": "Gewicht",
         "bodyFatPercentage": "Körperfett",

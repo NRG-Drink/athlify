@@ -187,6 +187,24 @@ describe('BodyStatsPage grid', () => {
     })
   }, 30000)
 
+  it('offers the hidden ID column in the column picker', async () => {
+    const { user } = page()
+    await waitForRows()
+
+    await user.click(screen.getByRole('button', { name: 'Spalten' }))
+    const idColumn = await screen.findByRole('checkbox', { name: 'ID' })
+    expect(idColumn).not.toBeChecked()
+    await user.click(idColumn)
+
+    await waitFor(() => {
+      expect(
+        parseBodyStatsColumnState(localStorage.getItem(BODY_STATS_COLUMN_STORAGE_KEY)).find(
+          ({ colId }) => colId === 'id',
+        )?.hide,
+      ).toBe(false)
+    })
+  }, 20000)
+
   it('resets filters, sorting and column preferences', async () => {
     const { user, router } = page(undefined, '/body-stats?q=easy&tableFrom=2026-01-01')
     await waitForRows()

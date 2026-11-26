@@ -68,6 +68,7 @@ export function createEventsColumnDefs({
       colId: 'delete',
       headerName: t('events.columns.actions'),
       minWidth: 100,
+      width: 100,
       pinned: 'left',
       filter: false,
       sortable: false,
