@@ -35,6 +35,8 @@ type BodyStatsGridProps = {
   createdRow: BodyStatsRow | null
   isCreating: boolean
   onCreate: () => void
+  /** Called after a measurement was edited or deleted, so other views of the data can refresh. */
+  onDataChanged: () => void
   onColumnStateChange: (columns: BodyStatsColumnState[]) => void
   onGridStateChange: (filters: BodyStatsFilterModel, sort: BodyStatsSortModel) => void
 }
@@ -84,6 +86,7 @@ export function BodyStatsGrid({
   createdRow,
   isCreating,
   onCreate,
+  onDataChanged,
   onColumnStateChange,
   onGridStateChange,
 }: BodyStatsGridProps) {
@@ -145,15 +148,17 @@ export function BodyStatsGrid({
         current.map((pinned) => (pinned.id === row.id ? copyBodyStatsRow(row) : pinned)),
       )
       reloadRows()
+      onDataChanged()
     },
-    [reloadRows],
+    [onDataChanged, reloadRows],
   )
   const onBodyStatsGone = useCallback(
     (row: BodyStatsRow) => {
       setPinnedBodyStats((current) => current.filter((pinned) => pinned.id !== row.id))
       reloadRows()
+      onDataChanged()
     },
-    [reloadRows],
+    [onDataChanged, reloadRows],
   )
   const { isUpdating, onCellValueChanged } = useBodyStatsCellEdit(
     onBodyStatsUpdated,
@@ -284,10 +289,11 @@ export function BodyStatsGrid({
       onDeleted: () => {
         setPinnedBodyStats((current) => current.filter((pinned) => pinned.id !== id))
         reloadRows()
+        onDataChanged()
       },
       onSettled: () => setDeleting(null),
     })
-  }, [deleting, mutations, reloadRows])
+  }, [deleting, mutations, onDataChanged, reloadRows])
 
   const columnDefs = useMemo(
     () =>

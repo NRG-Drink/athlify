@@ -239,19 +239,15 @@ Multiple dated measurements are retained so that body development and trends
 remain visible on the Dashboard. Each Body-Stats entry can be viewed, updated
 and deleted by its owner. Deleting asks for confirmation.
 
-The Body-Stats page opens with one summary tile per measurement. A tile shows
-the latest value and its change within the selected date range; a missing value
-is shown as a dash, never as zero. Selecting a tile shows that measurement over
-time in a chart with its own unit and axis. The date range is selected
-dynamically with inclusive start and end dates, rather than from a fixed list
-of periods. The selected chart metric can be displayed at daily, weekly,
-monthly or yearly local-calendar resolution, or with aggregation disabled to
-show every measurement; each bucket uses the latest real measurement and does
-not alter the raw values used by tiles or the history table. Below the chart,
-the history grid lists all measurements, shows how many match, and sorts and
+The Body-Stats page opens with a chart of one selected measurement over
+time, drawn from exactly the measurements the history grid lists: the chart
+follows the grid's filters. A row of buttons selects the measurement; the
+chart has its own unit and axis. Above the chart, the latest value, the change
+from the first to the latest measurement, the average and the minimum and
+maximum are shown; a missing value is shown as a dash, never as zero. Below the chart,
+the history grid lists the measurements, shows how many match, and sorts and
 filters on the server across all pages (newest first by default). Filters are
-a note search, a date range of its own (separate from the chart's date range),
-and column filters for date, each measurement and the note; the chosen filters
+a note search, a date range, and column filters for date, each measurement and the note; the chosen filters
 and order are kept in the URL, and a view (filters, order and column layout)
 can be saved in the browser and applied again. Columns can be shown, hidden,
 resized, moved and pinned, and rows can be pinned above the results. Values

@@ -79,7 +79,7 @@ src/frontend/athlify/src/
 ├── features/         # one folder per domain area; body-stats/ is the reference (ADR-007)
 ├── theme/            # Chakra system: palette, semantic tokens, fonts (ADR-005)
 ├── components/       # domain-free building blocks (Page, QueryBoundary, DataTable, MetricChart,
-│                     #   KpiTile, DateRangePicker, FormDialog, ConfirmDialog, BrandMark, toggles, switcher)
+│                     #   KpiTile, FormDialog, ConfirmDialog, BrandMark, toggles, switcher)
 │   └── ui/           # generated Chakra UI snippets (provider, color-mode, toaster, tooltip; the Provider mounts the Toaster)
 ├── lib/              # pure functions: metrics, period, ticks
 ├── relay/            # Relay environment
@@ -181,43 +181,37 @@ the page header stays visible in both.
 A domain page follows [ADR-007](adr/ADR-007-domain-page-pattern.md); the
 reference is `src/features/body-stats/`.
 
-- **Data:** the page runs one query. Each component that shows data declares a
-  plural Relay fragment (`bodyStatsSeries_entries`).
-  A mutation selects every field those fragments read through one shared
+- **Data:** components that show store data declare a Relay fragment and a
+  mutation selects every field those fragments read through one shared
   fragment (`useBodyStatsMutations_entry`) so that a saved record is complete
-  in the store.
+  in the store. Body-Stats reads chart and grid rows with `fetchQuery` instead.
 - **Changes:** `use<Area>Mutations` adds, updates and deletes. Updates merge by
-  global ID; add and delete change the Relay connection (`@prependNode`,
-  `@deleteEdge`) once the server confirmed. There is no refetch and no
-  optimistic update.
+  global ID; where a list is a Relay connection, add and delete change it
+  (`@prependNode`, `@deleteEdge`) once the server confirmed. Body-Stats has no
+  connection: its page reloads the chart and the grid after a confirmed change.
+  There is no optimistic update.
 - **Lists:** a list is a Relay connection (`@connection` in a `@refetchable`
-  fragment on the page) with cursor paging from the API. The Body-Stats page
-  needs the whole history for chart and tiles, so it loads pages of 200 and
-  keeps calling `loadNext` until `hasNext` is false. A page that only needs the
-  newest entries stops after the first page.
-- **View state:** the selected metric and inclusive local date range live in
-  the URL; legacy `period` parameters remain readable for existing links.
+  fragment on the page) with cursor paging from the API. A page that only needs
+  the newest entries stops after the first page. Body-Stats reads its history
+  chart and its grid rows outside the Relay store (see below).
+- **View state:** the selected chart measurement (`metric`) lives in the URL.
 - **Formatting:** numbers, units and dates come from `useFormat()` in the active
   language; missing values show "—".
-- **Tiles and chart:** one `KpiTile` per measurement shows the latest value and
-  its change since the start of the selected date range without repeating the
-  range in every tile. Selecting a tile switches `MetricChart`, which draws
-  one measurement with its own unit and axis in `chart.primary`. The compact
-  `DateRangePicker` opens a responsive native-input editing surface: fields
-  are side by side on wider screens and stacked on phones; its resolution
-  selector supports no aggregation, daily, weekly, monthly and yearly chart
-  buckets. With aggregation disabled, every filtered measurement is shown;
-  otherwise chart aggregation keeps the latest real local-calendar measurement
-  per bucket, while KPI values and the history table remain based on raw
-  records. A range
-  without data keeps the chart's height and explains that no measurements
-  exist in the selected dates.
+- **Chart:** `BodyStatsChart` shows one measurement at a time, selected by a
+  button row, with the latest value, change, average and minimum/maximum above
+  `MetricChart`, which draws it with its own unit and axis in `chart.primary`.
+  The chart has no date range of its own: it loads every measurement that
+  matches the grid's filters (page filters and column filters, no sort) through
+  `useBodyStatsChartPoints`, pages of 200 with `fetchQuery` and `network-only`, oldest
+  first. A small page query (`BodyStatsPageQuery`) supplies the empty state and
+  the latest values for a new measurement. After an add, edit or delete the
+  page loads both again.
 - **Tables and grids:** Activities, Events and the Body-Stats history use the
   shared `AgGridTable` wrapper; no grid sorts or filters only the loaded page.
   Events and Body-Stats read rows through the infinite row model and
   `CursorInfiniteDatasource` ([ADR-013](adr/ADR-013-grid-lists-fetch-outside-the-relay-store.md)):
   the quick (note) filter, the table's own date range (`tableFrom`, `tableTo`,
-  apart from the chart's `from`/`to`), column filters and sort go to the
+  column filters and sort go to the
   server, state lives in the URL, and saved views and column layout live in
   `localStorage` (`athlify.bodystats.*`). Body-Stats cells are edited inline;
   Add creates a measurement at once from the latest known
@@ -306,7 +300,7 @@ flowchart LR
     API[(GraphQL API)]
     STORE[Relay store]
     PAGE[Page query]
-    VIEW[Tiles, chart and table]
+    VIEW[Chart and table]
     MUT[Mutation hook]
     PAGE -->|loads| API
     API -->|records| STORE

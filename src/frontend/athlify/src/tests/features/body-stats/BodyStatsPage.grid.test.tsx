@@ -30,11 +30,6 @@ const entry = (id: string, date: string, weight: number, comment: string | null 
 const newest = entry('bs-a', '2026-10-02T08:00:00Z', 70.5, 'Locker')
 const older = entry('bs-b', '2026-10-01T08:00:00Z', 71)
 
-const connection = (entries: ReturnType<typeof entry>[]) => ({
-  edges: entries.map((node) => ({ cursor: node.id, node })),
-  pageInfo: { hasNextPage: false, endCursor: null, hasPreviousPage: false, startCursor: null },
-})
-
 const gridPage = (nodes: ReturnType<typeof entry>[]) => ({
   data: {
     bodyStats: {
@@ -52,7 +47,10 @@ const page = (handler: Handler = () => undefined, path = '/body-stats', rows = [
     <BodyStatsPage />,
     (operation, variables) => {
       if (operation === GRID) return gridPage(rows)
-      if (operation === 'BodyStatsPageQuery') return { data: { bodyStats: connection(rows) } }
+      if (operation === 'BodyStatsPageQuery') {
+        return { data: { bodyStats: { totalCount: rows.length, nodes: rows.slice(0, 1) } } }
+      }
+      if (operation === 'BodyStatsChartPageQuery') return gridPage(rows)
       return handler(operation, variables)
     },
     { path, routePath: '/body-stats' },
@@ -99,11 +97,10 @@ describe('BodyStatsPage grid', () => {
     expect(await screen.findByText('2 Messungen')).toBeInTheDocument()
   })
 
-  it('restores URL filters and sorting, and keeps them apart from the chart range', async () => {
+  it('restores URL filters and sorting, and keeps the chart in step with them', async () => {
     const query = new URLSearchParams({
       q: 'easy',
       tableFrom: '2026-01-01',
-      from: '2026-02-01',
       gridFilters: JSON.stringify({ weight: { filter: 70, type: 'greaterThan' } }),
       gridSort: JSON.stringify([{ colId: 'weight', sort: 'desc' }]),
     })
@@ -113,6 +110,21 @@ describe('BodyStatsPage grid', () => {
       expect(calls(GRID)).toContainEqual(
         expect.objectContaining({
           order: [{ weight: 'DESC' }, { id: 'DESC' }],
+          where: {
+            and: [
+              {
+                and: [
+                  { date: { gte: dayStartIso('2026-01-01') } },
+                  { comment: { contains: 'easy' } },
+                ],
+              },
+              { weight: { gt: 70 } },
+            ],
+          },
+        }),
+      )
+      expect(calls('BodyStatsChartPageQuery')).toContainEqual(
+        expect.objectContaining({
           where: {
             and: [
               {

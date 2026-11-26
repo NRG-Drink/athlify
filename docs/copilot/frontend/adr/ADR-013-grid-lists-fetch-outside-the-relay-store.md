@@ -44,8 +44,7 @@ grids look and behave alike.
 **Chosen**: Option 2. A list that is shown in an AG Grid with column filters
 reads its rows through `CursorInfiniteDatasource` with `fetchQuery` and
 `network-only`. Mutations keep updating the normalized store for data that other
-components read from it (for Body-Stats, the analytics connection behind the
-chart and tiles), and the grid resets its datasource after a confirmed add,
+components read from it, and the grid resets its datasource after a confirmed add,
 update or delete.
 
 ## Consequences
@@ -62,7 +61,7 @@ update or delete.
 - A reset reloads the visible blocks after every change.
 - The row copies in the grid are not updated by the store; edits go through
   the datasource reset.
-- Body-Stats keeps two reads of the same data: the analytics connection (all
+- Body-Stats keeps two reads of the same data: the chart query (all matching
   pages) and the grid datasource (filtered pages).
 - Activities keep their option lists and the latest activity type in a small
   page query; the rows come from their own `fetchQuery`.

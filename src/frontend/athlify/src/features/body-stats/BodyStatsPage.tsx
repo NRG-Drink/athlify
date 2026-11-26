@@ -1,234 +1,150 @@
 import { Button, Stack } from '@chakra-ui/react'
-import { useEffect, useMemo, useState, useTransition } from 'react'
-import { graphql, useLazyLoadQuery, usePaginationFragment } from 'react-relay'
+import { useEffect, useMemo, useState } from 'react'
+import { graphql, useLazyLoadQuery } from 'react-relay'
 import { useTranslation } from 'react-i18next'
 import { LuActivity, LuPlus } from 'react-icons/lu'
 import { useSearchParams } from 'react-router-dom'
 import { Page, PageEmptyState } from '../../components/Page'
 import { QueryBoundary } from '../../components/QueryBoundary'
 import { useFetchKey } from '../../relay/useFetchKey'
-import { latest } from '../../lib/metrics'
-import {
-  defaultDateRange,
-  parseAggregation,
-  parseDateRange,
-  type Aggregation,
-  type DateRange,
-} from '../../lib/period'
-import { toaster } from '../../components/ui/toaster'
-import type { BodyStatsPage_analytics$key } from './__generated__/BodyStatsPage_analytics.graphql'
-import type { BodyStatsPageMoreQuery } from './__generated__/BodyStatsPageMoreQuery.graphql'
 import type { BodyStatsPageQuery } from './__generated__/BodyStatsPageQuery.graphql'
 import { BodyStatsChart } from './BodyStatsChart'
 import { newMeasurementInput } from './bodyStatsForm'
 import { BodyStatsGrid } from './BodyStatsGrid'
+import { getGridQuery } from './BodyStatsGridQuery'
 import { BodyStatsPageControls } from './BodyStatsPageControls'
 import type { BodyStatsRow } from './BodyStatsGridTypes'
-import { BodyStatsKpis } from './BodyStatsKpis'
 import { bodyStatsMetrics, parseMetric, type BodyStatsMetricKey } from './bodyStatsMetrics'
-import { useBodyStatsSeries } from './bodyStatsSeries'
 import { BodyStatsSkeleton } from './BodyStatsSkeleton'
 import { useBodyStatsMutations } from './useBodyStatsMutations'
 import { useBodyStatsPageState } from './useBodyStatsPageState'
 
-const ANALYTICS_PAGE_SIZE = 200
-
-const analyticsQuery = graphql`
+const overviewQuery = graphql`
   query BodyStatsPageQuery {
-    ...BodyStatsPage_analytics
-  }
-`
-
-const analyticsFragment = graphql`
-  fragment BodyStatsPage_analytics on Query
-  @refetchable(queryName: "BodyStatsPageMoreQuery")
-  @argumentDefinitions(first: { type: "Int", defaultValue: 200 }, after: { type: "String" }) {
-    bodyStats(first: $first, after: $after) @connection(key: "BodyStatsPage_analytics__bodyStats") {
-      edges {
-        node {
-          ...bodyStatsSeries_entries
-        }
-      }
-      pageInfo {
-        hasNextPage
+    bodyStats(first: 1, order: [{ date: DESC }, { id: DESC }]) {
+      totalCount
+      nodes {
+        weight
+        bodyFatPercentage
+        musclePercentage
+        waterPercentage
+        boneMass
       }
     }
   }
 `
 
-type AnalyticsStatus = 'pending' | 'ready' | 'empty'
+type LatestValues = Partial<Record<BodyStatsMetricKey, number>>
 
-interface AnalyticsProps {
+interface OverviewProps {
   fetchKey: number
   onCreate: () => void
   isCreating: boolean
-  onStatusChange: (status: Exclude<AnalyticsStatus, 'pending'>) => void
-  onLatestChange: (values: Partial<Record<BodyStatsMetricKey, number>>) => void
+  onOverviewChange: (overview: { isEmpty: boolean; latestValues: LatestValues }) => void
 }
 
-function BodyStatsAnalytics({
-  fetchKey,
-  onCreate,
-  isCreating,
-  onStatusChange,
-  onLatestChange,
-}: AnalyticsProps) {
+/** Loads whether any measurement exists and the latest values; shows the empty state if none. */
+function BodyStatsOverview({ fetchKey, onCreate, isCreating, onOverviewChange }: OverviewProps) {
   const { t } = useTranslation()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const [isChartPending, startChartTransition] = useTransition()
-  const [pagingFailed, setPagingFailed] = useState(false)
-  const queryData = useLazyLoadQuery<BodyStatsPageQuery>(
-    analyticsQuery,
+  const data = useLazyLoadQuery<BodyStatsPageQuery>(
+    overviewQuery,
     {},
-    { fetchKey, fetchPolicy: 'store-or-network' },
+    { fetchKey, fetchPolicy: 'network-only' },
   )
-  const { data, hasNext, isLoadingNext, loadNext } = usePaginationFragment<
-    BodyStatsPageMoreQuery,
-    BodyStatsPage_analytics$key
-  >(analyticsFragment, queryData)
-  const bodyStats = useMemo(
-    () => (data.bodyStats?.edges ?? []).map((edge) => edge.node),
-    [data.bodyStats],
-  )
-
-  useEffect(() => {
-    onStatusChange(bodyStats.length === 0 && !hasNext ? 'empty' : 'ready')
-  }, [bodyStats.length, hasNext, onStatusChange])
-
-  useEffect(() => {
-    if (!hasNext || isLoadingNext || pagingFailed) return
-    startChartTransition(() => {
-      loadNext(ANALYTICS_PAGE_SIZE, {
-        onComplete: (error) => {
-          if (!error) return
-          setPagingFailed(true)
-          toaster.create({ type: 'error', title: t('bodyStats.loadFailed') })
-        },
-      })
-    })
-  }, [hasNext, isLoadingNext, loadNext, pagingFailed, startChartTransition, t])
-
-  const series = useBodyStatsSeries(bodyStats)
+  const newest = data.bodyStats?.nodes?.[0]
+  const isEmpty = (data.bodyStats?.totalCount ?? 0) === 0
   const latestValues = useMemo(() => {
-    const values: Partial<Record<BodyStatsMetricKey, number>> = {}
-    for (const { key } of bodyStatsMetrics) values[key] = latest(series[key])?.value
+    const values: LatestValues = {}
+    if (newest) for (const { key } of bodyStatsMetrics) values[key] = newest[key]
     return values
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bodyStats])
+  }, [newest])
 
-  useEffect(() => onLatestChange(latestValues), [latestValues, onLatestChange])
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const now = useMemo(() => new Date(), [bodyStats])
-  const metric = parseMetric(searchParams.get('metric'))
-  const range = parseDateRange(
-    searchParams.get('from'),
-    searchParams.get('to'),
-    defaultDateRange(now),
-    now,
-    searchParams.get('period'),
+  useEffect(
+    () => onOverviewChange({ isEmpty, latestValues }),
+    [isEmpty, latestValues, onOverviewChange],
   )
-  const aggregation = parseAggregation(searchParams.get('aggregation'))
 
-  const setView = (next: {
-    metric?: BodyStatsMetricKey
-    range?: DateRange
-    aggregation?: Aggregation
-  }) =>
-    startChartTransition(() =>
-      setSearchParams(
-        (current) => {
-          const params = new URLSearchParams(current)
-          if (next.metric) params.set('metric', next.metric)
-          if (next.range) {
-            params.set('from', next.range.from)
-            params.set('to', next.range.to)
-            params.delete('period')
-          }
-          if (next.aggregation) params.set('aggregation', next.aggregation)
-          return params
-        },
-        { replace: true },
-      ),
-    )
-
-  if (bodyStats.length === 0 && !hasNext) {
-    return (
-      <PageEmptyState
-        icon={LuActivity}
-        title={t('bodyStats.empty.title')}
-        message={t('bodyStats.empty.message')}
-        action={
-          <Button onClick={onCreate} loading={isCreating}>
-            <LuPlus aria-hidden />
-            {t('bodyStats.empty.action')}
-          </Button>
-        }
-      />
-    )
-  }
+  if (!isEmpty) return null
 
   return (
-    <Stack gap="8">
-      <BodyStatsKpis
-        series={series}
-        metric={metric}
-        range={range}
-        onSelectMetric={(next) => setView({ metric: next })}
-      />
-      <BodyStatsChart
-        series={series}
-        metric={metric}
-        range={range}
-        aggregation={aggregation}
-        isPending={isChartPending}
-        onRangeChange={(next) => setView({ range: next.range, aggregation: next.aggregation })}
-      />
-    </Stack>
+    <PageEmptyState
+      icon={LuActivity}
+      title={t('bodyStats.empty.title')}
+      message={t('bodyStats.empty.message')}
+      action={
+        <Button onClick={onCreate} loading={isCreating}>
+          <LuPlus aria-hidden />
+          {t('bodyStats.empty.action')}
+        </Button>
+      }
+    />
   )
 }
 
 interface ContentProps {
-  analyticsFetchKey: number
-  retryAnalytics: () => void
+  overviewFetchKey: number
+  refreshOverview: () => void
 }
 
-function BodyStatsContent({ analyticsFetchKey, retryAnalytics }: ContentProps) {
+function BodyStatsContent({ overviewFetchKey, refreshOverview }: ContentProps) {
   const { t } = useTranslation()
-  const [analyticsStatus, setAnalyticsStatus] = useState<AnalyticsStatus>('pending')
-  const [latestValues, setLatestValues] = useState<Partial<Record<BodyStatsMetricKey, number>>>({})
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [overview, setOverview] = useState<{ isEmpty: boolean; latestValues: LatestValues } | null>(
+    null,
+  )
   const [gridRefreshVersion, setGridRefreshVersion] = useState(0)
   const [createdRow, setCreatedRow] = useState<BodyStatsRow | null>(null)
   const mutations = useBodyStatsMutations()
   const state = useBodyStatsPageState()
+  const metric = parseMetric(searchParams.get('metric'))
+  const chartWhere = useMemo(
+    () => getGridQuery([], state.filterModel, state.where).where,
+    [state.filterModel, state.where],
+  )
 
   const createMeasurement = () =>
-    mutations.add(newMeasurementInput(latestValues), {
+    mutations.add(newMeasurementInput(overview?.latestValues ?? {}), {
       onSuccess: (created) => {
         setCreatedRow(created)
         setGridRefreshVersion((version) => version + 1)
+        refreshOverview()
       },
     })
+
+  const selectMetric = (next: BodyStatsMetricKey) =>
+    setSearchParams(
+      (current) => {
+        const params = new URLSearchParams(current)
+        params.set('metric', next)
+        return params
+      },
+      { replace: true },
+    )
 
   return (
     <Stack gap="8">
       <QueryBoundary
-        onRetry={retryAnalytics}
+        onRetry={refreshOverview}
         fallback={<BodyStatsSkeleton />}
         errorMessage={t('bodyStats.loadFailed')}
       >
-        <BodyStatsAnalytics
-          fetchKey={analyticsFetchKey}
+        <BodyStatsOverview
+          fetchKey={overviewFetchKey}
           onCreate={createMeasurement}
           isCreating={mutations.isSaving}
-          onStatusChange={setAnalyticsStatus}
-          onLatestChange={setLatestValues}
+          onOverviewChange={setOverview}
         />
       </QueryBoundary>
 
-      {analyticsStatus !== 'empty' && (
+      {overview && !overview.isEmpty && (
         <Stack gap="6">
           <BodyStatsPageControls filters={state.filters} views={state.views} />
+          <BodyStatsChart
+            where={chartWhere}
+            refreshKey={overviewFetchKey}
+            metric={metric}
+            onMetricChange={selectMetric}
+          />
           <BodyStatsGrid
             where={state.where}
             filterModel={state.filterModel}
@@ -239,6 +155,7 @@ function BodyStatsContent({ analyticsFetchKey, retryAnalytics }: ContentProps) {
             createdRow={createdRow}
             isCreating={mutations.isSaving}
             onCreate={createMeasurement}
+            onDataChanged={refreshOverview}
             onColumnStateChange={state.onColumnStateChange}
             onGridStateChange={state.onGridStateChange}
           />
@@ -250,11 +167,11 @@ function BodyStatsContent({ analyticsFetchKey, retryAnalytics }: ContentProps) {
 
 export function BodyStatsPage() {
   const { t } = useTranslation()
-  const [analyticsFetchKey, retryAnalytics] = useFetchKey()
+  const [overviewFetchKey, refreshOverview] = useFetchKey()
 
   return (
     <Page title={t('nav.bodyStats')}>
-      <BodyStatsContent analyticsFetchKey={analyticsFetchKey} retryAnalytics={retryAnalytics} />
+      <BodyStatsContent overviewFetchKey={overviewFetchKey} refreshOverview={refreshOverview} />
     </Page>
   )
 }
