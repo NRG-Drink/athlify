@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { fetchQuery, graphql, useRelayEnvironment } from 'react-relay'
-import type { Environment } from 'relay-runtime'
+import type { Environment, GraphQLTaggedNode, OperationType } from 'relay-runtime'
 import type { ActivityRow, BodyRow } from '../../lib/aggregate'
 import { CTL_DAYS } from '../../lib/fitness'
 import { localDateKey, type DateRange } from '../../lib/period'
@@ -120,10 +120,33 @@ async function loadAll<T>(
 
 const network = { fetchPolicy: 'network-only' } as const
 
+/** Fetches every page of a connection, oldest first, past the cache. */
+function fetchAllPages<Q extends OperationType, T>(
+  environment: Environment,
+  query: GraphQLTaggedNode,
+  where: Q['variables'] extends { where?: infer W } ? W | undefined : never,
+  selectConnection: (response: Q['response']) => Connection<T> | undefined | null,
+): Promise<T[]> {
+  return loadAll(async (after) => {
+    const response = await fetchQuery<Q>(
+      environment,
+      query,
+      { first: PAGE_SIZE, after, where } as Q['variables'],
+      network,
+    ).toPromise()
+    return response ? selectConnection(response) : undefined
+  })
+}
+
 function shiftDays(dateKey: string, days: number): Date {
   const [year, month, day] = dateKey.split('-').map(Number)
   return new Date(year, month - 1, day + days)
 }
+
+type ConnectionNode<C> = C extends { nodes?: ReadonlyArray<infer N> | null } ? N : never
+type ActivityNode = ConnectionNode<useDashboardDataActivitiesQuery['response']['activities']>
+type BodyStatsNode = ConnectionNode<useDashboardDataBodyStatsQuery['response']['bodyStats']>
+type EventNode = ConnectionNode<useDashboardDataEventsQuery['response']['events']>
 
 type ActivitiesWhere = useDashboardDataActivitiesQuery$variables['where']
 
@@ -184,15 +207,12 @@ const loadActivityRows = async (
   environment: Environment,
   where: ActivitiesWhere,
 ): Promise<ActivityRow[]> => {
-  const rows = await loadAll(async (after) => {
-    const response = await fetchQuery<useDashboardDataActivitiesQuery>(
-      environment,
-      activitiesQuery,
-      { first: PAGE_SIZE, after, where },
-      network,
-    ).toPromise()
-    return response?.activities
-  })
+  const rows = await fetchAllPages<useDashboardDataActivitiesQuery, ActivityNode>(
+    environment,
+    activitiesQuery,
+    where,
+    (response) => response.activities,
+  )
   return rows.map((row) => ({
     date: new Date(row.date),
     time: row.time,
@@ -222,16 +242,12 @@ async function loadActivities(
 }
 
 async function loadBodyStats(environment: Environment, range: DateRange): Promise<BodyRow[]> {
-  const where = bodyStatsWhere(range)
-  const rows = await loadAll(async (after) => {
-    const response = await fetchQuery<useDashboardDataBodyStatsQuery>(
-      environment,
-      bodyStatsQuery,
-      { first: PAGE_SIZE, after, where },
-      network,
-    ).toPromise()
-    return response?.bodyStats
-  })
+  const rows = await fetchAllPages<useDashboardDataBodyStatsQuery, BodyStatsNode>(
+    environment,
+    bodyStatsQuery,
+    bodyStatsWhere(range),
+    (response) => response.bodyStats,
+  )
   return rows.map((row) => ({
     date: new Date(row.date),
     weight: row.weight,
@@ -243,16 +259,12 @@ async function loadBodyStats(environment: Environment, range: DateRange): Promis
 }
 
 async function loadEvents(environment: Environment, range: DateRange): Promise<DashboardEvent[]> {
-  const where = eventsWhere(range)
-  const rows = await loadAll(async (after) => {
-    const response = await fetchQuery<useDashboardDataEventsQuery>(
-      environment,
-      eventsQuery,
-      { first: PAGE_SIZE, after, where },
-      network,
-    ).toPromise()
-    return response?.events
-  })
+  const rows = await fetchAllPages<useDashboardDataEventsQuery, EventNode>(
+    environment,
+    eventsQuery,
+    eventsWhere(range),
+    (response) => response.events,
+  )
   return rows.map((row) => ({
     id: row.id,
     name: row.name,
