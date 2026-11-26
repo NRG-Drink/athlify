@@ -18,7 +18,7 @@ import {
   type ActivitiesColumnState,
   type ActivitiesSavedView,
 } from './ActivitiesGridState'
-import { localDateKey } from '../../lib/period'
+import { localDateKey, yearStartKey } from '../../lib/period'
 
 type ReplaceParams = (params: URLSearchParams) => void
 
@@ -92,7 +92,7 @@ export function useActivitiesPageState(
   )
   const onFilterYearToDate = useCallback(() => {
     const now = new Date()
-    const fromFilter = `${now.getFullYear()}-01-01`
+    const fromFilter = yearStartKey(now)
     changeQuery({ ...currentQuery, fromFilter, toFilter: localDateKey(now) })
   }, [changeQuery, currentQuery])
 

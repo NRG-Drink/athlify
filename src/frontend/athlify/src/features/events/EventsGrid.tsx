@@ -12,6 +12,7 @@ import { useGridUrlSync } from '../../components/ag-grid/useGridUrlSync'
 import { usePinnedRows } from '../../components/ag-grid/usePinnedRows'
 import { toaster } from '../../components/ui/toaster'
 import { useFormat } from '../../i18n/useFormat'
+import { localDateKey } from '../../lib/period'
 import type { EventFilterInput } from './__generated__/EventsManagementPageQuery.graphql'
 import type { EventsGridDeleteMutation } from './__generated__/EventsGridDeleteMutation.graphql'
 import type { EventsGridCreateMutation } from './__generated__/EventsGridCreateMutation.graphql'
@@ -96,14 +97,6 @@ const createMutation = graphql`
 const eventsToolbarColumnIds = eventsColumnIds.filter((column) => column !== 'delete')
 
 type UpdatedEvent = NonNullable<EventsGridUpdateMutation['response']['updateEvent']>
-
-function getTodayLocalDate(): string {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0')
-  const day = String(today.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
 
 export function EventsGrid({
   where,
@@ -207,7 +200,7 @@ export function EventsGrid({
       variables: {
         event: {
           name: t('events.add.defaultName'),
-          startDate: getTodayLocalDate(),
+          startDate: localDateKey(new Date()),
           type: 'OTHER',
           description: null,
           endDate: null,

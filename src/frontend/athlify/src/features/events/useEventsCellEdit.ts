@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { graphql, useMutation } from 'react-relay'
 import { toaster } from '../../components/ui/toaster'
 import { parseDate } from '../../lib/dates'
+import { localDateKey } from '../../lib/period'
 import type { EventsGridUpdateMutation } from './__generated__/EventsGridUpdateMutation.graphql'
 
 export type EventsGridRow = {
@@ -39,7 +40,7 @@ function normalizeEventDate(value: unknown): string | null | undefined {
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value
   const date = parseDate(value)
   if (!date) return undefined
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  return localDateKey(date)
 }
 
 type UpdatedEvent = NonNullable<EventsGridUpdateMutation['response']['updateEvent']>

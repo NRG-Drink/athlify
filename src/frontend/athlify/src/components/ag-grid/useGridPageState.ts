@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { yearStartKey } from '../../lib/period'
 import type { GridSavedView, GridStateCodec } from './gridStateCodec'
 import type { GridColumnState } from './useGridColumnPreferences'
 
@@ -153,7 +154,7 @@ export function useGridPageState<TColumnState extends GridColumnState, TWhere>(
   const onFilterYearToDate = useCallback(() => {
     const now = new Date()
     updateSearchParams((params) => {
-      params.set(urlParams.from, `${now.getFullYear()}-01-01`)
+      params.set(urlParams.from, yearStartKey(now))
       params.delete(urlParams.to)
       return params
     })
