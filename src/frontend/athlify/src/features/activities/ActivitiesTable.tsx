@@ -1,17 +1,9 @@
 import { Box, Button, Flex, Text, useBreakpointValue } from '@chakra-ui/react'
-import type {
-  CellValueChangedEvent,
-  ColDef,
-  FilterModel,
-  GridApi,
-  GridState,
-  IOverlayParams,
-} from 'ag-grid-community'
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { graphql, useRelayEnvironment } from 'react-relay'
+import type { ColDef, FilterModel, GridApi, GridState, IOverlayParams } from 'ag-grid-community'
+import { memo, useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
+import { graphql } from 'react-relay'
 import { useTranslation } from 'react-i18next'
-import { LuPlus } from 'react-icons/lu'
-import { GridColumnPicker } from '../../components/ag-grid/GridColumnPicker'
+import { GridToolbar } from '../../components/ag-grid/GridToolbar'
 import { InfiniteAgGridTable } from '../../components/ag-grid/InfiniteAgGridTable'
 import { handleGridFilterChanged } from '../../components/ag-grid/gridFilterChange'
 import { getGridSortModel } from '../../components/ag-grid/gridSortModel'
@@ -19,21 +11,10 @@ import { useGridColumnPreferences } from '../../components/ag-grid/useGridColumn
 import { useGridUrlSync } from '../../components/ag-grid/useGridUrlSync'
 import { usePinnedRows } from '../../components/ag-grid/usePinnedRows'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
-import { toaster } from '../../components/ui/toaster'
 import { useFormat } from '../../i18n/useFormat'
 import type { FilterOption } from './activityFilters'
-import { newActivityValues, toInput, validate, type ActivityInputValues } from './activityInput'
-import { activityInputFromCellChange } from './activityCellEdit'
 import { enumLabel } from './activityFormatting'
-import {
-  activityQueryVariables,
-  defaultActivitySort,
-  splitActivityFilterModel,
-  type ActivityGridFilterModel,
-  type ActivityQuery,
-  type ActivitySort,
-} from './activityQuery'
-import { ActivitiesDataSource, type GridQuery } from './ActivitiesDataSource'
+import type { ActivityGridFilterModel, ActivityQuery, ActivitySort } from './activityQuery'
 import { useActivitiesGridColumns } from './ActivitiesGridColumns'
 import type { ActivityRow } from './ActivitiesGridTypes'
 import {
@@ -43,8 +24,8 @@ import {
   serializeActivitiesColumnState,
   type ActivitiesColumnState,
 } from './ActivitiesGridState'
-import { useActivityMutations } from './useActivityMutations'
-import type { ActivityFilterInput } from './__generated__/ActivitiesTablePageQuery.graphql'
+import { useActivitiesRows } from './useActivitiesRows'
+import { useActivityRowActions } from './useActivityRowActions'
 
 const pageQuery = graphql`
   query ActivitiesTablePageQuery(
@@ -100,6 +81,10 @@ const pageQuery = graphql`
   }
 `
 
+const activitiesToolbarColumnIds = activitiesColumnIds.filter((id) => id !== 'actions')
+
+const activitiesColumnLabelKeys = { time: 'duration', averageSpeed: 'speed' }
+
 function ActivityEmptyOverlay({ emptyMessage }: { emptyMessage?: ReactNode }) {
   return <Box p="4">{emptyMessage}</Box>
 }
@@ -153,20 +138,12 @@ export const ActivitiesTable = memo(function ActivitiesTable({
 }: ActivitiesTableProps) {
   const { t } = useTranslation()
   const format = useFormat()
-  const environment = useRelayEnvironment()
-  const mutations = useActivityMutations()
   const showMd = useBreakpointValue({ base: false, md: true }) ?? true
   const showLg = useBreakpointValue({ base: false, lg: true }) ?? true
   const show2xl = useBreakpointValue({ base: false, '2xl': true }) ?? true
   const [gridApi, setGridApi] = useState<GridApi<ActivityRow> | null>(null)
-  const [loadFailed, setLoadFailed] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [result, setResult] = useState<{ count: number } | null>(null)
-  const [deleting, setDeleting] = useState<ActivityRow | null>(null)
   const countRef = useRef<HTMLParagraphElement>(null)
-  const deleted = useRef(false)
-  const countBeforeCreate = useRef<number | null>(null)
-  const { quickFilter, fromFilter, toFilter, sort } = query
+  const { sort } = query
 
   const {
     rows: pinnedActivities,
@@ -177,55 +154,18 @@ export const ActivitiesTable = memo(function ActivitiesTable({
     remove: removePinnedActivity,
   } = usePinnedRows<ActivityRow>()
 
-  const getQuery = useCallback(
-    (gridSort: ActivitySort, gridFilters: ActivityGridFilterModel): GridQuery => {
-      const { where, order } = activityQueryVariables({
-        ...splitActivityFilterModel(gridFilters),
-        quickFilter,
-        fromFilter,
-        toFilter,
-        sort: gridSort,
-      })
-      return { where: (where ?? null) as ActivityFilterInput | null, order }
-    },
-    [fromFilter, quickFilter, toFilter],
-  )
+  const { datasource, loading, loadFailed, result, reloadRows } = useActivitiesRows({
+    pageQuery,
+    query,
+    gridApi,
+  })
 
-  const onResultCountChange = useCallback((count: number) => setResult({ count }), [])
-
-  useEffect(() => {
-    if (!result || countBeforeCreate.current === null) return
-    const shown = result.count > countBeforeCreate.current
-    countBeforeCreate.current = null
-    toaster.create({
-      type: 'success',
-      title: t(shown ? 'activities.add.success' : 'activities.add.hiddenByFilters'),
-    })
-  }, [result, t])
-
-  const datasource = useMemo(
-    () =>
-      new ActivitiesDataSource({
-        environment,
-        pageQuery,
-        initialQuery: getQuery(defaultActivitySort, {}),
-        getQuery,
-        onLoadFailed: setLoadFailed,
-        onLoadStateChange: setLoading,
-        onResultCountChange,
-      }),
-    [environment, getQuery, onResultCountChange],
-  )
-
-  const reloadRows = useCallback(() => {
-    datasource.reset()
-    gridApi?.refreshInfiniteCache()
-  }, [datasource, gridApi])
-
-  const confirmDelete = useCallback((row: ActivityRow) => {
-    deleted.current = false
-    setDeleting(row)
-  }, [])
+  const actions = useActivityRowActions({
+    latestType,
+    result,
+    reloadRows,
+    pinned: { add: addPinnedActivity, update: updatePinnedActivity, remove: removePinnedActivity },
+  })
 
   const columnDefs = useActivitiesGridColumns({
     t,
@@ -233,7 +173,7 @@ export const ActivitiesTable = memo(function ActivitiesTable({
     showMd,
     showLg,
     show2xl,
-    isUpdating: mutations.isUpdating,
+    isUpdating: actions.isUpdating,
     vehicles,
     vehicleRecords,
     gadgets,
@@ -247,71 +187,8 @@ export const ActivitiesTable = memo(function ActivitiesTable({
     hasMoreTags,
     pinnedActivityIds,
     onTogglePin: togglePinnedActivity,
-    onDelete: confirmDelete,
+    onDelete: actions.requestDelete,
   })
-
-  const createActivity = () => {
-    const values: ActivityInputValues = {
-      ...newActivityValues({ type: latestType }),
-      duration: '0:01',
-      distance: '0',
-      description: t('activities.add.defaultDescription'),
-    }
-    const error = Object.values(validate(values, t)).find((message) => message !== undefined)
-    if (error) {
-      toaster.create({
-        type: 'error',
-        title: t('activities.add.errors.saveFailed'),
-        description: error,
-      })
-      return
-    }
-
-    mutations.create(toInput(values), {
-      onSuccess: (row) => {
-        addPinnedActivity(row)
-        countBeforeCreate.current = result?.count ?? 0
-        reloadRows()
-      },
-    })
-  }
-
-  const onCellValueChanged = useCallback(
-    (event: CellValueChangedEvent<ActivityRow>) => {
-      const { data: row, oldValue, newValue, node, column } = event
-      if (!row || oldValue === newValue) return
-
-      const field = column.getColId()
-      const restoreCell = () => node.setDataValue(field, oldValue)
-      const result = activityInputFromCellChange(row, field, newValue, t)
-      if (!result || 'error' in result) {
-        restoreCell()
-        toaster.create({
-          type: 'error',
-          title: t(
-            result
-              ? 'activities.edit.errors.validationFailed'
-              : 'activities.edit.errors.saveFailed',
-          ),
-          description: result?.error,
-        })
-        return
-      }
-
-      mutations.update(row.id, result.input, {
-        onSuccess: (updated) => {
-          updatePinnedActivity(updated.id, () => updated)
-          reloadRows()
-        },
-        onGone: () => {
-          removePinnedActivity(row.id)
-          reloadRows()
-        },
-        onFailure: restoreCell,
-      })
-    },
-    [mutations, reloadRows, removePinnedActivity, t, updatePinnedActivity],
-  )
 
   const { visibleColumns, persistColumnState, restoreColumnState, setColumnVisible } =
     useGridColumnPreferences<ActivityRow, ActivitiesColumnState>({
@@ -375,55 +252,17 @@ export const ActivitiesTable = memo(function ActivitiesTable({
           </Button>
         </Flex>
       )}
-      <Box
-        display="grid"
-        gridTemplateColumns={{ base: '1fr', sm: '1fr auto' }}
-        alignItems="center"
-        gap="3"
-      >
-        <Text
-          ref={countRef}
-          tabIndex={-1}
-          fontSize="sm"
-          color="fg.muted"
-          aria-live="polite"
-          _focusVisible={{ outline: 'none' }}
-        >
-          {result === null ? '' : t('activities.resultCount', { count: result.count })}
-        </Text>
-        <Box
-          display="grid"
-          gridTemplateColumns="max-content max-content"
-          justifyContent={{ base: 'start', sm: 'end' }}
-          gap="2"
-        >
-          <Button size="sm" onClick={createActivity} loading={mutations.isCreating}>
-            <LuPlus aria-hidden />
-            {t('activities.add.open')}
-          </Button>
-          <GridColumnPicker
-            visibleColumns={visibleColumns}
-            columns={activitiesColumnIds
-              .filter((id) => id !== 'actions')
-              .map((id) => ({
-                id,
-                label: t(
-                  `activities.columns.${
-                    (
-                      {
-                        time: 'duration',
-                        averageSpeed: 'speed',
-                      } as Record<string, string>
-                    )[id] ?? id
-                  }`,
-                ),
-              }))}
-            openLabel={t('activities.columnPicker.open')}
-            dialogLabel={t('activities.columnPicker.label')}
-            onColumnVisibleChange={setColumnVisible}
-          />
-        </Box>
-      </Box>
+      <GridToolbar
+        namespace="activities"
+        columnIds={activitiesToolbarColumnIds}
+        columnLabelKeys={activitiesColumnLabelKeys}
+        countRef={countRef}
+        resultCount={result?.count ?? null}
+        isCreating={actions.isCreating}
+        visibleColumns={visibleColumns}
+        onCreate={actions.createActivity}
+        onColumnVisibleChange={setColumnVisible}
+      />
       <InfiniteAgGridTable<ActivityRow>
         ariaLabel={t('activities.table.caption')}
         localeNamespace="activities"
@@ -460,7 +299,7 @@ export const ActivitiesTable = memo(function ActivitiesTable({
             )
           }
         }}
-        onCellValueChanged={onCellValueChanged}
+        onCellValueChanged={actions.onCellValueChanged}
         onColumnMoved={({ api }) => persistColumnState(api)}
         onColumnVisible={({ api }) => persistColumnState(api)}
         onColumnResized={({ api, finished }) => {
@@ -468,26 +307,14 @@ export const ActivitiesTable = memo(function ActivitiesTable({
         }}
       />
       <ConfirmDialog
-        open={deleting !== null}
-        onOpenChange={(open) => !open && setDeleting(null)}
+        open={actions.deleting !== null}
+        onOpenChange={(open) => !open && actions.cancelDelete()}
         title={t('activities.delete.title')}
-        description={deleting ? deleteDescription(deleting) : ''}
+        description={actions.deleting ? deleteDescription(actions.deleting) : ''}
         confirmLabel={t('activities.delete.confirm')}
-        busy={mutations.isDeleting}
-        onConfirm={() =>
-          deleting &&
-          mutations.remove(deleting.id, {
-            onSettled: (removed) => {
-              deleted.current = removed
-              if (removed) {
-                removePinnedActivity(deleting.id)
-                reloadRows()
-              }
-              setDeleting(null)
-            },
-          })
-        }
-        finalFocusEl={() => (deleted.current ? countRef.current : null)}
+        busy={actions.isDeleting}
+        onConfirm={actions.confirmDelete}
+        finalFocusEl={() => (actions.wasDeleted() ? countRef.current : null)}
       />
     </Flex>
   )

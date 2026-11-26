@@ -1,4 +1,5 @@
 import { Box, Button, Text } from '@chakra-ui/react'
+import type { Ref } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LuPlus } from 'react-icons/lu'
 import { GridColumnPicker } from './GridColumnPicker'
@@ -13,6 +14,10 @@ type GridToolbarProps = {
   visibleColumns: string[]
   onCreate: () => void
   onColumnVisibleChange: (column: string, visible: boolean) => void
+  /** Makes the result count focusable, so the focus can move there after a row was deleted. */
+  countRef?: Ref<HTMLParagraphElement>
+  /** The `columns.*` translation key of a column whose key differs from its id. */
+  columnLabelKeys?: Readonly<Record<string, string>>
 }
 
 /** Result count, add button and column picker above a grid. */
@@ -24,6 +29,8 @@ export function GridToolbar({
   visibleColumns,
   onCreate,
   onColumnVisibleChange,
+  countRef,
+  columnLabelKeys = {},
 }: GridToolbarProps) {
   const { t } = useTranslation()
 
@@ -34,7 +41,14 @@ export function GridToolbar({
       alignItems="center"
       gap="3"
     >
-      <Text fontSize="sm" color="fg.muted" aria-live="polite">
+      <Text
+        ref={countRef}
+        tabIndex={countRef ? -1 : undefined}
+        fontSize="sm"
+        color="fg.muted"
+        aria-live="polite"
+        _focusVisible={countRef ? { outline: 'none' } : undefined}
+      >
         {resultCount === null ? '' : t(`${namespace}.resultCount`, { count: resultCount })}
       </Text>
       <Box
@@ -49,7 +63,10 @@ export function GridToolbar({
         </Button>
         <GridColumnPicker
           visibleColumns={visibleColumns}
-          columns={columnIds.map((id) => ({ id, label: t(`${namespace}.columns.${id}`) }))}
+          columns={columnIds.map((id) => ({
+            id,
+            label: t(`${namespace}.columns.${columnLabelKeys[id] ?? id}`),
+          }))}
           openLabel={t(`${namespace}.columnPicker.open`)}
           dialogLabel={t(`${namespace}.columnPicker.label`)}
           onColumnVisibleChange={onColumnVisibleChange}
