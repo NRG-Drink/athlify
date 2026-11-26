@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Athlify.Api.Tests.DatabaseSeeds;
 
 [Category("DatabaseSeed")]
+[NotInParallel]
 [ClassDataSource<DatabaseSeedsFixture>(Shared = SharedType.None)]
 public class EventSeeds(DatabaseSeedsFixture database)
 {
@@ -44,5 +45,13 @@ public class EventSeeds(DatabaseSeedsFixture database)
         await Assert.That(persistedEvents.Count).IsEqualTo(numberOfEntries);
         await Assert.That(persistedEvents.Select(databaseEvent => databaseEvent.Name))
             .IsEquivalentTo(events.Select(databaseEvent => databaseEvent.Name));
+    }
+
+    [Test, Explicit]
+    public async Task ClearsEvents()
+    {
+        await database.Context.Events.ExecuteDeleteAsync();
+
+        await Assert.That(await database.Context.Events.CountAsync()).IsEqualTo(0);
     }
 }

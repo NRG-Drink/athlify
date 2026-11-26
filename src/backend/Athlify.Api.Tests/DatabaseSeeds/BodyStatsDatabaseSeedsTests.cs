@@ -4,41 +4,77 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Athlify.Api.Tests.DatabaseSeeds;
 
+[NotInParallel]
 [Category("DatabaseSeed")]
 [ClassDataSource<DatabaseSeedsFixture>(Shared = SharedType.None)]
 public class BodyStatsSeeds(DatabaseSeedsFixture database)
 {
     [Test, Explicit]
     [Arguments(20261126, 365)]
-    public async Task InsertsRandomBodyStats(int seed, int numberOfDays)
+    [Arguments(20261126, 2000)]
+    public async Task InsertsRealisticBodyStats(int seed, int numberOfDays)
     {
         if (numberOfDays < 1)
         {
-            throw new ArgumentOutOfRangeException(nameof(numberOfDays), "At least one Body-Stats entry must be inserted.");
+            throw new ArgumentOutOfRangeException(nameof(numberOfDays), "At least one day must be covered.");
         }
 
+        var random = new Randomizer(seed);
         var today = DateTime.UtcNow.Date;
-        var existingDates = (await database.Context.BodyStats
-                .Select(bodyStats => bodyStats.Date)
-                .ToListAsync())
-            .Select(date => date.Date)
-            .ToHashSet();
-        var missingDates = Enumerable.Range(1, numberOfDays)
-            .Select(daysAgo => today.AddDays(-daysAgo))
-            .Where(date => !existingDates.Contains(date))
-            .ToList();
+        var weight = 72.0;
+        var bodyFat = 16.0;
+        var muscle = 40.0;
+        var water = 60.0;
+        var boneMass = 3.2;
+        var gapDaysLeft = 0;
+        var entries = new List<BodyStats>();
 
-        var dayIndex = 0;
-        var bodyStatsFaker = new Faker<BodyStats>()
-            .UseSeed(seed)
-            .RuleFor(bodyStats => bodyStats.UserId, _ => database.OwnerUserId)
-            .RuleFor(bodyStats => bodyStats.Date, _ => missingDates[dayIndex++])
-            .RuleFor(bodyStats => bodyStats.Weight, (faker, bodyStats) => Trend(bodyStats, faker, 70.5, 2.5, 1.2))
-            .RuleFor(bodyStats => bodyStats.BodyFatPercentage, (faker, bodyStats) => Trend(bodyStats, faker, 15.2, 1.1, 0.5))
-            .RuleFor(bodyStats => bodyStats.MusclePercentage, (faker, bodyStats) => Trend(bodyStats, faker, 40.3, -0.8, 0.4))
-            .RuleFor(bodyStats => bodyStats.WaterPercentage, (faker, bodyStats) => Trend(bodyStats, faker, 60.1, -0.6, 0.6))
-            .RuleFor(bodyStats => bodyStats.BoneMass, faker => Math.Round(faker.Random.Double(3.1, 3.3), 1));
-        var entries = bodyStatsFaker.Generate(missingDates.Count);
+        for (var daysAgo = numberOfDays; daysAgo >= 1; daysAgo--)
+        {
+            if (gapDaysLeft > 0)
+            {
+                gapDaysLeft--;
+                continue;
+            }
+
+            if (random.Bool(0.06f))
+            {
+                gapDaysLeft = random.Int(2, 6);
+                continue;
+            }
+
+            if (random.Bool(0.15f))
+            {
+                continue;
+            }
+
+            var day = today.AddDays(-daysAgo);
+            var measurementTimes = new List<DateTime> { day.AddHours(random.Double(5.5, 10)) };
+            if (random.Bool(0.15f))
+            {
+                measurementTimes.Add(day.AddHours(random.Double(17, 22.5)));
+            }
+
+            foreach (var measurementTime in measurementTimes)
+            {
+                weight = Math.Clamp(weight + random.Double(-0.6, 0.6), 60, 90);
+                bodyFat = Math.Clamp(bodyFat + random.Double(-0.3, 0.3), 8, 30);
+                muscle = Math.Clamp(muscle + random.Double(-0.2, 0.2), 30, 50);
+                water = Math.Clamp(water + random.Double(-0.4, 0.4), 50, 65);
+                boneMass = Math.Clamp(boneMass + random.Double(-0.05, 0.05), 3.0, 3.4);
+
+                entries.Add(new BodyStats
+                {
+                    UserId = database.OwnerUserId,
+                    Date = measurementTime,
+                    Weight = Math.Round(weight, 1),
+                    BodyFatPercentage = Math.Round(bodyFat, 1),
+                    MusclePercentage = Math.Round(muscle, 1),
+                    WaterPercentage = Math.Round(water, 1),
+                    BoneMass = Math.Round(boneMass, 1),
+                });
+            }
+        }
 
         database.Context.BodyStats.AddRange(entries);
         await database.Context.SaveChangesAsync();
@@ -49,9 +85,17 @@ public class BodyStatsSeeds(DatabaseSeedsFixture database)
             .Where(bodyStats => ids.Contains(bodyStats.Id))
             .ToListAsync();
 
-        await Assert.That(persistedEntries.Count).IsEqualTo(missingDates.Count);
-        await Assert.That(persistedEntries.Select(bodyStats => bodyStats.Date.Date))
-            .IsEquivalentTo(missingDates);
+        await Assert.That(persistedEntries.Count).IsEqualTo(entries.Count);
+        await Assert.That(persistedEntries.All(bodyStats =>
+            bodyStats.Date >= today.AddDays(-numberOfDays) && bodyStats.Date < today)).IsTrue();
+    }
+
+    [Test, Explicit]
+    public async Task ClearsBodyStats()
+    {
+        await database.Context.BodyStats.ExecuteDeleteAsync();
+
+        await Assert.That(await database.Context.BodyStats.CountAsync()).IsEqualTo(0);
     }
 
     private static double Trend(BodyStats bodyStats, Faker faker, double start, double yearlyChange, double noise)

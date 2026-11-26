@@ -1,3 +1,4 @@
+using Athlify.Api.Database;
 using Athlify.Api.Domain.Activities;
 using Athlify.Api.Domain.Tags;
 using Bogus;
@@ -6,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Athlify.Api.Tests.DatabaseSeeds;
 
 [Category("DatabaseSeed")]
+[NotInParallel]
 [ClassDataSource<DatabaseSeedsFixture>(Shared = SharedType.None)]
 public class ActivitySeeds(DatabaseSeedsFixture database)
 {
@@ -72,6 +74,17 @@ public class ActivitySeeds(DatabaseSeedsFixture database)
         await Assert.That(persistedActivities.Count).IsEqualTo(numberOfEntries);
         await Assert.That(persistedActivities.All(activity => activity.AverageSpeed is not null)).IsTrue();
         await Assert.That(persistedActivities.Count(activity => activity.MergeId == merge.Id)).IsEqualTo(2);
+    }
+
+    [Test, Explicit]
+    public async Task ClearsActivitiesAndMerges()
+    {
+        var includeSoftDeleted = new[] { AthlifyDbContext.NotDeletedFilter };
+        await database.Context.Activities.IgnoreQueryFilters(includeSoftDeleted).ExecuteDeleteAsync();
+        await database.Context.ActivityMerges.IgnoreQueryFilters(includeSoftDeleted).ExecuteDeleteAsync();
+
+        await Assert.That(await database.Context.Activities.IgnoreQueryFilters(includeSoftDeleted).CountAsync()).IsEqualTo(0);
+        await Assert.That(await database.Context.ActivityMerges.IgnoreQueryFilters(includeSoftDeleted).CountAsync()).IsEqualTo(0);
     }
 
     private async Task<List<Tag>> GetOrCreateTagsAsync()
