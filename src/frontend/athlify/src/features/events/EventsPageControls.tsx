@@ -22,6 +22,8 @@ import { LuChevronRight } from 'react-icons/lu'
 type EventsPageControlsProps = {
   filters: EventsPageFilterControls
   views: EventsSavedViewControls
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
 
 type DateFilterDraft = {
@@ -48,7 +50,12 @@ function hasFourDigitYear(value: string): boolean {
   return /^\d{1,2}\.\d{1,2}\.\d{4}$/.test(value.trim())
 }
 
-export function EventsPageControls({ filters, views }: EventsPageControlsProps) {
+export function EventsPageControls({
+  filters,
+  views,
+  open,
+  onOpenChange,
+}: EventsPageControlsProps) {
   const { t } = useTranslation()
   const [saveViewOpen, setSaveViewOpen] = useState(false)
   const [newViewName, setNewViewName] = useState('')
@@ -91,7 +98,7 @@ export function EventsPageControls({ filters, views }: EventsPageControlsProps) 
   }
 
   return (
-    <Collapsible.Root defaultOpen>
+    <Collapsible.Root open={open} onOpenChange={(details) => onOpenChange(details.open)}>
       <Box
         display="grid"
         bg="bg.panel"
@@ -106,7 +113,6 @@ export function EventsPageControls({ filters, views }: EventsPageControlsProps) 
             <LuChevronRight />
           </Collapsible.Indicator>
           <Text>{t('events.controls.title')}</Text>
-          {/* {t('events.controls.title')} */}
         </Collapsible.Trigger>
         <Collapsible.Content>
           <Box display="grid" gap="3">
