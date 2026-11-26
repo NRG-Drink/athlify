@@ -61,14 +61,14 @@ the "Night Ride" theme in `src/theme/`
 ([ADR-007](adr/ADR-007-domain-page-pattern.md)): summary tiles, a chart of the
 selected measurement over a selectable date range, and a history table with add,
 edit and delete against the backend API. New entries are prefilled from the
-entry with the newest date. The Activities page is an AG Grid backed by the
+entry with the newest date. The Activities page is an AG Grid on the infinite row model backed by the
 `activities` connection, with URL-backed description/date/column filters and
 multi-column server sorting, browser-local saved views, configurable columns,
-separate filter/table resets and automatic cursor pagination while scrolling.
+separate filter/table resets and cursor pages that load while scrolling.
 New activities are temporarily pinned above current results; input values are
-edited directly in their grid cells, while add and duplicate create pinned
-rows for inline completion; delete uses a confirmation
-([ADR-012](adr/ADR-012-store-updates-for-server-sorted-lists.md)). Dashboard, Garage and
+edited directly in their grid cells, while add creates a pinned row for inline
+completion; delete uses a confirmation
+([ADR-013](adr/ADR-013-grid-lists-fetch-outside-the-relay-store.md)). Dashboard, Garage and
 Settings remain placeholders. The Settings page lets the signed-in user edit their own
 profile, language and password. The Body-Stats history is an AG Grid with URL-backed filters, browser-local saved views, configurable columns, pinned rows, form-free creation of a pinned measurement and inline editing ([ADR-013](adr/ADR-013-grid-lists-fetch-outside-the-relay-store.md)). The Events page uses the backend API to list,
 create, edit and delete personal events, with URL-backed filters and saved

@@ -169,7 +169,7 @@ In short:
 
 - **Row actions.** Activities are edited directly in cells; clicking a row
   does not open a form. Their actions live in the leftmost pinned column as
-  ghost icon buttons for duplicate, pin/unpin and delete, each with a
+  ghost icon buttons for pin/unpin and delete, each with a
   row-specific `aria-label`. Delete opens a confirmation dialog. Other
   domain tables may use a separate edit action or a menu when their workflow
   requires it.

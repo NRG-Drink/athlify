@@ -224,7 +224,7 @@ describe('form values', () => {
     })
   })
 
-  it('reads an activity, and as a copy with the current date', () => {
+  it('reads an activity', () => {
     const values = activityToValues(activity)
     expect(values).toMatchObject({
       date: '01.10.2026, 18:15',
@@ -238,10 +238,6 @@ describe('form values', () => {
       wind: 'CALM',
       mood: '',
       gadgetIds: ['gadget-1'],
-    })
-    expect(activityToValues(activity, { asCopy: true, now })).toEqual({
-      ...values,
-      date: '12.10.2026, 07:30',
     })
   })
 

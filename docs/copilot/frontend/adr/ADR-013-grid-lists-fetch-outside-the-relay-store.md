@@ -18,7 +18,9 @@ after any edit, so the client cannot decide where a record belongs.
 
 Events already feeds its grid through the AG Grid infinite row model and a
 cursor datasource (`CursorInfiniteDatasource`) that fetches pages with
-`fetchQuery` and the `network-only` policy.
+`fetchQuery` and the `network-only` policy. Activities, which ADR-012 kept on a
+paginated Relay connection, moved to the same mechanism so that all three
+grids look and behave alike.
 
 ## Options Considered
 
@@ -32,8 +34,8 @@ cursor datasource (`CursorInfiniteDatasource`) that fetches pages with
 ### Option 2: Infinite row model with a cursor datasource and `network-only`
 
 - Pros: AG Grid owns paging, caching and sort/filter changes. The server always
-  decides membership, position and count. The same datasource serves Events and
-  Body-Stats.
+  decides membership, position and count. The same datasource serves Events,
+  Body-Stats and Activities.
 - Cons: Grid rows are plain copies, not store records. After a mutation the
   datasource must be reset.
 
@@ -52,7 +54,8 @@ update or delete.
 
 - Position, membership and count of every row come from the server for any
   filter or sort combination.
-- Events and Body-Stats share one datasource and one set of grid state helpers.
+- Events, Body-Stats and Activities share one datasource and one set of grid
+  state helpers.
 
 ### Negative / Trade-offs
 
@@ -61,3 +64,10 @@ update or delete.
   the datasource reset.
 - Body-Stats keeps two reads of the same data: the analytics connection (all
   pages) and the grid datasource (filtered pages).
+- Activities keep their option lists and the latest activity type in a small
+  page query; the rows come from their own `fetchQuery`.
+
+## Implementation Notes
+
+- Activities: `src/frontend/athlify/src/features/activities/`
+  (`ActivitiesTable.tsx`, `ActivitiesDataSource.ts`).

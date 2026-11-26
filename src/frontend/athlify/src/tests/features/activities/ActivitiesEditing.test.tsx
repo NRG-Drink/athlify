@@ -5,7 +5,6 @@ import {
   ACTIVITIES_COLUMN_STORAGE_KEY,
   activitiesColumnIds,
 } from '../../../features/activities/ActivitiesGridState'
-import { formatDate } from '../../../lib/dates'
 import { mockAgGridViewport } from '../../utils/mockAgGridViewport'
 import { renderWithRelay } from '../../utils/relay'
 
@@ -17,7 +16,7 @@ afterEach(() => {
 })
 
 const QUERY = 'ActivitiesPageQuery'
-const MORE = 'ActivitiesPageMoreQuery'
+const GRID = 'ActivitiesTablePageQuery'
 const CREATE = 'useActivityMutationsCreateMutation'
 const UPDATE = 'useActivityMutationsUpdateMutation'
 const DELETE = 'useActivityMutationsDeleteMutation'
@@ -67,18 +66,19 @@ const second: Activity = {
   merge: { __typename: 'ActivityMerge', id: 'merge-1' },
 }
 
-const list = (nodes: Activity[], latest: Activity | undefined = nodes[0]) => ({
-  activities: {
-    totalCount: nodes.length,
-    edges: nodes.map((node) => ({ cursor: node.id, node })),
-    pageInfo: { hasNextPage: false, endCursor: nodes.at(-1)?.id ?? null },
+const rows = (nodes: Activity[]) => ({
+  data: {
+    activities: {
+      totalCount: nodes.length,
+      nodes,
+      pageInfo: { hasNextPage: false, endCursor: nodes.at(-1)?.id ?? null },
+    },
   },
-  latest: { nodes: latest ? [{ id: latest.id, type: latest.type, vehicle: latest.vehicle }] : [] },
 })
 
-const query = (nodes: Activity[]) => ({
+const lookups = (latest: Activity | undefined = base) => ({
   data: {
-    ...list(nodes),
+    latest: { nodes: latest ? [{ id: latest.id, type: latest.type }] : [] },
     vehicles: { nodes: [canyon], pageInfo: { hasNextPage: false } },
     gadgets: {
       nodes: [
@@ -92,6 +92,21 @@ const query = (nodes: Activity[]) => ({
     },
   },
 })
+
+/** Serves the lookups and the rows; `after` replaces the rows once `trigger` has been called. */
+function serve(before: Activity[], after: Activity[] = before, latest?: Activity) {
+  let changed = false
+  return {
+    trigger: () => {
+      changed = true
+    },
+    handler: (operation: string) => {
+      if (operation === QUERY) return lookups(latest ?? before[0])
+      if (operation === GRID) return rows(changed ? after : before)
+      return undefined
+    },
+  }
+}
 
 function mockWideViewport() {
   vi.spyOn(window, 'matchMedia').mockImplementation(
@@ -112,7 +127,7 @@ type Handler = Parameters<typeof renderWithRelay>[1]
 const page = (handler: Handler, path = '/activities') =>
   renderWithRelay(<ActivitiesPage />, handler, { path, routePath: '/activities' })
 
-const okQuery = (operation: string) => (operation === QUERY ? query([base, second]) : undefined)
+const okQuery = serve([base, second]).handler
 
 // `hidden`: an open modal hides the table from the accessibility tree.
 const table = () => screen.getByRole('grid', { hidden: true })
@@ -155,7 +170,7 @@ describe('ActivitiesPage editing', () => {
       await user.click(row)
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
-      expect(await rowActionButton('16.10.2026', 'Duplizieren')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Duplizieren' })).not.toBeInTheDocument()
       expect(await rowActionButton('16.10.2026', 'Aktivität anheften')).toBeInTheDocument()
       expect(await rowActionButton('16.10.2026', 'Löschen')).toBeInTheDocument()
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
@@ -192,7 +207,7 @@ describe('ActivitiesPage editing', () => {
   })
 
   describe('inline editing', () => {
-    it('refetches server-filtered rows after an edit no longer matches', async () => {
+    it('reloads server-filtered rows after an edit no longer matches', async () => {
       mockWideViewport()
       window.localStorage.setItem(
         ACTIVITIES_COLUMN_STORAGE_KEY,
@@ -200,18 +215,14 @@ describe('ActivitiesPage editing', () => {
           activitiesColumnIds.map((colId) => ({ colId, hide: colId !== 'description' })),
         ),
       )
-      const { user, calls, router } = page(
-        (operation) => {
-          if (operation === UPDATE) {
-            return {
-              data: { updateActivity: { ...base, description: 'No longer matching' } },
-            }
-          }
-          if (operation === MORE) return { data: list([]) }
-          return operation === QUERY ? query([base]) : undefined
-        },
-        '/activities?q=Feierabendrunde',
-      )
+      const server = serve([base], [])
+      const { user, calls, router } = page((operation) => {
+        if (operation === UPDATE) {
+          server.trigger()
+          return { data: { updateActivity: { ...base, description: 'No longer matching' } } }
+        }
+        return server.handler(operation)
+      }, '/activities?q=Feierabendrunde')
 
       await screen.findByText('Feierabendrunde')
       const descriptionCell = within(table()).getByRole('gridcell', { name: 'Feierabendrunde' })
@@ -224,7 +235,7 @@ describe('ActivitiesPage editing', () => {
 
       await waitFor(() => {
         expect(calls(UPDATE)).toHaveLength(1)
-        expect(calls(MORE)).toHaveLength(1)
+        expect(calls(GRID)).toHaveLength(2)
       })
       expect(calls(UPDATE)[0]).toMatchObject({
         id: 'activity-1',
@@ -235,7 +246,7 @@ describe('ActivitiesPage editing', () => {
           type: 'ROAD',
         },
       })
-      expect(calls(MORE)[0]).toMatchObject({
+      expect(calls(GRID)[1]).toMatchObject({
         where: { description: { contains: 'Feierabendrunde' } },
       })
       expect(router.state.location.search).toBe('?q=Feierabendrunde')
@@ -245,10 +256,15 @@ describe('ActivitiesPage editing', () => {
   })
 
   describe('deleting', () => {
-    it('asks first, removes the row, lowers the count and does not reload the list', async () => {
-      const { user, calls } = page((operation) =>
-        operation === DELETE ? { data: { deleteActivity: 'activity-1' } } : okQuery(operation),
-      )
+    it('asks first, removes the row, lowers the count and reloads the rows', async () => {
+      const server = serve([base, second], [second])
+      const { user, calls } = page((operation) => {
+        if (operation === DELETE) {
+          server.trigger()
+          return { data: { deleteActivity: 'activity-1' } }
+        }
+        return server.handler(operation)
+      })
       await clickRowAction('16.10.2026', 'Löschen')
 
       const confirm = await screen.findByRole('alertdialog', { name: 'Aktivität löschen?' })
@@ -263,7 +279,7 @@ describe('ActivitiesPage editing', () => {
       await waitFor(() => expect(rowCount()).toBe(1))
       // The row and its menu are gone; the count line takes the focus.
       await waitFor(() => expect(screen.getByText('1 Aktivität')).toHaveFocus())
-      expect(calls(MORE)).toHaveLength(0)
+      expect(calls(GRID)).toHaveLength(2)
       expect(calls(QUERY)).toHaveLength(1)
     })
 
@@ -306,13 +322,14 @@ describe('ActivitiesPage editing', () => {
     })
 
     it('shows the first-use empty state and keeps Add in the grid toolbar after the last delete', async () => {
-      const { user } = page((operation) =>
-        operation === DELETE
-          ? { data: { deleteActivity: 'activity-1' } }
-          : operation === QUERY
-            ? query([base])
-            : undefined,
-      )
+      const server = serve([base], [])
+      const { user } = page((operation) => {
+        if (operation === DELETE) {
+          server.trigger()
+          return { data: { deleteActivity: 'activity-1' } }
+        }
+        return server.handler(operation)
+      })
       await clickRowAction('16.10.2026', 'Löschen')
       await user.click(
         within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Löschen' }),
@@ -336,22 +353,19 @@ describe('ActivitiesPage editing', () => {
       vehicle: canyon,
     }
 
-    const creating = (operation: string) => {
-      if (operation === CREATE) return { data: { createActivity: created } }
-      if (operation === MORE) return { data: list([created, base, second]) }
-      return okQuery(operation)
+    const creating = (before: Activity[], after: Activity[], latest?: Activity) => {
+      const server = serve(before, after, latest)
+      return (operation: string) => {
+        if (operation === CREATE) {
+          server.trigger()
+          return { data: { createActivity: created } }
+        }
+        return server.handler(operation)
+      }
     }
 
     it('creates with minimal valid values and the latest type, then pins the row', async () => {
-      const { user, calls } = page((operation) =>
-        operation === QUERY
-          ? query([second, base])
-          : operation === CREATE
-            ? { data: { createActivity: created } }
-            : operation === MORE
-              ? { data: list([created, second, base]) }
-              : undefined,
-      )
+      const { user, calls } = page(creating([second, base], [created, second, base], second))
       await user.click(await screen.findByRole('button', { name: 'Aktivität erfassen' }))
 
       await waitFor(() => expect(calls(CREATE)).toHaveLength(1))
@@ -367,8 +381,11 @@ describe('ActivitiesPage editing', () => {
       expect(await rowActionButton('20.10.2026', 'Anheftung lösen')).toBeInTheDocument()
     })
 
-    it('creates immediately, then reloads the list as far as it was loaded, keeping filter and order', async () => {
-      const { user, calls } = page(creating, '/activities?sort=-distance')
+    it('creates immediately, then reloads the rows, keeping filter and order', async () => {
+      const { user, calls } = page(
+        creating([base, second], [created, base, second]),
+        '/activities?sort=-distance',
+      )
       await user.click(await screen.findByRole('button', { name: 'Aktivität erfassen' }))
 
       await waitFor(() => expect(calls(CREATE)).toHaveLength(1))
@@ -382,43 +399,32 @@ describe('ActivitiesPage editing', () => {
         tagIds: [],
       })
       expect(await screen.findByText('Aktivität gespeichert.')).toBeInTheDocument()
-      await waitFor(() => expect(calls(MORE)).toHaveLength(1))
-      expect(calls(MORE)[0]).toMatchObject({
-        first: 50,
+      await waitFor(() => expect(calls(GRID)).toHaveLength(2))
+      expect(calls(GRID).at(-1)).toMatchObject({
+        first: 20,
         order: [{ distance: 'DESC' }, { id: 'DESC' }],
       })
-      await waitFor(() => expect(rowCount()).toBe(3))
-      expect(screen.getByText('3 Aktivitäten')).toBeInTheDocument()
-      expect(
-        await rowActionButton('20.10.2026', 'Anheftung lösen'),
-      ).toBeInTheDocument()
+      await waitFor(() => expect(screen.getByText('3 Aktivitäten')).toBeInTheDocument())
+      expect(await rowActionButton('20.10.2026', 'Anheftung lösen')).toBeInTheDocument()
     })
 
     it('says so when the active filters hide the new activity', async () => {
-      // The server applies the filters: the reloaded list neither shows the new one nor counts it.
-      const hiding = (operation: string) =>
-        operation === MORE ? { data: list([base, second]) } : creating(operation)
-      const { user, calls, router } = page(hiding, '/activities?type=GRAVEL')
+      const { user, calls, router } = page(
+        creating([base, second], [base, second]),
+        '/activities?type=GRAVEL',
+      )
       await user.click(await screen.findByRole('button', { name: 'Aktivität erfassen' }))
 
       expect(
         await screen.findByText('Aktivität gespeichert. Die aktiven Filter blenden sie aus.'),
       ).toBeInTheDocument()
-      await waitFor(() => expect(calls(MORE)).toHaveLength(1))
-      expect(calls(MORE)[0]).toMatchObject({ where: { type: { in: ['GRAVEL'] } } })
+      await waitFor(() => expect(calls(GRID).length).toBeGreaterThan(1))
+      expect(calls(GRID).at(-1)).toMatchObject({ where: { type: { in: ['GRAVEL'] } } })
       expect(router.state.location.search).toBe('?type=GRAVEL')
     })
 
     it('can add the first activity from the empty state', async () => {
-      const { user, calls } = page((operation) =>
-        operation === QUERY
-          ? query([])
-          : operation === CREATE
-            ? { data: { createActivity: created } }
-            : operation === MORE
-              ? { data: list([created]) }
-              : undefined,
-      )
+      const { user, calls } = page(creating([], [created]))
       await user.click(await screen.findByRole('button', { name: 'Aktivität erfassen' }))
 
       await waitFor(() => expect(calls(CREATE)).toHaveLength(1))
@@ -431,52 +437,4 @@ describe('ActivitiesPage editing', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     })
   })
-
-  describe('duplicating', () => {
-    it('creates immediately from the row values with the current date', async () => {
-      const { calls } = page((operation) =>
-        operation === CREATE
-          ? { data: { createActivity: { ...second, id: 'activity-3' } } }
-          : operation === MORE
-            ? { data: list([base, second]) }
-            : okQuery(operation),
-      )
-      await waitFor(() => {
-        if (calls(CREATE).length > 0) return
-        const time = [...table().querySelectorAll('time')].find((candidate) =>
-          candidate.textContent?.includes('14.10.2026'),
-        )
-        const row = time?.closest('[row-index]')
-        if (!(row instanceof HTMLElement)) throw new Error('The copied activity row is not attached.')
-        fireEvent.click(within(row).getByRole('button', { name: 'Duplizieren' }))
-        expect(calls(CREATE)).toHaveLength(1)
-      })
-      expect(calls(CREATE)[0].input).toMatchObject({
-        type: 'GRAVEL',
-        time: 5400,
-        distance: 42.5,
-        description: '(Kopie)',
-        heartRateAverage: 142,
-        vehicleId: 'vehicle-1',
-      })
-      expect(formatDate(new Date(calls(CREATE)[0].input.date))).toBe(formatDate(new Date()))
-      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-      expect(calls(UPDATE)).toHaveLength(0)
-    })
-
-    it('appends a copy suffix to an existing description', async () => {
-      const { calls } = page((operation) =>
-        operation === CREATE
-          ? { data: { createActivity: { ...base, id: 'activity-3' } } }
-          : operation === MORE
-            ? { data: list([base, second]) }
-            : okQuery(operation),
-      )
-      await clickRowAction('16.10.2026', 'Duplizieren')
-
-      await waitFor(() => expect(calls(CREATE)).toHaveLength(1))
-      expect(calls(CREATE)[0].input.description).toBe('Feierabendrunde (Kopie)')
-    })
-  })
-
 })

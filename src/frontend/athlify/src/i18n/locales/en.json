@@ -308,9 +308,6 @@
       "moreTags": "+{{count}}",
       "resultCount_one": "{{count}} activity",
       "resultCount_other": "{{count}} activities",
-      "loadMore": "Load more activities",
-      "loadingMore": "Loading more activities …",
-      "loadMoreFailed": "More activities could not be loaded.",
       "loadFailed": "Activities could not be loaded.",
       "empty": {
         "title": "No activities yet",
@@ -348,11 +345,6 @@
         "errors": {
           "saveFailed": "Saving failed. Please try again."
         }
-      },
-      "duplicate": {
-        "action": "Duplicate",
-        "title": "Duplicate activity",
-        "copySuffix": "(copy)"
       },
       "edit": {
         "title": "Edit activity",

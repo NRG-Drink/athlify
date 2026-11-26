@@ -6,7 +6,7 @@ Technical detail documentation for the functional concept in
 The backend implements activity management (create, edit, soft delete,
 filters and merges) through the GraphQL API; see
 [`api-design.md`](api-design.md#activities-and-merges). The Activities page
-lists, adds, edits, duplicates and soft-deletes activities; the calendar view,
+lists, adds, edits and soft-deletes activities; the calendar view,
 the merge UI and Strava synchronization are not implemented yet.
 
 ## Views and functions
@@ -43,9 +43,7 @@ the merge UI and Strava synchronization are not implemented yet.
   ROAD), the current date and time, a one-minute duration, zero distance and a
   localized "New Activity" description.
   The row is pinned while the user completes it through inline cell editing.
-  Duplicate immediately creates a pinned copy with the source values and the
-  current date and time, appending a localized copy marker to the description
-  (or using the marker alone when the source has no description). Tags can be
+  There is no copy function. Tags can be
   created from a small popover in the tags cell editor. Delete requires
   confirmation and warns when the activity belongs to a merge.
 - Calendar view with weekly summary inspired by TrainingPeaks.

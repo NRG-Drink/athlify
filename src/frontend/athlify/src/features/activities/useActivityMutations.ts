@@ -1,7 +1,6 @@
-import { graphql, useMutation, useRelayEnvironment } from 'react-relay'
+import { graphql, useMutation } from 'react-relay'
 import { useTranslation } from 'react-i18next'
 import { toaster } from '../../components/ui/toaster'
-import { removeFromConnections } from '../../relay/removeFromConnections'
 import type { ActivityFormInput } from './activityForm'
 import type { useActivityMutationsCreateMutation } from './__generated__/useActivityMutationsCreateMutation.graphql'
 import type { useActivityMutationsDeleteMutation } from './__generated__/useActivityMutationsDeleteMutation.graphql'
@@ -105,6 +104,8 @@ interface Callbacks {
 
 interface UpdateCallbacks extends Callbacks {
   onFailure?: () => void
+  /** Called when the activity no longer exists on the server. */
+  onGone?: () => void
 }
 
 interface DeleteCallbacks {
@@ -117,14 +118,11 @@ type ActivityMutationRow = NonNullable<
 >
 
 /**
- * Create, update and delete for activities. The list is sorted and filtered by the server, so a new
- * activity is not inserted here: the caller refetches the list. An update changes the row in place
- * (it does not move, even if it no longer fits the sort or filters); a deleted or vanished activity
- * leaves the list and the count. The user gets a toast for every outcome.
+ * Create, update and delete for activities. The list is sorted and filtered by the server, so the
+ * caller reloads its rows after every change. The user gets a toast for every outcome.
  */
-export function useActivityMutations(connectionId: string) {
+export function useActivityMutations() {
   const { t } = useTranslation()
-  const environment = useRelayEnvironment()
   const [commitCreate, isCreating] = useMutation<useActivityMutationsCreateMutation>(createMutation)
   const [commitUpdate, isUpdating] = useMutation<useActivityMutationsUpdateMutation>(updateMutation)
   const [commitDelete, isDeleting] = useMutation<useActivityMutationsDeleteMutation>(deleteMutation)
@@ -132,8 +130,6 @@ export function useActivityMutations(connectionId: string) {
   const fail = (key: string): void => {
     toaster.create({ type: 'error', title: t(key) })
   }
-
-  const removeLocally = (id: string) => removeFromConnections(environment, [connectionId], id)
 
   const create = (input: ActivityFormInput, { onSuccess }: Callbacks) =>
     commitCreate({
@@ -148,7 +144,11 @@ export function useActivityMutations(connectionId: string) {
       onError: () => fail('activities.add.errors.saveFailed'),
     })
 
-  const update = (id: string, input: ActivityFormInput, { onSuccess, onFailure }: UpdateCallbacks) =>
+  const update = (
+    id: string,
+    input: ActivityFormInput,
+    { onSuccess, onFailure, onGone }: UpdateCallbacks,
+  ) =>
     commitUpdate({
       variables: { id, input },
       onCompleted: (response, errors) => {
@@ -158,10 +158,9 @@ export function useActivityMutations(connectionId: string) {
           return
         }
         if (!response.updateActivity) {
-          // The activity vanished on the server: drop it here as well.
-          removeLocally(id)
           fail('activities.edit.errors.notFound')
           onFailure?.()
+          onGone?.()
         } else {
           toaster.create({ type: 'success', title: t('activities.edit.success') })
           onSuccess(response.updateActivity)
@@ -179,8 +178,6 @@ export function useActivityMutations(connectionId: string) {
       onCompleted: (_response, errors) => {
         if (errors?.length) fail('activities.delete.errors.failed')
         else {
-          // Also when the server no longer knows it (`null`): either way it is gone.
-          removeLocally(id)
           toaster.create({ type: 'success', title: t('activities.delete.success') })
         }
         onSettled(!errors?.length)

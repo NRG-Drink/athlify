@@ -308,9 +308,6 @@
       "moreTags": "+{{count}}",
       "resultCount_one": "{{count}} Aktivität",
       "resultCount_other": "{{count}} Aktivitäten",
-      "loadMore": "Weitere Aktivitäten laden",
-      "loadingMore": "Weitere Aktivitäten werden geladen …",
-      "loadMoreFailed": "Weitere Aktivitäten konnten nicht geladen werden.",
       "loadFailed": "Aktivitäten konnten nicht geladen werden.",
       "empty": {
         "title": "Noch keine Aktivitäten",
@@ -348,11 +345,6 @@
         "errors": {
           "saveFailed": "Speichern fehlgeschlagen. Bitte versuche es nochmals."
         }
-      },
-      "duplicate": {
-        "action": "Duplizieren",
-        "title": "Aktivität duplizieren",
-        "copySuffix": "(Kopie)"
       },
       "edit": {
         "title": "Aktivität bearbeiten",

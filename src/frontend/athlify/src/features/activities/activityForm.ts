@@ -128,13 +128,10 @@ export function newActivityValues(
   }
 }
 
-/** The values of an existing activity; as a copy (duplicate) it gets the current date and time. */
-export function activityToValues(
-  activity: ActivityFormSource,
-  { asCopy = false, now = new Date() }: { asCopy?: boolean; now?: Date } = {},
-): ActivityFormValues {
+/** The values of an existing activity. */
+export function activityToValues(activity: ActivityFormSource): ActivityFormValues {
   return {
-    date: formatDateTime(asCopy ? now : new Date(activity.date)),
+    date: formatDateTime(new Date(activity.date)),
     type: asEnum(activityTypes, activity.type) ?? 'ROAD',
     duration: formatDuration(activity.time),
     time: activity.time,
